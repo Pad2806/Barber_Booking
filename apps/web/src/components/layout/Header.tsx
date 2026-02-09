@@ -3,12 +3,11 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Layout, Menu, Button, Drawer, Space, Badge, Avatar, Dropdown } from 'antd';
+import { Layout, Menu, Button, Drawer, Space } from 'antd';
 import {
   MenuOutlined,
   PhoneOutlined,
   EnvironmentOutlined,
-  UserOutlined,
   CalendarOutlined,
   HomeOutlined,
   ScissorOutlined,
@@ -54,27 +53,6 @@ export function Header() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const userMenuItems: MenuProps['items'] = [
-    {
-      key: 'bookings',
-      icon: <CalendarOutlined />,
-      label: <Link href="/my-bookings">Lịch hẹn của tôi</Link>,
-    },
-    {
-      key: 'profile',
-      icon: <UserOutlined />,
-      label: <Link href="/profile">Tài khoản</Link>,
-    },
-    {
-      type: 'divider',
-    },
-    {
-      key: 'logout',
-      label: 'Đăng xuất',
-      danger: true,
-    },
-  ];
 
   return (
     <>
