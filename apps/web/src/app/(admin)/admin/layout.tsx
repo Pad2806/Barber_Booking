@@ -15,7 +15,6 @@ import {
   Settings,
   LogOut,
   Menu,
-  X,
   User,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';

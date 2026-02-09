@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -563,8 +562,8 @@ export default function AdminStaffPage() {
               <h3 className="text-lg font-semibold text-gray-800 mb-2">Xác nhận xoá</h3>
               <p className="text-sm text-gray-600 mb-6">
                 Bạn có chắc chắn muốn xóa nhân viên{' '}
-                <span className="font-medium">"{deleteConfirm.staffName}"</span>? Hành động này
-                không thể hoàn tác.
+                <span className="font-medium">&quot;{deleteConfirm.staffName}&quot;</span>? Hành
+                động này không thể hoàn tác.
               </p>
               <div className="flex items-center justify-end gap-3">
                 <button
