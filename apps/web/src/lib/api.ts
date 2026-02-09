@@ -113,6 +113,7 @@ export interface Booking {
   totalAmount: number;
   status: string;
   paymentStatus: string;
+  paymentMethod?: string | null;
   note?: string;
   salon: Salon;
   staff?: Staff;
@@ -123,6 +124,15 @@ export interface Booking {
     duration: number;
   }>;
   createdAt: string;
+}
+
+export interface AdminBookingDetail extends Booking {
+  customer: {
+    id: string;
+    name: string;
+    phone: string;
+    email?: string | null;
+  };
 }
 
 export interface Review {
@@ -285,7 +295,7 @@ export const adminApi = {
     return response.data;
   },
   getBookingById: async (bookingId: string) => {
-    const response = await apiClient.get<Booking>(`/bookings/${bookingId}`);
+    const response = await apiClient.get<AdminBookingDetail>(`/bookings/${bookingId}`);
     return response.data;
   },
   updateBookingStatus: async (bookingId: string, status: string) => {

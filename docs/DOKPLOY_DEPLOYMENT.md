@@ -18,12 +18,12 @@
 
 ### Services cần deploy:
 
-| Service        | Loại        | Image Source                    | Port |
-| -------------- | ----------- | ------------------------------- | ---- |
-| **PostgreSQL** | Database    | Docker Hub (postgres:16-alpine) | 5432 |
-| **Redis**      | Cache       | Docker Hub (redis:7-alpine)     | 6379 |
-| **API**        | Application | GHCR (pre-built from GitHub)    | 3001 |
-| **Web**        | Application | GHCR (pre-built from GitHub)    | 3000 |
+| Service        | Loại        | Image Source                 | Port |
+| -------------- | ----------- | ---------------------------- | ---- |
+| **PostgreSQL** | Database    | GHCR (optional) / Docker Hub | 5432 |
+| **Redis**      | Cache       | Docker Hub (redis:7-alpine)  | 6379 |
+| **API**        | Application | GHCR (pre-built from GitHub) | 3001 |
+| **Web**        | Application | GHCR (pre-built from GitHub) | 3000 |
 
 ---
 
@@ -79,7 +79,7 @@ Vào **Settings** → **Secrets and variables** → **Actions** → **Variables*
 
 | Variable Name                  | Value (example)                         |
 | ------------------------------ | --------------------------------------- |
-| `NEXT_PUBLIC_API_URL`          | `https://api.yourdomain.com/api/v1`     |
+| `NEXT_PUBLIC_API_URL`          | `https://api.yourdomain.com`            |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | `363394779808-...googleusercontent.com` |
 
 #### 1.4 Enable GitHub Packages
@@ -256,7 +256,7 @@ Domain: api.yourdomain.com
 Port: 3001
 SSL: Enable (Let's Encrypt)
 Health Check:
-  Path: /api/v1/health
+  Path: /api/health
   Interval: 30s
   Timeout: 10s
 ```
@@ -369,7 +369,7 @@ Console: https://console.cloud.google.com/apis/credentials
 
 ```
 Authorized redirect URIs:
-- https://api.yourdomain.com/api/v1/auth/google/callback
+- https://api.yourdomain.com/api/auth/google/callback
 - https://yourdomain.com/api/auth/callback/google
 ```
 

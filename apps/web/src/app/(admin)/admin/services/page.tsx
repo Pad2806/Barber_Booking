@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Search, Plus, MoreVertical, Edit, Trash2, Loader2, AlertCircle } from 'lucide-react';
 import { formatPrice, SERVICE_CATEGORIES, cn } from '@/lib/utils';
@@ -26,11 +26,7 @@ export default function AdminServicesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchServices();
-  }, [categoryFilter]);
-
-  const fetchServices = async () => {
+  const fetchServices = useCallback(async () => {
     try {
       setLoading(true);
       const params: any = { take: 100 };
@@ -44,7 +40,11 @@ export default function AdminServicesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [categoryFilter]);
+
+  useEffect(() => {
+    void fetchServices();
+  }, [fetchServices]);
 
   const handleDelete = async (id: string) => {
     if (!confirm('Bạn có chắc muốn xóa dịch vụ này?')) return;

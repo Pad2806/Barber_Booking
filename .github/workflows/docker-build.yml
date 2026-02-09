@@ -96,7 +96,7 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix=sha-
+            type=sha,prefix=sha-,format=long
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push API image
@@ -154,7 +154,7 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix=sha-
+            type=sha,prefix=sha-,format=long
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Web image
@@ -170,7 +170,7 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
           build-args: |
-            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://api.yourdomain.com/api/v1' }}
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://api.yourdomain.com' }}
             NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ vars.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
 
       - name: Generate Web artifact attestation
@@ -215,7 +215,7 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix=sha-
+            type=sha,prefix=sha-,format=long
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push DB image
@@ -249,9 +249,7 @@ jobs:
       - name: Trigger Dokploy API Deployment
         run: |
           if [ -n "${{ secrets.DOKPLOY_WEBHOOK_API }}" ]; then
-            curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_API }}" \
-              -H "Content-Type: application/json" \
-              -d '{"trigger": "github-actions", "image": "${{ needs.build-api.outputs.image_tag }}"}'
+            curl -fsS -X POST "${{ secrets.DOKPLOY_WEBHOOK_API }}" -H "Content-Type: application/json" -d '{}'
           else
             echo "DOKPLOY_WEBHOOK_API is not set; skipping."
           fi
@@ -260,9 +258,7 @@ jobs:
       - name: Trigger Dokploy Web Deployment
         run: |
           if [ -n "${{ secrets.DOKPLOY_WEBHOOK_WEB }}" ]; then
-            curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_WEB }}" \
-              -H "Content-Type: application/json" \
-              -d '{"trigger": "github-actions", "image": "${{ needs.build-web.outputs.image_tag }}"}'
+            curl -fsS -X POST "${{ secrets.DOKPLOY_WEBHOOK_WEB }}" -H "Content-Type: application/json" -d '{}'
           else
             echo "DOKPLOY_WEBHOOK_WEB is not set; skipping."
           fi
@@ -271,9 +267,7 @@ jobs:
       - name: Trigger Dokploy DB Deployment
         run: |
           if [ -n "${{ secrets.DOKPLOY_WEBHOOK_DB }}" ]; then
-            curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_DB }}" \
-              -H "Content-Type: application/json" \
-              -d '{"trigger": "github-actions", "image": "${{ needs.build-db.outputs.image_tag }}"}'
+            curl -fsS -X POST "${{ secrets.DOKPLOY_WEBHOOK_DB }}" -H "Content-Type: application/json" -d '{}'
           else
             echo "DOKPLOY_WEBHOOK_DB is not set; skipping."
           fi
@@ -285,8 +279,11 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Docker Images Built & Pushed:" >> $GITHUB_STEP_SUMMARY
           echo "- **API**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "  - sha: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:sha-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Web**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "  - sha: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}:sha-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **DB**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME_DB }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "  - sha: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME_DB }}:sha-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Dokploy Webhooks Triggered:" >> $GITHUB_STEP_SUMMARY
           echo "- API Service: ✅" >> $GITHUB_STEP_SUMMARY

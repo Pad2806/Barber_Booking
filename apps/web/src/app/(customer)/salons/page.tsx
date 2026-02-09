@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { MapPin, Star, Clock, Search, Filter } from 'lucide-react';
+import { MapPin, Star, Clock, Search } from 'lucide-react';
 import { salonApi, Salon } from '@/lib/api';
 import Header from '@/components/header';
 
@@ -12,24 +12,24 @@ export default function SalonsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  useEffect(() => {
-    fetchSalons();
-  }, []);
-
-  const fetchSalons = async () => {
+  const fetchSalons = useCallback(async (query?: string) => {
     try {
       setLoading(true);
-      const response = await salonApi.getAll({ search });
+      const response = await salonApi.getAll(query ? { search: query } : undefined);
       setSalons(response.data);
     } catch (error) {
       console.error('Failed to fetch salons:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    void fetchSalons();
+  }, [fetchSalons]);
 
   const handleSearch = () => {
-    fetchSalons();
+    void fetchSalons(search);
   };
 
   return (

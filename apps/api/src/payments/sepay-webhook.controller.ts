@@ -18,7 +18,7 @@ import { PaymentsService } from './payments.service';
  * Sepay sends transaction data to this webhook when a bank transfer is received.
  * This allows automatic payment confirmation without manual intervention.
  * 
- * Webhook URL: POST /api/v1/payments/webhook/sepay
+ * Webhook URL: POST /api/payments/webhook/sepay
  * 
  * You need to configure this URL in your Sepay dashboard.
  */

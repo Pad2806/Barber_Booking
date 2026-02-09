@@ -14,7 +14,6 @@ import {
   Loader2,
   DollarSign,
   Star,
-  TrendingUp,
   Scissors,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api';

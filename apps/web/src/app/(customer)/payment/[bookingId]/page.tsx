@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import Image from 'next/image';
+import { useParams } from 'next/navigation';
 import { CheckCircle, XCircle, Clock, Copy, Check, RefreshCw, QrCode } from 'lucide-react';
 import { bookingApi, paymentApi, Booking } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
@@ -10,7 +11,6 @@ import { formatPrice, cn } from '@/lib/utils';
 
 export default function PaymentPage() {
   const params = useParams();
-  const router = useRouter();
   const bookingId = params.bookingId as string;
   const { reset } = useBookingStore();
 
@@ -28,11 +28,27 @@ export default function PaymentPage() {
   const [copied, setCopied] = useState(false);
   const [countdown, setCountdown] = useState(600); // 10 minutes
 
-  useEffect(() => {
-    if (bookingId) {
-      fetchData();
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const [bookingData, qr] = await Promise.all([
+        bookingApi.getById(bookingId),
+        paymentApi.generateQR(bookingId),
+      ]);
+      setBooking(bookingData);
+      setQrData(qr);
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+    } finally {
+      setLoading(false);
     }
   }, [bookingId]);
+
+  useEffect(() => {
+    if (bookingId) {
+      void fetchData();
+    }
+  }, [bookingId, fetchData]);
 
   // Poll for payment status
   useEffect(() => {
@@ -69,22 +85,6 @@ export default function PaymentPage() {
 
     return () => clearInterval(timer);
   }, [paymentStatus, countdown]);
-
-  const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [bookingData, qr] = await Promise.all([
-        bookingApi.getById(bookingId),
-        paymentApi.generateQR(bookingId),
-      ]);
-      setBooking(bookingData);
-      setQrData(qr);
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const copyToClipboard = useCallback((text: string) => {
     navigator.clipboard.writeText(text);
@@ -203,7 +203,7 @@ export default function PaymentPage() {
 
             {qrData?.qrCode && (
               <div className="bg-white p-4 rounded-2xl inline-block shadow-sm border mb-6">
-                <img src={qrData.qrCode} alt="QR Code" className="w-64 h-64" />
+                <Image src={qrData.qrCode} alt="QR Code" width={256} height={256} unoptimized />
               </div>
             )}
 

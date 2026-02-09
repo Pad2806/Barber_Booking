@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
@@ -22,13 +22,7 @@ export default function SalonDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'services' | 'staff' | 'info'>('services');
 
-  useEffect(() => {
-    if (slug) {
-      fetchData();
-    }
-  }, [slug]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const salonData = await salonApi.getBySlug(slug);
@@ -45,7 +39,13 @@ export default function SalonDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [slug]);
+
+  useEffect(() => {
+    if (slug) {
+      void fetchData();
+    }
+  }, [slug, fetchData]);
 
   const handleBooking = () => {
     if (salon) {

@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Check, Calendar, Clock, User, Scissors } from 'lucide-react';
@@ -49,22 +48,7 @@ export default function BookingPage() {
   const [timeSlots, setTimeSlots] = useState<{ time: string; available: boolean }[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    // Redirect if no salon or services selected
-    if (!salon || selectedServices.length === 0) {
-      router.push('/salons');
-      return;
-    }
-    fetchStaff();
-  }, [salon, selectedServices]);
-
-  useEffect(() => {
-    if (selectedDate && salon) {
-      fetchTimeSlots();
-    }
-  }, [selectedDate, salon, selectedStaff, totalDuration]);
-
-  const fetchStaff = async () => {
+  const fetchStaff = useCallback(async () => {
     if (!salon) return;
     try {
       const data = await staffApi.getBySalon(salon.id);
@@ -72,9 +56,9 @@ export default function BookingPage() {
     } catch (error) {
       console.error('Failed to fetch staff:', error);
     }
-  };
+  }, [salon]);
 
-  const fetchTimeSlots = async () => {
+  const fetchTimeSlots = useCallback(async () => {
     if (!salon || !selectedDate) return;
     try {
       setLoading(true);
@@ -90,7 +74,22 @@ export default function BookingPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [salon, selectedDate, totalDuration, selectedStaff?.id]);
+
+  useEffect(() => {
+    // Redirect if no salon or services selected
+    if (!salon || selectedServices.length === 0) {
+      router.push('/salons');
+      return;
+    }
+    void fetchStaff();
+  }, [fetchStaff, router, salon, selectedServices.length]);
+
+  useEffect(() => {
+    if (selectedDate && salon) {
+      void fetchTimeSlots();
+    }
+  }, [fetchTimeSlots, selectedDate, salon]);
 
   const handleContinue = () => {
     if (currentStep === 3) {

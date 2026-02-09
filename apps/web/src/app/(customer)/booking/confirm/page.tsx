@@ -20,7 +20,7 @@ import { formatPrice, formatDate, cn } from '@/lib/utils';
 
 export default function BookingConfirmPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const {
     salon,
     selectedServices,
@@ -31,7 +31,6 @@ export default function BookingConfirmPage() {
     totalAmount,
     note,
     prevStep,
-    reset,
   } = useBookingStore();
 
   const [loading, setLoading] = useState(false);

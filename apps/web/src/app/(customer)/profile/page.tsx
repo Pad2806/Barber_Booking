@@ -5,18 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import {
-  User,
-  Mail,
-  Phone,
-  Lock,
-  Calendar,
-  LogOut,
-  ChevronRight,
-  Camera,
-  Loader2,
-  Save,
-} from 'lucide-react';
+import { User, Mail, Phone, Lock, LogOut, Camera, Loader2, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { apiClient } from '@/lib/api';
 import { cn } from '@/lib/utils';

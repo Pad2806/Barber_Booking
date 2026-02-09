@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Eye, EyeOff, Lock, Loader2, CheckCircle, XCircle } from 'lucide-react';
@@ -20,24 +20,24 @@ function ResetPasswordForm() {
   const [status, setStatus] = useState<'form' | 'success' | 'error'>('form');
   const [verifying, setVerifying] = useState(true);
 
-  useEffect(() => {
-    if (!token) {
-      setStatus('error');
-      setVerifying(false);
-      return;
-    }
-    verifyToken();
-  }, [token]);
-
-  const verifyToken = async () => {
+  const verifyToken = useCallback(async () => {
     try {
+      if (!token) {
+        setStatus('error');
+        setVerifying(false);
+        return;
+      }
       await axios.get(`${API_URL}/api/auth/verify-reset-token?token=${token}`);
       setVerifying(false);
     } catch (error) {
       setStatus('error');
       setVerifying(false);
     }
-  };
+  }, [token]);
+
+  useEffect(() => {
+    void verifyToken();
+  }, [verifyToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,20 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import {
-  ChevronLeft,
-  MapPin,
-  Calendar,
-  Clock,
-  User,
-  Scissors,
-  Phone,
-  AlertCircle,
-  XCircle,
-} from 'lucide-react';
+import { ChevronLeft, MapPin, Calendar, Clock, User, Scissors, Phone, XCircle } from 'lucide-react';
 import { bookingApi, Booking } from '@/lib/api';
 import {
   formatPrice,
@@ -37,17 +27,7 @@ export default function BookingDetailPage() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/login?callbackUrl=/my-bookings');
-      return;
-    }
-    if (status === 'authenticated' && bookingId) {
-      fetchBooking();
-    }
-  }, [status, bookingId, router]);
-
-  const fetchBooking = async () => {
+  const fetchBooking = useCallback(async () => {
     try {
       setLoading(true);
       const data = await bookingApi.getById(bookingId);
@@ -57,7 +37,17 @@ export default function BookingDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [bookingId]);
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/login?callbackUrl=/my-bookings');
+      return;
+    }
+    if (status === 'authenticated' && bookingId) {
+      void fetchBooking();
+    }
+  }, [status, bookingId, router, fetchBooking]);
 
   const handleCancel = async () => {
     if (!booking) return;
@@ -65,7 +55,7 @@ export default function BookingDetailPage() {
       setCancelling(true);
       await bookingApi.cancel(booking.id, cancelReason);
       setShowCancelModal(false);
-      fetchBooking();
+      await fetchBooking();
     } catch (error) {
       console.error('Failed to cancel booking:', error);
     } finally {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -19,62 +19,19 @@ import {
   XCircle,
 } from 'lucide-react';
 import { formatPrice, formatDate, BOOKING_STATUS } from '@/lib/utils';
-import { adminApi } from '@/lib/api';
+import { adminApi, type AdminBookingDetail } from '@/lib/api';
 import toast from 'react-hot-toast';
-
-interface BookingDetail {
-  id: string;
-  bookingCode: string;
-  bookingDate: string;
-  timeSlot: string;
-  totalAmount: number;
-  status: string;
-  paymentStatus: string;
-  paymentMethod: string;
-  note: string | null;
-  createdAt: string;
-  customer: {
-    id: string;
-    name: string;
-    phone: string;
-    email: string;
-  };
-  salon: {
-    id: string;
-    name: string;
-    address: string;
-    phone: string;
-  };
-  staff: {
-    id: string;
-    name: string;
-    avatar: string | null;
-    position: string;
-  } | null;
-  bookingServices?: Array<{
-    service: {
-      id: string;
-      name: string;
-      price: number;
-      duration: number;
-    };
-  }>;
-}
 
 export default function BookingDetailPage() {
   const params = useParams();
   const router = useRouter();
   const bookingId = params.id as string;
 
-  const [booking, setBooking] = useState<BookingDetail | null>(null);
+  const [booking, setBooking] = useState<AdminBookingDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
 
-  useEffect(() => {
-    fetchBooking();
-  }, [bookingId]);
-
-  const fetchBooking = async () => {
+  const fetchBooking = useCallback(async () => {
     try {
       setLoading(true);
       const data = await adminApi.getBookingById(bookingId);
@@ -85,7 +42,11 @@ export default function BookingDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [bookingId, router]);
+
+  useEffect(() => {
+    void fetchBooking();
+  }, [fetchBooking]);
 
   const handleUpdateStatus = async (newStatus: string) => {
     if (!booking) return;
@@ -196,26 +157,26 @@ export default function BookingDetailPage() {
                   <p className="text-sm text-gray-600">{booking.salon.address}</p>
                 </div>
               </div>
-              {booking.staff && booking.staff.name && (
+              {booking.staff && booking.staff.user?.name && (
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden">
-                    {booking.staff.avatar ? (
+                    {booking.staff.user.avatar ? (
                       <Image
-                        src={booking.staff.avatar}
-                        alt={booking.staff.name}
+                        src={booking.staff.user.avatar}
+                        alt={booking.staff.user.name}
                         width={40}
                         height={40}
                         className="object-cover"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-accent/10 text-accent font-semibold">
-                        {booking.staff.name.charAt(0)}
+                        {booking.staff.user.name.charAt(0)}
                       </div>
                     )}
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Stylist</p>
-                    <p className="font-medium">{booking.staff.name}</p>
+                    <p className="font-medium">{booking.staff.user.name}</p>
                     <p className="text-xs text-gray-500">{booking.staff.position}</p>
                   </div>
                 </div>
@@ -227,17 +188,17 @@ export default function BookingDetailPage() {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-lg font-semibold mb-4">Dịch vụ đã chọn</h2>
             <div className="space-y-3">
-              {booking.bookingServices && booking.bookingServices.length > 0 ? (
-                booking.bookingServices.map((bs, index) => (
+              {booking.services && booking.services.length > 0 ? (
+                booking.services.map((bs, index) => (
                   <div
                     key={index}
                     className="flex justify-between items-center py-2 border-b last:border-0"
                   >
                     <div>
                       <p className="font-medium">{bs.service.name}</p>
-                      <p className="text-sm text-gray-500">{bs.service.duration} phút</p>
+                      <p className="text-sm text-gray-500">{bs.duration} phút</p>
                     </div>
-                    <p className="font-semibold text-accent">{formatPrice(bs.service.price)}</p>
+                    <p className="font-semibold text-accent">{formatPrice(bs.price)}</p>
                   </div>
                 ))
               ) : (
@@ -269,7 +230,7 @@ export default function BookingDetailPage() {
                 <Calendar className="w-5 h-5 text-accent" />
                 <div>
                   <p className="text-sm text-gray-500">Ngày đặt</p>
-                  <p className="font-medium">{formatDate(booking.bookingDate)}</p>
+                  <p className="font-medium">{formatDate(booking.date)}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
