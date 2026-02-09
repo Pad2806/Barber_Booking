@@ -1,0 +1,44 @@
+{
+  "name": "@reetro/zalo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "start": "vite dev",
+    "build": "tsc && vite build",
+    "zmp:start": "zmp start",
+    "zmp:build": "zmp build",
+    "zmp:deploy": "zmp deploy",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@reetro/brand": "workspace:*",
+    "@reetro/shared": "workspace:*",
+    "@tanstack/react-query": "^5.17.0",
+    "axios": "^1.6.0",
+    "dayjs": "^1.11.10",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.30.3",
+    "zustand": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "@vitejs/plugin-react": "4",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.33.2",
+    "postcss": "^8.4.32",
+    "typescript": "^5.3.2",
+    "vite": "5",
+    "zmp-cli": "^1.0.0",
+    "zmp-sdk": "^2.30.0",
+    "zmp-ui": "^1.11.12",
+    "zmp-vite-plugin": "^1.1.6"
+  }
+}

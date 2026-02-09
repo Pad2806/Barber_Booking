@@ -1,0 +1,49 @@
+{
+  "template": "mini-store",
+  "app": {
+    "title": "ReetroBarberShop"
+  },
+  "pages": [
+    {
+      "path": "/",
+      "component": "index"
+    },
+    {
+      "path": "/salons",
+      "component": "salons"
+    },
+    {
+      "path": "/salon-detail",
+      "component": "salon-detail"
+    },
+    {
+      "path": "/booking",
+      "component": "booking"
+    },
+    {
+      "path": "/booking-confirm",
+      "component": "booking-confirm"
+    },
+    {
+      "path": "/booking-detail",
+      "component": "booking-detail"
+    },
+    {
+      "path": "/my-bookings",
+      "component": "my-bookings"
+    },
+    {
+      "path": "/payment",
+      "component": "payment"
+    },
+    {
+      "path": "/profile",
+      "component": "profile"
+    }
+  ],
+  "listCSS": [
+    "https://cdn.jsdelivr.net/npm/zmp-css@latest/zmp.min.css"
+  ],
+  "listSyncJS": [],
+  "listAsyncJS": []
+}

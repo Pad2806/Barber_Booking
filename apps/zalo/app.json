@@ -1,0 +1,53 @@
+{
+  "app": {
+    "title": "ReetroBarberShop",
+    "headerTitle": "ReetroBarberShop",
+    "statusBarColor": "#1a1a2e",
+    "headerColor": "#1a1a2e",
+    "textColor": "#ffffff",
+    "leftButton": "back",
+    "hideAndroidBottomNavigationBar": true,
+    "actionBarHidden": false
+  },
+  "pages": [
+    "pages/index/index",
+    "pages/salons/index",
+    "pages/salon-detail/index",
+    "pages/booking/index",
+    "pages/booking-confirm/index",
+    "pages/payment/index",
+    "pages/my-bookings/index",
+    "pages/booking-detail/index",
+    "pages/profile/index"
+  ],
+  "tabBar": {
+    "items": [
+      {
+        "pagePath": "pages/index/index",
+        "text": "Trang chủ",
+        "icon": "/assets/icons/home.png",
+        "activeIcon": "/assets/icons/home-active.png"
+      },
+      {
+        "pagePath": "pages/salons/index",
+        "text": "Salon",
+        "icon": "/assets/icons/salon.png",
+        "activeIcon": "/assets/icons/salon-active.png"
+      },
+      {
+        "pagePath": "pages/my-bookings/index",
+        "text": "Lịch hẹn",
+        "icon": "/assets/icons/calendar.png",
+        "activeIcon": "/assets/icons/calendar-active.png"
+      },
+      {
+        "pagePath": "pages/profile/index",
+        "text": "Tài khoản",
+        "icon": "/assets/icons/user.png",
+        "activeIcon": "/assets/icons/user-active.png"
+      }
+    ],
+    "activeColor": "#e94560",
+    "inActiveColor": "#7a7a7a"
+  }
+}

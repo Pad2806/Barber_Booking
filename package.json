@@ -1,0 +1,37 @@
+{
+  "name": "reetro-barbershop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ReetroBarberShop - Booking System for Barber Shops",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "clean": "turbo run clean && rimraf node_modules",
+    "db:generate": "turbo run db:generate",
+    "db:push": "turbo run db:push",
+    "db:migrate": "turbo run db:migrate",
+    "db:seed": "turbo run db:seed",
+    "dev:api": "turbo run dev --filter=@reetro/api",
+    "dev:web": "turbo run dev --filter=@reetro/web",
+    "dev:zalo": "turbo run dev --filter=@reetro/zalo"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "eslint": "^8.55.0",
+    "prettier": "^3.1.0",
+    "rimraf": "^5.0.5",
+    "turbo": "^1.11.0",
+    "typescript": "^5.3.0"
+  },
+  "packageManager": "pnpm@8.11.0",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}

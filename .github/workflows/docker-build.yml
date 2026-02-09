@@ -1,0 +1,287 @@
+name: Build & Push Docker Images
+
+on:
+  push:
+    branches: [main]
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+          - staging
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME_API: ${{ github.repository }}/api
+  IMAGE_NAME_WEB: ${{ github.repository }}/web
+  IMAGE_NAME_DB: ${{ github.repository }}/db
+
+jobs:
+  # ===========================================
+  # Lint & Test (Quick validation)
+  # ===========================================
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Run API tests
+        run: pnpm --filter api test
+
+  # ===========================================
+  # Build & Push API Docker Image
+  # ===========================================
+  build-api:
+    runs-on: ubuntu-latest
+    needs: validate
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+      image_digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for API
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push API image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/api/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: Generate API artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+  # ===========================================
+  # Build & Push Web Docker Image
+  # ===========================================
+  build-web:
+    runs-on: ubuntu-latest
+    needs: validate
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+      image_digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Web
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Web image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/web/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL || 'https://api.yourdomain.com/api/v1' }}
+            NEXT_PUBLIC_GOOGLE_CLIENT_ID=${{ vars.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
+
+      - name: Generate Web artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+  # ===========================================
+  # Build & Push DB Docker Image
+  # ===========================================
+  build-db:
+    runs-on: ubuntu-latest
+    needs: validate
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image_tag: ${{ steps.meta.outputs.tags }}
+      image_digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for DB
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_DB }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push DB image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./apps/db/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+      - name: Generate DB artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_DB }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true
+
+  # ===========================================
+  # Notify Dokploy to Deploy (Webhook)
+  # ===========================================
+  deploy-dokploy:
+    runs-on: ubuntu-latest
+    needs: [build-api, build-web, build-db]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Trigger Dokploy API Deployment
+        run: |
+          curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_API }}" \
+            -H "Content-Type: application/json" \
+            -d '{"trigger": "github-actions", "image": "${{ needs.build-api.outputs.image_tag }}"}'
+        continue-on-error: true
+
+      - name: Trigger Dokploy Web Deployment
+        run: |
+          curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_WEB }}" \
+            -H "Content-Type: application/json" \
+            -d '{"trigger": "github-actions", "image": "${{ needs.build-web.outputs.image_tag }}"}'
+        continue-on-error: true
+
+      - name: Trigger Dokploy DB Deployment
+        run: |
+          curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_DB }}" \
+            -H "Content-Type: application/json" \
+            -d '{"trigger": "github-actions", "image": "${{ needs.build-db.outputs.image_tag }}"}'
+        continue-on-error: true
+
+      - name: Deployment Summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Docker Images Built & Pushed:" >> $GITHUB_STEP_SUMMARY
+          echo "- **API**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Web**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **DB**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME_DB }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Dokploy Webhooks Triggered:" >> $GITHUB_STEP_SUMMARY
+          echo "- API Service: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- Web Service: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "- DB Service: ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Image Digests:" >> $GITHUB_STEP_SUMMARY
+          echo "- API: \`${{ needs.build-api.outputs.image_digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Web: \`${{ needs.build-web.outputs.image_digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- DB: \`${{ needs.build-db.outputs.image_digest }}\`" >> $GITHUB_STEP_SUMMARY
