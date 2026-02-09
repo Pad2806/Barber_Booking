@@ -248,23 +248,35 @@ jobs:
     steps:
       - name: Trigger Dokploy API Deployment
         run: |
-          curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_API }}" \
-            -H "Content-Type: application/json" \
-            -d '{"trigger": "github-actions", "image": "${{ needs.build-api.outputs.image_tag }}"}'
+          if [ -n "${{ secrets.DOKPLOY_WEBHOOK_API }}" ]; then
+            curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_API }}" \
+              -H "Content-Type: application/json" \
+              -d '{"trigger": "github-actions", "image": "${{ needs.build-api.outputs.image_tag }}"}'
+          else
+            echo "DOKPLOY_WEBHOOK_API is not set; skipping."
+          fi
         continue-on-error: true
 
       - name: Trigger Dokploy Web Deployment
         run: |
-          curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_WEB }}" \
-            -H "Content-Type: application/json" \
-            -d '{"trigger": "github-actions", "image": "${{ needs.build-web.outputs.image_tag }}"}'
+          if [ -n "${{ secrets.DOKPLOY_WEBHOOK_WEB }}" ]; then
+            curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_WEB }}" \
+              -H "Content-Type: application/json" \
+              -d '{"trigger": "github-actions", "image": "${{ needs.build-web.outputs.image_tag }}"}'
+          else
+            echo "DOKPLOY_WEBHOOK_WEB is not set; skipping."
+          fi
         continue-on-error: true
 
       - name: Trigger Dokploy DB Deployment
         run: |
-          curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_DB }}" \
-            -H "Content-Type: application/json" \
-            -d '{"trigger": "github-actions", "image": "${{ needs.build-db.outputs.image_tag }}"}'
+          if [ -n "${{ secrets.DOKPLOY_WEBHOOK_DB }}" ]; then
+            curl -X POST "${{ secrets.DOKPLOY_WEBHOOK_DB }}" \
+              -H "Content-Type: application/json" \
+              -d '{"trigger": "github-actions", "image": "${{ needs.build-db.outputs.image_tag }}"}'
+          else
+            echo "DOKPLOY_WEBHOOK_DB is not set; skipping."
+          fi
         continue-on-error: true
 
       - name: Deployment Summary
