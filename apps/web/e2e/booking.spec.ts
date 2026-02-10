@@ -79,14 +79,14 @@ test.describe('Booking Flow', () => {
 test.describe('Authenticated Booking Flow', () => {
   test.beforeEach(async ({ page }) => {
     // Login first (mock login for testing)
-    await page.goto('/auth/login');
+    await page.goto('/login');
     
     // Fill login form
-    const phoneInput = page.locator('input[name="phone"], input[type="tel"]');
+    const emailInput = page.locator('input[type="email"], input#email');
     const passwordInput = page.locator('input[type="password"]');
     
-    if (await phoneInput.isVisible() && await passwordInput.isVisible()) {
-      await phoneInput.fill('0901234567');
+    if (await emailInput.isVisible() && await passwordInput.isVisible()) {
+      await emailInput.fill('test@example.com');
       await passwordInput.fill('TestPassword123');
       
       const submitButton = page.getByRole('button', { name: /đăng nhập|login/i });
@@ -139,13 +139,14 @@ test.describe('Authenticated Booking Flow', () => {
 
 test.describe('My Bookings Page', () => {
   test('should redirect to login if not authenticated', async ({ page }) => {
-    await page.goto('/bookings');
+    await page.goto('/my-bookings');
     await page.waitForLoadState('networkidle');
     
     // Should redirect to login
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(2000);
     
-    const isLoginPage = page.url().includes('login') || page.url().includes('auth');
+    const currentUrl = page.url();
+    const isLoginPage = currentUrl.includes('login') || currentUrl.includes('auth');
     const hasLoginForm = await page.locator('form').isVisible();
     
     // Either redirected to login or showing login form

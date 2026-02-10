@@ -19,9 +19,9 @@ test.describe('Homepage', () => {
   test('should have navigation menu', async ({ page }) => {
     await page.goto('/');
     
-    // Check for navigation links
-    const nav = page.locator('nav, header');
-    await expect(nav).toBeVisible();
+    // Check for header (contains nav inside)
+    const header = page.locator('header');
+    await expect(header).toBeVisible();
   });
 
   test('should have working links in navigation', async ({ page }) => {
@@ -43,19 +43,24 @@ test.describe('Salons Page', () => {
     // Wait for page to load
     await page.waitForLoadState('networkidle');
     
-    // Check for salon cards or listing
-    const salonsContainer = page.locator('[data-testid="salons-list"], .salons-container, main');
-    await expect(salonsContainer).toBeVisible();
+    // Check for the salons page heading
+    const heading = page.locator('h1');
+    await expect(heading).toBeVisible();
   });
 
   test('should be able to search salons', async ({ page }) => {
     await page.goto('/salons');
     
     // Look for search input
-    const searchInput = page.getByPlaceholder(/tìm kiếm|search/i);
+    const searchInput = page.getByPlaceholder(/tìm theo tên|tìm kiếm|search/i);
     if (await searchInput.isVisible()) {
       await searchInput.fill('Reetro');
-      await searchInput.press('Enter');
+      
+      // Click search button
+      const searchButton = page.getByRole('button', { name: /tìm kiếm|search/i });
+      if (await searchButton.isVisible()) {
+        await searchButton.click();
+      }
       
       // Wait for search results
       await page.waitForTimeout(1000);
@@ -65,7 +70,7 @@ test.describe('Salons Page', () => {
 
 test.describe('Authentication', () => {
   test('should navigate to login page', async ({ page }) => {
-    await page.goto('/auth/login');
+    await page.goto('/login');
     
     // Check for login form
     const loginForm = page.locator('form');
@@ -73,7 +78,7 @@ test.describe('Authentication', () => {
   });
 
   test('should show validation errors for empty form', async ({ page }) => {
-    await page.goto('/auth/login');
+    await page.goto('/login');
     
     // Submit empty form
     const submitButton = page.getByRole('button', { name: /đăng nhập|login/i });
@@ -86,7 +91,7 @@ test.describe('Authentication', () => {
   });
 
   test('should navigate to register page', async ({ page }) => {
-    await page.goto('/auth/register');
+    await page.goto('/register');
     
     // Check for registration form
     const registerForm = page.locator('form');
@@ -94,7 +99,7 @@ test.describe('Authentication', () => {
   });
 
   test('should have password input for registration', async ({ page }) => {
-    await page.goto('/auth/register');
+    await page.goto('/register');
     
     // Check for password field
     const passwordInput = page.locator('input[type="password"]');
@@ -103,15 +108,14 @@ test.describe('Authentication', () => {
 });
 
 test.describe('Responsive Design', () => {
-  test('mobile: should show hamburger menu', async ({ page }) => {
+  test('mobile: should show header on mobile', async ({ page }) => {
     // Set mobile viewport
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/');
     
-    // Look for mobile menu button
-    const mobileMenuButton = page.locator('button[aria-label*="menu"], [data-testid="mobile-menu"]');
-    // Mobile menu may or may not exist depending on implementation
-    await page.waitForTimeout(500);
+    // Header should still be visible on mobile
+    const header = page.locator('header');
+    await expect(header).toBeVisible();
   });
 
   test('desktop: should show full navigation', async ({ page }) => {
@@ -119,8 +123,12 @@ test.describe('Responsive Design', () => {
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto('/');
     
-    // Navigation should be visible
-    const nav = page.locator('nav, header');
+    // Header should be visible
+    const header = page.locator('header');
+    await expect(header).toBeVisible();
+    
+    // Desktop nav should be visible
+    const nav = page.locator('nav');
     await expect(nav).toBeVisible();
   });
 });
