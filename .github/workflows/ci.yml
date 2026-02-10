@@ -173,5 +173,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Generate Prisma Client
+        run: pnpm --filter api run db:generate
+
       - name: Build all packages
         run: pnpm build
