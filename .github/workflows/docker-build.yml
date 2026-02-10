@@ -73,6 +73,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
       image_digest: ${{ steps.build.outputs.digest }}
@@ -131,6 +132,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
       image_digest: ${{ steps.build.outputs.digest }}
@@ -192,6 +194,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
       image_digest: ${{ steps.build.outputs.digest }}

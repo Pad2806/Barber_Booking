@@ -28,6 +28,12 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_GOOGLE_CLIENT_ID
 ENV NEXT_PUBLIC_GOOGLE_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
+# Enable standalone output for Docker
+ENV BUILD_STANDALONE=true
+
+# Ensure public directory exists (Next.js needs it)
+RUN mkdir -p ./apps/web/public
+
 # Build the Web app
 RUN pnpm turbo run build --filter=web
 
