@@ -12,14 +12,16 @@
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "clean": "rimraf dist",
-    "db:generate": "prisma generate",
+    "db:generate": "node ./scripts/prisma-generate.cjs",
     "db:push": "prisma db push",
     "db:migrate": "prisma migrate dev",
     "db:seed": "ts-node prisma/seed.ts",
-    "pretest": "prisma generate",
+    "pretest": "pnpm run db:generate",
     "test": "jest",
     "test:watch": "jest --watch",
+    "pretest:cov": "pnpm run db:generate",
     "test:cov": "jest --coverage",
+    "pretest:e2e": "pnpm run db:generate",
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {

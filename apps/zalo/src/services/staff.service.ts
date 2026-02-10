@@ -32,9 +32,7 @@ export interface TimeSlot {
 
 // Get staff by salon
 export const getStaffBySalon = async (salonId: string): Promise<Staff[]> => {
-  const response = await apiClient.get<Staff[]>(`/staff`, {
-    params: { salonId },
-  });
+  const response = await apiClient.get<Staff[]>(`/staff/salon/${salonId}`);
   return response.data;
 };
 
@@ -57,8 +55,32 @@ export const getAvailableSlots = async (
   duration: number,
   staffId?: string
 ): Promise<TimeSlot[]> => {
-  const response = await apiClient.get<TimeSlot[]>(`/staff/available-slots`, {
-    params: { salonId, date, duration, staffId },
-  });
-  return response.data;
+  // Note: Current API exposes staff-based availability:
+  // GET /staff/:id/available-slots?date=YYYY-MM-DD
+  // It does not currently take salonId/duration into account.
+
+  const fetchStaffSlots = async (id: string): Promise<string[]> => {
+    const response = await apiClient.get<string[]>(`/staff/${id}/available-slots`, {
+      params: { date },
+    });
+    return response.data;
+  };
+
+  let times: string[] = [];
+
+  if (staffId) {
+    times = await fetchStaffSlots(staffId);
+  } else {
+    const staffList = await getStaffBySalon(salonId);
+    const slotLists = await Promise.all(
+      staffList.map((member) => fetchStaffSlots(member.id).catch(() => [])),
+    );
+    times = Array.from(new Set(slotLists.flat()));
+  }
+
+  // Keep signature stable; duration currently unused by API.
+  void duration;
+
+  times.sort(); // HH:mm lexical sort works
+  return times.map((time) => ({ time, available: true }));
 };

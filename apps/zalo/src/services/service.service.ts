@@ -21,9 +21,7 @@ export interface ServicesByCategory {
 
 // Get services by salon
 export const getServicesBySalon = async (salonId: string): Promise<Service[]> => {
-  const response = await apiClient.get<Service[]>(`/services`, {
-    params: { salonId },
-  });
+  const response = await apiClient.get<Service[]>(`/services/salon/${salonId}`);
   return response.data;
 };
 

@@ -1,4 +1,4 @@
-import { authorize, getAccessToken as getZaloToken, getUserInfo } from 'zmp-sdk';
+import { authorize, login as zaloLogin, getAccessToken as getZaloToken, getUserInfo } from 'zmp-sdk';
 import apiClient from './api';
 
 export interface ZaloUserInfo {
@@ -23,8 +23,9 @@ export interface User {
 }
 
 export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
   user: User;
-  tokens: AuthTokens;
 }
 
 // Get Zalo access token
@@ -61,15 +62,29 @@ export const loginWithZalo = async (): Promise<LoginResponse> => {
       scopes: ['scope.userInfo'],
     });
 
-    // Get Zalo access token
-    const zaloToken = await getZaloAccessToken();
+    // Get Zalo access token.
+    // In Zalo Mini App web/simulator, getAccessToken() can return empty string.
+    // login() may trigger auth flow; after that we re-try getAccessToken().
+    let zaloToken = await getZaloAccessToken();
+    let zaloCode = '';
+
+    if (!zaloToken) {
+      const loginResult = await zaloLogin().catch(() => '');
+      // Some environments may return auth code or a status string.
+      if (typeof loginResult === 'string' && loginResult) {
+        zaloCode = loginResult;
+      }
+      // Re-try token after login() attempt.
+      zaloToken = await getZaloAccessToken().catch(() => '');
+    }
     
     // Get user info
     const zaloUser = await getZaloUserInfo();
 
     // Call backend API to authenticate
     const response = await apiClient.post<LoginResponse>('/auth/zalo', {
-      accessToken: zaloToken,
+      ...(zaloToken ? { accessToken: zaloToken } : {}),
+      ...(zaloCode ? { code: zaloCode } : {}),
       zaloId: zaloUser.id,
       name: zaloUser.name,
       avatar: zaloUser.avatar,

@@ -29,6 +29,19 @@ export class ZaloStrategy extends PassportStrategy(Strategy, 'zalo') {
     const { accessToken, code } = req.body;
 
     if (!accessToken && !code) {
+      // In Zalo Mini App web/simulator, the SDK may not be able to provide tokens.
+      // Allow local development to proceed using zaloId (no token verification).
+      if (process.env.NODE_ENV === 'development' && req?.body?.zaloId) {
+        const { zaloId, name, avatar } = req.body;
+        return this.authService.validateOAuthUser(
+          AuthProvider.ZALO,
+          String(zaloId),
+          null,
+          name ? String(name) : null,
+          avatar ? String(avatar) : null,
+        );
+      }
+
       throw new UnauthorizedException('Zalo access token or code is required');
     }
 
@@ -54,6 +67,10 @@ export class ZaloStrategy extends PassportStrategy(Strategy, 'zalo') {
 
       return user;
     } catch (error) {
+      // Preserve explicit UnauthorizedException messages for better UX/debugging
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       throw new UnauthorizedException('Invalid Zalo authentication');
     }
   }
@@ -62,13 +79,17 @@ export class ZaloStrategy extends PassportStrategy(Strategy, 'zalo') {
     const appId = this.configService.get<string>('oauth.zalo.appId');
     const appSecret = this.configService.get<string>('oauth.zalo.appSecret');
 
+    if (!appId || !appSecret) {
+      throw new UnauthorizedException('Zalo appId/appSecret not configured on server');
+    }
+
     const response = await fetch(
       `https://oauth.zaloapp.com/v4/access_token?app_id=${appId}&code=${code}&code_verifier=&grant_type=authorization_code`,
       {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          secret_key: appSecret ?? '',
+          secret_key: appSecret,
         },
       },
     );

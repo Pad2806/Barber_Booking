@@ -4,14 +4,14 @@ const isProd = import.meta.env.PROD;
 const apiBaseUrlFromEnv = (import.meta.env.VITE_API_BASE_URL as string | undefined) || '';
 
 // Notes:
-// - In dev, the Nest API defaults to PORT=4000 and sets global prefix to /api.
+// - In this repo, the Nest API dev default is PORT=3001 and sets global prefix to /api.
 // - When testing on a phone, `localhost` points to the phone itself; set VITE_API_BASE_URL
-//   to your computer's LAN IP (e.g. http://192.168.1.10:4000/api).
+//   to your computer's LAN IP (e.g. http://192.168.1.10:3001/api).
 export const API_BASE_URL = apiBaseUrlFromEnv
   ? apiBaseUrlFromEnv
   : isProd
     ? 'https://api.reetro.vn/api'
-    : 'http://localhost:4000/api';
+    : 'http://localhost:3001/api';
 
 // Zalo App Configuration
 // Note: Vite exposes env vars via import.meta.env.

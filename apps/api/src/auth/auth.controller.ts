@@ -124,11 +124,12 @@ export class AuthController {
 
   @Post('zalo')
   @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard('zalo'))
   @ApiOperation({ summary: 'Login with Zalo (for Mini App)' })
-  async zaloAuth(@Body() body: { accessToken: string }): Promise<TokenResponse> {
-    // This is called from Zalo Mini App with access token from Zalo SDK
-    // The ZaloStrategy will validate and process
-    return this.authService.generateTokens({} as User); // Will be implemented properly
+  async zaloAuth(@Req() req: Request): Promise<TokenResponse> {
+    // Called from Zalo Mini App with access token from Zalo SDK.
+    // ZaloStrategy validates token with Zalo and attaches a User to req.user.
+    return this.authService.generateTokens(req.user as User);
   }
 
   // ============== Password Reset Routes ==============

@@ -1,5 +1,5 @@
 export default () => ({
-  port: parseInt(process.env.PORT || '4000', 10),
+  port: parseInt(process.env.PORT || process.env.API_PORT || '3001', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
 
   database: {
@@ -52,7 +52,7 @@ export default () => ({
   },
 
   urls: {
-    api: process.env.API_URL || 'http://localhost:4000',
+    api: process.env.API_URL || 'http://localhost:3001',
     web: process.env.WEB_URL || 'http://localhost:3000',
   },
 

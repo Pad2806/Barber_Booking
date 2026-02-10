@@ -54,8 +54,8 @@ export const useAuthStore = create<AuthState>()(
           const response = await loginWithZalo();
           set({
             user: response.user,
-            accessToken: response.tokens.accessToken,
-            refreshToken: response.tokens.refreshToken,
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
             isAuthenticated: true,
             isLoading: false,
           });

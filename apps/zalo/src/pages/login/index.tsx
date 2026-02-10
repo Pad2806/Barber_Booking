@@ -34,7 +34,8 @@ const LoginPage: React.FC = () => {
       await login();
       navigate(returnTo, { replace: true });
     } catch (e: any) {
-      const message = e?.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
+      const message =
+        e?.response?.data?.message || e?.message || 'Đăng nhập thất bại. Vui lòng thử lại.';
       setError(message);
     } finally {
       setSubmitting(false);

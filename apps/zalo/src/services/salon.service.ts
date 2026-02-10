@@ -42,13 +42,13 @@ export const getSalons = async (filters?: SalonFilters): Promise<PaginatedRespon
 
 // Get salon by slug
 export const getSalonBySlug = async (slug: string): Promise<Salon> => {
-  const response = await apiClient.get<Salon>(`/salons/${slug}`);
+  const response = await apiClient.get<Salon>(`/salons/slug/${slug}`);
   return response.data;
 };
 
 // Get salon by ID
 export const getSalonById = async (id: string): Promise<Salon> => {
-  const response = await apiClient.get<Salon>(`/salons/id/${id}`);
+  const response = await apiClient.get<Salon>(`/salons/${id}`);
   return response.data;
 };
 

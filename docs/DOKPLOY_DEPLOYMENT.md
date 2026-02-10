@@ -213,7 +213,9 @@ NODE_ENV=production
 PORT=3001
 
 # Database (internal network)
-DATABASE_URL=postgresql://reetro_user:<DB_PASSWORD>@reetro-postgres:5432/reetro_booking
+# Use the Internal Connection URL from your Dokploy PostgreSQL service.
+# Example:
+DATABASE_URL=postgresql://root:<DB_PASSWORD>@bookingbarber-db-cszgfp:5432/booking_barber_db?schema=public
 
 # Redis (internal network)
 REDIS_URL=redis://:<REDIS_PASSWORD>@reetro-redis:6379
@@ -379,7 +381,7 @@ Console: https://developers.facebook.com/apps
 
 ```
 Valid OAuth Redirect URIs:
-- https://api.yourdomain.com/api/v1/auth/facebook/callback
+- https://api.yourdomain.com/api/auth/facebook/callback
 ```
 
 #### 10.3 Zalo OAuth
@@ -388,7 +390,7 @@ Console: https://developers.zalo.me/app
 
 ```
 Callback URL:
-- https://api.yourdomain.com/api/v1/auth/zalo/callback
+- https://api.yourdomain.com/api/auth/zalo/callback
 ```
 
 ---
@@ -398,7 +400,7 @@ Callback URL:
 1. Đăng ký webhook với Sepay:
 
 ```
-URL: https://api.yourdomain.com/api/v1/payments/webhook
+URL: https://api.yourdomain.com/api/payments/webhook
 Method: POST
 ```
 
