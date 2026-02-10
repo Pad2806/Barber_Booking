@@ -74,6 +74,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      attestations: write
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
       image_digest: ${{ steps.build.outputs.digest }}
@@ -133,6 +134,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      attestations: write
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
       image_digest: ${{ steps.build.outputs.digest }}
@@ -195,6 +197,7 @@ jobs:
       contents: read
       packages: write
       id-token: write
+      attestations: write
     outputs:
       image_tag: ${{ steps.meta.outputs.tags }}
       image_digest: ${{ steps.build.outputs.digest }}
