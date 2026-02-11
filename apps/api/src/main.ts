@@ -15,6 +15,8 @@ async function bootstrap() {
       'http://localhost:3000', // Web
       'http://localhost:3005', // Zalo Mini App dev (zmp/vite)
       'http://127.0.0.1:3005', // Zalo Mini App dev (zmp/vite)
+      'https://h5.zalo.me', // Zalo Mini App production
+      'https://zalo.me', // Zalo production
       process.env.WEB_URL || '',
       process.env.FRONTEND_URL || '',
     ].filter(Boolean),

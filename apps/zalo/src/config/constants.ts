@@ -10,7 +10,7 @@ const apiBaseUrlFromEnv = (import.meta.env.VITE_API_BASE_URL as string | undefin
 export const API_BASE_URL = apiBaseUrlFromEnv
   ? apiBaseUrlFromEnv
   : isProd
-    ? 'https://api.reetro.vn/api'
+    ? 'https://barber-api.paduy.tech/api'
     : 'http://localhost:3001/api';
 
 // Zalo App Configuration

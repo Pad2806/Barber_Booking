@@ -32,18 +32,17 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
-
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-# Copy built files
+# Copy built files and prisma schema
 COPY --from=builder /app/apps/api/dist ./dist
 COPY --from=builder /app/apps/api/package.json ./
 COPY --from=builder /app/apps/api/prisma ./prisma
-COPY --from=builder /app/node_modules ./node_modules
+
+# Install production dependencies with npm (flat node_modules, no symlinks)
+RUN npm install --omit=dev && npm install prisma && npx prisma generate
 
 # Set ownership
 RUN chown -R nestjs:nodejs /app
