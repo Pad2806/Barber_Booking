@@ -40,9 +40,10 @@ RUN adduser --system --uid 1001 nestjs
 COPY --from=builder /app/apps/api/dist ./dist
 COPY --from=builder /app/apps/api/package.json ./
 COPY --from=builder /app/apps/api/prisma ./prisma
+COPY --from=builder /app/node_modules ./node_modules
 
-# Install production dependencies with npm (flat node_modules, no symlinks)
-RUN npm install --omit=dev && npm install prisma && npx prisma generate
+# Install prisma CLI globally (for migrate deploy at startup)
+RUN npm install -g prisma@5
 
 # Set ownership
 RUN chown -R nestjs:nodejs /app
@@ -52,4 +53,4 @@ USER nestjs
 EXPOSE 3001
 
 # Run Prisma migrations and start the app
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "prisma migrate deploy && node dist/main.js"]
