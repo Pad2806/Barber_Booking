@@ -9,9 +9,7 @@ const apiBaseUrlFromEnv = (import.meta.env.VITE_API_BASE_URL as string | undefin
 //   to your computer's LAN IP (e.g. http://192.168.1.10:3001/api).
 export const API_BASE_URL = apiBaseUrlFromEnv
   ? apiBaseUrlFromEnv
-  : isProd
-    ? 'https://barber-api.paduy.tech/api'
-    : 'http://localhost:3001/api';
+  : 'https://barber-api.paduy.tech/api';
 
 // Zalo App Configuration
 // Note: Vite exposes env vars via import.meta.env.
