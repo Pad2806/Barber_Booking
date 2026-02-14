@@ -32,6 +32,9 @@ FROM node:20-alpine AS runner
 
 WORKDIR /app
 
+# Install OpenSSL (required by Prisma engine on Alpine)
+RUN apk add --no-cache openssl
+
 # Create non-root user
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
@@ -42,8 +45,10 @@ COPY --from=builder /app/apps/api/package.json ./
 COPY --from=builder /app/apps/api/prisma ./prisma
 COPY --from=builder /app/node_modules ./node_modules
 
-# Install prisma CLI globally (for migrate deploy at startup)
-RUN npm install -g prisma@5
+# Install prisma CLI globally and pre-download engines (as root)
+RUN npm install -g prisma@5 \
+    && prisma generate --schema=./prisma/schema.prisma || true \
+    && chmod -R 755 /usr/local/lib/node_modules/prisma/ 2>/dev/null || true
 
 # Set ownership
 RUN chown -R nestjs:nodejs /app
@@ -53,4 +58,4 @@ USER nestjs
 EXPOSE 3001
 
 # Run Prisma migrations and start the app
-CMD ["sh", "-c", "prisma migrate deploy && node dist/main.js"]
+CMD ["sh", "-c", "prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"]
