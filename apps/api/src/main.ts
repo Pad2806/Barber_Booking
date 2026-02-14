@@ -11,15 +11,35 @@ async function bootstrap() {
 
   // CORS
   app.enableCors({
-    origin: [
-      'http://localhost:3000', // Web
-      'http://localhost:3005', // Zalo Mini App dev (zmp/vite)
-      'http://127.0.0.1:3005', // Zalo Mini App dev (zmp/vite)
-      'https://h5.zalo.me', // Zalo Mini App production
-      'https://zalo.me', // Zalo production
-      process.env.WEB_URL || '',
-      process.env.FRONTEND_URL || '',
-    ].filter(Boolean),
+    origin: (requestOrigin, callback) => {
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'http://localhost:3005',
+        'http://127.0.0.1:3005',
+        process.env.WEB_URL,
+        process.env.FRONTEND_URL,
+      ];
+
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!requestOrigin) return callback(null, true);
+
+      if (allowedOrigins.includes(requestOrigin)) return callback(null, true);
+
+      // Allow Zalo Mini App domains and schemes
+      if (
+        requestOrigin.startsWith('https://h5.zalo.me') ||
+        requestOrigin.startsWith('zbrowser://') ||
+        requestOrigin.includes('zalo.me')
+      ) {
+        return callback(null, true);
+      }
+
+      // During development/testing, you might want to log blocked origins
+      // console.log('Blocked Origin:', requestOrigin);
+
+      // Strict check for others
+      callback(new Error('Not allowed by CORS'), false);
+    },
     credentials: true,
   });
 

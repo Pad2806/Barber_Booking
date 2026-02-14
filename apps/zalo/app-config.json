@@ -2,7 +2,8 @@
   "template": "mini-store",
   "framework": "react",
   "app": {
-    "title": "ReetroBarberShop"
+    "title": "ReetroBarberShop",
+    "id": "2917748007370695388"
   },
   "pages": [
     {
