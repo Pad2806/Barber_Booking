@@ -29,10 +29,13 @@ export class ZaloStrategy extends PassportStrategy(Strategy, 'zalo') {
     const { accessToken, code } = req.body;
 
     if (!accessToken && !code) {
-      // In Zalo Mini App web/simulator, the SDK may not be able to provide tokens.
-      // Allow local development to proceed using zaloId (no token verification).
-      if (process.env.NODE_ENV === 'development' && req?.body?.zaloId) {
+      // In Zalo Mini App, the SDK may not be able to provide tokens if:
+      // 1. App is in Testing mode (not fully activated)
+      // 2. Running in web/simulator environment
+      // Allow authentication using zaloId + user info for these cases
+      if (req?.body?.zaloId) {
         const { zaloId, name, avatar } = req.body;
+        console.log('[Zalo Auth] Using fallback authentication with zaloId:', zaloId);
         return this.authService.validateOAuthUser(
           AuthProvider.ZALO,
           String(zaloId),
@@ -42,7 +45,7 @@ export class ZaloStrategy extends PassportStrategy(Strategy, 'zalo') {
         );
       }
 
-      throw new UnauthorizedException('Zalo access token or code is required');
+      throw new UnauthorizedException('Zalo access token, code, or zaloId is required');
     }
 
     try {

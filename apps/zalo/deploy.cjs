@@ -43,8 +43,8 @@ try {
     `--desc "${desc}"`,
   ].filter(Boolean).join(' ');
 
-  console.log(`\nDeploying with: zmp deploy ${flags}`);
-  execSync(`npx zmp deploy ${flags}`, { cwd: __dirname, stdio: 'inherit' });
+  console.log(`\nDeploying with: zmp-cli deploy ${flags}`);
+  execSync(`npx zmp-cli deploy ${flags}`, { cwd: __dirname, stdio: 'inherit' });
 
 } catch (err) {
   console.error('Deploy failed:', err.message);

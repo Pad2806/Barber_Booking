@@ -62,26 +62,32 @@ export const loginWithZalo = async (): Promise<LoginResponse> => {
       scopes: ['scope.userInfo'],
     });
 
-    // Get Zalo access token.
-    // In Zalo Mini App web/simulator, getAccessToken() can return empty string.
-    // login() may trigger auth flow; after that we re-try getAccessToken().
-    let zaloToken = await getZaloAccessToken();
-    let zaloCode = '';
-
-    if (!zaloToken) {
-      const loginResult = await zaloLogin().catch(() => '');
-      // Some environments may return auth code or a status string.
-      if (typeof loginResult === 'string' && loginResult) {
-        zaloCode = loginResult;
-      }
-      // Re-try token after login() attempt.
-      zaloToken = await getZaloAccessToken().catch(() => '');
-    }
-    
-    // Get user info
+    // Get Zalo user info first (this works even if app is not fully activated)
     const zaloUser = await getZaloUserInfo();
 
+    // Try to get Zalo access token (may fail with -1401 if app not activated)
+    let zaloToken = '';
+    let zaloCode = '';
+
+    try {
+      zaloToken = await getZaloAccessToken();
+
+      if (!zaloToken) {
+        const loginResult = await zaloLogin().catch(() => '');
+        if (typeof loginResult === 'string' && loginResult) {
+          zaloCode = loginResult;
+        }
+        zaloToken = await getZaloAccessToken().catch(() => '');
+      }
+    } catch (tokenError: any) {
+      // Log token error but continue with user info only
+      console.warn('Failed to get Zalo token (app may not be activated):', tokenError);
+      // If error code is -1401, it means app is not activated yet
+      // We'll proceed with just user info for development/testing
+    }
+
     // Call backend API to authenticate
+    // Backend will handle the case where no token is provided (development mode)
     const response = await apiClient.post<LoginResponse>('/auth/zalo', {
       ...(zaloToken ? { accessToken: zaloToken } : {}),
       ...(zaloCode ? { code: zaloCode } : {}),

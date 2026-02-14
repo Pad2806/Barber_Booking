@@ -16,7 +16,9 @@
     "db:seed": "turbo run db:seed",
     "dev:api": "turbo run dev --filter=@reetro/api",
     "dev:web": "turbo run dev --filter=@reetro/web",
-    "dev:zalo": "turbo run dev --filter=@reetro/zalo"
+    "dev:zalo": "turbo run dev --filter=@reetro/zalo",
+    "zalo:validate": "node scripts/validate-zalo-config.js",
+    "zalo:deploy": "node scripts/deploy-zalo.js"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
