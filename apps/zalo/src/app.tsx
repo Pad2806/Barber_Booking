@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { HashRouter, Routes, Route } from 'react-router-dom';
 
 import { AuthProvider } from './providers/AuthProvider';
 import { QueryProvider } from './providers/QueryProvider';
@@ -24,7 +24,7 @@ const MyApp: React.FC = () => {
   return (
     <QueryProvider>
       <AuthProvider>
-        <BrowserRouter>
+        <HashRouter>
           <AuthEventListener />
           <Layout>
             <Routes>
@@ -75,7 +75,7 @@ const MyApp: React.FC = () => {
               <Route path="/profile" element={<ProfilePage />} />
             </Routes>
           </Layout>
-        </BrowserRouter>
+        </HashRouter>
       </AuthProvider>
     </QueryProvider>
   );

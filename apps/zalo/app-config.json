@@ -1,5 +1,6 @@
 {
   "template": "mini-store",
+  "framework": "react",
   "app": {
     "title": "ReetroBarberShop"
   },
@@ -41,9 +42,7 @@
       "component": "profile"
     }
   ],
-  "listCSS": [
-    "https://cdn.jsdelivr.net/npm/zmp-css@latest/zmp.min.css"
-  ],
+  "listCSS": [],
   "listSyncJS": [],
   "listAsyncJS": []
 }
