@@ -63,8 +63,12 @@ export interface BookingFilters {
 
 // Get my bookings
 export const getMyBookings = async (filters?: BookingFilters): Promise<PaginatedResponse<Booking>> => {
-  const response = await apiClient.get<PaginatedResponse<Booking>>('/bookings', {
-    params: filters,
+  const response = await apiClient.get<PaginatedResponse<Booking>>('/bookings/my-bookings', {
+    params: {
+      skip: filters?.page != null ? ((filters.page - 1) * (filters.limit ?? 20)) : undefined,
+      take: filters?.limit,
+      status: filters?.status,
+    },
   });
   return response.data;
 };
@@ -83,8 +87,8 @@ export const createBooking = async (data: CreateBookingDto): Promise<Booking> =>
 
 // Cancel booking
 export const cancelBooking = async (id: string, reason?: string): Promise<Booking> => {
-  const response = await apiClient.delete<Booking>(`/bookings/${id}`, {
-    data: { reason },
+  const response = await apiClient.patch<Booking>(`/bookings/${id}/cancel`, {
+    reason,
   });
   return response.data;
 };

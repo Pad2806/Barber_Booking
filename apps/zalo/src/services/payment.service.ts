@@ -17,32 +17,33 @@ export interface Payment {
   createdAt: string;
 }
 
-export interface CreatePaymentQRDto {
+export interface QRCodeResponse {
+  id: string;
   bookingId: string;
   amount: number;
-}
-
-export interface QRCodeResponse {
+  method: PaymentMethod;
   qrCode: string;
-  qrContent: string;
-  amount: number;
+  qrCodeUrl?: string;
+  qrContent?: string;
   bankCode: string;
   bankAccount: string;
-  bankName: string;
-  expiresAt: string;
+  bankName?: string;
+  status: PaymentStatus;
+  createdAt: string;
 }
 
-// Generate QR code for payment
+// Generate QR code for payment (creates payment with VIETQR method)
 export const generatePaymentQR = async (bookingId: string): Promise<QRCodeResponse> => {
-  const response = await apiClient.post<QRCodeResponse>(`/payments/create-qr`, {
+  const response = await apiClient.post<QRCodeResponse>(`/payments`, {
     bookingId,
+    method: 'VIETQR',
   });
   return response.data;
 };
 
-// Get payment status
+// Get payment status by booking ID
 export const getPaymentStatus = async (bookingId: string): Promise<Payment> => {
-  const response = await apiClient.get<Payment>(`/payments/${bookingId}/status`);
+  const response = await apiClient.get<Payment>(`/payments/booking/${bookingId}`);
   return response.data;
 };
 

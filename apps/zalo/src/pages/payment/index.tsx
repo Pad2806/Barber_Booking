@@ -5,6 +5,7 @@ import dayjs from 'dayjs';
 import { getBookingById, type Booking } from '../../services/booking.service';
 import {
   generatePaymentQR,
+  getPaymentByBooking,
   type QRCodeResponse,
   pollPaymentStatus,
   type Payment,
@@ -74,13 +75,24 @@ const PaymentPage: React.FC = () => {
       setBooking(bookingData);
 
       if (bookingData.paymentStatus !== 'PAID') {
-        const qr = await generatePaymentQR(bookingId!);
-        setQrData(qr);
+        try {
+          // Try to create a new payment with QR
+          const qr = await generatePaymentQR(bookingId!);
+          setQrData(qr);
+        } catch (createErr: any) {
+          // If payment already exists, fetch it instead
+          const existingPayment = await getPaymentByBooking(bookingId!);
+          if (existingPayment) {
+            setQrData(existingPayment as any);
+          } else {
+            throw createErr;
+          }
+        }
       } else {
         setIsPaid(true);
       }
     } catch (err: any) {
-      setError(err.message);
+      setError(err?.response?.data?.message || err.message);
     } finally {
       setLoading(false);
     }
@@ -210,7 +222,7 @@ const PaymentPage: React.FC = () => {
                 }}
               >
                 <img
-                  src={qrData.qrCode}
+                  src={qrData.qrCodeUrl || qrData.qrCode}
                   alt="QR Code"
                   style={{ width: 224, height: 224, display: 'block' }}
                 />
@@ -232,7 +244,7 @@ const PaymentPage: React.FC = () => {
                   Ngân hàng
                 </Text>
                 <Text bold size="small">
-                  {qrData.bankName}
+                  {qrData.bankName || qrData.bankCode || 'N/A'}
                 </Text>
               </Box>
               <Box

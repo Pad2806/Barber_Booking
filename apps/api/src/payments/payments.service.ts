@@ -10,6 +10,7 @@ import { Payment, PaymentStatus, PaymentMethod, BookingStatus } from '@prisma/cl
 
 export interface PaymentWithQR extends Payment {
   qrCodeUrl?: string | null;
+  bankName?: string | null;
 }
 
 @Injectable()
@@ -92,6 +93,7 @@ export class PaymentsService {
     return {
       ...payment,
       qrCodeUrl: qrCode,
+      bankName: salon.bankName || salon.name,
     };
   }
 
@@ -104,9 +106,16 @@ export class PaymentsService {
       return null;
     }
 
+    // Fetch salon bankName for display
+    const booking = await this.prisma.booking.findUnique({
+      where: { id: bookingId },
+      include: { salon: { select: { bankName: true, name: true } } },
+    });
+
     return {
       ...payment,
       qrCodeUrl: payment.qrCode,
+      bankName: booking?.salon?.bankName || booking?.salon?.name || null,
     };
   }
 
@@ -135,6 +144,7 @@ export class PaymentsService {
     return {
       ...payment,
       qrCodeUrl: payment.qrCode,
+      bankName: (payment.booking as any)?.salon?.bankName || (payment.booking as any)?.salon?.name || null,
     };
   }
 
