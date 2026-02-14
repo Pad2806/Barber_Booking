@@ -27,6 +27,13 @@ RUN cd apps/api && pnpm prisma generate
 # Build the API
 RUN pnpm turbo run build --filter=api
 
+# Deploy: create isolated production bundle with flat node_modules (no symlinks)
+RUN pnpm --filter api deploy --prod /app/deployed
+
+# Copy dist and prisma into deployed folder
+RUN cp -r /app/apps/api/dist /app/deployed/dist \
+    && cp -r /app/apps/api/prisma /app/deployed/prisma
+
 # Production stage
 FROM node:20-alpine AS runner
 
@@ -39,13 +46,10 @@ RUN apk add --no-cache openssl
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nestjs
 
-# Copy built files and prisma schema
-COPY --from=builder /app/apps/api/dist ./dist
-COPY --from=builder /app/apps/api/package.json ./
-COPY --from=builder /app/apps/api/prisma ./prisma
-COPY --from=builder /app/node_modules ./node_modules
+# Copy deployed bundle (flat node_modules + dist + prisma)
+COPY --from=builder /app/deployed ./
 
-# Install prisma CLI globally and pre-download engines (as root)
+# Install prisma CLI globally (for migrate deploy at startup)
 RUN npm install -g prisma@5 \
     && prisma generate --schema=./prisma/schema.prisma || true \
     && chmod -R 755 /usr/local/lib/node_modules/prisma/ 2>/dev/null || true
