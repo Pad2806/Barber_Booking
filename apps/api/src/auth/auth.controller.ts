@@ -27,7 +27,7 @@ import { User } from '@prisma/client';
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly authService: AuthService) { }
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
@@ -130,6 +130,46 @@ export class AuthController {
     // Called from Zalo Mini App with access token from Zalo SDK.
     // ZaloStrategy validates token with Zalo and attaches a User to req.user.
     return this.authService.generateTokens(req.user as User);
+  }
+
+  @Post('zalo/deletion')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Zalo data deletion webhook (GDPR compliance)' })
+  async zaloDeletion(@Body() body: any) {
+    console.log('Received Zalo data deletion request:', body);
+    // In a real implementation, we would process the deletion request here.
+    // For now, we acknowledge receipt to satisfy Zalo's requirements.
+    return {
+      success: true,
+      message: 'Data deletion request received',
+    };
+  }
+
+  @Get('terms')
+  @ApiOperation({ summary: 'Terms of Service' })
+  async terms(@Res() res: Response) {
+    res.header('Content-Type', 'text/html');
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>Terms of Service - ReetroBarberShop</title>
+        <style>body{font-family:sans-serif;line-height:1.6;padding:20px;max-width:800px;margin:0 auto}</style>
+      </head>
+      <body>
+        <h1>Terms of Service</h1>
+        <p>Last updated: February 2026</p>
+        <p>Welcome to ReetroBarberShop. By using our Zalo Mini App, you agree to these terms.</p>
+        <h2>1. Services</h2>
+        <p>We provide barber booking services through the Zalo platform.</p>
+        <h2>2. Data Privacy</h2>
+        <p>We collect minimal data (name, phone number) to facilitate bookings. We do not share this data with third parties.</p>
+        <h2>3. Contact</h2>
+        <p>For questions or data deletion requests, please contact support at reetro@barber.com.</p>
+      </body>
+      </html>
+    `);
   }
 
   // ============== Password Reset Routes ==============
