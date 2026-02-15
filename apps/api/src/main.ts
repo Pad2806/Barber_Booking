@@ -18,27 +18,43 @@ async function bootstrap() {
         'http://127.0.0.1:3005',
         process.env.WEB_URL,
         process.env.FRONTEND_URL,
-      ];
+      ].filter(Boolean);
 
       // Allow requests with no origin (like mobile apps or curl requests)
-      if (!requestOrigin) return callback(null, true);
+      if (!requestOrigin) {
+        console.log('[CORS] Allowing request with no origin');
+        return callback(null, true);
+      }
 
-      if (allowedOrigins.includes(requestOrigin)) return callback(null, true);
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(requestOrigin)) {
+        console.log('[CORS] Allowing origin from allowed list:', requestOrigin);
+        return callback(null, true);
+      }
 
       // Allow Zalo Mini App domains and schemes
       if (
         requestOrigin.startsWith('https://h5.zalo.me') ||
+        requestOrigin.startsWith('http://h5.zalo.me') ||
         requestOrigin.startsWith('zbrowser://') ||
-        requestOrigin.includes('zalo.me')
+        requestOrigin.includes('zalo.me') ||
+        requestOrigin.includes('zadn.vn')
       ) {
+        console.log('[CORS] Allowing Zalo origin:', requestOrigin);
         return callback(null, true);
       }
 
-      // During development/testing, you might want to log blocked origins
-      // console.log('Blocked Origin:', requestOrigin);
+      // In development/testing, allow all origins and log them
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[CORS] DEV MODE - Allowing origin:', requestOrigin);
+        return callback(null, true);
+      }
 
-      // Strict check for others
-      callback(new Error('Not allowed by CORS'), false);
+      // Log blocked origin for debugging
+      console.warn('[CORS] BLOCKED origin:', requestOrigin);
+
+      // Instead of throwing error, just return false to block
+      callback(null, false);
     },
     credentials: true,
   });
