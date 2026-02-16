@@ -64,6 +64,12 @@ npm run zmp:deploy
 → Vào https://developers.zalo.me/ và thêm tài khoản test vào "Người dùng thử nghiệm"
 
 ### Network Error?
+→ **QUAN TRỌNG**: Vào Zalo Developer Console > Cài đặt > Tên miền Server
+→ Thêm domain `barber-api.paduy.tech` vào danh sách whitelist.
+
+→ **CORS NOTICE**: Nếu whitelist rồi vẫn lỗi, khả năng do Zalo App trên Android gửi `Origin: null`.
+→ Mình đã update backend để cho phép `null`. Vui lòng **Redeploy Backend** (git push lại).
+
 → Kiểm tra backend đã deploy chưa:
 ```powershell
 Invoke-WebRequest -Uri "https://barber-api.paduy.tech/api/salons?page=1&limit=10" -Method GET

@@ -21,8 +21,9 @@ async function bootstrap() {
       ].filter(Boolean);
 
       // Allow requests with no origin (like mobile apps or curl requests)
-      if (!requestOrigin) {
-        console.log('[CORS] Allowing request with no origin');
+      // Also allow 'null' origin which is common in mobile webviews/file protocols
+      if (!requestOrigin || requestOrigin === 'null' || requestOrigin === 'file://') {
+        console.log('[CORS] Allowing request with no origin or null:', requestOrigin);
         return callback(null, true);
       }
 

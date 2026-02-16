@@ -23,6 +23,7 @@
 
 **Giải pháp đã áp dụng**:
 - ✅ Cập nhật CORS trong `apps/api/src/main.ts` để cho phép các domain Zalo
+- ✅ Cho phép `Origin: null` (Android Webview issue)
 - ✅ Hardcode API URL thành `https://barber-api.paduy.tech/api` trong `constants.ts`
 - ✅ Đổi `base: '/'` thành `base: './'` trong `vite.config.mjs`
 
