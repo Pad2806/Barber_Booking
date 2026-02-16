@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Page, Box, Text, Button, DatePicker, Icon, Grid, Header, useSnackbar } from 'zmp-ui';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -85,13 +85,32 @@ const BookingPage: React.FC = () => {
     }
   };
 
+  // Filter time slots: mark past slots as unavailable if selected date is today
+  const filteredTimeSlots = useMemo(() => {
+    if (!selectedDate) return timeSlots;
+    const isToday = dayjs(selectedDate).isSame(dayjs(), 'day');
+    if (!isToday) return timeSlots;
+
+    const nowPlusBuffer = dayjs().add(BOOKING_CONFIG.minAdvanceHours, 'hour');
+    return timeSlots.map(slot => {
+      const [h, m] = slot.time.split(':').map(Number);
+      const slotTime = dayjs(selectedDate).hour(h).minute(m);
+      if (slotTime.isBefore(nowPlusBuffer)) {
+        return { ...slot, available: false };
+      }
+      return slot;
+    });
+  }, [timeSlots, selectedDate]);
+
+  const depositAmount = Math.round(totalAmount * 0.5);
+
   const handleSubmit = async () => {
     if (!salon || !selectedDate || !selectedTimeSlot) return;
 
     try {
       setSubmitting(true);
       const cleanNote = note.trim();
-      const booking = await createBooking({
+      await createBooking({
         salonId: salon.id,
         ...(selectedStaff?.id ? { staffId: selectedStaff.id } : {}),
         date: selectedDate,
@@ -101,7 +120,12 @@ const BookingPage: React.FC = () => {
       });
 
       reset();
-      navigate(`/booking-confirm?id=${booking.id}`);
+      openSnackbar({
+        text: `Đặt lịch thành công! Phí đặt cọc: ${formatPrice(depositAmount)}. Vui lòng vào Lịch hẹn để thanh toán.`,
+        type: 'success',
+        duration: 5000,
+      });
+      navigate('/my-bookings', { replace: true });
     } catch (error: any) {
       console.error('Failed to create booking:', error);
       const message =
@@ -125,7 +149,7 @@ const BookingPage: React.FC = () => {
     }).format(price);
   };
 
-  const minDate = dayjs().add(BOOKING_CONFIG.minAdvanceHours, 'hour').toDate();
+  const minDate = dayjs().startOf('day').toDate();
   const maxDate = dayjs().add(BOOKING_CONFIG.maxAdvanceDays, 'day').toDate();
 
   if (!salon || selectedServices.length === 0) {
@@ -409,7 +433,7 @@ const BookingPage: React.FC = () => {
                     </Box>
                   ) : (
                     <Grid columnCount={4} columnSpace="8px" rowSpace="8px">
-                      {timeSlots.map(slot => (
+                      {filteredTimeSlots.map(slot => (
                         <Box
                           key={slot.time}
                           p={3}
@@ -518,6 +542,26 @@ const BookingPage: React.FC = () => {
                     style={{ color: 'var(--zaui-light-color-primary, var(--brand-accent))' }}
                   >
                     {formatPrice(totalAmount)}
+                  </Text>
+                </Box>
+                <Box
+                  flex
+                  justifyContent="space-between"
+                  alignItems="center"
+                  mt={2}
+                  p={3}
+                  style={{
+                    background: 'rgba(233, 69, 96, 0.08)',
+                    borderRadius: 12,
+                    border: '1px solid rgba(233, 69, 96, 0.15)',
+                  }}
+                >
+                  <Box>
+                    <Text bold size="small" style={{ color: '#e94560' }}>Phí đặt cọc (50%)</Text>
+                    <Text size="xxSmall" style={{ opacity: 0.7 }}>Thanh toán sau khi đặt lịch</Text>
+                  </Box>
+                  <Text bold style={{ color: '#e94560' }}>
+                    {formatPrice(depositAmount)}
                   </Text>
                 </Box>
               </Box>

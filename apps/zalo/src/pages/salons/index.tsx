@@ -85,7 +85,7 @@ const SalonListPage: React.FC = () => {
               {/* Cover Image */}
               <Box style={{ position: 'relative', height: 140 }}>
                 <img
-                  src={salon.coverImage || '/assets/images/default-salon.jpg'}
+                  src={salon.coverImage || salon.images?.[0] || 'https://images.unsplash.com/photo-1585747860019-8e2e0c35c0e1?w=600&h=300&fit=crop'}
                   alt={salon.name}
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
