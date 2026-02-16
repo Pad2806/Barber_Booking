@@ -79,6 +79,7 @@ const BookingDetailPage: React.FC = () => {
       style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)', paddingBottom: 120 }}
     >
       <Header title="Chi tiết đặt lịch" onBackClick={() => navigate(-1)} />
+      <Box style={{ height: 44 }} />
 
       <Box p={4}>
         <Box flex justifyContent="space-between" alignItems="center" style={{ gap: 12 }}>

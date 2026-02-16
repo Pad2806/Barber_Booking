@@ -17,6 +17,12 @@ import ProfilePage from './pages/profile';
 import LoginPage from './pages/login';
 import RegisterPage from './pages/register';
 import Layout from './pages/layout';
+import UpdateProfilePage from './pages/profile/update';
+import FavoritesPage from './pages/favorites';
+import NotificationsPage from './pages/notifications';
+import AboutPage from './pages/static/about';
+import TermsPage from './pages/static/terms';
+import SupportPage from './pages/static/support';
 
 import RequireAuth from './components/auth/RequireAuth';
 import AuthEventListener from './components/auth/AuthEventListener';
@@ -75,6 +81,33 @@ const MyApp: React.FC = () => {
                 }
               />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route
+                path="/profile/update"
+                element={
+                  <RequireAuth>
+                    <UpdateProfilePage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/favorites"
+                element={
+                  <RequireAuth>
+                    <FavoritesPage />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/notifications"
+                element={
+                  <RequireAuth>
+                    <NotificationsPage />
+                  </RequireAuth>
+                }
+              />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/support" element={<SupportPage />} />
             </Routes>
           </Layout>
         </HashRouter>

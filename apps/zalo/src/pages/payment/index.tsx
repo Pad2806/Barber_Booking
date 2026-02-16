@@ -123,6 +123,7 @@ const PaymentPage: React.FC = () => {
     return (
       <Page style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)' }}>
         <Header title="Thanh toán" onBackClick={() => navigate(-1)} />
+        <Box style={{ height: 44 }} />
         <Box
           p={6}
           flex
@@ -183,6 +184,7 @@ const PaymentPage: React.FC = () => {
   return (
     <Page style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)' }}>
       <Header title="Thanh toán" onBackClick={() => navigate(-1)} />
+      <Box style={{ height: 44 }} />
 
       <Box p={4}>
         <Text size="xxSmall" style={{ opacity: 0.7 }}>

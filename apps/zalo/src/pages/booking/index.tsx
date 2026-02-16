@@ -161,12 +161,13 @@ const BookingPage: React.FC = () => {
       style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)', paddingBottom: 120 }}
     >
       <Header title="Đặt lịch" onBackClick={() => navigate(-1)} />
+      <Box style={{ height: 44 }} />
       {/* Progress Steps */}
       <Box
         p={4}
         style={{
           position: 'sticky',
-          top: 0,
+          top: 44,
           zIndex: 10,
           background: 'var(--zaui-light-header-background-color, #fff)',
           borderBottom: '1px solid var(--zaui-light-header-divider, #e9ebed)',

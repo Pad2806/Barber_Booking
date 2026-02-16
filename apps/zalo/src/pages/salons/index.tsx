@@ -38,12 +38,13 @@ const SalonListPage: React.FC = () => {
   return (
     <Page style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)' }}>
       <Header title="Salon" showBackIcon={false} />
+      <Box style={{ height: 44 }} />
       {/* Search */}
       <Box
         p={4}
         style={{
           position: 'sticky',
-          top: 0,
+          top: 44,
           zIndex: 10,
           background: 'var(--zaui-light-header-background-color, #fff)',
         }}

@@ -110,6 +110,7 @@ model User {
   refreshTokens RefreshToken[]
   passwordResetTokens PasswordResetToken[]
   notifications Notification[]
+  favorites     UserFavoriteSalon[]
 
   @@map("users")
 }
@@ -172,6 +173,7 @@ model Salon {
   services    Service[]
   bookings    Booking[]
   reviews     Review[]
+  favoritedBy UserFavoriteSalon[]
 
   // Payment settings
   bankCode    String?
@@ -382,4 +384,16 @@ model Notification {
 
   @@index([userId, isRead])
   @@map("notifications")
+}
+
+model UserFavoriteSalon {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  salonId   String
+  salon     Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, salonId])
+  @@map("user_favorite_salons")
 }

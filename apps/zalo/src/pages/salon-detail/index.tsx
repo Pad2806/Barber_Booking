@@ -11,12 +11,15 @@ import { getStaffBySalon, type Staff } from '../../services/staff.service';
 import { PageLoading, ErrorState, ShareButton } from '../../components/shared';
 import { useBookingStore } from '../../stores/bookingStore';
 import { SERVICE_CATEGORIES, STAFF_POSITIONS } from '../../config';
+import { checkIsFavorite, addToFavorites, removeFromFavorites } from '../../services/favorites.service';
+import { useSnackbar } from 'zmp-ui';
 
 const SalonDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const salonId = searchParams.get('id');
   const { setSalon, addService, removeService, selectedServices } = useBookingStore();
+  const { openSnackbar } = useSnackbar();
 
   const [salon, setSalonData] = useState<Salon | null>(null);
   const [services, setServices] = useState<Service[]>([]);
@@ -24,6 +27,7 @@ const SalonDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('services');
+  const [isFavorited, setIsFavorited] = useState(false);
 
   useEffect(() => {
     if (salonId) {
@@ -34,14 +38,16 @@ const SalonDetailPage: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [salonData, servicesData, staffData] = await Promise.all([
+      const [salonData, servicesData, staffData, favoriteData] = await Promise.all([
         getSalonById(salonId!),
         getServicesBySalon(salonId!),
         getStaffBySalon(salonId!),
+        checkIsFavorite(salonId!)
       ]);
       setSalonData(salonData);
       setServices(servicesData);
       setStaff(staffData);
+      setIsFavorited(favoriteData.data.isFavorite);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -75,6 +81,23 @@ const SalonDetailPage: React.FC = () => {
     }).format(price);
   };
 
+  const handleToggleFavorite = async () => {
+      if (!salon) return;
+      try {
+          if (isFavorited) {
+              await removeFromFavorites(salon.id);
+              setIsFavorited(false);
+              openSnackbar({ text: 'Đã xóa khỏi danh sách yêu thích', type: 'success' });
+          } else {
+              await addToFavorites(salon.id);
+              setIsFavorited(true);
+              openSnackbar({ text: 'Đã thêm vào danh sách yêu thích', type: 'success' });
+          }
+      } catch (err) {
+          openSnackbar({ text: 'Thao tác thất bại', type: 'error' });
+      }
+  };
+
   if (loading) {
     return <PageLoading />;
   }
@@ -105,6 +128,7 @@ const SalonDetailPage: React.FC = () => {
       style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)', paddingBottom: 96 }}
     >
       <Header title="Chi tiết salon" onBackClick={() => navigate(-1)} />
+      <Box style={{ height: 44 }} />
       {/* Hero Section */}
       <Box style={{ position: 'relative', height: 200 }}>
         <img
@@ -119,7 +143,21 @@ const SalonDetailPage: React.FC = () => {
             background: 'linear-gradient(180deg, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.6) 100%)',
           }}
         />
-        <Box style={{ position: 'absolute', top: 12, right: 12, zIndex: 10 }}>
+        <Box style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, display: 'flex', gap: 8 }}>
+          <Box
+            onClick={handleToggleFavorite}
+            style={{
+                background: 'rgba(255,255,255,0.8)',
+                borderRadius: '50%',
+                width: 32,
+                height: 32,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+            }}
+          >
+              <Icon icon={isFavorited ? 'zi-heart-solid' : 'zi-heart'} style={{ color: isFavorited ? '#e94560' : '#333' }} />
+          </Box>
           <ShareButton
             type="salon"
             data={{

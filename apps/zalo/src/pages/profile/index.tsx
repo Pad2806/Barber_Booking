@@ -29,6 +29,7 @@ const ProfilePage: React.FC = () => {
     return (
       <Page style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)' }}>
         <Header title="Tài khoản" showBackIcon={false} />
+        <Box style={{ height: 44 }} />
         <Box
           flex
           flexDirection="column"
@@ -70,6 +71,7 @@ const ProfilePage: React.FC = () => {
   return (
     <Page style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)' }}>
       <Header title="Tài khoản" showBackIcon={false} />
+      <Box style={{ height: 44 }} />
       {/* Profile Header */}
       <Box
         p={6}
@@ -153,13 +155,13 @@ const ProfilePage: React.FC = () => {
               title="Salon yêu thích"
               prefix={<Icon icon="zi-heart" />}
               suffix={<Icon icon="zi-arrow-right" />}
-              onClick={() => {}}
+              onClick={() => navigate('/favorites')}
             />
             <List.Item
               title="Lịch sử thanh toán"
               prefix={<Icon icon="zi-upload" />}
               suffix={<Icon icon="zi-arrow-right" />}
-              onClick={() => {}}
+              onClick={() => navigate('/my-bookings')}
             />
           </List>
         </Box>
@@ -177,13 +179,13 @@ const ProfilePage: React.FC = () => {
               title="Thông tin cá nhân"
               prefix={<Icon icon="zi-user" />}
               suffix={<Icon icon="zi-arrow-right" />}
-              onClick={() => {}}
+              onClick={() => navigate('/profile/update')}
             />
             <List.Item
               title="Thông báo"
               prefix={<Icon icon="zi-notif" />}
               suffix={<Icon icon="zi-arrow-right" />}
-              onClick={() => {}}
+              onClick={() => navigate('/notifications')}
             />
             <List.Item
               title="Cài đặt"
@@ -207,19 +209,19 @@ const ProfilePage: React.FC = () => {
               title="Trung tâm hỗ trợ"
               prefix={<Icon icon="zi-warning" />}
               suffix={<Icon icon="zi-arrow-right" />}
-              onClick={() => {}}
+              onClick={() => navigate('/support')}
             />
             <List.Item
               title="Về chúng tôi"
               prefix={<Icon icon="zi-file" />}
               suffix={<Icon icon="zi-arrow-right" />}
-              onClick={() => {}}
+              onClick={() => navigate('/about')}
             />
             <List.Item
               title="Điều khoản sử dụng"
               prefix={<Icon icon="zi-file" />}
               suffix={<Icon icon="zi-arrow-right" />}
-              onClick={() => {}}
+              onClick={() => navigate('/terms')}
             />
           </List>
         </Box>

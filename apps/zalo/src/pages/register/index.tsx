@@ -57,6 +57,7 @@ const RegisterPage: React.FC = () => {
         showBackIcon
         onBackClick={() => navigate(-1)}
       />
+      <Box style={{ height: 44 }} />
 
       <Box
         flex

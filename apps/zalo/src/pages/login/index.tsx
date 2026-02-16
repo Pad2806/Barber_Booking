@@ -73,6 +73,7 @@ const LoginPage: React.FC = () => {
         showBackIcon={location.key !== 'default'}
         onBackClick={() => navigate(-1)}
       />
+      <Box style={{ height: 44 }} />
 
       <Box
         flex
