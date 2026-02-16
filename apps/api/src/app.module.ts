@@ -11,6 +11,7 @@ import { BookingsModule } from './bookings/bookings.module';
 import { PaymentsModule } from './payments/payments.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { FavoritesModule } from './favorites/favorites.module';
 import { AdminModule } from './admin/admin.module';
 import configuration from './config/configuration';
 import { HealthModule } from './health/health.module';
@@ -39,8 +40,9 @@ import { HealthModule } from './health/health.module';
     PaymentsModule,
     ReviewsModule,
     NotificationsModule,
+    FavoritesModule,
     AdminModule,
     HealthModule,
   ],
 })
-export class AppModule {}
+export class AppModule { }

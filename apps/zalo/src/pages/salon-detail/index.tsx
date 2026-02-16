@@ -38,16 +38,22 @@ const SalonDetailPage: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [salonData, servicesData, staffData, favoriteData] = await Promise.all([
+      const [salonData, servicesData, staffData] = await Promise.all([
         getSalonById(salonId!),
         getServicesBySalon(salonId!),
         getStaffBySalon(salonId!),
-        checkIsFavorite(salonId!)
       ]);
       setSalonData(salonData);
       setServices(servicesData);
       setStaff(staffData);
-      setIsFavorited(favoriteData.data.isFavorite);
+
+      // Check favorite status separately - don't let it block the page
+      try {
+        const favoriteData = await checkIsFavorite(salonId!);
+        setIsFavorited(favoriteData.data.isFavorite);
+      } catch {
+        setIsFavorited(false);
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
