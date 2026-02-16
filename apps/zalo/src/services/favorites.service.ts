@@ -1,5 +1,5 @@
 import api from './api';
-import { Salon } from './salon.service';
+import type { Salon } from './salon.service';
 
 export interface FavoriteSalon extends Salon {
     createdAt: string;

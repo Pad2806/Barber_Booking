@@ -41,30 +41,6 @@
     {
       "path": "/profile",
       "component": "profile"
-    },
-    {
-      "path": "/profile/update",
-      "component": "profile-update"
-    },
-    {
-      "path": "/favorites",
-      "component": "favorites"
-    },
-    {
-      "path": "/notifications",
-      "component": "notifications"
-    },
-    {
-      "path": "/about",
-      "component": "about"
-    },
-    {
-      "path": "/terms",
-      "component": "terms"
-    },
-    {
-      "path": "/support",
-      "component": "support"
     }
   ],
   "listCSS": [],
