@@ -13,14 +13,15 @@ export interface AuthTokens {
 }
 
 export interface LoginDto {
-  email: string; // Used for phone number as well in backend
+  email?: string;
+  phone?: string;
   password: string;
 }
 
 export interface RegisterDto {
-  name: string;
-  phone: string;
-  email: string;
+  name?: string;
+  phone?: string;
+  email?: string;
   password: string;
 }
 

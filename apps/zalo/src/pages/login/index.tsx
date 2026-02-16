@@ -53,7 +53,7 @@ const LoginPage: React.FC = () => {
     setError(null);
     setSubmitting(true);
     try {
-      await loginWithPassword({ email: phone, password });
+      await loginWithPassword({ phone, password });
       navigate(returnTo, { replace: true });
     } catch (e: any) {
       const message =

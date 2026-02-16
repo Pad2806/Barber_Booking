@@ -37,7 +37,6 @@ const RegisterPage: React.FC = () => {
         name,
         phone,
         password,
-        email: phone, // Use phone as email for now
       });
       navigate('/', { replace: true });
     } catch (e: any) {

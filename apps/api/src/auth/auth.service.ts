@@ -30,16 +30,19 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   async register(dto: RegisterDto): Promise<TokenResponse> {
+    if (!dto.email && !dto.phone) {
+      throw new BadRequestException('Email or phone is required');
+    }
+
+    const orConditions: any[] = [];
+    if (dto.email) orConditions.push({ email: dto.email });
+    if (dto.phone) orConditions.push({ phone: dto.phone });
+
     const existingUser = await this.prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: dto.email },
-          dto.phone ? { phone: dto.phone } : {},
-        ],
-      },
+      where: { OR: orConditions },
     });
 
     if (existingUser) {
@@ -48,12 +51,15 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
+    // If no email provided, generate a placeholder from phone
+    const email = dto.email || `${dto.phone}@phone.local`;
+
     const user = await this.prisma.user.create({
       data: {
-        email: dto.email,
+        email,
         phone: dto.phone,
         password: hashedPassword,
-        name: dto.name,
+        name: dto.name || dto.phone,
         authProvider: AuthProvider.LOCAL,
       },
     });
@@ -62,7 +68,11 @@ export class AuthService {
   }
 
   async login(dto: LoginDto): Promise<TokenResponse> {
-    const user = await this.validateUser(dto.email, dto.password);
+    const identifier = dto.email || dto.phone;
+    if (!identifier) {
+      throw new BadRequestException('Email or phone is required');
+    }
+    const user = await this.validateUser(identifier, dto.password);
     return this.generateTokens(user);
   }
 
