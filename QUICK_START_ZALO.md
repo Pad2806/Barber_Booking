@@ -67,8 +67,9 @@ npm run zmp:deploy
 → **QUAN TRỌNG**: Vào Zalo Developer Console > Cài đặt > Tên miền Server
 → Thêm domain `barber-api.paduy.tech` vào danh sách whitelist.
 
-→ **CORS NOTICE**: Nếu whitelist rồi vẫn lỗi, khả năng do Zalo App trên Android gửi `Origin: null`.
-→ Mình đã update backend để cho phép `null`. Vui lòng **Redeploy Backend** (git push lại).
+→ **CORS NOTICE**: Nếu whitelist rồi vẫn lỗi, khả năng do Zalo App gửi `Origin: null` mà Backend bật `credentials: true`.
+→ Mình đã update backend: **Allow null + Disable credentials**.
+→ Vui lòng **Redeploy Backend** (git push lại) để fix triệt để.
 
 → Kiểm tra backend đã deploy chưa:
 ```powershell

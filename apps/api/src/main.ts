@@ -57,7 +57,7 @@ async function bootstrap() {
       // Instead of throwing error, just return false to block
       callback(null, false);
     },
-    credentials: true,
+    credentials: false, // Disable credentials to allow wildcard/* origins (required for mobile webviews)
   });
 
   // Validation
