@@ -18,7 +18,7 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly vietQRService: VietQRService,
-  ) {}
+  ) { }
 
   async createPayment(dto: CreatePaymentDto): Promise<PaymentWithQR> {
     // Get booking
@@ -51,6 +51,9 @@ export class PaymentsService {
     let qrCode: string | undefined;
     let qrContent: string | undefined;
 
+    // Calculate deposit amount (50%)
+    const depositAmount = Math.round(Number(booking.totalAmount) * 0.5);
+
     if (dto.method === PaymentMethod.VIETQR && salon.bankCode && salon.bankAccount) {
       const description = `RB${booking.bookingCode}`;
 
@@ -58,7 +61,7 @@ export class PaymentsService {
         bankCode: salon.bankCode,
         accountNumber: salon.bankAccount,
         accountName: salon.bankName || salon.name,
-        amount: Number(booking.totalAmount),
+        amount: depositAmount,
         description,
       });
 
@@ -66,7 +69,7 @@ export class PaymentsService {
         bankCode: salon.bankCode,
         accountNumber: salon.bankAccount,
         accountName: salon.bankName || salon.name,
-        amount: Number(booking.totalAmount),
+        amount: depositAmount,
         description,
       });
     }
@@ -74,7 +77,7 @@ export class PaymentsService {
     const payment = await this.prisma.payment.create({
       data: {
         bookingId: dto.bookingId,
-        amount: booking.totalAmount,
+        amount: depositAmount,
         method: dto.method,
         status: PaymentStatus.PENDING,
         qrCode,

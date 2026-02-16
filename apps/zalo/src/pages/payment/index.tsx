@@ -203,10 +203,10 @@ const PaymentPage: React.FC = () => {
           {/* Amount */}
           <Box style={{ textAlign: 'center', marginBottom: 16 }}>
             <Text size="xxSmall" style={{ opacity: 0.7 }}>
-              Số tiền thanh toán
+              Số tiền đặt cọc (50%)
             </Text>
             <Text.Title style={{ color: 'var(--zaui-light-color-primary, var(--brand-accent))' }}>
-              {formatPrice(booking.totalAmount)}
+              {formatPrice(Math.round(booking.totalAmount * 0.5))}
             </Text.Title>
           </Box>
 
