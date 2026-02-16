@@ -1,12 +1,14 @@
 import React, { createContext, useContext, useEffect, type ReactNode } from 'react';
 import { useAuthStore } from '../stores/authStore';
-import type { User } from '../services/auth.service';
+import type { User, LoginDto, RegisterDto } from '../services/auth.service';
 
 interface AuthContextValue {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: User | null;
   login: () => Promise<void>;
+  loginWithPassword: (dto: LoginDto) => Promise<void>;
+  register: (dto: RegisterDto) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -17,7 +19,16 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const { user, isAuthenticated, isLoading, login, logout, fetchUser } = useAuthStore();
+  const {
+    user,
+    isAuthenticated,
+    isLoading,
+    login,
+    loginWithPassword,
+    register,
+    logout,
+    fetchUser,
+  } = useAuthStore();
 
   useEffect(() => {
     // Fetch user on mount if authenticated
@@ -31,6 +42,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading,
     user,
     login,
+    loginWithPassword,
+    register,
     logout,
   };
 

@@ -52,7 +52,9 @@ npm run zmp:deploy
 2. **Quét QR**: Quét mã QR từ terminal
 3. **Test**:
    - ✅ Xem danh sách salon
-   - ✅ Đăng nhập với Zalo
+   - ✅ Đăng nhập với SĐT/Mật khẩu (Mới)
+   - ✅ Đăng ký tài khoản mới (Mới)
+   - ✅ Đăng nhập với Zalo (Tùy chọn)
    - ✅ Đặt lịch
    - ✅ Xem lịch hẹn
 

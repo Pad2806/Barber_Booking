@@ -15,6 +15,7 @@ import PaymentPage from './pages/payment';
 import MyBookingsPage from './pages/my-bookings';
 import ProfilePage from './pages/profile';
 import LoginPage from './pages/login';
+import RegisterPage from './pages/register';
 import Layout from './pages/layout';
 
 import RequireAuth from './components/auth/RequireAuth';
@@ -30,6 +31,7 @@ const MyApp: React.FC = () => {
             <Routes>
               <Route path="/" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
               <Route path="/salons" element={<SalonListPage />} />
               <Route path="/salon-detail" element={<SalonDetailPage />} />
               <Route

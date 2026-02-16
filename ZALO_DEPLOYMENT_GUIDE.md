@@ -40,6 +40,18 @@
 **Giải pháp đã áp dụng**:
 - ✅ Đổi `npx zmp deploy` thành `npx zmp-cli deploy` trong `deploy.cjs`
 
+### 5. Tính năng Authentication Mới
+**Yêu cầu**:
+- Đăng nhập/Đăng ký bằng Số điện thoại + Mật khẩu
+- Giữ lại Zalo Login như tùy chọn phụ
+
+**Giải pháp đã áp dụng**:
+- ✅ Thêm API `login` và `register` vào `auth.service.ts`
+- ✅ Cập nhật `authStore.ts` để hỗ trợ login thường
+- ✅ Cập nhật `LoginPage` với form đăng nhập SĐT/MK
+- ✅ Thêm trang `RegisterPage` để tạo tài khoản mới
+- ✅ Cập nhật `app.tsx` với router cho trang đăng ký
+
 ## Các bước deploy
 
 ### Bước 1: Commit và Push code

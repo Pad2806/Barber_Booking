@@ -12,9 +12,16 @@
 **Đã fix**:
 - ✅ Hardcode API URL thành production: `https://barber-api.paduy.tech/api`
 - ✅ Cấu hình CORS cho Zalo domains (zbrowser://, h5.zalo.me)
+- ✅ Cấu hình CORS cho Zalo domains (zbrowser://, h5.zalo.me)
 - ✅ Đổi base path từ `/` sang `./` trong Vite
 
-### 3. ❌ Màn hình trắng khi deploy
+### 3. 🆕 Authentication (MỚI)
+**Đã thêm**:
+- ✅ Đăng nhập với Số điện thoại & Mật khẩu
+- ✅ Đăng ký tài khoản mới
+- ✅ Giữ lại Zalo Login (tùy chọn)
+
+### 4. ❌ Màn hình trắng khi deploy
 **Đã fix**:
 - ✅ Đổi từ BrowserRouter sang HashRouter
 - ✅ Fix asset loading với relative base path

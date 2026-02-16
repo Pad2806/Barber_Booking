@@ -2,10 +2,14 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import {
   loginWithZalo,
+  login as loginApi,
+  register as registerApi,
   logout as logoutApi,
   getCurrentUser,
   type User,
   type AuthTokens,
+  type LoginDto,
+  type RegisterDto,
 } from '../services/auth.service';
 
 interface AuthState {
@@ -20,6 +24,8 @@ interface AuthState {
   setUser: (user: User | null) => void;
   setTokens: (tokens: AuthTokens) => void;
   login: () => Promise<void>;
+  loginWithPassword: (dto: LoginDto) => Promise<void>;
+  register: (dto: RegisterDto) => Promise<void>;
   logout: () => Promise<void>;
   fetchUser: () => Promise<void>;
   clearSession: () => void;
@@ -62,6 +68,46 @@ export const useAuthStore = create<AuthState>()(
         } catch (error: any) {
           set({
             error: error.message || 'Đăng nhập thất bại',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      loginWithPassword: async (dto: LoginDto) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await loginApi(dto);
+          set({
+            user: response.user,
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+        } catch (error: any) {
+          set({
+            error: error.response?.data?.message || error.message || 'Đăng nhập thất bại',
+            isLoading: false,
+          });
+          throw error;
+        }
+      },
+
+      register: async (dto: RegisterDto) => {
+        set({ isLoading: true, error: null });
+        try {
+          const response = await registerApi(dto);
+          set({
+            user: response.user,
+            accessToken: response.accessToken,
+            refreshToken: response.refreshToken,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+        } catch (error: any) {
+          set({
+            error: error.response?.data?.message || error.message || 'Đăng ký thất bại',
             isLoading: false,
           });
           throw error;

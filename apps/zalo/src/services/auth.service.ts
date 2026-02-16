@@ -12,6 +12,18 @@ export interface AuthTokens {
   refreshToken: string;
 }
 
+export interface LoginDto {
+  email: string; // Used for phone number as well in backend
+  password: string;
+}
+
+export interface RegisterDto {
+  name: string;
+  phone: string;
+  email: string;
+  password: string;
+}
+
 export interface User {
   id: string;
   email?: string;
@@ -52,6 +64,18 @@ export const getZaloUserInfo = async (): Promise<ZaloUserInfo> => {
     console.error('Failed to get Zalo user info:', error);
     throw error;
   }
+};
+
+// Login with Password
+export const login = async (dto: LoginDto): Promise<LoginResponse> => {
+  const response = await apiClient.post<LoginResponse>('/auth/login', dto);
+  return response.data;
+};
+
+// Register
+export const register = async (dto: RegisterDto): Promise<LoginResponse> => {
+  const response = await apiClient.post<LoginResponse>('/auth/register', dto);
+  return response.data;
 };
 
 // Login with Zalo OAuth
