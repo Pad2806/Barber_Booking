@@ -114,6 +114,7 @@ const MyBookingsPage: React.FC = () => {
   return (
     <Page style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)' }}>
       <Header title="Lịch hẹn" showBackIcon={false} />
+      <Box style={{ height: 44 }} />
       <Tabs activeKey={activeTab} onChange={setActiveTab}>
         <Tabs.Tab key="upcoming" label="Sắp tới">
           <Box p={4}>
