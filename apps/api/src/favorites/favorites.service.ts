@@ -86,7 +86,6 @@ export class FavoritesService {
                             id: true,
                             name: true,
                             address: true,
-                            rating: true,
                             coverImage: true,
                             images: true,
                         },
@@ -100,7 +99,7 @@ export class FavoritesService {
         ]);
 
         return {
-            data: favorites.map(f => f.salon),
+            data: favorites.map((f) => f.salon),
             meta: {
                 total,
                 page,
