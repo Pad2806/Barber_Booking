@@ -28,7 +28,7 @@ export class SepayWebhookController {
   constructor(
     private readonly paymentsService: PaymentsService,
     private readonly configService: ConfigService,
-  ) {}
+  ) { }
 
   @Post('sepay')
   @HttpCode(HttpStatus.OK)
@@ -38,12 +38,16 @@ export class SepayWebhookController {
     @Body() body: SepayWebhookPayload,
     @Headers('authorization') authHeader: string,
   ) {
-    // Verify webhook secret
+    // Verify webhook secret (SePay sends: "Apikey <key>" or "Bearer <key>")
     const webhookSecret = this.configService.get<string>('payment.sepay.webhookSecret');
 
     if (webhookSecret) {
-      const expectedAuth = `Bearer ${webhookSecret}`;
-      if (authHeader !== expectedAuth) {
+      // SePay may send auth as "Apikey <secret>" or "Bearer <secret>"
+      const token = authHeader
+        ? authHeader.replace(/^(Bearer|Apikey)\s+/i, '').trim()
+        : '';
+
+      if (token !== webhookSecret) {
         throw new UnauthorizedException('Invalid webhook signature');
       }
     }
