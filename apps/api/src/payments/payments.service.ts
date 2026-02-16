@@ -265,14 +265,19 @@ export class PaymentsService {
         };
       }
 
+      // Parse transaction date safely (SePay sends "YYYY-MM-DD HH:mm:ss")
+      // Replace space with T for ISO format to ensure Node parses it correctly
+      const dateStr = data.transactionDate.replace(' ', 'T');
+      const paidAt = new Date(dateStr); // e.g. "2026-02-17T01:17:55"
+
       // Confirm payment
       await this.prisma.payment.update({
         where: { id: booking.payment.id },
         data: {
           status: PaymentStatus.PAID,
-          paidAt: new Date(data.transactionDate),
-          sepayTransId: data.id,
-          sepayRef: data.referenceCode,
+          paidAt: isNaN(paidAt.getTime()) ? new Date() : paidAt, // Fallback to now if invalid
+          sepayTransId: String(data.id), // Ensure string
+          sepayRef: String(data.referenceCode), // Ensure string
         },
       });
 
@@ -289,11 +294,12 @@ export class PaymentsService {
         success: true,
         message: `Payment confirmed for booking ${bookingCode}`,
       };
-    } catch (error) {
+    } catch (error: any) {
       console.error('Sepay webhook error:', error);
+      // Return actual error message for debugging
       return {
         success: false,
-        message: 'Internal error processing webhook',
+        message: `Internal error: ${error.message || JSON.stringify(error)}`,
       };
     }
   }
