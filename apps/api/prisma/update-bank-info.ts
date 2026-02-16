@@ -1,9 +1,10 @@
 /**
  * Script to update bank info for all existing salons.
- * Run with: npx ts-node prisma/update-bank-info.ts
  * 
- * This updates salon bank accounts to TPBank (PHAN ANH DUY)
- * without wiping existing booking/user data.
+ * Usage:
+ *   DATABASE_URL="postgresql://..." npx ts-node prisma/update-bank-info.ts
+ * 
+ * Or set DATABASE_URL in .env to your production DB URL from Dokploy.
  */
 import { PrismaClient } from '@prisma/client';
 
@@ -11,6 +12,7 @@ const prisma = new PrismaClient();
 
 async function main() {
     console.log('🏦 Updating bank info for all salons...');
+    console.log('📡 Database URL:', process.env.DATABASE_URL?.replace(/:[^@]+@/, ':***@'));
 
     const result = await prisma.salon.updateMany({
         data: {
