@@ -55,7 +55,12 @@ export class PaymentsService {
     const depositAmount = Math.round(Number(booking.totalAmount) * 0.5);
 
     if (dto.method === PaymentMethod.VIETQR && salon.bankCode && salon.bankAccount) {
-      const description = `RB${booking.bookingCode}`;
+      // Booking code already starts with RB, so we don't need to add it again
+      // Or if we want a specific prefix for transactions, checks if it's already there
+      const prefix = 'RB';
+      const description = booking.bookingCode.startsWith(prefix)
+        ? booking.bookingCode
+        : `${prefix}${booking.bookingCode}`;
 
       qrCode = this.vietQRService.generateQRCodeUrl({
         bankCode: salon.bankCode,
@@ -205,16 +210,24 @@ export class PaymentsService {
     try {
       // Extract booking code from content
       // Content format: "RB{bookingCode}" or contains booking code
-      const bookingCodeMatch = data.content.match(/RB[A-Z0-9]{8,12}/i);
+      // Booking code usually starts with RB and is around 10-12 chars
+      // Regex: Look for RB followed by alphanumeric characters
+      const bookingCodeRegex = /RB[A-Z0-9]{8,15}/i;
+      const match = data.content.match(bookingCodeRegex);
 
-      if (!bookingCodeMatch) {
+      if (!match) {
         return {
           success: false,
           message: 'Could not extract booking code from transfer content',
         };
       }
 
-      const bookingCode = bookingCodeMatch[0];
+      let bookingCode = match[0];
+
+      // Fix double prefix issue if present (e.g., RBRB...)
+      if (bookingCode.startsWith('RBRB')) {
+        bookingCode = bookingCode.substring(2);
+      }
 
       // Find booking
       const booking = await this.prisma.booking.findUnique({
