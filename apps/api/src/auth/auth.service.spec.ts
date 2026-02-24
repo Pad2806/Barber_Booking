@@ -2,7 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
-import { MailerService } from '@nestjs-modules/mailer';
 import * as bcrypt from 'bcrypt';
 
 import { AuthService } from './auth.service';
@@ -13,6 +12,15 @@ import { UsersService } from '../users/users.service';
 jest.mock('bcrypt', () => ({
   hash: jest.fn().mockResolvedValue('hashedPassword'),
   compare: jest.fn().mockResolvedValue(true),
+}));
+
+// Mock resend
+jest.mock('resend', () => ({
+  Resend: jest.fn().mockImplementation(() => ({
+    emails: {
+      send: jest.fn().mockResolvedValue({ data: { id: 'mock-email-id' }, error: null }),
+    },
+  })),
 }));
 
 describe('AuthService', () => {
@@ -69,13 +77,11 @@ describe('AuthService', () => {
         'JWT_EXPIRES_IN': '15m',
         'JWT_REFRESH_SECRET': 'test-refresh-secret',
         'JWT_REFRESH_EXPIRES_IN': '7d',
+        'resend.apiKey': 're_test_123',
+        'resend.from': 'Test <test@resend.dev>',
       };
       return config[key];
     }),
-  };
-
-  const mockMailerService = {
-    sendMail: jest.fn().mockResolvedValue(true),
   };
 
   beforeEach(async () => {
@@ -86,7 +92,6 @@ describe('AuthService', () => {
         { provide: UsersService, useValue: mockUsersService },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
-        { provide: MailerService, useValue: mockMailerService },
       ],
     }).compile();
 

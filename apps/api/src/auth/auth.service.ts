@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException, ConflictException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { MailerService } from '@nestjs-modules/mailer';
+import { Resend } from 'resend';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import * as crypto from 'crypto';
@@ -26,13 +26,16 @@ export interface TokenResponse {
 
 @Injectable()
 export class AuthService {
+  private resend: Resend;
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly mailerService: MailerService,
-  ) { }
+  ) {
+    this.resend = new Resend(this.configService.get<string>('resend.apiKey'));
+  }
 
   async register(dto: RegisterDto): Promise<TokenResponse> {
     if (!dto.email && !dto.phone) {
@@ -276,11 +279,13 @@ export class AuthService {
 
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     const resetLink = `${frontendUrl}/reset-password?token=${token}`;
+    const fromEmail = this.configService.get<string>('resend.from') || 'ReetroBarberShop <onboarding@resend.dev>';
 
-    // Send email with reset link
+    // Send email via Resend HTTP API (bypasses all firewall/SMTP port blocks)
     try {
-      await this.mailerService.sendMail({
-        to: email,
+      const { data, error } = await this.resend.emails.send({
+        from: fromEmail,
+        to: [email],
         subject: 'ReetroBarberShop - Đặt lại mật khẩu',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
@@ -309,11 +314,20 @@ export class AuthService {
           </div>
         `,
       });
-      console.log(`Password reset email sent to ${email}`);
+
+      if (error) {
+        console.error('Resend API error:', error);
+        throw new InternalServerErrorException(
+          `Không thể gửi email: ${error.message}`
+        );
+      }
+
+      console.log(`Password reset email sent to ${email} via Resend (ID: ${data?.id})`);
     } catch (error: any) {
+      if (error instanceof InternalServerErrorException) throw error;
       console.error('Failed to send password reset email:', error);
       throw new InternalServerErrorException(
-        `Không thể gửi email do sai cấu hình SMTP: ${error.message || 'Lỗi không xác định'}`
+        `Không thể gửi email: ${error.message || 'Lỗi không xác định'}`
       );
     }
 

@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { MailerModule } from '@nestjs-modules/mailer';
+import { ConfigModule } from '@nestjs/config';
 import { resolve } from 'node:path';
 import { PrismaModule } from './database/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -30,28 +29,6 @@ import { HealthModule } from './health/health.module';
         resolve(__dirname, '..', '.env'),
       ],
       load: [configuration],
-    }),
-    MailerModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: async (config: ConfigService) => ({
-        transport: {
-          host: config.get('mail.host'),
-          port: config.get('mail.port'),
-          secure: config.get('mail.port') === 465, // true for 465, false for 587
-          auth: {
-            user: config.get('mail.user'),
-            pass: config.get('mail.pass'),
-          },
-          tls: {
-            // Do not fail on invalid certs in container environments
-            rejectUnauthorized: false,
-          },
-        },
-        defaults: {
-          from: config.get('mail.from'),
-        },
-      }),
-      inject: [ConfigService],
     }),
     PrismaModule,
     AuthModule,

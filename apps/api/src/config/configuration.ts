@@ -62,11 +62,8 @@ export default () => ({
     apiSecret: process.env.CLOUDINARY_API_SECRET,
   },
 
-  mail: {
-    host: process.env.MAIL_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.MAIL_PORT || '587', 10),
-    user: process.env.MAIL_USER,
-    pass: process.env.MAIL_PASS,
-    from: process.env.MAIL_FROM || 'Reetro BarberShop <noreply@reetro.vn>',
+  resend: {
+    apiKey: process.env.RESEND_API_KEY || '',
+    from: process.env.RESEND_FROM || 'ReetroBarberShop <onboarding@resend.dev>',
   }
 });
