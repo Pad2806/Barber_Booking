@@ -72,7 +72,7 @@ export default function ForgotPasswordPage() {
       {/* Left side - Image */}
       <div className="hidden lg:flex lg:w-1/2 bg-primary relative">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-secondary to-primary" />
-        <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
+        <div className="relative z-10 flex flex-col justify-center items-center text-white p-12 w-full">
           <h1 className="text-4xl font-heading font-bold mb-4">
             Reetro<span className="text-accent">BarberShop</span>
           </h1>
@@ -83,7 +83,7 @@ export default function ForgotPasswordPage() {
       </div>
 
       {/* Right side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md space-y-8">
           <div>
             <Link
