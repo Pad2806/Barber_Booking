@@ -6,14 +6,7 @@ const nextConfig = {
   output: process.env.BUILD_STANDALONE === 'true' ? 'standalone' : undefined,
   transpilePackages: ['@reetro/shared', '@reetro/brand'],
   images: {
-    domains: [
-      'localhost',
-      'res.cloudinary.com',
-      'lh3.googleusercontent.com',
-      'platform-lookaside.fbsbx.com',
-      'images.unsplash.com',
-      'ui-avatars.com',
-    ],
+
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     // Allow remote images in production
