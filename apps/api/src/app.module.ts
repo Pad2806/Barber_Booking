@@ -37,10 +37,14 @@ import { HealthModule } from './health/health.module';
         transport: {
           host: config.get('mail.host'),
           port: config.get('mail.port'),
-          secure: config.get('mail.port') === 465, // true for 465, false for other ports
+          secure: config.get('mail.port') === 465, // true for 465, false for 587
           auth: {
             user: config.get('mail.user'),
             pass: config.get('mail.pass'),
+          },
+          tls: {
+            // Do not fail on invalid certs in container environments
+            rejectUnauthorized: false,
           },
         },
         defaults: {
