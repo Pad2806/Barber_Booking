@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { MailerService } from '@nestjs-modules/mailer';
@@ -310,10 +310,11 @@ export class AuthService {
         `,
       });
       console.log(`Password reset email sent to ${email}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to send password reset email:', error);
-      // We don't throw an error here to prevent revealing to the attacker if the email exists,
-      // but in a real-world scenario we might want to alert the admins or retry.
+      throw new InternalServerErrorException(
+        `Không thể gửi email do sai cấu hình SMTP: ${error.message || 'Lỗi không xác định'}`
+      );
     }
 
     return { message: 'If the email exists, a reset link will be sent' };
