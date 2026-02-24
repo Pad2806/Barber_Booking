@@ -22,7 +22,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
-import { User } from '@prisma/client';
+import { User, AuthProvider } from '@prisma/client';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -86,40 +86,32 @@ export class AuthController {
 
   // ============== OAuth Routes ==============
 
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
-  @ApiOperation({ summary: 'Login with Google' })
-  async googleAuth() {
-    // Initiates Google OAuth flow
-  }
-
-  @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
-  @ApiOperation({ summary: 'Google OAuth callback' })
-  async googleCallback(@Req() req: Request, @Res() res: Response) {
-    const tokens = await this.authService.generateTokens(req.user as User);
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(
-      `${frontendUrl}/auth/callback?accessToken=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`,
+  @Post('google')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Login with Google from NextAuth' })
+  async googleAuth(@Body() body: any): Promise<TokenResponse> {
+    const user = await this.authService.validateOAuthUser(
+      AuthProvider.GOOGLE,
+      body.googleId,
+      body.email,
+      body.name,
+      body.avatar,
     );
+    return this.authService.generateTokens(user);
   }
 
-  @Get('facebook')
-  @UseGuards(AuthGuard('facebook'))
-  @ApiOperation({ summary: 'Login with Facebook' })
-  async facebookAuth() {
-    // Initiates Facebook OAuth flow
-  }
-
-  @Get('facebook/callback')
-  @UseGuards(AuthGuard('facebook'))
-  @ApiOperation({ summary: 'Facebook OAuth callback' })
-  async facebookCallback(@Req() req: Request, @Res() res: Response) {
-    const tokens = await this.authService.generateTokens(req.user as User);
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-    res.redirect(
-      `${frontendUrl}/auth/callback?accessToken=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`,
+  @Post('facebook')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Login with Facebook from NextAuth' })
+  async facebookAuth(@Body() body: any): Promise<TokenResponse> {
+    const user = await this.authService.validateOAuthUser(
+      AuthProvider.FACEBOOK,
+      body.facebookId,
+      body.email,
+      body.name,
+      body.avatar,
     );
+    return this.authService.generateTokens(user);
   }
 
   @Post('zalo')

@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { MailerService } from '@nestjs-modules/mailer';
 import * as bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
 import * as crypto from 'crypto';
@@ -30,6 +31,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly mailerService: MailerService,
   ) { }
 
   async register(dto: RegisterDto): Promise<TokenResponse> {
@@ -272,11 +274,47 @@ export class AuthService {
       },
     });
 
-    // TODO: Send email with reset link
-    // For now, log the token (in production, send via email service)
     const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     const resetLink = `${frontendUrl}/reset-password?token=${token}`;
-    console.log(`Password reset link for ${email}: ${resetLink}`);
+
+    // Send email with reset link
+    try {
+      await this.mailerService.sendMail({
+        to: email,
+        subject: 'ReetroBarberShop - Đặt lại mật khẩu',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <h1 style="color: #1a1a1a; margin: 0;">Reetro<span style="color: #cda873;">BarberShop</span></h1>
+            </div>
+            <div style="background-color: #f9f9f9; padding: 20px; border-radius: 5px;">
+              <h2 style="color: #333; margin-top: 0;">Yêu cầu đặt lại mật khẩu</h2>
+              <p style="color: #555; font-size: 16px; line-height: 1.5;">
+                Chào ${user.name || 'bạn'},<br><br>
+                Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản ReetroBarberShop của bạn.
+                Vui lòng nhấn vào nút bên dưới để tiến hành đặt mật khẩu mới. Link này sẽ hết hạn sau 1 giờ.
+              </p>
+              <div style="text-align: center; margin: 30px 0;">
+                <a href="${resetLink}" style="background-color: #cda873; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px; display: inline-block;">
+                  Đặt Lại Mật Khẩu
+                </a>
+              </div>
+              <p style="color: #777; font-size: 14px; text-align: center;">
+                Nếu bạn không yêu cầu đổi mật khẩu, vui lòng bỏ qua email này.
+              </p>
+            </div>
+            <div style="text-align: center; margin-top: 20px; color: #999; font-size: 12px;">
+              <p>&copy; ${new Date().getFullYear()} ReetroBarberShop. All rights reserved.</p>
+            </div>
+          </div>
+        `,
+      });
+      console.log(`Password reset email sent to ${email}`);
+    } catch (error) {
+      console.error('Failed to send password reset email:', error);
+      // We don't throw an error here to prevent revealing to the attacker if the email exists,
+      // but in a real-world scenario we might want to alert the admins or retry.
+    }
 
     return { message: 'If the email exists, a reset link will be sent' };
   }
