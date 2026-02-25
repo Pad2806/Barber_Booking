@@ -27,7 +27,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Post()
   @Roles(Role.SUPER_ADMIN)
@@ -69,8 +69,9 @@ export class UsersController {
 
   @Get('me')
   @ApiOperation({ summary: 'Get current user profile' })
-  getMe(@CurrentUser() currentUser: any) {
-    const { password, ...sanitized } = currentUser;
+  async getMe(@CurrentUser('id') userId: string) {
+    const user = await this.usersService.findOne(userId);
+    const { password, ...sanitized } = user;
     return sanitized;
   }
 

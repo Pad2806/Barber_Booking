@@ -27,6 +27,12 @@ export default function BookingDetailPage() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
 
+  const totalPaid = booking?.payments
+    ? booking.payments.filter(p => p.status === 'PAID').reduce((sum, p) => sum + Number(p.amount), 0)
+    : 0;
+  
+  const remainingAmount = booking ? Math.max(0, booking.totalAmount - totalPaid) : 0;
+
   const fetchBooking = useCallback(async () => {
     try {
       setLoading(true);
@@ -209,11 +215,25 @@ export default function BookingDetailPage() {
               </div>
             ))}
           </div>
-          <div className="mt-4 pt-4 border-t flex justify-between items-center">
-            <p className="text-gray-500">
-              Tổng thời gian: <strong>{booking.totalDuration} phút</strong>
-            </p>
-            <p className="text-xl font-bold text-accent">{formatPrice(booking.totalAmount)}</p>
+          <div className="mt-4 pt-4 border-t space-y-2">
+            <div className="flex justify-between items-center text-sm text-gray-500">
+              <p>Tổng thời gian</p>
+              <p><strong>{booking.totalDuration} phút</strong></p>
+            </div>
+            <div className="flex justify-between items-center">
+              <p className="font-medium text-gray-700">Tổng tiền dịch vụ</p>
+              <p className="font-medium">{formatPrice(booking.totalAmount)}</p>
+            </div>
+            {totalPaid > 0 && (
+              <div className="flex justify-between items-center text-teal-600">
+                <p className="text-sm">Đã đặt cọc</p>
+                <p className="font-medium">-{formatPrice(totalPaid)}</p>
+              </div>
+            )}
+            <div className="flex justify-between items-center pt-2 mt-2 border-t border-dashed border-gray-200">
+              <p className="font-semibold text-lg text-gray-800">Cần thanh toán tại quầy</p>
+              <p className="text-2xl font-bold text-accent">{formatPrice(remainingAmount)}</p>
+            </div>
           </div>
         </div>
 
@@ -237,13 +257,13 @@ export default function BookingDetailPage() {
         )}
 
         {/* Payment button for unpaid */}
-        {booking.paymentStatus === 'UNPAID' &&
+        {(booking.paymentStatus === 'UNPAID' || booking.paymentStatus === 'PENDING') &&
           ['PENDING', 'CONFIRMED'].includes(booking.status) && (
             <Link
               href={`/payment/${booking.id}`}
-              className="block mt-4 w-full py-4 bg-accent text-white rounded-xl font-semibold text-center hover:bg-accent/90 transition-colors"
+              className="block mt-6 w-full py-4 bg-accent text-white rounded-xl font-semibold text-center hover:bg-accent/90 transition-colors shadow-lg"
             >
-              Thanh toán ngay
+              Thanh toán cọc (50%) ngay
             </Link>
           )}
       </div>

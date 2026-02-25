@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { getSession } from 'next-auth/react';
+import type { User } from '@reetro/shared';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -114,6 +115,14 @@ export interface Booking {
   status: string;
   paymentStatus: string;
   paymentMethod?: string | null;
+  payments?: Array<{
+    id: string;
+    amount: number;
+    method: string;
+    type: string;
+    status: string;
+    paidAt?: string;
+  }>;
   note?: string;
   salon: Salon;
   staff?: Staff;
@@ -241,6 +250,21 @@ export const paymentApi = {
     const response = await apiClient.get(`/payments/${bookingId}/status`);
     return response.data;
   },
+  getSummary: async (bookingId: string) => {
+    const response = await apiClient.get<{
+      totalAmount: number;
+      depositPaid: number;
+      finalPaid: number;
+      totalPaid: number;
+      remaining: number;
+      isFullyPaid: boolean;
+    }>(`/payments/booking/${bookingId}/summary`);
+    return response.data;
+  },
+  checkout: async (bookingId: string, method: string) => {
+    const response = await apiClient.post(`/payments/booking/${bookingId}/checkout`, { method });
+    return response.data;
+  },
 };
 
 // Admin APIs
@@ -302,6 +326,10 @@ export const adminApi = {
     const response = await apiClient.patch<Booking>(`/admin/bookings/${bookingId}/status`, { status });
     return response.data;
   },
+  addServiceToBooking: async (bookingId: string, serviceIds: string[]) => {
+    const response = await apiClient.patch<Booking>(`/bookings/${bookingId}/add-service`, { serviceIds });
+    return response.data;
+  },
   getAllStaff: async (params?: { skip?: number; take?: number; salonId?: string; search?: string }) => {
     const response = await apiClient.get<PaginatedResponse<Staff>>('/admin/staff', { params });
     return response.data;
@@ -344,6 +372,14 @@ export const adminApi = {
   },
   deleteService: async (id: string) => {
     await apiClient.delete(`/services/${id}`);
+  },
+};
+
+// Users APIs
+export const usersApi = {
+  getMe: async () => {
+    const response = await apiClient.get<User & { staff?: Staff }>('/users/me');
+    return response.data;
   },
 };
 

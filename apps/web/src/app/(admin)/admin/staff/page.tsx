@@ -874,10 +874,12 @@ export default function AdminStaffPage() {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                       required
                     >
-                      <option value="SENIOR_STYLIST">Senior Stylist</option>
+                      <option value="RECEPTIONIST">Thu ngân</option>
                       <option value="STYLIST">Stylist</option>
-                      <option value="JUNIOR_STYLIST">Junior Stylist</option>
-                      <option value="TRAINEE">Trainee</option>
+                      <option value="SENIOR_STYLIST">Senior Stylist</option>
+                      <option value="MASTER_STYLIST">Master Stylist</option>
+                      <option value="SKINNER">Skinner</option>
+                      <option value="MANAGER">Quản lý</option>
                     </select>
                   </div>
 

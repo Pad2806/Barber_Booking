@@ -18,7 +18,10 @@ import {
   User,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
+import { useQuery } from '@tanstack/react-query';
+import { usersApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import { Role, StaffPosition } from '@reetro/shared';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -40,19 +43,54 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
 
+  const { data: me, isLoading: isLoadingMe } = useQuery({
+    queryKey: ['users', 'me'],
+    queryFn: usersApi.getMe,
+    enabled: status === 'authenticated',
+  });
+
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login?callbackUrl=/admin');
     }
-    // TODO: Check if user has admin role
   }, [status, router]);
 
-  if (status === 'loading') {
+  if (status === 'loading' || (status === 'authenticated' && isLoadingMe)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin" />
       </div>
     );
+  }
+
+  // Filter MENU_ITEMS based on user role/position
+  let visibleMenuItems = MENU_ITEMS;
+
+  if (me) {
+    if (me.role === Role.STAFF) {
+      if (me.staff?.position === StaffPosition.RECEPTIONIST) {
+        // Receptionist can see dashboard, bookings, reviews, profile
+        visibleMenuItems = MENU_ITEMS.filter(item => 
+          ['/admin', '/admin/bookings', '/admin/reviews', '/profile'].includes(item.href)
+        );
+      } else if (
+        me.staff?.position === StaffPosition.STYLIST ||
+        me.staff?.position === StaffPosition.SENIOR_STYLIST ||
+        me.staff?.position === StaffPosition.MASTER_STYLIST ||
+        me.staff?.position === StaffPosition.SKINNER
+      ) {
+        // Barbers/Stylists only see My Calendar (bookings mapping) and profile
+        // Wait, for barbers maybe the same bookings UI, but backend filters for them.
+        visibleMenuItems = MENU_ITEMS.filter(item => 
+          ['/admin/bookings', '/profile'].includes(item.href)
+        );
+      } else if (me.staff?.position === StaffPosition.MANAGER) {
+        // Manager can see almost everything except maybe system settings
+        visibleMenuItems = MENU_ITEMS.filter(item => 
+          item.href !== '/admin/salons' && item.href !== '/admin/settings'
+        );
+      }
+    }
   }
 
   return (
@@ -66,7 +104,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </div>
 
         <nav className="px-4 space-y-1">
-          {MENU_ITEMS.map(item => {
+          {visibleMenuItems.map(item => {
             const isActive = pathname === item.href;
             return (
               <Link

@@ -58,6 +58,7 @@ export const BOOKING_STATUS: Record<string, { label: string; color: string }> = 
 export const PAYMENT_STATUS: Record<string, { label: string; color: string }> = {
   UNPAID: { label: 'Chưa thanh toán', color: 'bg-gray-100 text-gray-800' },
   PENDING: { label: 'Đang chờ', color: 'bg-yellow-100 text-yellow-800' },
+  DEPOSIT_PAID: { label: 'Đã đặt cọc', color: 'bg-teal-100 text-teal-800' },
   PAID: { label: 'Đã thanh toán', color: 'bg-green-100 text-green-800' },
   REFUNDED: { label: 'Đã hoàn tiền', color: 'bg-red-100 text-red-800' },
 };
@@ -80,5 +81,6 @@ export const STAFF_POSITIONS: Record<string, string> = {
   SENIOR_STYLIST: 'Senior Stylist',
   MASTER_STYLIST: 'Master Stylist',
   SKINNER: 'Skinner',
+  RECEPTIONIST: 'Thu Ngân',
   MANAGER: 'Quản lý',
 };

@@ -115,10 +115,11 @@ export default function PaymentPage() {
             <CheckCircle className="w-12 h-12 text-green-500" />
           </div>
           <h1 className="text-2xl font-heading font-bold text-gray-800 mb-2">
-            Thanh toán thành công!
+            Đặt cọc thành công!
           </h1>
           <p className="text-gray-500 mb-6">
-            Cảm ơn bạn đã đặt lịch. Thông tin chi tiết đã được gửi về email/điện thoại của bạn.
+            Cảm ơn bạn đã đặt cọc để giữ lịch. Thông tin chi tiết đã được gửi về email/điện thoại của bạn.
+            Phần còn lại sẽ được thanh toán tại cửa hàng sau khi trải nghiệm dịch vụ xong.
           </p>
           {booking && (
             <div className="bg-gray-50 rounded-xl p-4 mb-6 text-left">
@@ -209,9 +210,9 @@ export default function PaymentPage() {
 
             {/* Amount */}
             <div className="mb-6">
-              <p className="text-gray-500 mb-1">Số tiền thanh toán</p>
+              <p className="text-gray-500 mb-1">Số tiền đặt cọc (50%)</p>
               <p className="text-3xl font-bold text-accent">
-                {formatPrice(qrData?.amount || booking?.totalAmount || 0)}
+                {formatPrice(qrData?.amount || (booking?.totalAmount ? booking.totalAmount * 0.5 : 0))}
               </p>
             </div>
 

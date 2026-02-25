@@ -93,6 +93,7 @@ export enum StaffPosition {
   SENIOR_STYLIST = 'SENIOR_STYLIST',
   MASTER_STYLIST = 'MASTER_STYLIST',
   SKINNER = 'SKINNER',
+  RECEPTIONIST = 'RECEPTIONIST',
   MANAGER = 'MANAGER',
 }
 
@@ -132,6 +133,7 @@ export enum BookingStatus {
 export enum PaymentStatus {
   UNPAID = 'UNPAID',
   PENDING = 'PENDING',
+  DEPOSIT_PAID = 'DEPOSIT_PAID',
   PAID = 'PAID',
   REFUNDED = 'REFUNDED',
 }
@@ -140,6 +142,12 @@ export enum PaymentMethod {
   CASH = 'CASH',
   BANK_TRANSFER = 'BANK_TRANSFER',
   VIETQR = 'VIETQR',
+}
+
+export enum PaymentType {
+  DEPOSIT = 'DEPOSIT',
+  FINAL = 'FINAL',
+  FULL = 'FULL',
 }
 
 export interface Booking {
@@ -166,6 +174,7 @@ export interface Booking {
   salon?: Salon;
   staff?: Staff;
   services?: BookingService[];
+  payments?: Payment[];
 }
 
 export interface BookingService {
@@ -183,6 +192,7 @@ export interface Payment {
   bookingId: string;
   amount: number;
   method: PaymentMethod;
+  type: PaymentType;
   qrCode?: string;
   qrContent?: string;
   bankCode?: string;
