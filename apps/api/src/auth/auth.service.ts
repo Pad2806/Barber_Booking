@@ -277,7 +277,7 @@ export class AuthService {
       },
     });
 
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
+    const frontendUrl = this.configService.get<string>('urls.web') || this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3000';
     const resetLink = `${frontendUrl}/reset-password?token=${token}`;
     const fromEmail = this.configService.get<string>('resend.from') || 'ReetroBarberShop <onboarding@resend.dev>';
 
