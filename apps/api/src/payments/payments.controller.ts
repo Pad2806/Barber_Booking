@@ -8,7 +8,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
-import { Role } from '@prisma/client';
+import { Role, PaymentMethod } from '@prisma/client';
 
 import { PaymentsService } from './payments.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
@@ -21,18 +21,24 @@ import { Roles } from '../auth/decorators/roles.decorator';
 @UseGuards(JwtAuthGuard)
 @Controller('payments')
 export class PaymentsController {
-  constructor(private readonly paymentsService: PaymentsService) {}
+  constructor(private readonly paymentsService: PaymentsService) { }
 
   @Post()
-  @ApiOperation({ summary: 'Create payment for booking' })
+  @ApiOperation({ summary: 'Create deposit payment for booking' })
   createPayment(@Body() dto: CreatePaymentDto) {
     return this.paymentsService.createPayment(dto);
   }
 
   @Get('booking/:bookingId')
-  @ApiOperation({ summary: 'Get payment by booking ID' })
-  getPaymentByBooking(@Param('bookingId') bookingId: string) {
-    return this.paymentsService.getPaymentByBooking(bookingId);
+  @ApiOperation({ summary: 'Get all payments for a booking' })
+  getPaymentsByBooking(@Param('bookingId') bookingId: string) {
+    return this.paymentsService.getPaymentsByBooking(bookingId);
+  }
+
+  @Get('booking/:bookingId/summary')
+  @ApiOperation({ summary: 'Get payment summary (deposit, remaining, total)' })
+  getBookingPaymentSummary(@Param('bookingId') bookingId: string) {
+    return this.paymentsService.getBookingPaymentSummary(bookingId);
   }
 
   @Get(':id')
@@ -52,9 +58,20 @@ export class PaymentsController {
     return this.paymentsService.confirmPayment(id, transactionId);
   }
 
+  @Post('booking/:bookingId/checkout')
+  @UseGuards(RolesGuard)
+  @Roles(Role.STAFF)
+  @ApiOperation({ summary: 'Checkout: collect remaining payment at counter (Receptionist/Manager)' })
+  checkout(
+    @Param('bookingId') bookingId: string,
+    @Body('method') method: PaymentMethod,
+  ) {
+    return this.paymentsService.checkout(bookingId, method);
+  }
+
   @Get('stats/:salonId')
   @UseGuards(RolesGuard)
-  @Roles(Role.SALON_OWNER)
+  @Roles(Role.STAFF)
   @ApiOperation({ summary: 'Get payment statistics for salon' })
   @ApiQuery({ name: 'period', enum: ['day', 'week', 'month'] })
   getStats(

@@ -4,7 +4,7 @@ import { Role, BookingStatus, PaymentStatus } from '@prisma/client';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async getDashboardStats() {
     const today = new Date();
@@ -479,8 +479,8 @@ export class AdminService {
               },
             },
           },
-          payment: {
-            select: { status: true, method: true, amount: true },
+          payments: {
+            select: { status: true, method: true, amount: true, type: true },
           },
         },
       }),

@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class BookingsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(dto: CreateBookingDto, customerId: string): Promise<Booking> {
     // Validate salon exists
@@ -189,7 +189,7 @@ export class BookingsService {
               service: true,
             },
           },
-          payment: true,
+          payments: true,
         },
       }),
       this.prisma.booking.count({ where }),
@@ -235,7 +235,7 @@ export class BookingsService {
             service: true,
           },
         },
-        payment: true,
+        payments: true,
         review: true,
       },
     });
@@ -267,7 +267,7 @@ export class BookingsService {
             },
           },
         },
-        payment: true,
+        payments: true,
       },
     });
 
@@ -323,7 +323,7 @@ export class BookingsService {
             },
           },
         },
-        payment: true,
+        payments: true,
       },
     });
   }
@@ -457,6 +457,66 @@ export class BookingsService {
         },
       },
     });
+  }
+
+  /**
+   * Add extra service(s) to an active booking (Receptionist upsell).
+   */
+  async addServiceToBooking(
+    bookingId: string,
+    serviceIds: string[],
+    user: User,
+  ): Promise<Booking> {
+    const booking = await this.findOne(bookingId);
+
+    await this.validateBookingAccess(booking, user, true);
+
+    if (
+      booking.status !== BookingStatus.CONFIRMED &&
+      booking.status !== BookingStatus.IN_PROGRESS
+    ) {
+      throw new BadRequestException(
+        'Can only add services to CONFIRMED or IN_PROGRESS bookings',
+      );
+    }
+
+    const services = await this.prisma.service.findMany({
+      where: {
+        id: { in: serviceIds },
+        salonId: booking.salonId,
+        isActive: true,
+      },
+    });
+
+    if (services.length !== serviceIds.length) {
+      throw new BadRequestException('Some services are invalid or inactive');
+    }
+
+    const addedDuration = this.calculateTotalDuration(services);
+    const addedAmount = this.calculateTotalAmount(services);
+
+    // Create booking-service records and update totals
+    await this.prisma.$transaction([
+      ...services.map(service =>
+        this.prisma.bookingService.create({
+          data: {
+            bookingId,
+            serviceId: service.id,
+            price: service.price,
+            duration: service.duration,
+          },
+        }),
+      ),
+      this.prisma.booking.update({
+        where: { id: bookingId },
+        data: {
+          totalDuration: { increment: addedDuration },
+          totalAmount: { increment: addedAmount },
+        },
+      }),
+    ]);
+
+    return this.findOne(bookingId);
   }
 
   private async checkStaffAvailability(

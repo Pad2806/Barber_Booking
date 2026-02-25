@@ -42,6 +42,7 @@ enum StaffPosition {
   SENIOR_STYLIST
   MASTER_STYLIST
   SKINNER
+  RECEPTIONIST
   MANAGER
 }
 
@@ -57,6 +58,7 @@ enum BookingStatus {
 enum PaymentStatus {
   UNPAID
   PENDING
+  DEPOSIT_PAID
   PAID
   REFUNDED
 }
@@ -65,6 +67,12 @@ enum PaymentMethod {
   CASH
   BANK_TRANSFER
   VIETQR
+}
+
+enum PaymentType {
+  DEPOSIT
+  FINAL
+  FULL
 }
 
 enum NotificationType {
@@ -274,7 +282,7 @@ model Booking {
   // Payment
   paymentStatus   PaymentStatus   @default(UNPAID)
   paymentMethod   PaymentMethod?
-  payment         Payment?
+  payments        Payment[]
 
   // Customer notes
   note            String?
@@ -313,11 +321,12 @@ model BookingService {
 model Payment {
   id              String        @id @default(uuid())
 
-  bookingId       String        @unique
+  bookingId       String
   booking         Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   amount          Decimal       @db.Decimal(10, 0)
   method          PaymentMethod
+  type            PaymentType   @default(FULL)
 
   // VietQR specific
   qrCode          String?
@@ -335,6 +344,7 @@ model Payment {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
+  @@index([bookingId])
   @@map("payments")
 }
 

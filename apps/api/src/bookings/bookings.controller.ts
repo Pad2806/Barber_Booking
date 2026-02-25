@@ -24,7 +24,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 @UseGuards(JwtAuthGuard)
 @Controller('bookings')
 export class BookingsController {
-  constructor(private readonly bookingsService: BookingsService) {}
+  constructor(private readonly bookingsService: BookingsService) { }
 
   @Post()
   @ApiOperation({ summary: 'Create a new booking' })
@@ -140,5 +140,17 @@ export class BookingsController {
     @CurrentUser() user: User,
   ) {
     return this.bookingsService.cancel(id, reason, user);
+  }
+
+  @Patch(':id/add-service')
+  @UseGuards(RolesGuard)
+  @Roles(Role.STAFF)
+  @ApiOperation({ summary: 'Add extra services to booking (Receptionist/Manager)' })
+  addServiceToBooking(
+    @Param('id') id: string,
+    @Body('serviceIds') serviceIds: string[],
+    @CurrentUser() user: User,
+  ) {
+    return this.bookingsService.addServiceToBooking(id, serviceIds, user);
   }
 }
