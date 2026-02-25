@@ -19,11 +19,29 @@ export const metadata: Metadata = {
   description: 'Hệ thống đặt lịch cắt tóc chuyên nghiệp. Phong cách - Đẳng cấp - Chất lượng.',
   keywords: ['cắt tóc', 'barber', 'salon', 'đặt lịch', 'reetro'],
   authors: [{ name: 'ReetroBarberShop' }],
+  icons: {
+    icon: [
+      { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-48.png', sizes: '48x48', type: 'image/png' },
+      { url: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
   openGraph: {
     title: 'ReetroBarberShop - Đặt lịch cắt tóc online',
     description: 'Hệ thống đặt lịch cắt tóc chuyên nghiệp',
     type: 'website',
     locale: 'vi_VN',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'ReetroBarberShop - The Hidden Barbershop',
+      },
+    ],
   },
 };
 

@@ -23,7 +23,7 @@ export const BRAND_CONFIG = {
   appName: 'ReetroBarberShop',
   tagline: 'Phong cách - Đẳng cấp - Chất lượng',
   phone: '1900 xxxx xx',
-  logoUrl: 'https://reetro.vn/logo.png', // Update with actual logo URL
+  logoUrl: 'https://reetrobarber.paduy.tech/logo.png',
   zaloOAId: ZALO_OA_ID,
   colors: {
     primary: '#1a1a2e',
