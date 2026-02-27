@@ -7,8 +7,9 @@ import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { User, Mail, Phone, Lock, LogOut, Camera, Loader2, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { apiClient } from '@/lib/api';
+import { apiClient, uploadApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
+import ImageUpload from '@/components/ImageUpload';
 
 interface UserProfile {
   id: string;
@@ -31,6 +32,7 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    avatar: '',
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -66,6 +68,7 @@ export default function ProfilePage() {
       setFormData({
         name: response.data.name || '',
         phone: response.data.phone || '',
+        avatar: response.data.avatar || '',
       });
     } catch (error) {
       console.error('Failed to fetch profile:', error);
@@ -83,10 +86,10 @@ export default function ProfilePage() {
       await apiClient.patch('/users/me', {
         name: formData.name,
         phone: formData.phone || null,
+        avatar: formData.avatar || null,
       });
       toast.success('Cập nhật thành công!');
       fetchProfile();
-      // Update session
       await update({ name: formData.name });
     } catch (error: any) {
       const message = error.response?.data?.message || 'Cập nhật thất bại';
@@ -172,24 +175,12 @@ export default function ProfilePage() {
           <div className="bg-white rounded-2xl shadow-sm p-6 mb-6">
             <div className="flex items-center gap-6">
               <div className="relative">
-                <div className="w-24 h-24 rounded-full bg-gray-200 overflow-hidden">
-                  {profile?.avatar ? (
-                    <Image
-                      src={profile.avatar}
-                      alt={profile.name}
-                      width={96}
-                      height={96}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      <User className="w-12 h-12" />
-                    </div>
-                  )}
-                </div>
-                <button className="absolute bottom-0 right-0 w-8 h-8 bg-accent rounded-full flex items-center justify-center text-white shadow-md hover:bg-accent/90 transition-colors">
-                  <Camera className="w-4 h-4" />
-                </button>
+                <ImageUpload
+                  value={formData.avatar || profile?.avatar || ''}
+                  onChange={url => setFormData({ ...formData, avatar: url })}
+                  folder="avatars"
+                  variant="avatar"
+                />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">{profile?.name}</h1>

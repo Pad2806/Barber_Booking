@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, ReactNode } from 'react';
+import { useEffect, ReactNode, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -16,27 +16,33 @@ import {
   LogOut,
   Menu,
   User,
+  ShieldAlert,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
 import { usersApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { Role, StaffPosition } from '@reetro/shared';
+import {
+  Role,
+  hasPermission,
+  ADMIN_MENU_ITEMS,
+  ROLE_DISPLAY,
+} from '@reetro/shared';
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
-const MENU_ITEMS = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/bookings', label: 'Đặt lịch', icon: Calendar },
-  { href: '/admin/staff', label: 'Nhân viên', icon: Users },
-  { href: '/admin/services', label: 'Dịch vụ', icon: Scissors },
-  { href: '/admin/salons', label: 'Chi nhánh', icon: Store },
-  { href: '/admin/reviews', label: 'Đánh giá', icon: Star },
-  { href: '/profile', label: 'Tài khoản', icon: User },
-  { href: '/admin/settings', label: 'Cài đặt', icon: Settings },
-];
+// Map menu keys to icons
+const MENU_ICONS: Record<string, React.ElementType> = {
+  dashboard: LayoutDashboard,
+  bookings: Calendar,
+  staff: Users,
+  services: Scissors,
+  salons: Store,
+  reviews: Star,
+  settings: Settings,
+};
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { data: session, status } = useSession();
@@ -55,6 +61,49 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
   }, [status, router]);
 
+  // Compute visible menu items from SHARED permission definitions
+  const visibleMenuItems = useMemo(() => {
+    if (!me) return [];
+
+    const role = me.role as Role;
+    const staffPosition = me.staff?.position || null;
+
+    // Build menu from shared ADMIN_MENU_ITEMS + profile link
+    const adminItems: Array<{ key: string; href: string; label: string; icon: React.ElementType }> =
+      ADMIN_MENU_ITEMS
+        .filter(item => hasPermission(role, item.permission, staffPosition))
+        .map(item => ({
+          key: item.key,
+          href: item.href,
+          label: item.label,
+          icon: MENU_ICONS[item.key] || LayoutDashboard,
+        }));
+
+    // Always add profile link
+    adminItems.push({ key: 'profile', href: '/profile', label: 'Tài khoản', icon: User });
+
+    return adminItems;
+  }, [me]);
+
+  // Check if current route is accessible
+  useEffect(() => {
+    if (!me || isLoadingMe) return;
+
+    const role = me.role as Role;
+
+    // Block customer
+    if (role === Role.CUSTOMER) return;
+
+    const isRouteAllowed = visibleMenuItems.some(
+      item => pathname === item.href || pathname.startsWith(item.href + '/')
+    );
+
+    if (!isRouteAllowed && pathname.startsWith('/admin')) {
+      const firstAllowed = visibleMenuItems[0]?.href || '/';
+      router.replace(firstAllowed);
+    }
+  }, [me, isLoadingMe, pathname, visibleMenuItems, router]);
+
   if (status === 'loading' || (status === 'authenticated' && isLoadingMe)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -63,35 +112,24 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  // Filter MENU_ITEMS based on user role/position
-  let visibleMenuItems = MENU_ITEMS;
-
-  if (me) {
-    if (me.role === Role.STAFF) {
-      if (me.staff?.position === StaffPosition.RECEPTIONIST) {
-        // Receptionist can see dashboard, bookings, reviews, profile
-        visibleMenuItems = MENU_ITEMS.filter(item => 
-          ['/admin', '/admin/bookings', '/admin/reviews', '/profile'].includes(item.href)
-        );
-      } else if (
-        me.staff?.position === StaffPosition.STYLIST ||
-        me.staff?.position === StaffPosition.SENIOR_STYLIST ||
-        me.staff?.position === StaffPosition.MASTER_STYLIST ||
-        me.staff?.position === StaffPosition.SKINNER
-      ) {
-        // Barbers/Stylists only see My Calendar (bookings mapping) and profile
-        // Wait, for barbers maybe the same bookings UI, but backend filters for them.
-        visibleMenuItems = MENU_ITEMS.filter(item => 
-          ['/admin/bookings', '/profile'].includes(item.href)
-        );
-      } else if (me.staff?.position === StaffPosition.MANAGER) {
-        // Manager can see almost everything except maybe system settings
-        visibleMenuItems = MENU_ITEMS.filter(item => 
-          item.href !== '/admin/salons' && item.href !== '/admin/settings'
-        );
-      }
-    }
+  // Block customers
+  if (me && me.role === Role.CUSTOMER) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center space-y-4 p-8">
+          <ShieldAlert className="w-16 h-16 text-red-500 mx-auto" />
+          <h2 className="text-xl font-bold text-gray-800">Truy cập bị từ chối</h2>
+          <p className="text-gray-500">Bạn không có quyền truy cập trang quản trị.</p>
+          <Link href="/" className="inline-block px-6 py-2 bg-accent text-white rounded-lg hover:bg-accent/90">
+            Về trang chủ
+          </Link>
+        </div>
+      </div>
+    );
   }
+
+  const roleInfo = ROLE_DISPLAY[me?.role || ''];
+  const staffPosition = me?.staff?.position;
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -105,10 +143,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
         <nav className="px-4 space-y-1">
           {visibleMenuItems.map(item => {
-            const isActive = pathname === item.href;
+            const Icon = item.icon;
+            const isActive =
+              item.href === '/admin'
+                ? pathname === '/admin'
+                : pathname === item.href || pathname.startsWith(item.href + '/');
             return (
               <Link
-                key={item.href}
+                key={item.key}
                 href={item.href}
                 className={cn(
                   'flex items-center gap-3 px-4 py-3 rounded-xl transition-colors',
@@ -117,14 +159,27 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                     : 'text-white/70 hover:bg-white/5 hover:text-white'
                 )}
               >
-                <item.icon className="w-5 h-5" />
+                <Icon className="w-5 h-5" />
                 {item.label}
               </Link>
             );
           })}
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4">
+        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3">
+          {roleInfo && (
+            <div className="px-4 py-2 rounded-lg bg-white/5">
+              <div className="flex items-center gap-2">
+                <span className={cn('w-2 h-2 rounded-full', roleInfo.color)} />
+                <span className="text-xs text-white/80">{roleInfo.label}</span>
+              </div>
+              {staffPosition && (
+                <p className="text-xs text-white/50 mt-1 ml-4">
+                  {staffPosition.replace(/_/g, ' ')}
+                </p>
+              )}
+            </div>
+          )}
           <button
             onClick={() => signOut({ callbackUrl: '/' })}
             className="flex items-center gap-3 px-4 py-3 rounded-xl text-white/70 hover:bg-white/5 hover:text-white w-full transition-colors"
@@ -137,7 +192,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       {/* Main Content */}
       <div className="flex-1 lg:ml-64">
-        {/* Top Bar */}
         <header className="bg-white border-b sticky top-0 z-40">
           <div className="px-6 py-4 flex items-center justify-between">
             <button className="lg:hidden">
@@ -154,7 +208,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="p-6">{children}</main>
       </div>
     </div>

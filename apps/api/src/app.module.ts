@@ -15,6 +15,7 @@ import { FavoritesModule } from './favorites/favorites.module';
 import { AdminModule } from './admin/admin.module';
 import configuration from './config/configuration';
 import { HealthModule } from './health/health.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { HealthModule } from './health/health.module';
     FavoritesModule,
     AdminModule,
     HealthModule,
+    CloudinaryModule,
   ],
 })
 export class AppModule { }

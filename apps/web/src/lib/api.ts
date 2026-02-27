@@ -375,6 +375,33 @@ export const adminApi = {
   },
 };
 
+// Upload APIs
+export type UploadFolder = 'avatars' | 'salons' | 'services' | 'reviews';
+
+export const uploadApi = {
+  uploadImage: async (file: File, folder: UploadFolder = 'avatars') => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post<{ url: string; publicId: string }>(
+      `/upload?folder=${folder}`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    );
+    return response.data;
+  },
+
+  uploadMultiple: async (files: File[], folder: UploadFolder = 'avatars') => {
+    const formData = new FormData();
+    files.forEach(file => formData.append('files', file));
+    const response = await apiClient.post<Array<{ url: string; publicId: string }>>(
+      `/upload/multiple?folder=${folder}`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    );
+    return response.data;
+  },
+};
+
 // Users APIs
 export const usersApi = {
   getMe: async () => {

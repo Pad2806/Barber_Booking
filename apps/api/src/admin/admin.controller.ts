@@ -1,42 +1,45 @@
 import { Controller, Get, Query, Patch, Param, UseGuards, Body } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
-import { Role, BookingStatus } from '@prisma/client';
+import { BookingStatus } from '@prisma/client';
+import { Permission } from '@reetro/shared';
 
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
+import { PermissionsGuard } from '../auth/guards/permissions.guard';
+import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.SUPER_ADMIN)
+@UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(private readonly adminService: AdminService) { }
 
   @Get('dashboard')
+  @RequirePermissions(Permission.VIEW_DASHBOARD)
   @ApiOperation({ summary: 'Get admin dashboard statistics' })
   getDashboardStats() {
     return this.adminService.getDashboardStats();
   }
 
   @Get('users/stats')
+  @RequirePermissions(Permission.VIEW_USERS)
   @ApiOperation({ summary: 'Get user statistics' })
   getUserStats() {
     return this.adminService.getUserStats();
   }
 
   @Get('users')
+  @RequirePermissions(Permission.MANAGE_USERS)
   @ApiOperation({ summary: 'Get all users (paginated)' })
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
-  @ApiQuery({ name: 'role', required: false, enum: Role })
+  @ApiQuery({ name: 'role', required: false })
   @ApiQuery({ name: 'search', required: false })
   getAllUsers(
     @Query('skip') skip?: string,
     @Query('take') take?: string,
-    @Query('role') role?: Role,
+    @Query('role') role?: any,
     @Query('search') search?: string,
   ) {
     return this.adminService.getAllUsers({
@@ -48,12 +51,14 @@ export class AdminController {
   }
 
   @Get('salons/stats')
+  @RequirePermissions(Permission.VIEW_SALONS)
   @ApiOperation({ summary: 'Get salon statistics' })
   getSalonStats() {
     return this.adminService.getSalonStats();
   }
 
   @Get('salons')
+  @RequirePermissions(Permission.VIEW_SALONS)
   @ApiOperation({ summary: 'Get all salons (paginated)' })
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
@@ -74,6 +79,7 @@ export class AdminController {
   }
 
   @Get('bookings/stats')
+  @RequirePermissions(Permission.VIEW_ALL_BOOKINGS)
   @ApiOperation({ summary: 'Get booking statistics' })
   @ApiQuery({ name: 'period', enum: ['week', 'month', 'year'] })
   getBookingStats(@Query('period') period: 'week' | 'month' | 'year' = 'month') {
@@ -81,6 +87,7 @@ export class AdminController {
   }
 
   @Get('bookings')
+  @RequirePermissions(Permission.VIEW_ALL_BOOKINGS)
   @ApiOperation({ summary: 'Get all bookings (paginated)' })
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
@@ -101,6 +108,7 @@ export class AdminController {
   }
 
   @Patch('bookings/:id/status')
+  @RequirePermissions(Permission.MANAGE_BOOKINGS)
   @ApiOperation({ summary: 'Update booking status' })
   @ApiParam({ name: 'id', description: 'Booking ID' })
   @ApiBody({ schema: { properties: { status: { enum: Object.values(BookingStatus) } } } })
@@ -112,6 +120,7 @@ export class AdminController {
   }
 
   @Get('revenue/stats')
+  @RequirePermissions(Permission.VIEW_REVENUE)
   @ApiOperation({ summary: 'Get revenue statistics' })
   @ApiQuery({ name: 'period', enum: ['week', 'month', 'year'] })
   getRevenueStats(@Query('period') period: 'week' | 'month' | 'year' = 'month') {
@@ -119,6 +128,7 @@ export class AdminController {
   }
 
   @Get('staff')
+  @RequirePermissions(Permission.VIEW_STAFF)
   @ApiOperation({ summary: 'Get all staff (paginated)' })
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
@@ -139,6 +149,7 @@ export class AdminController {
   }
 
   @Get('services')
+  @RequirePermissions(Permission.VIEW_SERVICES)
   @ApiOperation({ summary: 'Get all services (paginated)' })
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
@@ -159,6 +170,7 @@ export class AdminController {
   }
 
   @Get('reviews')
+  @RequirePermissions(Permission.VIEW_REVIEWS)
   @ApiOperation({ summary: 'Get all reviews (paginated)' })
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })

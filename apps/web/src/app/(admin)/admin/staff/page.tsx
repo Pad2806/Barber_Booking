@@ -25,6 +25,7 @@ import {
 import { STAFF_POSITIONS, cn } from '@/lib/utils';
 import { adminApi, salonApi, type Salon } from '@/lib/api';
 import toast from 'react-hot-toast';
+import ImageUpload from '@/components/ImageUpload';
 
 interface Staff {
   id: string;
@@ -778,35 +779,14 @@ export default function AdminStaffPage() {
                   {/* Avatar */}
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ảnh đại diện (URL)
+                      Ảnh đại diện
                     </label>
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full overflow-hidden bg-accent/10 flex items-center justify-center">
-                        {formData.avatar ? (
-                          <Image
-                            src={formData.avatar}
-                            alt={formData.name || 'avatar'}
-                            width={48}
-                            height={48}
-                            className="object-cover"
-                          />
-                        ) : (
-                          <span className="text-lg font-bold text-accent">
-                            {(formData.name || 'N').charAt(0)}
-                          </span>
-                        )}
-                      </div>
-                      <input
-                        type="url"
-                        value={formData.avatar}
-                        onChange={e => setFormData({ ...formData, avatar: e.target.value })}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                        placeholder="https://res.cloudinary.com/..."
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Gợi ý: dùng link Cloudinary hoặc link ảnh công khai.
-                    </p>
+                    <ImageUpload
+                      value={formData.avatar}
+                      onChange={url => setFormData({ ...formData, avatar: url })}
+                      folder="avatars"
+                      variant="avatar"
+                    />
                   </div>
 
                   {/* Email */}
