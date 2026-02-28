@@ -178,7 +178,7 @@ export default function BookingConfirmPage() {
 
           {/* Total */}
           <div className="p-6 bg-gray-50">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mb-4">
               <div>
                 <p className="text-gray-500">Tổng thời gian</p>
                 <p className="font-medium">{totalDuration} phút</p>
@@ -187,6 +187,16 @@ export default function BookingConfirmPage() {
                 <p className="text-gray-500">Tổng thanh toán</p>
                 <p className="text-2xl font-bold text-accent">{formatPrice(totalAmount)}</p>
               </div>
+            </div>
+            
+            <div className="flex justify-between items-center p-4 bg-red-50/50 border border-red-100 rounded-xl">
+              <div>
+                <p className="font-bold text-red-500 text-sm">Phí đặt cọc (50%)</p>
+                <p className="text-xs text-gray-500">Thanh toán sau khi đặt lịch</p>
+              </div>
+              <p className="font-bold text-red-500 text-lg">
+                {formatPrice(Math.round(totalAmount * 0.5))}
+              </p>
             </div>
           </div>
         </div>

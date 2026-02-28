@@ -68,7 +68,28 @@ export default function BookingPage() {
         totalDuration,
         selectedStaff?.id
       );
-      setTimeSlots(data);
+      
+      const slotsData = Array.isArray(data) ? data : [];
+      const isToday = selectedDate === new Date().toISOString().split('T')[0];
+      if (isToday) {
+        // Filter out past slots with a 1-hour buffer like Zalo Mini App
+        const now = new Date();
+        now.setHours(now.getHours() + 1);
+        
+        const filteredData = slotsData.map((slot: { time: string; available: boolean }) => {
+          const [h, m] = slot.time.split(':').map(Number);
+          const slotTime = new Date();
+          slotTime.setHours(h, m, 0, 0);
+          
+          if (slotTime < now) {
+            return { ...slot, available: false };
+          }
+          return slot;
+        });
+        setTimeSlots(filteredData);
+      } else {
+        setTimeSlots(slotsData);
+      }
     } catch (error) {
       console.error('Failed to fetch time slots:', error);
     } finally {
