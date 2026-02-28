@@ -1,4 +1,13 @@
-import { PrismaClient, AuthProvider, Role, ServiceCategory, StaffPosition, BookingStatus, PaymentStatus, PaymentMethod } from '@prisma/client';
+import {
+  PrismaClient,
+  AuthProvider,
+  Role,
+  ServiceCategory,
+  StaffPosition,
+  BookingStatus,
+  PaymentStatus,
+  PaymentMethod,
+} from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -163,7 +172,9 @@ async function main() {
         closeTime: '21:00',
         latitude: 10.7739,
         longitude: 106.7004,
-        images: ['https://images.unsplash.com/photo-1585747860019-8e2e0c35c0e1?w=600&h=400&fit=crop'],
+        images: [
+          'https://images.unsplash.com/photo-1585747860019-8e2e0c35c0e1?w=600&h=400&fit=crop',
+        ],
         isActive: true,
         ownerId: adminUser.id,
         bankCode: '970423',
@@ -186,7 +197,9 @@ async function main() {
         closeTime: '21:00',
         latitude: 10.7823,
         longitude: 106.6875,
-        images: ['https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&h=400&fit=crop'],
+        images: [
+          'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=600&h=400&fit=crop',
+        ],
         isActive: true,
         ownerId: adminUser.id,
         bankCode: '970423',
@@ -236,14 +249,14 @@ async function main() {
         },
       });
     }
-    // Sunday off
+    // Sunday morning only
     await prisma.staffSchedule.create({
       data: {
         staffId: staff.id,
         dayOfWeek: 0,
-        startTime: '00:00',
-        endTime: '00:00',
-        isOff: true,
+        startTime: '08:00',
+        endTime: '12:00',
+        isOff: false,
       },
     });
   }
@@ -251,12 +264,54 @@ async function main() {
 
   // Create Services for each salon
   const serviceData = [
-    { name: 'Cắt tóc nam', description: 'Cắt tóc nam cơ bản, tạo kiểu theo yêu cầu', price: 100000, duration: 30, category: ServiceCategory.HAIRCUT, order: 1 },
-    { name: 'Cắt tóc + Gội massage', description: 'Combo cắt tóc kèm gội đầu massage thư giãn', price: 150000, duration: 45, category: ServiceCategory.COMBO, order: 2 },
-    { name: 'Cạo mặt + Đắp mặt nạ', description: 'Cạo râu, cạo mặt kèm đắp mặt nạ dưỡng da', price: 80000, duration: 25, category: ServiceCategory.FACIAL, order: 3 },
-    { name: 'Nhuộm tóc', description: 'Nhuộm tóc các màu theo xu hướng', price: 250000, duration: 90, category: ServiceCategory.HAIR_COLORING, order: 4 },
-    { name: 'Uốn tóc Hàn Quốc', description: 'Uốn tóc Hàn Quốc, tạo kiểu độc đáo', price: 350000, duration: 120, category: ServiceCategory.HAIR_STYLING, order: 5 },
-    { name: 'VIP Combo', description: 'Cắt + Gội + Cạo mặt + Đắp mặt nạ + Massage vai cổ', price: 300000, duration: 90, category: ServiceCategory.COMBO, order: 6 },
+    {
+      name: 'Cắt tóc nam',
+      description: 'Cắt tóc nam cơ bản, tạo kiểu theo yêu cầu',
+      price: 100000,
+      duration: 30,
+      category: ServiceCategory.HAIRCUT,
+      order: 1,
+    },
+    {
+      name: 'Cắt tóc + Gội massage',
+      description: 'Combo cắt tóc kèm gội đầu massage thư giãn',
+      price: 150000,
+      duration: 45,
+      category: ServiceCategory.COMBO,
+      order: 2,
+    },
+    {
+      name: 'Cạo mặt + Đắp mặt nạ',
+      description: 'Cạo râu, cạo mặt kèm đắp mặt nạ dưỡng da',
+      price: 80000,
+      duration: 25,
+      category: ServiceCategory.FACIAL,
+      order: 3,
+    },
+    {
+      name: 'Nhuộm tóc',
+      description: 'Nhuộm tóc các màu theo xu hướng',
+      price: 250000,
+      duration: 90,
+      category: ServiceCategory.HAIR_COLORING,
+      order: 4,
+    },
+    {
+      name: 'Uốn tóc Hàn Quốc',
+      description: 'Uốn tóc Hàn Quốc, tạo kiểu độc đáo',
+      price: 350000,
+      duration: 120,
+      category: ServiceCategory.HAIR_STYLING,
+      order: 5,
+    },
+    {
+      name: 'VIP Combo',
+      description: 'Cắt + Gội + Cạo mặt + Đắp mặt nạ + Massage vai cổ',
+      price: 300000,
+      duration: 90,
+      category: ServiceCategory.COMBO,
+      order: 6,
+    },
   ];
 
   const services: any[] = [];
@@ -285,12 +340,17 @@ async function main() {
 
     const salonIndex = Math.floor(Math.random() * salons.length);
     const salon = salons[salonIndex];
-    const salonServices = services.filter((s) => s.salonId === salon.id);
+    const salonServices = services.filter(s => s.salonId === salon.id);
     const selectedService = salonServices[Math.floor(Math.random() * salonServices.length)];
-    const salonStaff = staffRecords.filter((s) => s.salonId === salon.id);
+    const salonStaff = staffRecords.filter(s => s.salonId === salon.id);
     const selectedStaff = salonStaff[Math.floor(Math.random() * salonStaff.length)];
 
-    const statuses = [BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.COMPLETED, BookingStatus.CANCELLED];
+    const statuses = [
+      BookingStatus.PENDING,
+      BookingStatus.CONFIRMED,
+      BookingStatus.COMPLETED,
+      BookingStatus.CANCELLED,
+    ];
 
     const booking = await prisma.booking.create({
       data: {
@@ -323,7 +383,7 @@ async function main() {
   console.log('✅ Created', bookings.length, 'sample bookings');
 
   // Create payments for completed bookings
-  const completedBookings = bookings.filter((b) => b.status === BookingStatus.COMPLETED);
+  const completedBookings = bookings.filter(b => b.status === BookingStatus.COMPLETED);
   for (const booking of completedBookings) {
     await prisma.payment.create({
       data: {
@@ -354,11 +414,10 @@ async function main() {
 }
 
 main()
-  .catch((e) => {
+  .catch(e => {
     console.error('❌ Seeding failed:', e);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
   });
-

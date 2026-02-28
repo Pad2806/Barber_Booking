@@ -239,7 +239,19 @@ export class StaffService {
     });
 
     // Staff is off this day
-    if (!schedule || schedule.isOff) {
+    if (!schedule) {
+      return [];
+    }
+
+    // Force Sunday to be ON with default morning start time if it was set to OFF by seed
+    if (dayOfWeek === 0) {
+      schedule.isOff = false;
+      if (schedule.startTime === '00:00') {
+        schedule.startTime = '08:00';
+      }
+    }
+
+    if (schedule.isOff) {
       return [];
     }
 
@@ -260,7 +272,11 @@ export class StaffService {
     let actualEndTime = schedule.endTime;
     if (dayOfWeek === 0) {
       // Sunday works only morning (ends at 12:00)
-      if (this.timeToMinutes(actualEndTime) > this.timeToMinutes('12:00')) {
+      // If it's seeded as 00:00, or runs past 12:00, force it to 12:00
+      if (
+        actualEndTime === '00:00' ||
+        this.timeToMinutes(actualEndTime) > this.timeToMinutes('12:00')
+      ) {
         actualEndTime = '12:00';
       }
     }
