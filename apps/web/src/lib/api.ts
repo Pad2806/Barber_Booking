@@ -187,7 +187,7 @@ export const salonApi = {
 // Service APIs
 export const serviceApi = {
   getBySalon: async (salonId: string) => {
-    const response = await apiClient.get<Service[]>('/services', { params: { salonId } });
+    const response = await apiClient.get<Service[]>(`/services/salon/${salonId}`);
     return response.data;
   },
 };
@@ -195,7 +195,7 @@ export const serviceApi = {
 // Staff APIs
 export const staffApi = {
   getBySalon: async (salonId: string) => {
-    const response = await apiClient.get<Staff[]>('/staff', { params: { salonId } });
+    const response = await apiClient.get<Staff[]>(`/staff/salon/${salonId}`);
     return response.data;
   },
   getAvailableSlots: async (salonId: string, date: string, duration: number, staffId?: string) => {
