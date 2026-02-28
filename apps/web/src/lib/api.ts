@@ -256,7 +256,7 @@ export const bookingApi = {
     return response.data;
   },
   cancel: async (id: string, reason?: string) => {
-    const response = await apiClient.delete<Booking>(`/bookings/${id}`, { data: { reason } });
+    const response = await apiClient.patch<Booking>(`/bookings/${id}/cancel`, { reason });
     return response.data;
   },
   getMy: async (params?: { status?: string; page?: number; limit?: number }) => {
