@@ -259,6 +259,12 @@ export const bookingApi = {
     const response = await apiClient.delete<Booking>(`/bookings/${id}`, { data: { reason } });
     return response.data;
   },
+  getMy: async (params?: { status?: string; page?: number; limit?: number }) => {
+    const response = await apiClient.get<PaginatedResponse<Booking>>('/bookings/my-bookings', {
+      params,
+    });
+    return response.data;
+  },
 };
 
 // Payment APIs

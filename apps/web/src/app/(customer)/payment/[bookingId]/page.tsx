@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { CheckCircle, XCircle, Clock, Copy, Check, RefreshCw, QrCode } from 'lucide-react';
 import { bookingApi, paymentApi, Booking } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
@@ -11,6 +11,7 @@ import { formatPrice, cn } from '@/lib/utils';
 
 export default function PaymentPage() {
   const params = useParams();
+  const router = useRouter();
   const bookingId = params.bookingId as string;
   const { reset } = useBookingStore();
 
@@ -128,12 +129,12 @@ export default function PaymentPage() {
             </div>
           )}
           <div className="flex flex-col gap-3">
-            <Link
-              href={`/my-bookings/${bookingId}`}
+            <button
+              onClick={() => router.replace(`/my-bookings/${bookingId}`)}
               className="bg-accent text-white py-3 rounded-xl font-semibold hover:bg-accent/90 transition-colors"
             >
               Xem chi tiết đặt lịch
-            </Link>
+            </button>
             <Link href="/" className="text-gray-600 hover:text-primary transition-colors">
               Về trang chủ
             </Link>
@@ -287,15 +288,15 @@ export default function PaymentPage() {
 
             {/* Pay Later */}
             <div className="mt-6">
-              <Link 
-                href={`/my-bookings/${bookingId}`}
+              <button 
                 className="block w-full text-center py-3.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors"
                 onClick={() => {
                   reset();
+                  router.replace(`/my-bookings/${bookingId}`);
                 }}
               >
                 Thanh toán sau tại salon
-              </Link>
+              </button>
             </div>
           </div>
         </div>

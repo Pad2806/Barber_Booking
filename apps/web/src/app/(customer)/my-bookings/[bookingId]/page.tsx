@@ -100,7 +100,7 @@ export default function BookingDetailPage() {
       <header className="bg-white border-b sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <button
-            onClick={() => router.back()}
+            onClick={() => router.push('/my-bookings')}
             className="flex items-center gap-2 text-gray-600 hover:text-primary"
           >
             <ChevronLeft className="w-5 h-5" />
