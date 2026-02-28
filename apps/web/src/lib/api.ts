@@ -14,7 +14,7 @@ export const apiClient = axios.create({
 
 // Request interceptor - add auth token
 apiClient.interceptors.request.use(
-  async (config) => {
+  async config => {
     if (typeof window !== 'undefined') {
       const session = await getSession();
       if (session?.accessToken) {
@@ -23,15 +23,15 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
+  error => {
     return Promise.reject(error);
   }
 );
 
 // Response interceptor
 apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
+  response => response,
+  error => {
     if (error.response?.status === 401) {
       // Redirect to login
       if (typeof window !== 'undefined') {
@@ -199,10 +199,38 @@ export const staffApi = {
     return response.data;
   },
   getAvailableSlots: async (salonId: string, date: string, duration: number, staffId?: string) => {
-    const response = await apiClient.get<{ time: string; available: boolean }[]>('/staff/available-slots', {
-      params: { salonId, date, duration, staffId },
+    if (staffId) {
+      const response = await apiClient.get<string[]>(`/staff/${staffId}/available-slots`, {
+        params: { date },
+      });
+      return response.data.map(time => ({ time, available: true }));
+    }
+
+    // "Any Stylist" selected: fetch slots for all barbers and merge them
+    const staffList = await apiClient.get<Staff[]>(`/staff/salon/${salonId}`).then(res => res.data);
+    const barbers = staffList.filter(s =>
+      ['STYLIST', 'SENIOR_STYLIST', 'MASTER_STYLIST'].includes(s.position.toUpperCase())
+    );
+
+    const promises = barbers.map(b =>
+      apiClient
+        .get<string[]>(`/staff/${b.id}/available-slots`, { params: { date } })
+        .then(res => res.data)
+        .catch(() => [] as string[])
+    );
+
+    const results = await Promise.all(promises);
+    const allSlots = new Set<string>();
+
+    results.forEach(slots => {
+      if (Array.isArray(slots)) {
+        slots.forEach(slot => allSlots.add(slot));
+      }
     });
-    return response.data;
+
+    return Array.from(allSlots)
+      .sort()
+      .map(time => ({ time, available: true }));
   },
 };
 
@@ -299,11 +327,15 @@ export const adminApi = {
     return response.data;
   },
   getBookingStats: async (period: 'week' | 'month' | 'year' = 'month') => {
-    const response = await apiClient.get<BookingStats>('/admin/bookings/stats', { params: { period } });
+    const response = await apiClient.get<BookingStats>('/admin/bookings/stats', {
+      params: { period },
+    });
     return response.data;
   },
   getRevenueStats: async (period: 'week' | 'month' | 'year' = 'month') => {
-    const response = await apiClient.get<RevenueStats>('/admin/revenue/stats', { params: { period } });
+    const response = await apiClient.get<RevenueStats>('/admin/revenue/stats', {
+      params: { period },
+    });
     return response.data;
   },
   getAllBookings: async (params?: {
@@ -323,14 +355,23 @@ export const adminApi = {
     return response.data;
   },
   updateBookingStatus: async (bookingId: string, status: string) => {
-    const response = await apiClient.patch<Booking>(`/admin/bookings/${bookingId}/status`, { status });
+    const response = await apiClient.patch<Booking>(`/admin/bookings/${bookingId}/status`, {
+      status,
+    });
     return response.data;
   },
   addServiceToBooking: async (bookingId: string, serviceIds: string[]) => {
-    const response = await apiClient.patch<Booking>(`/bookings/${bookingId}/add-service`, { serviceIds });
+    const response = await apiClient.patch<Booking>(`/bookings/${bookingId}/add-service`, {
+      serviceIds,
+    });
     return response.data;
   },
-  getAllStaff: async (params?: { skip?: number; take?: number; salonId?: string; search?: string }) => {
+  getAllStaff: async (params?: {
+    skip?: number;
+    take?: number;
+    salonId?: string;
+    search?: string;
+  }) => {
     const response = await apiClient.get<PaginatedResponse<Staff>>('/admin/staff', { params });
     return response.data;
   },
@@ -350,23 +391,54 @@ export const adminApi = {
     const response = await apiClient.delete(`/users/${userId}`);
     return response.data;
   },
-  getAllServices: async (params?: { skip?: number; take?: number; salonId?: string; category?: string }) => {
+  getAllServices: async (params?: {
+    skip?: number;
+    take?: number;
+    salonId?: string;
+    category?: string;
+  }) => {
     const response = await apiClient.get<PaginatedResponse<Service>>('/admin/services', { params });
     return response.data;
   },
-  getAllSalons: async (params?: { skip?: number; take?: number; city?: string; isActive?: boolean }) => {
+  getAllSalons: async (params?: {
+    skip?: number;
+    take?: number;
+    city?: string;
+    isActive?: boolean;
+  }) => {
     const response = await apiClient.get<PaginatedResponse<Salon>>('/admin/salons', { params });
     return response.data;
   },
-  getAllReviews: async (params?: { skip?: number; take?: number; salonId?: string; rating?: number }) => {
+  getAllReviews: async (params?: {
+    skip?: number;
+    take?: number;
+    salonId?: string;
+    rating?: number;
+  }) => {
     const response = await apiClient.get<PaginatedResponse<Review>>('/admin/reviews', { params });
     return response.data;
   },
-  createService: async (data: { name: string; description?: string | null; price: number; duration: number; category: string; isActive?: boolean }) => {
+  createService: async (data: {
+    name: string;
+    description?: string | null;
+    price: number;
+    duration: number;
+    category: string;
+    isActive?: boolean;
+  }) => {
     const response = await apiClient.post<Service>('/services', data);
     return response.data;
   },
-  updateService: async (id: string, data: Partial<{ name: string; description: string; price: number; duration: number; category: string }>) => {
+  updateService: async (
+    id: string,
+    data: Partial<{
+      name: string;
+      description: string;
+      price: number;
+      duration: number;
+      category: string;
+    }>
+  ) => {
     const response = await apiClient.patch<Service>(`/services/${id}`, data);
     return response.data;
   },
@@ -385,7 +457,7 @@ export const uploadApi = {
     const response = await apiClient.post<{ url: string; publicId: string }>(
       `/upload?folder=${folder}`,
       formData,
-      { headers: { 'Content-Type': 'multipart/form-data' } },
+      { headers: { 'Content-Type': 'multipart/form-data' } }
     );
     return response.data;
   },
@@ -396,7 +468,7 @@ export const uploadApi = {
     const response = await apiClient.post<Array<{ url: string; publicId: string }>>(
       `/upload/multiple?folder=${folder}`,
       formData,
-      { headers: { 'Content-Type': 'multipart/form-data' } },
+      { headers: { 'Content-Type': 'multipart/form-data' } }
     );
     return response.data;
   },
