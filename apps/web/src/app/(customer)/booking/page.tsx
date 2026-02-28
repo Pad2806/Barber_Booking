@@ -52,7 +52,12 @@ export default function BookingPage() {
     if (!salon) return;
     try {
       const data = await staffApi.getBySalon(salon.id);
-      setStaffList(data);
+      // Filter out only stylist/barber roles
+      const barbers = data.filter(staff => {
+        const role = staff.position.toUpperCase();
+        return role === 'STYLIST' || role === 'SENIOR_STYLIST' || role === 'MASTER_STYLIST';
+      });
+      setStaffList(barbers);
     } catch (error) {
       console.error('Failed to fetch staff:', error);
     }
