@@ -180,7 +180,7 @@ export default function PaymentPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 max-w-lg">
-        <div className="bg-white rounded-2xl overflow-hidden shadow-lg">
+        <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
           {/* Header */}
           <div className="bg-accent p-6 text-white text-center">
             <QrCode className="w-12 h-12 mx-auto mb-2" />
@@ -188,88 +188,116 @@ export default function PaymentPage() {
             <p className="text-white/80 mt-1">Sử dụng App ngân hàng để quét</p>
           </div>
 
-          {/* QR Code */}
-          <div className="p-8 text-center">
-            {/* Countdown */}
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <Clock
-                className={cn('w-5 h-5', countdown <= 60 ? 'text-red-500' : 'text-gray-400')}
-              />
-              <span
-                className={cn('font-medium', countdown <= 60 ? 'text-red-500' : 'text-gray-600')}
-              >
-                Còn lại: {formatTime(countdown)}
-              </span>
+          {/* QR Code Content */}
+          <div className="p-6">
+            <div className="text-center mb-6">
+              <p className="text-sm text-gray-500 mb-1">Mã đặt lịch</p>
+              <p className="font-semibold text-gray-800">{booking?.bookingCode}</p>
             </div>
 
-            {qrData?.qrCode && (
-              <div className="bg-white p-4 rounded-2xl inline-block shadow-sm border mb-6">
-                <Image src={qrData.qrCode} alt="QR Code" width={256} height={256} unoptimized />
+            <div className="p-6 bg-white border border-gray-100 rounded-2xl shadow-sm text-center">
+              {/* Amount */}
+              <div className="mb-4">
+                <p className="text-sm text-gray-500 mb-1">Số tiền đặt cọc (50%)</p>
+                <p className="text-3xl font-bold text-accent">
+                  {formatPrice(qrData?.amount || (booking?.totalAmount ? booking.totalAmount * 0.5 : 0))}
+                </p>
               </div>
-            )}
 
-            {/* Amount */}
-            <div className="mb-6">
-              <p className="text-gray-500 mb-1">Số tiền đặt cọc (50%)</p>
-              <p className="text-3xl font-bold text-accent">
-                {formatPrice(qrData?.amount || (booking?.totalAmount ? booking.totalAmount * 0.5 : 0))}
-              </p>
-            </div>
-
-            {/* Bank Info */}
-            <div className="bg-gray-50 rounded-xl p-4 space-y-3 text-left">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-500">Ngân hàng</span>
-                <span className="font-medium">{qrData?.bankName}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-500">Số tài khoản</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium font-mono">{qrData?.bankAccount}</span>
-                  <button
-                    onClick={() => copyToClipboard(qrData?.bankAccount || '')}
-                    className="text-accent hover:text-accent/80"
-                  >
-                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  </button>
-                </div>
-              </div>
-              {booking && (
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Nội dung CK</span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium font-mono">{booking.bookingCode}</span>
-                    <button
-                      onClick={() => copyToClipboard(booking.bookingCode)}
-                      className="text-accent hover:text-accent/80"
-                    >
-                      {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                    </button>
-                  </div>
+              {/* QR Image */}
+              {qrData?.qrCode && (
+                <div className="bg-white p-3 rounded-2xl border border-gray-100 inline-block mb-6 shadow-sm">
+                  <Image src={qrData.qrCode} alt="QR Code" width={224} height={224} unoptimized className="block" />
                 </div>
               )}
+
+              {/* Bank Info */}
+              {qrData && (
+                <div className="bg-gray-50/80 rounded-xl p-4 space-y-3 text-left">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Ngân hàng</span>
+                    <span className="font-semibold">{qrData?.bankName || qrData?.bankCode}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500">Số tài khoản</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-semibold font-mono">{qrData?.bankAccount}</span>
+                      <button
+                        onClick={() => copyToClipboard(qrData?.bankAccount || '')}
+                        className="text-accent hover:text-accent/80 p-1"
+                      >
+                        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+                  {booking && (
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-500">Nội dung chuyển khoản</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold font-mono text-accent">{booking.bookingCode}</span>
+                        <button
+                          onClick={() => copyToClipboard(booking.bookingCode)}
+                          className="text-accent hover:text-accent/80 p-1"
+                        >
+                          {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Timer */}
+              <div className="mt-6 text-center">
+                <p className="text-xs text-gray-500 mb-1">Thời gian còn lại</p>
+                <div className="flex items-center justify-center gap-2">
+                  <Clock
+                    className={cn('w-4 h-4', countdown <= 60 ? 'text-red-500' : 'text-accent')}
+                  />
+                  <span
+                    className={cn('text-xl font-bold font-mono', countdown <= 60 ? 'text-red-500' : 'text-accent')}
+                  >
+                    {formatTime(countdown)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Status Indicator */}
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                <span className="text-sm text-gray-500">Đang chờ xác nhận thanh toán...</span>
+              </div>
             </div>
 
-            {/* Status */}
-            <div className="mt-6 flex items-center justify-center gap-2 text-gray-500">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              Đang chờ thanh toán...
+            {/* Instructions */}
+            <div className="mt-6 p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                  <span className="text-xs font-bold">i</span>
+                </div>
+                <h3 className="font-semibold text-gray-800 text-sm">Hướng dẫn thanh toán</h3>
+              </div>
+              <ul className="text-sm text-gray-600 space-y-2">
+                <li>1. Mở ứng dụng ngân hàng của bạn</li>
+                <li>2. Quét mã QR phía trên</li>
+                <li>3. Kiểm tra thông tin và xác nhận chuyển khoản</li>
+                <li>4. Hệ thống sẽ tự động xác nhận sau khi nhận được tiền</li>
+              </ul>
+            </div>
+
+            {/* Pay Later */}
+            <div className="mt-6">
+              <Link 
+                href={`/my-bookings/${bookingId}`}
+                className="block w-full text-center py-3.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors"
+                onClick={() => {
+                  reset();
+                }}
+              >
+                Thanh toán sau tại salon
+              </Link>
             </div>
           </div>
-
-          {/* Footer Note */}
-          <div className="bg-yellow-50 p-4 text-center">
-            <p className="text-sm text-yellow-700">
-              💡 Sau khi thanh toán, hệ thống sẽ tự động xác nhận trong vài giây
-            </p>
-          </div>
-        </div>
-
-        {/* Cancel */}
-        <div className="text-center mt-6">
-          <Link href="/salons" className="text-gray-500 hover:text-gray-700 transition-colors">
-            Hủy và đặt lịch mới
-          </Link>
         </div>
       </div>
     </div>
