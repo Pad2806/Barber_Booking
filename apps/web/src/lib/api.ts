@@ -175,11 +175,11 @@ export const salonApi = {
     return response.data;
   },
   getBySlug: async (slug: string) => {
-    const response = await apiClient.get<Salon>(`/salons/${slug}`);
+    const response = await apiClient.get<Salon>(`/salons/slug/${slug}`);
     return response.data;
   },
   getById: async (id: string) => {
-    const response = await apiClient.get<Salon>(`/salons/id/${id}`);
+    const response = await apiClient.get<Salon>(`/salons/${id}`);
     return response.data;
   },
 };
