@@ -127,7 +127,7 @@ jobs:
         run: pnpm --filter web exec playwright install --with-deps
 
       - name: Build web app
-        run: pnpm --filter web build
+        run: pnpm turbo run build --filter=@reetro/web
 
       - name: Run E2E tests
         run: pnpm --filter web test:e2e
