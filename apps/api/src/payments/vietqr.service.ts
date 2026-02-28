@@ -21,7 +21,7 @@ export interface VietQRResult {
 export class VietQRService {
   private readonly apiUrl = 'https://img.vietqr.io/image';
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(private readonly configService: ConfigService) { }
 
   /**
    * Generate VietQR code URL
@@ -37,10 +37,13 @@ export class VietQRService {
       template = 'compact2',
     } = params;
 
+    const bin = this.getBankBin(bankCode);
+    const cleanAccountNumber = accountNumber.replace(/\s/g, '');
+    const cleanAmount = Math.floor(amount);
     const encodedDescription = encodeURIComponent(description);
     const encodedAccountName = encodeURIComponent(accountName);
 
-    return `${this.apiUrl}/${bankCode}-${accountNumber}-${template}.png?amount=${amount}&addInfo=${encodedDescription}&accountName=${encodedAccountName}`;
+    return `${this.apiUrl}/${bin}-${cleanAccountNumber}-${template}.png?amount=${cleanAmount}&addInfo=${encodedDescription}&accountName=${encodedAccountName}`;
   }
 
   /**
