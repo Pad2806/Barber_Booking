@@ -313,11 +313,16 @@ export const paymentApi = {
       totalPaid: number;
       remaining: number;
       isFullyPaid: boolean;
+      payments: any[];
     }>(`/payments/booking/${bookingId}/summary`);
     return response.data;
   },
   checkout: async (bookingId: string, method: string) => {
     const response = await apiClient.post(`/payments/booking/${bookingId}/checkout`, { method });
+    return response.data;
+  },
+  confirm: async (paymentId: string) => {
+    const response = await apiClient.post(`/payments/${paymentId}/confirm`);
     return response.data;
   },
 };
