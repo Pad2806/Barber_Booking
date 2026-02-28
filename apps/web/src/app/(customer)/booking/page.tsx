@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Check, Calendar, Clock, User, Scissors } from 'lucide-react';
@@ -8,19 +8,6 @@ import { staffApi, Staff } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
 import { formatPrice, STAFF_POSITIONS, cn } from '@/lib/utils';
 
-// Generate dates for next 14 days
-function generateDates() {
-  const dates = [];
-  const today = new Date();
-  for (let i = 0; i < 14; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
-    dates.push(date);
-  }
-  return dates;
-}
-
-const DATES = generateDates();
 const DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 
 export default function BookingPage() {
@@ -43,6 +30,44 @@ export default function BookingPage() {
     nextStep,
     prevStep,
   } = useBookingStore();
+
+  const DATES = useMemo(() => {
+    if (!salon) return [];
+    const dates = [];
+    const today = new Date();
+
+    // Check if today is past working hours
+    const now = new Date();
+    let isPastWorkingHours = false;
+
+    let closeTime = salon.closeTime;
+    if (now.getDay() === 0) {
+      // Sunday works only morning (ends at 12:00)
+      closeTime = '12:00';
+    }
+
+    if (closeTime) {
+      const [h, m] = closeTime.split(':').map(Number);
+      const closeDate = new Date();
+      closeDate.setHours(h, m, 0, 0);
+
+      // If current time + minimum booking duration >= closing time, we can't book today
+      // Setting a 1 hour buffer
+      closeDate.setHours(closeDate.getHours() - 1);
+      if (now >= closeDate) {
+        isPastWorkingHours = true;
+      }
+    }
+
+    let startOffset = isPastWorkingHours ? 1 : 0;
+
+    for (let i = startOffset; i < 14 + startOffset; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      dates.push(date);
+    }
+    return dates;
+  }, [salon]);
 
   const [staff, setStaffList] = useState<Staff[]>([]);
   const [timeSlots, setTimeSlots] = useState<{ time: string; available: boolean }[]>([]);
@@ -73,19 +98,19 @@ export default function BookingPage() {
         totalDuration,
         selectedStaff?.id
       );
-      
+
       const slotsData = Array.isArray(data) ? data : [];
       const isToday = selectedDate === new Date().toISOString().split('T')[0];
       if (isToday) {
         // Filter out past slots with a 1-hour buffer like Zalo Mini App
         const now = new Date();
         now.setHours(now.getHours() + 1);
-        
+
         const filteredData = slotsData.map((slot: { time: string; available: boolean }) => {
           const [h, m] = slot.time.split(':').map(Number);
           const slotTime = new Date();
           slotTime.setHours(h, m, 0, 0);
-          
+
           if (slotTime < now) {
             return { ...slot, available: false };
           }

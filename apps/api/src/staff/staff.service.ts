@@ -157,7 +157,7 @@ export class StaffService {
   async updateSchedule(
     staffId: string,
     schedules: UpdateScheduleDto[],
-    currentUser: User,
+    currentUser: User
   ): Promise<void> {
     const staff = await this.findOne(staffId);
 
@@ -186,8 +186,8 @@ export class StaffService {
             endTime: schedule.endTime,
             isOff: schedule.isOff,
           },
-        }),
-      ),
+        })
+      )
     );
   }
 
@@ -257,10 +257,18 @@ export class StaffService {
     });
 
     // Generate time slots
+    let actualEndTime = schedule.endTime;
+    if (dayOfWeek === 0) {
+      // Sunday works only morning (ends at 12:00)
+      if (this.timeToMinutes(actualEndTime) > this.timeToMinutes('12:00')) {
+        actualEndTime = '12:00';
+      }
+    }
+
     const slots = this.generateTimeSlots(
       schedule.startTime,
-      schedule.endTime,
-      30, // 30-minute intervals
+      actualEndTime,
+      30 // 30-minute intervals
     );
 
     // Filter out booked slots
@@ -276,11 +284,7 @@ export class StaffService {
     return availableSlots;
   }
 
-  private generateTimeSlots(
-    startTime: string,
-    endTime: string,
-    intervalMinutes: number,
-  ): string[] {
+  private generateTimeSlots(startTime: string, endTime: string, intervalMinutes: number): string[] {
     const slots: string[] = [];
     let current = this.timeToMinutes(startTime);
     const end = this.timeToMinutes(endTime);
