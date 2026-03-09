@@ -14,12 +14,12 @@ export default function Header(): React.ReactNode {
   const isLoggedIn = status === 'authenticated';
 
   return (
-    <header className="bg-white/80 backdrop-blur-2xl border-b border-gray-100 sticky top-0 z-50 transition-all duration-500">
+    <header className="bg-background/80 backdrop-blur-2xl border-b border-border sticky top-0 z-50 transition-all duration-500">
       <div className="container mx-auto px-4 py-4 sm:py-6">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <span className="text-2xl sm:text-3xl font-black tracking-[-0.08em] text-black group-hover:scale-105 transition-transform duration-500">
-              REETRO<span className="bg-black text-white px-2 py-0.5 ml-1 rounded-sm">BARBER</span>
+            <span className="text-2xl sm:text-3xl font-heading font-black tracking-[-0.05em] text-foreground group-hover:scale-105 transition-transform duration-500 uppercase italic">
+              REETRO<span className="text-primary ml-1">BARBER</span>
             </span>
           </Link>
           <nav className="hidden md:flex items-center gap-12">
@@ -34,12 +34,12 @@ export default function Header(): React.ReactNode {
                   href={item.href}
                   className={cn(
                     'text-[10px] font-black uppercase tracking-[0.3em] transition-all duration-500 relative group',
-                    pathname === item.href ? 'text-black' : 'text-gray-300 hover:text-black'
+                    pathname === item.href ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
                   {item.label}
                   <span className={cn(
-                    "absolute -bottom-2 left-0 w-full h-0.5 bg-black transition-all duration-700 origin-left scale-x-0 group-hover:scale-x-100",
+                    "absolute -bottom-2 left-0 w-full h-0.5 bg-primary transition-all duration-700 origin-left scale-x-0 group-hover:scale-x-100",
                     pathname === item.href && "scale-x-100"
                   )} />
                 </Link>
@@ -64,14 +64,14 @@ export default function Header(): React.ReactNode {
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] hidden lg:inline">{session?.user?.name || 'Cá nhân'}</span>
               </Link>
             ) : (
-              <Link href="/login" className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-300 hover:text-black transition-all duration-500">
+              <Link href="/login" className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground transition-all duration-500">
                 CLIENT LOGIN
               </Link>
             )}
           </nav>
           <Link
             href="/salons"
-            className="hidden md:block bg-black hover:bg-white hover:text-black border-2 border-black text-white px-10 py-3.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] transition-all duration-700 shadow-2xl shadow-black/10 active:scale-95"
+            className="hidden md:block bg-foreground hover:bg-primary border-2 border-foreground text-background px-10 py-3.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] transition-all duration-700 shadow-2xl shadow-foreground/10 active:scale-95"
           >
             ĐẶT LỊCH NGAY
           </Link>
