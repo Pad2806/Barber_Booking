@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import { Upload, X, Loader2, Plus } from 'lucide-react';
+import { X, Loader2, Plus } from 'lucide-react';
 import { uploadApi, type UploadFolder } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
