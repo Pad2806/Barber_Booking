@@ -50,6 +50,13 @@ export class AdminController {
     });
   }
 
+  @Get('users/:id')
+  @RequirePermissions(Permission.VIEW_USERS)
+  @ApiOperation({ summary: 'Get user detail with booking history' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  getUserById(@Param('id') id: string) {
+    return this.adminService.getUserById(id);
+  }
   @Get('salons/stats')
   @RequirePermissions(Permission.VIEW_SALONS)
   @ApiOperation({ summary: 'Get salon statistics' })

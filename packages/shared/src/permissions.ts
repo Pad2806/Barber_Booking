@@ -166,6 +166,7 @@ export const ADMIN_MENU_ITEMS = [
     { key: 'staff', href: '/admin/staff', label: 'Nhân viên', permission: Permission.VIEW_STAFF },
     { key: 'services', href: '/admin/services', label: 'Dịch vụ', permission: Permission.VIEW_SERVICES },
     { key: 'salons', href: '/admin/salons', label: 'Chi nhánh', permission: Permission.VIEW_SALONS },
+    { key: 'customers', href: '/admin/customers', label: 'Khách hàng', permission: Permission.VIEW_USERS },
     { key: 'reviews', href: '/admin/reviews', label: 'Đánh giá', permission: Permission.VIEW_REVIEWS },
     { key: 'settings', href: '/admin/settings', label: 'Cài đặt', permission: Permission.MANAGE_SETTINGS },
 ] as const;
@@ -180,6 +181,7 @@ export const ROUTE_PERMISSION_MAP: Record<string, Permission> = {
     '/admin/staff': Permission.VIEW_STAFF,
     '/admin/services': Permission.VIEW_SERVICES,
     '/admin/reviews': Permission.VIEW_REVIEWS,
+    '/admin/customers': Permission.VIEW_USERS,
     '/admin/bookings': Permission.VIEW_ALL_BOOKINGS,
     '/admin': Permission.VIEW_DASHBOARD,
 };

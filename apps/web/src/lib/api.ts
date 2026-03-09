@@ -376,6 +376,19 @@ export const adminApi = {
     const response = await apiClient.get<DashboardStats>('/admin/dashboard');
     return response.data;
   },
+  getAllUsers: async (params?: {
+    skip?: number;
+    take?: number;
+    role?: string;
+    search?: string;
+  }) => {
+    const response = await apiClient.get('/admin/users', { params });
+    return response.data;
+  },
+  getUserById: async (userId: string) => {
+    const response = await apiClient.get(`/admin/users/${userId}`);
+    return response.data;
+  },
   getBookingStats: async (period: 'week' | 'month' | 'year' = 'month') => {
     const response = await apiClient.get<BookingStats>('/admin/bookings/stats', {
       params: { period },

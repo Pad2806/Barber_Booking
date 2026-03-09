@@ -399,6 +399,56 @@ export class AdminService {
     };
   }
 
+  async getUserById(userId: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        name: true,
+        avatar: true,
+        role: true,
+        isActive: true,
+        isVerified: true,
+        authProvider: true,
+        createdAt: true,
+        lastLoginAt: true,
+        bookings: {
+          take: 20,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            bookingCode: true,
+            date: true,
+            timeSlot: true,
+            totalAmount: true,
+            status: true,
+            paymentStatus: true,
+            salon: { select: { id: true, name: true } },
+            services: {
+              select: {
+                service: { select: { id: true, name: true } },
+                price: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            bookings: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    return user;
+  }
+
   async getAllSalons(params: {
     skip?: number;
     take?: number;

@@ -16,6 +16,7 @@ import {
   LogOut,
   Menu,
   User,
+  UserCheck,
   ShieldAlert,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
@@ -42,6 +43,7 @@ const MENU_ICONS: Record<string, React.ElementType> = {
   salons: Store,
   reviews: Star,
   settings: Settings,
+  customers: UserCheck,
 };
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
