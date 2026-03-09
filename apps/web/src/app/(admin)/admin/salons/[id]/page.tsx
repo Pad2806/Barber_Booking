@@ -1,15 +1,15 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useEffect, useState, useCallback } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ArrowLeft, Loader2, MapPin, Phone, Clock, Star, Users, Scissors, Calendar, TrendingUp, Edit } from 'lucide-react';
-import { salonApi, adminApi, apiClient } from '@/lib/api';
+import { salonApi, apiClient } from '@/lib/api';
 import { formatPrice, cn } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 export default function SalonDetailPage() {
-  const router = useRouter();
   const params = useParams();
   const salonId = params.id as string;
   
@@ -17,11 +17,7 @@ export default function SalonDetailPage() {
   const [salon, setSalon] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, [salonId]);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const [salonData, statsData] = await Promise.all([
@@ -32,11 +28,17 @@ export default function SalonDetailPage() {
       setStats(statsData);
     } catch (error: any) {
       toast.error('Không thể tải thông tin chi nhánh');
-      // router.push('/admin/salons');
     } finally {
       setLoading(false);
     }
-  };
+  }, [salonId]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+
+
 
   if (loading) {
     return (
@@ -127,7 +129,7 @@ export default function SalonDetailPage() {
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <div className="relative h-48">
               {salon.coverImage ? (
-                <img src={salon.coverImage} className="w-full h-full object-cover" alt={salon.name} />
+                <Image src={salon.coverImage} className="w-full h-full object-cover" alt={salon.name} fill />
               ) : (
                 <div className="w-full h-full bg-accent/10 flex items-center justify-center">
                   <Scissors className="w-12 h-12 text-accent/20" />
@@ -135,7 +137,7 @@ export default function SalonDetailPage() {
               )}
               {salon.logo && (
                 <div className="absolute -bottom-6 left-6 w-20 h-20 rounded-xl border-4 border-white overflow-hidden shadow-lg bg-white">
-                  <img src={salon.logo} className="w-full h-full object-cover" alt="Logo" />
+                  <Image src={salon.logo} className="w-full h-full object-cover" alt="Logo" fill />
                 </div>
               )}
             </div>
@@ -184,7 +186,7 @@ export default function SalonDetailPage() {
                 >
                   <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-100">
                     {s.user.avatar ? (
-                      <img src={s.user.avatar} className="w-full h-full object-cover" alt={s.user.name} />
+                      <Image src={s.user.avatar} className="w-full h-full object-cover" alt={s.user.name} fill />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center font-bold text-gray-400">
                         {s.user.name.charAt(0)}

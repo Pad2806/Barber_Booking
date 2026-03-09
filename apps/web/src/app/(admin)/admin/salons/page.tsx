@@ -71,7 +71,7 @@ export default function AdminSalonsPage() {
       salon.district?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleDelete = async (id: string) => {
+  const _handleDelete = async (id: string) => {
     if (!confirm('Bạn có chắc muốn xóa chi nhánh này? Mọi dữ liệu liên quan sẽ bị ảnh hưởng!')) return;
     try {
       await salonApi.delete(id);

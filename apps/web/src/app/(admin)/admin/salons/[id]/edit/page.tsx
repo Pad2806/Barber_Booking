@@ -40,6 +40,7 @@ export default function EditSalonPage() {
 
   useEffect(() => {
     fetchSalon();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [salonId]);
 
   const fetchSalon = async () => {

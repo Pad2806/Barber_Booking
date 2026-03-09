@@ -27,6 +27,7 @@ export default function EditServicePage() {
 
   useEffect(() => {
     fetchService();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serviceId]);
 
   const fetchService = async () => {

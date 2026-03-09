@@ -359,7 +359,7 @@ export default function AdminReviewsPage() {
             <form onSubmit={handleReply}>
               <div className="p-6 space-y-4">
                 <div className="bg-gray-50 p-4 rounded-xl text-sm italic text-gray-600">
-                  "{replyingTo.comment}"
+                  &ldquo;{replyingTo.comment}&rdquo;
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">

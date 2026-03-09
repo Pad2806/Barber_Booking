@@ -27,7 +27,7 @@ function resolveRoutePermission(pathname: string): Permission | null {
 }
 
 // STAFF can access any admin route at middleware level (position check happens in layout + backend)
-const STAFF_ALLOWED_PERMISSIONS = new Set<Permission>([
+const _STAFF_ALLOWED_PERMISSIONS = new Set<Permission>([
   Permission.VIEW_DASHBOARD,
   Permission.VIEW_ALL_BOOKINGS,
   Permission.VIEW_OWN_BOOKINGS,
