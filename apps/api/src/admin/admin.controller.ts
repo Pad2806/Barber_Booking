@@ -189,4 +189,18 @@ export class AdminController {
       rating: rating ? parseInt(rating) : undefined,
     });
   }
+
+  @Get('settings')
+  @RequirePermissions(Permission.MANAGE_SETTINGS)
+  @ApiOperation({ summary: 'Get system settings' })
+  getSettings() {
+    return this.adminService.getSettings();
+  }
+
+  @Patch('settings')
+  @RequirePermissions(Permission.MANAGE_SETTINGS)
+  @ApiOperation({ summary: 'Update system settings' })
+  updateSettings(@Body() data: Record<string, any>) {
+    return this.adminService.updateSettings(data);
+  }
 }

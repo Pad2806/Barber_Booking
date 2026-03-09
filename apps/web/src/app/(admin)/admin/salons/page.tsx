@@ -18,7 +18,8 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { adminApi } from '@/lib/api';
+import { adminApi, salonApi } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 interface SalonData {
   id: string;
@@ -69,6 +70,18 @@ export default function AdminSalonsPage() {
       salon.address?.toLowerCase().includes(search.toLowerCase()) ||
       salon.district?.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Bạn có chắc muốn xóa chi nhánh này? Mọi dữ liệu liên quan sẽ bị ảnh hưởng!')) return;
+    try {
+      await salonApi.delete(id);
+      setSalons(prev => prev.filter(s => s.id !== id));
+      setSelectedSalon(null);
+      toast.success('Xóa chi nhánh thành công!');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Không thể xóa chi nhánh');
+    }
+  };
 
   if (loading) {
     return (

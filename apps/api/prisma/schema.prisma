@@ -407,3 +407,13 @@ model UserFavoriteSalon {
   @@unique([userId, salonId])
   @@map("user_favorite_salons")
 }
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
+}

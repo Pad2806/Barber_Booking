@@ -22,9 +22,10 @@ interface ReviewData {
   staff: { id: string; name: string } | null;
   rating: number;
   comment: string;
+  reply: string | null;
+  repliedAt: string | null;
+  isVisible: boolean;
   createdAt: string;
-  isVerified?: boolean;
-  helpfulCount?: number;
 }
 
 export default function AdminReviewsPage() {
@@ -34,6 +35,11 @@ export default function AdminReviewsPage() {
   const [selectedReview, setSelectedReview] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Reply stats
+  const [replyingTo, setReplyingTo] = useState<ReviewData | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const [submittingReply, setSubmittingReply] = useState(false);
 
   const fetchReviews = useCallback(async () => {
     try {
@@ -54,6 +60,41 @@ export default function AdminReviewsPage() {
   useEffect(() => {
     void fetchReviews();
   }, [fetchReviews]);
+
+  const handleReply = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!replyingTo || !replyText.trim()) return;
+
+    try {
+      setSubmittingReply(true);
+      await adminApi.replyReview(replyingTo.id, replyText);
+      setReviews(prev =>
+        prev.map(r =>
+          r.id === replyingTo.id
+            ? { ...r, reply: replyText, repliedAt: new Date().toISOString() }
+            : r
+        )
+      );
+      setReplyingTo(null);
+      setReplyText('');
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Không thể gửi phản hồi');
+    } finally {
+      setSubmittingReply(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Bạn có chắc muốn xóa đánh giá này?')) return;
+    try {
+      // Assuming a generic deleteReview exists or similar
+      await adminApi.deleteReview(id);
+      setReviews(prev => prev.filter(r => r.id !== id));
+      setSelectedReview(null);
+    } catch (err: any) {
+      alert(err.response?.data?.message || 'Không thể xóa đánh giá');
+    }
+  };
 
   const filteredReviews = reviews.filter(review => {
     const matchesSearch =
@@ -259,7 +300,10 @@ export default function AdminReviewsPage() {
                         <Flag className="w-4 h-4" />
                         Đánh dấu spam
                       </button>
-                      <button className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm w-full text-red-600">
+                      <button
+                        onClick={() => handleDelete(review.id)}
+                        className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm w-full text-red-600"
+                      >
                         <Trash2 className="w-4 h-4" />
                         Xóa
                       </button>
@@ -271,18 +315,86 @@ export default function AdminReviewsPage() {
 
             <p className="text-gray-700 mb-4">{review.comment}</p>
 
+            {review.reply && (
+              <div className="bg-gray-50 rounded-lg p-4 mb-4 border-l-4 border-accent/20">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="font-semibold text-sm">Phản hồi của shop</p>
+                  <span className="text-xs text-gray-400">
+                    {review.repliedAt ? formatDateTime(review.repliedAt) : ''}
+                  </span>
+                </div>
+                <p className="text-gray-600 text-sm">{review.reply}</p>
+              </div>
+            )}
+
             <div className="flex items-center justify-between text-sm text-gray-500">
               <span>{formatDateTime(review.createdAt)}</span>
               <div className="flex items-center gap-4">
-                <button className="text-accent hover:underline flex items-center gap-1">
+                <button
+                  onClick={() => {
+                    setReplyingTo(review);
+                    setReplyText(review.reply || '');
+                  }}
+                  className="text-accent hover:underline flex items-center gap-1"
+                >
                   <MessageSquare className="w-4 h-4" />
-                  Phản hồi
+                  {review.reply ? 'Sửa phản hồi' : 'Phản hồi'}
                 </button>
               </div>
             </div>
           </div>
         ))}
       </div>
+
+      {/* Reply Modal */}
+      {replyingTo && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in duration-200">
+            <div className="p-6 border-b">
+              <h3 className="text-xl font-bold">Phản hồi đánh giá</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                Khách hàng: {replyingTo.customer.name} • {replyingTo.rating} sao
+              </p>
+            </div>
+            <form onSubmit={handleReply}>
+              <div className="p-6 space-y-4">
+                <div className="bg-gray-50 p-4 rounded-xl text-sm italic text-gray-600">
+                  "{replyingTo.comment}"
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nội dung phản hồi
+                  </label>
+                  <textarea
+                    required
+                    value={replyText}
+                    onChange={e => setReplyText(e.target.value)}
+                    className="w-full px-4 py-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-accent min-h-[120px]"
+                    placeholder="Cảm ơn khách hàng đã ghé thăm..."
+                  />
+                </div>
+              </div>
+              <div className="p-6 pt-0 flex gap-3">
+                <button
+                  type="submit"
+                  disabled={submittingReply}
+                  className="flex-1 bg-accent text-white py-2 rounded-xl font-bold hover:bg-accent/90 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {submittingReply && <Loader2 className="w-4 h-4 animate-spin" />}
+                  Gửi phản hồi
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setReplyingTo(null)}
+                  className="px-6 py-2 border rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {filteredReviews.length === 0 && (
         <div className="bg-white rounded-xl p-12 text-center shadow-sm">

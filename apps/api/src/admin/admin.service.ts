@@ -711,4 +711,24 @@ export class AdminService {
       },
     };
   }
+
+  async getSettings() {
+    const settings = await (this.prisma as any).setting.findMany();
+    return settings.reduce((acc: Record<string, any>, curr: any) => {
+      acc[curr.key] = curr.value;
+      return acc;
+    }, {} as Record<string, any>);
+  }
+
+  async updateSettings(data: Record<string, any>) {
+    const updates = Object.entries(data).map(([key, value]) =>
+      (this.prisma as any).setting.upsert({
+        where: { key },
+        update: { value: value as any },
+        create: { key, value: value as any },
+      })
+    );
+    await Promise.all(updates);
+    return this.getSettings();
+  }
 }

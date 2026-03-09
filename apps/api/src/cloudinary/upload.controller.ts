@@ -15,7 +15,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CloudinaryService, UploadFolder } from './cloudinary.service';
 
 @ApiTags('Upload')
-@Controller('api/upload')
+@Controller('upload')
 export class UploadController {
     constructor(private readonly cloudinaryService: CloudinaryService) { }
 

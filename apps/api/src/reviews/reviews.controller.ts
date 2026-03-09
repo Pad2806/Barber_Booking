@@ -7,6 +7,7 @@ import {
   Query,
   Patch,
   UseGuards,
+  Delete,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { Role, User } from '@prisma/client';
@@ -23,7 +24,7 @@ import { Public } from '../auth/decorators/public.decorator';
 @ApiTags('Reviews')
 @Controller('reviews')
 export class ReviewsController {
-  constructor(private readonly reviewsService: ReviewsService) {}
+  constructor(private readonly reviewsService: ReviewsService) { }
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -79,5 +80,14 @@ export class ReviewsController {
   @ApiOperation({ summary: 'Toggle review visibility' })
   toggleVisibility(@Param('id') id: string, @CurrentUser() user: User) {
     return this.reviewsService.toggleVisibility(id, user);
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SALON_OWNER, Role.SUPER_ADMIN)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a review' })
+  delete(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.reviewsService.delete(id, user);
   }
 }

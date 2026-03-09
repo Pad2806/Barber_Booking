@@ -11,7 +11,7 @@ import { Review, BookingStatus, Role, User } from '@prisma/client';
 
 @Injectable()
 export class ReviewsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(dto: CreateReviewDto, customerId: string): Promise<Review> {
     // Check booking exists and belongs to customer
@@ -217,6 +217,27 @@ export class ReviewsService {
     return this.prisma.review.update({
       where: { id },
       data: { isVisible: !review.isVisible },
+    });
+  }
+
+  async delete(id: string, user: User): Promise<void> {
+    const review = await this.findOne(id);
+
+    // Check salon ownership or super admin
+    const salon = await this.prisma.salon.findUnique({
+      where: { id: review.salonId },
+    });
+
+    if (!salon) {
+      throw new NotFoundException('Salon not found');
+    }
+
+    if (user.role !== Role.SUPER_ADMIN && salon.ownerId !== user.id) {
+      throw new ForbiddenException('Only salon owner can delete reviews');
+    }
+
+    await this.prisma.review.delete({
+      where: { id },
     });
   }
 

@@ -1,14 +1,34 @@
 'use client';
 
-import { useState } from 'react';
-import { Save, Building, CreditCard, Bell, Shield, Globe, Palette } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Save, Building, CreditCard, Bell, Shield, Globe, Palette, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { adminApi } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 type SettingsTab = 'general' | 'payment' | 'notifications' | 'security' | 'branding';
 
 export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<Record<string, any>>({});
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      setLoading(true);
+      const data = await adminApi.getSettings();
+      setSettings(data);
+    } catch (err: any) {
+      toast.error('Không thể tải cài đặt');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const TABS = [
     { id: 'general', label: 'Thông tin chung', icon: Building },
@@ -19,11 +39,28 @@ export default function AdminSettingsPage() {
   ];
 
   const handleSave = async () => {
-    setSaving(true);
-    // Mock save
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setSaving(false);
+    try {
+      setSaving(true);
+      await adminApi.updateSettings(settings);
+      toast.success('Lưu cài đặt thành công');
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Không thể lưu cài đặt');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const updateSetting = (key: string, value: any) => {
+    setSettings(prev => ({ ...prev, [key]: value }));
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -89,7 +126,8 @@ export default function AdminSettingsPage() {
                   </label>
                   <input
                     type="text"
-                    defaultValue="ReetroBarberShop"
+                    value={settings.businessName || 'ReetroBarberShop'}
+                    onChange={e => updateSetting('businessName', e.target.value)}
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
@@ -99,7 +137,8 @@ export default function AdminSettingsPage() {
                   </label>
                   <input
                     type="email"
-                    defaultValue="contact@reetro.vn"
+                    value={settings.contactEmail || 'contact@reetro.vn'}
+                    onChange={e => updateSetting('contactEmail', e.target.value)}
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
@@ -109,7 +148,8 @@ export default function AdminSettingsPage() {
                   </label>
                   <input
                     type="tel"
-                    defaultValue="1900 1234"
+                    value={settings.contactPhone || '1900 1234'}
+                    onChange={e => updateSetting('contactPhone', e.target.value)}
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
@@ -117,7 +157,8 @@ export default function AdminSettingsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
                   <input
                     type="url"
-                    defaultValue="https://reetro.vn"
+                    value={settings.website || 'https://reetro.vn'}
+                    onChange={e => updateSetting('website', e.target.value)}
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                 </div>
@@ -126,7 +167,8 @@ export default function AdminSettingsPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Địa chỉ</label>
                 <textarea
                   rows={3}
-                  defaultValue="123 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh"
+                  value={settings.address || '123 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh'}
+                  onChange={e => updateSetting('address', e.target.value)}
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 />
               </div>
@@ -147,7 +189,11 @@ export default function AdminSettingsPage() {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Ngân hàng</label>
-                  <select className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent">
+                  <select
+                    value={settings.bankCode || 'MB'}
+                    onChange={e => updateSetting('bankCode', e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                  >
                     <option value="VCB">Vietcombank</option>
                     <option value="TCB">Techcombank</option>
                     <option value="MB">MB Bank</option>
@@ -160,6 +206,8 @@ export default function AdminSettingsPage() {
                   </label>
                   <input
                     type="text"
+                    value={settings.bankAccount || ''}
+                    onChange={e => updateSetting('bankAccount', e.target.value)}
                     placeholder="1234567890"
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   />
@@ -170,6 +218,8 @@ export default function AdminSettingsPage() {
                   </label>
                   <input
                     type="text"
+                    value={settings.bankAccountName || ''}
+                    onChange={e => updateSetting('bankAccountName', e.target.value)}
                     placeholder="CONG TY TNHH REETRO"
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   />
@@ -180,6 +230,8 @@ export default function AdminSettingsPage() {
                   </label>
                   <input
                     type="password"
+                    value={settings.sepayApiKey || ''}
+                    onChange={e => updateSetting('sepayApiKey', e.target.value)}
                     placeholder="••••••••••••••••"
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                   />

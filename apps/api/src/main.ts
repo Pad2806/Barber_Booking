@@ -47,8 +47,8 @@ async function bootstrap() {
       .addTag('admin', 'Admin operations')
       .build();
 
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('docs', app, document);
+    const document = SwaggerModule.createDocument(app as any, config);
+    SwaggerModule.setup('docs', app as any, document);
   }
 
   const port = Number(process.env.PORT || process.env.API_PORT || 3001);

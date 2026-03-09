@@ -69,6 +69,7 @@ export interface Salon {
   images: string[];
   rating?: number;
   totalReviews?: number;
+  isActive: boolean;
 }
 
 export interface Service {
@@ -80,6 +81,7 @@ export interface Service {
   category: string;
   image?: string;
   salonId: string;
+  isActive: boolean;
 }
 
 export interface Staff {
@@ -182,12 +184,28 @@ export const salonApi = {
     const response = await apiClient.get<Salon>(`/salons/${id}`);
     return response.data;
   },
+  create: async (data: any) => {
+    const response = await apiClient.post<Salon>('/salons', data);
+    return response.data;
+  },
+  update: async (id: string, data: any) => {
+    const response = await apiClient.patch<Salon>(`/salons/${id}`, data);
+    return response.data;
+  },
+  delete: async (id: string) => {
+    const response = await apiClient.delete(`/salons/${id}`);
+    return response.data;
+  },
 };
 
 // Service APIs
 export const serviceApi = {
   getBySalon: async (salonId: string) => {
     const response = await apiClient.get<Service[]>(`/services/salon/${salonId}`);
+    return response.data;
+  },
+  getById: async (id: string) => {
+    const response = await apiClient.get<Service>(`/services/${id}`);
     return response.data;
   },
 };
@@ -476,6 +494,21 @@ export const adminApi = {
   },
   deleteService: async (id: string) => {
     await apiClient.delete(`/services/${id}`);
+  },
+  replyReview: async (reviewId: string, reply: string) => {
+    const response = await apiClient.patch(`/reviews/${reviewId}/reply`, { reply });
+    return response.data;
+  },
+  deleteReview: async (id: string) => {
+    await apiClient.delete(`/reviews/${id}`);
+  },
+  getSettings: async () => {
+    const response = await apiClient.get<Record<string, any>>('/admin/settings');
+    return response.data;
+  },
+  updateSettings: async (data: Record<string, any>) => {
+    const response = await apiClient.patch<Record<string, any>>('/admin/settings', data);
+    return response.data;
   },
 };
 

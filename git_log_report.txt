@@ -1,0 +1,50 @@
+﻿2026-03-01|fix: resolve QR code empty/broken image by adding allowed domain to next.config and robust URL parameters in backend
+2026-03-01|feat: complete QR payment flow with dynamic QR display, status polling, and manual confirmation in admin dashboard
+2026-03-01|fix(web): properly match cancel api route with backend patch endpoint
+2026-03-01|feat(web): update routing on payment and booking details, and fix my-bookings api call
+2026-02-28|fix(api): override database seed constraints and ensure Sunday morning slots are successfully generated
+2026-02-28|feat(booking): restrict Sunday working hours to morning only and prevent booking past close time
+2026-02-28|feat(web): match payment ui with zalo
+2026-02-28|fix(payment): return paymentStatus properly and fix old payment routes
+2026-02-28|fix(web): properly fetch available slots based on selected stylist or all barbers
+2026-02-28|feat(web): filter stylist roles from staff list in booking page
+2026-02-28|fix(web): correct endpoint paths for getting services and staff by salon
+2026-02-28|fix(web): correct salon API endpoints for getBySlug and getById
+2026-02-28|fix(ci): use turbo for web build to resolve shared module dependency
+2026-02-28|feat(web): update booking flow to match zalo mini app features including 50% deposit display and time slot local filtering
+2026-02-28|fix(build): compile shared package into commonjs to resolve esm node20 issues
+2026-02-28|fix: resolve esm directory import node20 error
+2026-02-27|feat: centralize role-based access control and image upload
+2026-02-26|done implement FE web and zalo
+2026-02-26|feat(api): implement deposit+final payment flow & add-service endpoint - Schema: 1:N Payment, PaymentType enum, DEPOSIT_PAID status, RECEPTIONIST position - PaymentsService: createPayment (DEPOSIT), checkout (FINAL), getBookingPaymentSummary - BookingsService: addServiceToBooking for receptionist upsell - All singular payment refs updated to plural payments
+2026-02-25|add package.json
+2026-02-25|chore: remove sharp dev dependency from root
+2026-02-25|feat: add bulldog mascot favicon, logo, og-image and update Zalo logo URL
+2026-02-25|fix(api): use correct config path for frontend URL in reset link
+2026-02-25|feat(api): replace SMTP mailer with Resend HTTP API for email delivery
+2026-02-25|fix(api): add tls rejectUnauthorized false for robust SMTP connections
+2026-02-24|fix(auth): correct layout on forgot password and expose SMTP errors
+2026-02-24|fix: layout overlap on forgot password page
+2026-02-24|fix(web): remove deprecated images.domains config
+2026-02-24|test: mock MailerService in auth tests
+2026-02-24|chore: sync lockfile for mailer dependencies
+2026-02-24|feat: implement OAuth setup and password reset mailer
+2026-02-24|fix: fix 401 unauthorized server-to-server networking
+2026-02-24|fix: fix 401 unauthorized server-to-server networking
+2026-02-17|debug: expose full webhook error message and fix date parsing
+2026-02-17|fix: double RB prefix in booking QR code which caused webhook 404 error
+2026-02-17|fix: support SePay Apikey auth format in webhook controller
+2026-02-17|fix: remove non-existent rating field from Salon select in FavoritesService
+2026-02-17|fix: register FavoritesModule in AppModule and graceful favorites check
+2026-02-17|fix: permission denied
+2026-02-17|feat: favourite salon and contact
+2026-02-16|fix: add space under Header
+2026-02-16|fix: update payment amount to 50% deposit, fix webhook validation
+2026-02-16|feat: complete booking flow update
+2026-02-16|feat: updated bank to TPBank, fixed salon images, added date restrictions
+2026-02-16|fix: cors wildcard + phone-only login/register for zalo
+2026-02-16|fix: disable credentials for cors strict mode
+2026-02-16|fix: allow null origin for zalo webview
+2026-02-16|feat: add phone password login for zalo mini app
+2026-02-15|feat: add zalo compliance endpoints (webhook/terms)
+2026-02-15|fix: cors error - allow all origins in dev mode and log blocked origins
