@@ -51,4 +51,9 @@ export class CreateServiceDto {
   @ApiProperty({ description: 'Salon ID' })
   @IsUUID()
   salonId: string;
+
+  @ApiPropertyOptional({ default: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

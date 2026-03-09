@@ -112,4 +112,9 @@ export class CreateSalonDto {
   @IsOptional()
   @IsString()
   bankName?: string;
+
+  @ApiPropertyOptional({ default: true })
+  @IsOptional()
+  @IsBoolean()
+  isActive?: boolean;
 }

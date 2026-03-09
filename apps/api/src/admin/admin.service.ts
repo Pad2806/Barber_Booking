@@ -102,11 +102,14 @@ export class AdminService {
       totalBookings,
       todayBookings,
       monthBookings,
-      bookingGrowth: Math.round(bookingGrowth * 100) / 100,
-      monthRevenue: monthRevenueNum,
-      revenueGrowth: Math.round(revenueGrowth * 100) / 100,
       pendingBookings,
-      recentBookings,
+      monthRevenue: monthRevenueNum,
+      bookingGrowth: Math.round(bookingGrowth),
+      revenueGrowth: Math.round(revenueGrowth),
+      recentBookings: recentBookings.map(b => ({
+        ...b,
+        totalAmount: Number(b.totalAmount),
+      })),
     };
   }
 
@@ -300,11 +303,11 @@ export class AdminService {
     ]);
 
     return {
-      total: total._sum.amount || 0,
+      total: Number(total._sum.amount || 0),
       transactionCount: total._count,
       byMethod: byMethod.map(m => ({
         method: m.method,
-        amount: m._sum.amount || 0,
+        amount: Number(m._sum.amount || 0),
         count: m._count,
       })),
       timeline,
@@ -446,7 +449,17 @@ export class AdminService {
       throw new Error('User not found');
     }
 
-    return user;
+    return {
+      ...user,
+      bookings: user.bookings.map((b) => ({
+        ...b,
+        totalAmount: Number(b.totalAmount),
+        services: b.services.map((s) => ({
+          ...s,
+          price: Number(s.price),
+        })),
+      })),
+    };
   }
 
   async getAllSalons(params: {
@@ -554,10 +567,11 @@ export class AdminService {
     return {
       bookings: bookings.map(b => ({
         ...b,
+        totalAmount: Number(b.totalAmount),
         staff: b.staff ? { id: b.staff.id, name: b.staff.user?.name || 'N/A' } : null,
         services: b.services.map(s => ({
           name: s.service.name,
-          price: s.service.price,
+          price: Number(s.service.price),
         })),
       })),
       meta: {
@@ -691,7 +705,7 @@ export class AdminService {
         id: s.id,
         name: s.name,
         description: s.description,
-        price: s.price,
+        price: Number(s.price),
         duration: s.duration,
         category: s.category,
         image: s.image,

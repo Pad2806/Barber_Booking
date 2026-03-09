@@ -332,8 +332,8 @@ export class SalonsService {
         lastMonthBookings > 0
           ? ((monthBookings - lastMonthBookings) / lastMonthBookings) * 100
           : 100,
-      totalRevenue: totalRevenue._sum.amount || 0,
-      monthRevenue: monthRevenue._sum.amount || 0,
+      totalRevenue: Number(totalRevenue._sum.amount || 0),
+      monthRevenue: Number(monthRevenue._sum.amount || 0),
       averageRating: avgRating._avg.rating || 0,
       totalReviews,
     };
