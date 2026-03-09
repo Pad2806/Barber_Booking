@@ -1,14 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
+import { Save, ArrowLeft, Loader2 } from 'lucide-react';
 import { adminApi } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { SERVICE_CATEGORIES } from '@/lib/utils';
 
 export default function NewServicePage() {
   const router = useRouter();
+  const [salons, setSalons] = useState<{ id: string; name: string }[]>([]);
+  const [loadingSalons, setLoadingSalons] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -18,12 +21,31 @@ export default function NewServicePage() {
     duration: '',
     category: 'HAIRCUT',
     isActive: true,
+    salonId: '',
   });
+
+  useEffect(() => {
+    fetchSalons();
+  }, []);
+
+  const fetchSalons = async () => {
+    try {
+      const data = await adminApi.getAllSalons({ take: 100 });
+      setSalons(data.data || []);
+      if (data.data?.length > 0) {
+        setFormData(prev => ({ ...prev, salonId: data.data[0].id }));
+      }
+    } catch (err) {
+      toast.error('Không thể tải danh sách chi nhánh');
+    } finally {
+      setLoadingSalons(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.price || !formData.duration) {
+    if (!formData.name || !formData.price || !formData.duration || !formData.salonId) {
       toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
       return;
     }
@@ -37,6 +59,7 @@ export default function NewServicePage() {
         duration: parseInt(formData.duration),
         category: formData.category,
         isActive: formData.isActive,
+        salonId: formData.salonId,
       });
       toast.success('Tạo dịch vụ thành công!');
       router.push('/admin/services');
@@ -135,12 +158,35 @@ export default function NewServicePage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 required
               >
-                <option value="HAIRCUT">Cắt tóc</option>
-                <option value="PERM">Uốn tóc</option>
-                <option value="COLOR">Nhuộm tóc</option>
-                <option value="TREATMENT">Chăm sóc</option>
-                <option value="STYLING">Tạo kiểu</option>
-                <option value="OTHER">Khác</option>
+                {Object.entries(SERVICE_CATEGORIES).map(([key, value]) => (
+                  <option key={key} value={key}>
+                    {value.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Salon Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Chi nhánh <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={formData.salonId}
+                onChange={e => setFormData({ ...formData, salonId: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                required
+                disabled={loadingSalons}
+              >
+                {loadingSalons ? (
+                  <option>Đang tải chi nhánh...</option>
+                ) : (
+                  salons.map(salon => (
+                    <option key={salon.id} value={salon.id}>
+                      {salon.name}
+                    </option>
+                  ))
+                )}
               </select>
             </div>
 

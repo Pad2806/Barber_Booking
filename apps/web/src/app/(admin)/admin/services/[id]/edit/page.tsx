@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Loader2, Save, Trash2 } from 'lucide-react';
 import { adminApi, serviceApi } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { SERVICE_CATEGORIES } from '@/lib/utils';
 
 export default function EditServicePage() {
   const router = useRouter();
@@ -198,12 +199,11 @@ export default function EditServicePage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
                 required
               >
-                <option value="HAIRCUT">Cắt tóc</option>
-                <option value="PERM">Uốn tóc</option>
-                <option value="COLOR">Nhuộm tóc</option>
-                <option value="TREATMENT">Chăm sóc</option>
-                <option value="STYLING">Tạo kiểu</option>
-                <option value="OTHER">Khác</option>
+                {Object.entries(SERVICE_CATEGORIES).map(([key, value]) => (
+                  <option key={key} value={key}>
+                    {value.label}
+                  </option>
+                ))}
               </select>
             </div>
 

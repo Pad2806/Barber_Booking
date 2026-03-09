@@ -71,7 +71,7 @@ export default function AdminSalonsPage() {
       salon.district?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const _handleDelete = async (id: string) => {
+  const handleDelete = async (id: string) => {
     if (!confirm('Bạn có chắc muốn xóa chi nhánh này? Mọi dữ liệu liên quan sẽ bị ảnh hưởng!')) return;
     try {
       await salonApi.delete(id);
@@ -176,7 +176,10 @@ export default function AdminSalonsPage() {
                       <Edit className="w-4 h-4" />
                       Chỉnh sửa
                     </Link>
-                    <button className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm w-full text-red-600">
+                    <button 
+                      onClick={() => handleDelete(salon.id)}
+                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm w-full text-red-600"
+                    >
                       <Trash2 className="w-4 h-4" />
                       Xóa
                     </button>

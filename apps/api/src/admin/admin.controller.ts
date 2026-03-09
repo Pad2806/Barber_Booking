@@ -22,13 +22,6 @@ export class AdminController {
     return this.adminService.getDashboardStats();
   }
 
-  @Get('users/stats')
-  @RequirePermissions(Permission.VIEW_USERS)
-  @ApiOperation({ summary: 'Get user statistics' })
-  getUserStats() {
-    return this.adminService.getUserStats();
-  }
-
   @Get('users')
   @RequirePermissions(Permission.MANAGE_USERS)
   @ApiOperation({ summary: 'Get all users (paginated)' })
@@ -57,13 +50,6 @@ export class AdminController {
   getUserById(@Param('id') id: string) {
     return this.adminService.getUserById(id);
   }
-  @Get('salons/stats')
-  @RequirePermissions(Permission.VIEW_SALONS)
-  @ApiOperation({ summary: 'Get salon statistics' })
-  getSalonStats() {
-    return this.adminService.getSalonStats();
-  }
-
   @Get('salons')
   @RequirePermissions(Permission.VIEW_SALONS)
   @ApiOperation({ summary: 'Get all salons (paginated)' })

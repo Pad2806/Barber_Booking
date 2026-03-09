@@ -488,6 +488,7 @@ export const adminApi = {
     duration: number;
     category: string;
     isActive?: boolean;
+    salonId: string;
   }) => {
     const response = await apiClient.post<Service>('/services', data);
     return response.data;
@@ -500,6 +501,7 @@ export const adminApi = {
       price: number;
       duration: number;
       category: string;
+      isActive: boolean;
     }>
   ) => {
     const response = await apiClient.patch<Service>(`/services/${id}`, data);

@@ -1,0 +1,94 @@
+{
+    "meta": {
+        "schema_version": "1.1.0",
+        "awf_version": "3.3.0"
+    },
+    "project": {
+        "name": "Reetro Barber Booking",
+        "type": "Fullstack NextJS NestJS app",
+        "status": "development"
+    },
+    "tech_stack": {
+        "frontend": {
+            "framework": "Next.js",
+            "language": "TypeScript",
+            "styling": "TailwindCSS",
+            "components": "Lucide React",
+            "auth": "NextAuth.js"
+        },
+        "backend": {
+            "framework": "NestJS",
+            "language": "TypeScript",
+            "orm": "Prisma",
+            "auth": "JWT Passport"
+        },
+        "database": {
+            "type": "PostgreSQL"
+        },
+        "deployment": {
+            "tool": "Dokploy via Github Actions"
+        }
+    },
+    "database_schema": {
+        "summary": "Platform manages Salons, Services, Users (Admin, Owner, Staff, Customer), Bookings, Reviews, Payments.",
+        "tables": [
+            "User",
+            "Salon",
+            "Service",
+            "Staff",
+            "Booking",
+            "BookingService",
+            "Payment",
+            "Review",
+            "ServiceCategory"
+        ],
+        "relationships_explained": "1 User can have 1 Staff profile and multiple Bookings. 1 Booking belongs to 1 Salon and contains multiple Services via BookingService. 1 Booking can have multiple Payments."
+    },
+    "api_endpoints": [
+        {
+            "path": "/admin/dashboard",
+            "explained": "Retrieve overall platform statistics (revenue, users, bookings)."
+        },
+        {
+            "path": "/admin/users/:id",
+            "explained": "Retrieve single customer detail along with its booking history."
+        },
+        {
+            "path": "/payment/generate-qr",
+            "explained": "Generate a VietQR code for the specified booking."
+        },
+        {
+            "path": "/webhooks/sepay",
+            "explained": "Webhook listener for automatic payment confirmations from SePay API."
+        }
+    ],
+    "business_rules": [
+        "Staff are linked to exactly 1 Salon and have specific POSITIONS determining permissions.",
+        "Payments support CASH or VIETQR. Webhooks automatically confirm VietQR transactions.",
+        "A booking contains time slots in strings like HH:mm format."
+    ],
+    "features": [
+        "Customer portal for booking appointments",
+        "Staff portal for checking schedule",
+        "Global Admin CRM for managing customers, salons, and revenues",
+        "Automatic payment system via SePay Webhook",
+        "Ratings and reviews platform for salons"
+    ],
+    "knowledge_items": {
+        "patterns": [
+            "React Hook Form with Zod",
+            "Prisma FindUnique/FindMany complex joins",
+            "Centralized Permission array in shared library"
+        ],
+        "gotchas": [
+            "MappedTypes trigger TS2742, avoid PartialType across monorepos and explicitly declare properties",
+            "React exhaustive-deps strictness on useEffect",
+            "NestJS JWT Guard missing properties if relations not included"
+        ],
+        "conventions": [
+            "Use next/image for rendering",
+            "Use eslint-disable for intentionally missing deps",
+            "Use Tailwind UI classes and Lucide Icons"
+        ]
+    }
+}

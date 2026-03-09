@@ -11,7 +11,7 @@ import { Salon, Role, User } from '@prisma/client';
 
 @Injectable()
 export class SalonsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(dto: CreateSalonDto, ownerId: string): Promise<Salon> {
     // Check if slug already exists
@@ -39,9 +39,12 @@ export class SalonsService {
     search?: string;
     isActive?: boolean;
   }) {
-    const { skip = 0, take = 20, city, district, search, isActive = true } = params;
+    const { skip = 0, take = 20, city, district, search, isActive } = params;
 
-    const where: any = { isActive };
+    const where: any = {};
+    if (isActive !== undefined) {
+      where.isActive = isActive;
+    }
 
     if (city) {
       where.city = city;

@@ -483,8 +483,22 @@ export class AdminService {
       this.prisma.salon.count({ where }),
     ]);
 
+    const salonsWithRating = await Promise.all(
+      salons.map(async (salon) => {
+        const avgRating = await this.prisma.review.aggregate({
+          where: { salonId: salon.id, isVisible: true },
+          _avg: { rating: true },
+        });
+        return {
+          ...salon,
+          rating: avgRating._avg.rating || 0,
+        };
+      }),
+    );
+
     return {
-      data: salons,
+      data: salonsWithRating,
+
       meta: {
         total,
         skip,
