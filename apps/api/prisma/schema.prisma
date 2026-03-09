@@ -202,6 +202,8 @@ model Service {
   duration    Int             // Minutes
   category    ServiceCategory
   image       String?
+  videoUrl    String?
+  gallery     String[]        @default([])
   isActive    Boolean         @default(true)
   order       Int             @default(0)
 

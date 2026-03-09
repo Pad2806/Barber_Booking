@@ -709,6 +709,8 @@ export class AdminService {
         duration: s.duration,
         category: s.category,
         image: s.image,
+        videoUrl: s.videoUrl,
+        gallery: s.gallery,
         isActive: s.isActive,
         order: s.order,
         totalBookings: s._count.bookingServices,

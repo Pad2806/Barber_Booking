@@ -4,10 +4,11 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { MapPin, Star, Clock, Phone, ChevronRight, Check } from 'lucide-react';
+import { MapPin, Star, Clock, Phone, ChevronRight, Check, Play } from 'lucide-react';
 import { salonApi, serviceApi, staffApi, Salon, Service, Staff } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
 import { formatPrice, SERVICE_CATEGORIES, STAFF_POSITIONS, cn } from '@/lib/utils';
+import ServiceDetailModal from '@/components/ServiceDetailModal';
 
 export default function SalonDetailPage() {
   const params = useParams();
@@ -21,6 +22,10 @@ export default function SalonDetailPage() {
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'services' | 'staff' | 'info'>('services');
+
+  // Service Detail Modal
+  const [selectedDetailService, setSelectedDetailService] = useState<Service | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -195,38 +200,70 @@ export default function SalonDetailPage() {
                         key={service.id}
                         onClick={() => toggleService(service)}
                         className={cn(
-                          'bg-white rounded-xl p-5 cursor-pointer transition-all border-2',
+                          'bg-white rounded-xl p-3 cursor-pointer transition-all border-2 relative group',
                           isServiceSelected(service.id)
                             ? 'border-accent bg-accent/5'
                             : 'border-transparent hover:shadow-md'
                         )}
                       >
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-gray-800">{service.name}</h4>
-                            {service.description && (
-                              <p className="text-sm text-gray-500 mt-1">{service.description}</p>
-                            )}
-                            <div className="flex items-center gap-4 mt-3">
-                              <span className="text-xl font-bold text-accent">
-                                {formatPrice(service.price)}
-                              </span>
-                              <span className="text-sm text-gray-400">
-                                ⏱ {service.duration} phút
-                              </span>
+                        <div className="flex gap-4">
+                          {/* Thumbnail */}
+                          {(service.image || service.videoUrl) && (
+                            <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
+                              <Image
+                                src={service.image || '/images/service-placeholder.jpg'}
+                                alt={service.name}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform"
+                                sizes="96px"
+                              />
+                              {service.videoUrl && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
+                                  <div className="w-8 h-8 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white">
+                                    <Play className="w-4 h-4 fill-white" />
+                                  </div>
+                                </div>
+                              )}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedDetailService(service);
+                                  setIsModalOpen(true);
+                                }}
+                                className="absolute bottom-1 right-1 p-1.5 bg-white/90 rounded-md text-xs font-medium text-gray-700 hover:bg-white shadow-sm transition-colors"
+                              >
+                                Xem kĩ
+                              </button>
                             </div>
-                          </div>
-                          <div
-                            className={cn(
-                              'w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0',
-                              isServiceSelected(service.id)
-                                ? 'bg-accent border-accent'
-                                : 'border-gray-300'
-                            )}
-                          >
-                            {isServiceSelected(service.id) && (
-                              <Check className="w-4 h-4 text-white" />
-                            )}
+                          )}
+
+                          <div className="flex-1 flex justify-between gap-2">
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-gray-800 line-clamp-1">{service.name}</h4>
+                              {service.description && (
+                                <p className="text-sm text-gray-500 mt-1 line-clamp-2">{service.description}</p>
+                              )}
+                              <div className="flex items-center gap-3 mt-2">
+                                <span className="text-lg font-bold text-accent">
+                                  {formatPrice(service.price)}
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                  ⏱ {service.duration} phút
+                                </span>
+                              </div>
+                            </div>
+                            <div
+                              className={cn(
+                                'w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1',
+                                isServiceSelected(service.id)
+                                  ? 'bg-accent border-accent'
+                                  : 'border-gray-300'
+                              )}
+                            >
+                              {isServiceSelected(service.id) && (
+                                <Check className="w-4 h-4 text-white" />
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -330,6 +367,17 @@ export default function SalonDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Detail Modal */}
+      {selectedDetailService && (
+        <ServiceDetailModal
+          service={selectedDetailService}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSelect={() => toggleService(selectedDetailService)}
+          isSelected={isServiceSelected(selectedDetailService.id)}
+        />
+      )}
     </div>
   );
 }

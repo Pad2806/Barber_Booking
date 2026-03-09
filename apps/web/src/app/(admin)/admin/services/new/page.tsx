@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Save, ArrowLeft, Loader2 } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, Video, Image as ImageIcon } from 'lucide-react';
 import { adminApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { SERVICE_CATEGORIES } from '@/lib/utils';
+import ImageUpload from '@/components/ImageUpload';
+import MultiImageUpload from '@/components/MultiImageUpload';
 
 export default function NewServicePage() {
   const router = useRouter();
@@ -22,6 +24,9 @@ export default function NewServicePage() {
     category: 'HAIRCUT',
     isActive: true,
     salonId: '',
+    image: '',
+    videoUrl: '',
+    gallery: [] as string[],
   });
 
   useEffect(() => {
@@ -60,6 +65,9 @@ export default function NewServicePage() {
         category: formData.category,
         isActive: formData.isActive,
         salonId: formData.salonId,
+        image: formData.image || undefined,
+        videoUrl: formData.videoUrl || undefined,
+        gallery: formData.gallery,
       });
       toast.success('Tạo dịch vụ thành công!');
       router.push('/admin/services');
@@ -190,7 +198,6 @@ export default function NewServicePage() {
               </select>
             </div>
 
-            {/* Status */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
               <label className="flex items-center gap-2 cursor-pointer mt-3">
@@ -202,6 +209,60 @@ export default function NewServicePage() {
                 />
                 <span className="text-sm text-gray-700">Đang hoạt động</span>
               </label>
+            </div>
+          </div>
+
+          <div className="space-y-6 pt-6 border-t">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <ImageIcon className="w-5 h-5" />
+              Hình ảnh & Video
+            </h3>
+
+            <div className="grid md:grid-cols-2 gap-8">
+              {/* Main Image */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Ảnh đại diện dịch vụ
+                </label>
+                <ImageUpload
+                  value={formData.image}
+                  onChange={url => setFormData({ ...formData, image: url })}
+                  folder="services"
+                />
+              </div>
+
+              {/* Video URL */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
+                  <Video className="w-4 h-4" />
+                  Link Video (Youtube/Cloudinary)
+                </label>
+                <input
+                  type="url"
+                  value={formData.videoUrl}
+                  onChange={e => setFormData({ ...formData, videoUrl: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+                  placeholder="https://www.youtube.com/watch?v=..."
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Hiển thị video giới thiệu kỹ thuật hớt tóc hoặc kết quả.
+                </p>
+              </div>
+            </div>
+
+            {/* Gallery */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Bộ sưu tập ảnh mẫu (Gallery)
+              </label>
+              <MultiImageUpload
+                value={formData.gallery}
+                onChange={urls => setFormData({ ...formData, gallery: urls })}
+                folder="services"
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                Nên thêm 3-5 ảnh kết quả thực tế để khách hàng tham khảo.
+              </p>
             </div>
           </div>
 

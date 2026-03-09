@@ -80,6 +80,8 @@ export interface Service {
   duration: number;
   category: string;
   image?: string;
+  videoUrl?: string;
+  gallery?: string[];
   salonId: string;
   isActive: boolean;
 }
@@ -489,6 +491,9 @@ export const adminApi = {
     category: string;
     isActive?: boolean;
     salonId: string;
+    image?: string;
+    videoUrl?: string;
+    gallery?: string[];
   }) => {
     const response = await apiClient.post<Service>('/services', data);
     return response.data;
@@ -502,6 +507,9 @@ export const adminApi = {
       duration: number;
       category: string;
       isActive: boolean;
+      image?: string;
+      videoUrl?: string;
+      gallery?: string[];
     }>
   ) => {
     const response = await apiClient.patch<Service>(`/services/${id}`, data);

@@ -5,6 +5,7 @@ import {
   IsEnum,
   IsBoolean,
   Min,
+  IsArray,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { ServiceCategory } from '@prisma/client';
@@ -44,6 +45,17 @@ export class UpdateServiceDto {
   @IsOptional()
   @IsString()
   image?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  videoUrl?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  gallery?: string[];
 
   @ApiPropertyOptional()
   @IsOptional()
