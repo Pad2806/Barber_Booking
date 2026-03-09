@@ -179,123 +179,123 @@ export default function PaymentPage() {
 
   // Payment Pending - Show QR
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 max-w-lg">
-        <div className="bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100">
-          {/* Header */}
-          <div className="bg-accent p-6 text-white text-center">
-            <QrCode className="w-12 h-12 mx-auto mb-2" />
-            <h1 className="text-2xl font-heading font-bold">Quét mã để thanh toán</h1>
-            <p className="text-white/80 mt-1">Sử dụng App ngân hàng để quét</p>
+    <div className="min-h-screen bg-[#FDFCFB] py-12 pb-32">
+      <div className="container mx-auto px-4 max-w-lg animate-in fade-in zoom-in-95 duration-700">
+        <div className="bg-white rounded-[40px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-gray-100">
+          {/* Status Header */}
+          <div className="bg-gray-900 p-10 text-center relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-accent/20 to-transparent pointer-events-none" />
+             <div className="relative z-10">
+               <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-6 backdrop-blur-md border border-white/20">
+                 <QrCode className="w-10 h-10 text-accent animate-pulse" />
+               </div>
+               <h1 className="text-3xl font-heading font-black text-white mb-2 tracking-tight">THANH TOÁN</h1>
+               <p className="text-gray-400 text-xs font-bold uppercase tracking-[0.2em] opacity-60">Quét mã bằng App ngân hàng</p>
+             </div>
           </div>
 
-          {/* QR Code Content */}
-          <div className="p-6">
-            <div className="text-center mb-6">
-              <p className="text-sm text-gray-500 mb-1">Mã đặt lịch</p>
-              <p className="font-semibold text-gray-800">{booking?.bookingCode}</p>
+          {/* QR & Bank Section */}
+          <div className="p-8">
+            <div className="text-center mb-8 bg-gray-50 rounded-2xl py-4 border border-gray-100">
+              <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">Mã đặt lịch của bạn</p>
+              <p className="text-xl font-black text-gray-900 tracking-tighter">{booking?.bookingCode}</p>
             </div>
 
-            <div className="p-6 bg-white border border-gray-100 rounded-2xl shadow-sm text-center">
-              {/* Amount */}
-              <div className="mb-4">
-                <p className="text-sm text-gray-500 mb-1">Số tiền đặt cọc (50%)</p>
-                <p className="text-3xl font-bold text-accent">
-                  {formatPrice(qrData?.amount || (booking?.totalAmount ? booking.totalAmount * 0.5 : 0))}
-                </p>
+            <div className="relative flex flex-col items-center">
+              {/* Amount Pill */}
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20 px-6 py-2 bg-accent rounded-full text-white font-black text-lg shadow-xl shadow-accent/20 scale-110">
+                {formatPrice(qrData?.amount || (booking?.totalAmount ? booking.totalAmount * 0.5 : 0))}
               </div>
 
-              {/* QR Image */}
-              {qrData?.qrCode && (
-                <div className="bg-white p-3 rounded-2xl border border-gray-100 inline-block mb-6 shadow-sm">
-                  <Image src={qrData.qrCode} alt="QR Code" width={224} height={224} unoptimized className="block" />
-                </div>
-              )}
-
-              {/* Bank Info */}
-              {qrData && (
-                <div className="bg-gray-50/80 rounded-xl p-4 space-y-3 text-left">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-500">Ngân hàng</span>
-                    <span className="font-semibold">{qrData?.bankName || qrData?.bankCode}</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-gray-500">Số tài khoản</span>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold font-mono">{qrData?.bankAccount}</span>
-                      <button
-                        onClick={() => copyToClipboard(qrData?.bankAccount || '')}
-                        className="text-accent hover:text-accent/80 p-1"
-                      >
-                        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                      </button>
+              {/* QR Image Frame */}
+              <div className="bg-white p-6 pt-10 rounded-[32px] border-2 border-gray-100 inline-block mb-10 shadow-2xl relative">
+                {qrData?.qrCode ? (
+                  <div className="relative group grayscale hover:grayscale-0 transition-all duration-700">
+                    <Image src={qrData.qrCode} alt="QR Code" width={260} height={260} unoptimized className="block rounded-xl" />
+                    <div className="absolute inset-x-0 -bottom-2 flex justify-center translate-y-full opacity-0 group-hover:opacity-100 transition-opacity">
+                       <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">ĐÃ TỐI ƯU CHO MOBILE BANKING</span>
                     </div>
                   </div>
-                  {booking && (
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-500">Nội dung chuyển khoản</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold font-mono text-accent">{booking.bookingCode}</span>
-                        <button
-                          onClick={() => copyToClipboard(booking.bookingCode)}
-                          className="text-accent hover:text-accent/80 p-1"
-                        >
-                          {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                        </button>
-                      </div>
+                ) : (
+                  <div className="w-[260px] h-[260px] flex flex-col items-center justify-center gap-4 text-gray-200">
+                    <RefreshCw className="w-12 h-12 animate-spin" />
+                    <span className="text-xs font-bold uppercase tracking-widest">Đang tạo mã...</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Bank Details Visual Card */}
+              <div className="w-full bg-gradient-to-br from-gray-50 to-white rounded-3xl p-6 border border-gray-100 space-y-5">
+                 <div className="flex justify-between items-center group">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-tight">Ngân hàng</span>
+                    <span className="text-sm font-black text-gray-900">{qrData?.bankName || qrData?.bankCode}</span>
+                 </div>
+                 <div className="h-px bg-dashed border-t border-gray-200" />
+                 <div className="flex justify-between items-center bg-white p-3 rounded-2xl border border-gray-100 group">
+                    <div>
+                       <p className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-1">Số tài khoản</p>
+                       <p className="text-lg font-black text-gray-900 font-mono tracking-tighter">{qrData?.bankAccount}</p>
                     </div>
-                  )}
-                </div>
-              )}
-
-              {/* Timer */}
-              <div className="mt-6 text-center">
-                <p className="text-xs text-gray-500 mb-1">Thời gian còn lại</p>
-                <div className="flex items-center justify-center gap-2">
-                  <Clock
-                    className={cn('w-4 h-4', countdown <= 60 ? 'text-red-500' : 'text-accent')}
-                  />
-                  <span
-                    className={cn('text-xl font-bold font-mono', countdown <= 60 ? 'text-red-500' : 'text-accent')}
-                  >
-                    {formatTime(countdown)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Status Indicator */}
-              <div className="mt-4 flex items-center justify-center gap-2">
-                <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
-                <span className="text-sm text-gray-500">Đang chờ xác nhận thanh toán...</span>
+                    <button
+                      onClick={() => copyToClipboard(qrData?.bankAccount || '')}
+                      className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 hover:text-accent hover:bg-accent/10 transition-all active:scale-90"
+                    >
+                      {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
+                    </button>
+                 </div>
+                 <div className="flex justify-between items-center bg-accent/5 p-3 rounded-2xl border border-accent/10 group">
+                    <div>
+                       <p className="text-[10px] font-bold text-accent uppercase leading-none mb-1">Nội dung (BẮT BUỘC)</p>
+                       <p className="text-lg font-black text-accent font-mono tracking-tighter">{booking?.bookingCode}</p>
+                    </div>
+                    <button
+                      onClick={() => booking && copyToClipboard(booking.bookingCode)}
+                      className="w-10 h-10 rounded-xl bg-accent text-white flex items-center justify-center shadow-lg shadow-accent/20 transition-all active:scale-90"
+                    >
+                      {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                    </button>
+                 </div>
               </div>
             </div>
 
-            {/* Instructions */}
-            <div className="mt-6 p-4 bg-blue-50/50 border border-blue-100 rounded-xl">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-                  <span className="text-xs font-bold">i</span>
-                </div>
-                <h3 className="font-semibold text-gray-800 text-sm">Hướng dẫn thanh toán</h3>
-              </div>
-              <ul className="text-sm text-gray-600 space-y-2">
-                <li>1. Mở ứng dụng ngân hàng của bạn</li>
-                <li>2. Quét mã QR phía trên</li>
-                <li>3. Kiểm tra thông tin và xác nhận chuyển khoản</li>
-                <li>4. Hệ thống sẽ tự động xác nhận sau khi nhận được tiền</li>
-              </ul>
+            {/* Expiring Timer */}
+            <div className="mt-10 flex flex-col items-center">
+               <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] mb-3">Mã sẽ hết hạn sau</p>
+               <div className={cn(
+                 "flex items-center gap-3 px-8 py-3 rounded-2xl border-2 transition-all duration-500",
+                 countdown <= 60 ? "border-red-100 bg-red-50 text-red-500 shadow-lg shadow-red-200/50" : "border-gray-50 bg-gray-50 text-accent font-black"
+               )}>
+                 <Clock className={cn("w-6 h-6", countdown <= 60 ? "animate-bounce" : "")} />
+                 <span className="text-2xl font-black font-mono tracking-tighter">{formatTime(countdown)}</span>
+               </div>
             </div>
 
-            {/* Pay Later */}
-            <div className="mt-6">
-              <button 
-                className="block w-full text-center py-3.5 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors"
+            {/* Waiting State */}
+            <div className="mt-10 pt-8 border-t border-dashed border-gray-100 flex flex-col items-center gap-4">
+               <div className="flex gap-1.5 items-center">
+                 <div className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" />
+                 <div className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce [animation-delay:0.2s]" />
+                 <div className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce [animation-delay:0.4s]" />
+               </div>
+               <p className="text-sm font-bold text-gray-400 tracking-tight">Đang đợi tiền về hệ thống...</p>
+            </div>
+
+            {/* Footer Actions */}
+            <div className="mt-12 space-y-4">
+               <div className="p-4 rounded-3xl bg-blue-50/50 border border-blue-100 flex gap-4 items-center">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
+                     <span className="font-black text-xs">!</span>
+                  </div>
+                  <p className="text-xs text-blue-600/80 font-bold leading-relaxed">Tiền cọc 50% dùng để giữ lịch, bạn sẽ trả phần còn lại tại Salon sau khi hớt xong.</p>
+               </div>
+               <button 
+                className="w-full py-5 text-gray-400 hover:text-gray-900 font-black text-xs uppercase tracking-widest transition-all"
                 onClick={() => {
                   reset();
                   router.replace(`/my-bookings/${bookingId}`);
                 }}
               >
-                Thanh toán sau tại salon
+                Hủy và thanh toán tại Salon sau
               </button>
             </div>
           </div>

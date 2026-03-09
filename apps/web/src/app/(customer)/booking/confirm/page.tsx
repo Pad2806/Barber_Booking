@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
   ChevronLeft,
+  ChevronRight,
   MapPin,
   Calendar,
   Clock,
@@ -13,10 +15,11 @@ import {
   Scissors,
   Check,
   AlertCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { bookingApi } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
-import { formatPrice, formatDate, cn } from '@/lib/utils';
+import { formatPrice, formatDate, cn, STAFF_POSITIONS } from '@/lib/utils';
 
 export default function BookingConfirmPage() {
   const router = useRouter();
@@ -82,169 +85,162 @@ export default function BookingConfirmPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32">
+    <div className="min-h-screen bg-[#FDFCFB] pb-40">
       {/* Header */}
-      <header className="bg-white border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
+      <header className="bg-white/80 backdrop-blur-xl border-b sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-5 flex items-center justify-between">
           <button
             onClick={() => prevStep()}
-            className="flex items-center gap-2 text-gray-600 hover:text-primary"
+            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 text-gray-400 hover:text-accent hover:bg-accent/10 transition-all active:scale-90"
           >
-            <ChevronLeft className="w-5 h-5" />
-            Quay lại
+            <ChevronLeft className="w-6 h-6" />
           </button>
+          <h1 className="text-sm font-black uppercase tracking-widest text-gray-400">Bước cuối: Xác nhận</h1>
+          <div className="w-10" />
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-2xl font-heading font-bold mb-6">Xác nhận đặt lịch</h1>
+      <div className="container mx-auto px-4 py-10 max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="text-center mb-10">
+          <h2 className="text-4xl font-heading font-black text-gray-900 mb-2 tracking-tight">KIỂM TRA LẠI</h2>
+          <p className="text-gray-400">Một chút nữa thôi là lịch hẹn đã sẵn sàng</p>
+        </div>
 
-        {/* Booking Summary */}
-        <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-          {/* Salon Info */}
-          <div className="p-6 border-b">
-            <h2 className="text-xl font-semibold mb-2">{salon.name}</h2>
-            <p className="text-gray-500 flex items-center gap-2">
-              <MapPin className="w-4 h-4" />
-              {salon.address}
-            </p>
+        {/* Main Card */}
+        <div className="bg-white rounded-[40px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] overflow-hidden border border-gray-100">
+          {/* Salon Spot */}
+          <div className="p-8 bg-gradient-to-br from-gray-50 to-white border-b border-dashed border-gray-100 relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-8 opacity-5">
+                <MapPin className="w-32 h-32" />
+             </div>
+             <div className="relative z-10">
+               <h3 className="text-xs font-black text-accent uppercase tracking-widest mb-2 flex items-center gap-2">
+                  Địa điểm hớt tóc
+               </h3>
+               <h2 className="text-2xl font-heading font-black text-gray-900 mb-2">{salon.name}</h2>
+               <p className="text-sm text-gray-400 font-medium">{salon.address}</p>
+             </div>
           </div>
 
-          {/* Date & Time */}
-          <div className="p-6 border-b">
-            <h3 className="text-sm font-medium text-gray-400 uppercase mb-4">Thời gian</h3>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-xl">
-                <Calendar className="w-6 h-6 text-accent" />
-                <div>
-                  <p className="text-sm text-gray-500">Ngày</p>
-                  <p className="font-semibold">{formatDate(selectedDate)}</p>
+          {/* Time & Stylist Row */}
+          <div className="grid sm:grid-cols-2">
+             <div className="p-8 border-b sm:border-b-0 sm:border-r border-dashed border-gray-100">
+                <h3 className="text-xs font-black text-gray-300 uppercase tracking-widest mb-4">Thời gian</h3>
+                <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 rounded-2xl bg-accent/5 flex items-center justify-center text-accent">
+                      <Calendar className="w-6 h-6" />
+                   </div>
+                   <div>
+                      <p className="text-lg font-black text-gray-900">{formatDate(selectedDate)}</p>
+                      <p className="text-xs font-bold text-accent uppercase tracking-tighter">Lúc {selectedTimeSlot}</p>
+                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-xl">
-                <Clock className="w-6 h-6 text-accent" />
-                <div>
-                  <p className="text-sm text-gray-500">Giờ</p>
-                  <p className="font-semibold">{selectedTimeSlot}</p>
+             </div>
+             <div className="p-8 border-b border-dashed border-gray-100">
+                <h3 className="text-xs font-black text-gray-300 uppercase tracking-widest mb-4">Người thực hiện</h3>
+                <div className="flex items-center gap-4">
+                   <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white ring-4 ring-gray-50 flex-shrink-0">
+                      {selectedStaff?.user.avatar ? (
+                        <Image src={selectedStaff.user.avatar} alt="Staff" width={48} height={48} className="object-cover" />
+                      ) : (
+                        <div className="w-full h-full bg-gray-100 flex items-center justify-center text-xl">👤</div>
+                      )}
+                   </div>
+                   <div>
+                      <p className="text-lg font-black text-gray-900">{selectedStaff?.user.name || 'Bất kỳ Stylist'}</p>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">
+                         {selectedStaff ? STAFF_POSITIONS[selectedStaff.position] : 'Hệ thống tự xếp'}
+                      </p>
+                   </div>
                 </div>
-              </div>
-            </div>
+             </div>
           </div>
 
-          {/* Staff */}
-          <div className="p-6 border-b">
-            <h3 className="text-sm font-medium text-gray-400 uppercase mb-4">Stylist</h3>
-            <div className="flex items-center gap-3 bg-gray-50 p-4 rounded-xl">
-              <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
-                <User className="w-6 h-6 text-accent" />
-              </div>
-              <div>
-                <p className="font-semibold">{selectedStaff?.user.name || 'Bất kỳ Stylist'}</p>
-                <p className="text-sm text-gray-500">
-                  {selectedStaff ? 'Đã chọn' : 'Hệ thống tự động chọn'}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Services */}
-          <div className="p-6 border-b">
-            <h3 className="text-sm font-medium text-gray-400 uppercase mb-4">
-              Dịch vụ ({selectedServices.length})
-            </h3>
-            <div className="space-y-3">
-              {selectedServices.map(service => (
-                <div key={service.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Scissors className="w-5 h-5 text-gray-400" />
-                    <div>
-                      <p className="font-medium">{service.name}</p>
-                      <p className="text-sm text-gray-400">{service.duration} phút</p>
+          {/* Services List */}
+          <div className="p-8 border-b border-dashed border-gray-100 bg-gray-50/30">
+             <h3 className="text-xs font-black text-gray-300 uppercase tracking-widest mb-6">Combo dịch vụ</h3>
+             <div className="space-y-4">
+                {selectedServices.map(service => (
+                  <div key={service.id} className="flex items-center justify-between group">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 group-hover:text-accent transition-colors">
+                        <Scissors className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-gray-900 tracking-tight">{service.name}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase">{service.duration} phút</p>
+                      </div>
                     </div>
+                    <p className="font-black text-gray-900">{formatPrice(service.price)}</p>
                   </div>
-                  <p className="font-semibold">{formatPrice(service.price)}</p>
-                </div>
-              ))}
-            </div>
+                ))}
+             </div>
           </div>
 
-          {/* Note */}
-          {note && (
-            <div className="p-6 border-b">
-              <h3 className="text-sm font-medium text-gray-400 uppercase mb-2">Ghi chú</h3>
-              <p className="text-gray-600">{note}</p>
-            </div>
-          )}
-
-          {/* Total */}
-          <div className="p-6 bg-gray-50">
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <p className="text-gray-500">Tổng thời gian</p>
-                <p className="font-medium">{totalDuration} phút</p>
-              </div>
-              <div className="text-right">
-                <p className="text-gray-500">Tổng thanh toán</p>
-                <p className="text-2xl font-bold text-accent">{formatPrice(totalAmount)}</p>
-              </div>
-            </div>
-            
-            <div className="flex justify-between items-center p-4 bg-red-50/50 border border-red-100 rounded-xl">
-              <div>
-                <p className="font-bold text-red-500 text-sm">Phí đặt cọc (50%)</p>
-                <p className="text-xs text-gray-500">Thanh toán sau khi đặt lịch</p>
-              </div>
-              <p className="font-bold text-red-500 text-lg">
-                {formatPrice(Math.round(totalAmount * 0.5))}
-              </p>
-            </div>
+          {/* Total & Deposit */}
+          <div className="p-8 bg-gray-900 text-white">
+             <div className="flex justify-between items-end mb-8">
+                <div>
+                   <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Tổng chi phí</p>
+                   <p className="text-3xl font-black text-white">{formatPrice(totalAmount)}</p>
+                </div>
+                <div className="text-right">
+                   <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Thời gian hớt</p>
+                   <p className="text-lg font-black text-white/80">{totalDuration} phút</p>
+                </div>
+             </div>
+             
+             <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10 flex justify-between items-center transition-transform active:scale-95">
+               <div>
+                 <p className="text-[10px] font-black text-accent uppercase tracking-widest mb-1">Cọc giữ lịch (50%)</p>
+                 <p className="text-2xl font-black text-white">{formatPrice(Math.round(totalAmount * 0.5))}</p>
+               </div>
+               <div className="w-12 h-12 rounded-2xl bg-accent text-white flex items-center justify-center shadow-lg shadow-accent/20">
+                 <Check className="w-6 h-6" />
+               </div>
+             </div>
+             <p className="text-[10px] text-center mt-6 font-bold text-white/30 uppercase tracking-wider">Lịch hẹn của bạn sẽ được giữ ngay sau khi chuyển khoản</p>
           </div>
         </div>
 
-        {/* Error */}
+        {/* Error/Notice */}
         {error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
-            <p className="text-red-600">{error}</p>
+          <div className="mt-8 p-6 bg-red-50 border-2 border-red-100 rounded-3xl flex items-start gap-4 animate-in shake-100">
+            <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
+            <p className="text-red-700 font-bold text-sm tracking-tight">{error}</p>
           </div>
         )}
 
-        {/* Login Notice */}
         {status !== 'authenticated' && (
-          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-100 rounded-xl flex items-start gap-3">
-            <AlertCircle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+          <div className="mt-8 p-6 bg-accent/5 border-2 border-accent/10 rounded-3xl flex items-start gap-4">
+            <AlertCircle className="w-6 h-6 text-accent flex-shrink-0" />
             <div>
-              <p className="font-medium text-yellow-800">Bạn chưa đăng nhập</p>
-              <p className="text-sm text-yellow-600">
-                Nhấn &quot;Xác nhận &amp; Thanh toán&quot; để đăng nhập trước khi hoàn tất đặt lịch
-              </p>
+              <p className="font-black text-gray-900 leading-none mb-1">CHƯA ĐĂNG NHẬP</p>
+              <p className="text-sm text-gray-400 font-medium">Bạn sẽ tự động được đưa tới trang đăng nhập để lưu trữ lịch hẹn này</p>
             </div>
           </div>
         )}
       </div>
 
-      {/* Floating Confirm Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4">
-        <div className="container mx-auto">
+      {/* Floating Action */}
+      <div className="fixed bottom-0 left-0 right-0 p-6 sm:p-10 pointer-events-none z-[60]">
+        <div className="container mx-auto max-w-lg pointer-events-auto">
           <button
             onClick={handleConfirm}
             disabled={loading}
             className={cn(
-              'w-full py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all',
+              'w-full py-6 rounded-[32px] font-black text-xl flex items-center justify-center gap-4 transition-all duration-500 shadow-2xl active:scale-95',
               loading
-                ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                : 'bg-accent hover:bg-accent/90 text-white'
+                ? 'bg-gray-100 text-gray-300'
+                : 'bg-accent text-white shadow-accent/40 hover:shadow-accent/60'
             )}
           >
             {loading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Đang xử lý...
-              </>
+              <RefreshCw className="w-6 h-6 animate-spin" />
             ) : (
               <>
-                <Check className="w-5 h-5" />
-                Xác nhận & Thanh toán
+                XÁC NHẬN NGAY
+                <ChevronRight className="w-6 h-6" />
               </>
             )}
           </button>

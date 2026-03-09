@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { X, Play, Image as ImageIcon, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, Play, Image as ImageIcon, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { Service } from '@/lib/api';
 import { formatPrice, cn } from '@/lib/utils';
 
@@ -40,123 +40,153 @@ export default function ServiceDetailModal({
   const videoId = service.videoUrl ? getYoutubeId(service.videoUrl) : null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white w-full max-w-2xl rounded-2xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
-        {/* Header */}
-        <div className="relative h-64 sm:h-80 bg-gray-900">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
+      <div className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+        {/* Header Media Section */}
+        <div className="relative h-72 sm:h-96 bg-gray-900 group">
           {activeTab === 'video' && videoId ? (
             <iframe
               className="w-full h-full"
-              src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
+              src={`https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0`}
               title="YouTube video player"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             ></iframe>
           ) : (
-            <div className="relative w-full h-full">
+            <div className="relative w-full h-full group">
               {allImages.length > 0 ? (
                 <>
                   <Image
                     src={allImages[currentImageIndex]}
                     alt={service.name}
                     fill
-                    className="object-cover"
+                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    priority
                   />
+                  <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/60 to-transparent" />
+                  
                   {allImages.length > 1 && (
-                    <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-between px-4">
+                    <div className="absolute inset-x-4 top-1/2 -translate-y-1/2 flex justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <button
                         onClick={() => setCurrentImageIndex((prev) => (prev === 0 ? allImages.length - 1 : prev - 1))}
-                        className="w-10 h-10 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 backdrop-blur-sm"
+                        className="w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center backdrop-blur-md border border-white/30 transition-all active:scale-90"
                       >
                         <ChevronLeft className="w-6 h-6" />
                       </button>
                       <button
                         onClick={() => setCurrentImageIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1))}
-                        className="w-10 h-10 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 backdrop-blur-sm"
+                        className="w-12 h-12 rounded-full bg-white/20 hover:bg-white/40 text-white flex items-center justify-center backdrop-blur-md border border-white/30 transition-all active:scale-90"
                       >
                         <ChevronRight className="w-6 h-6" />
                       </button>
                     </div>
                   )}
-                  {/* Dots */}
-                  <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5">
+                  {/* Dots indicator */}
+                  <div className="absolute bottom-6 left-0 right-0 flex justify-center gap-2">
                     {allImages.map((_, i) => (
-                      <div
+                      <button
                         key={i}
+                        onClick={() => setCurrentImageIndex(i)}
                         className={cn(
-                          "w-1.5 h-1.5 rounded-full transition-all",
-                          i === currentImageIndex ? "bg-white w-4" : "bg-white/50"
+                          "h-1.5 rounded-full transition-all duration-300",
+                          i === currentImageIndex 
+                            ? "bg-white w-8 shadow-lg shadow-white/20" 
+                            : "bg-white/40 w-1.5 hover:bg-white/60"
                         )}
                       />
                     ))}
                   </div>
                 </>
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  <ImageIcon className="w-12 h-12" />
+                <div className="w-full h-full flex flex-col items-center justify-center text-gray-500 gap-4 bg-gray-50">
+                  <ImageIcon className="w-16 h-16 opacity-20" />
+                  <p className="text-sm font-medium opacity-40">Đang cập nhật hình ảnh...</p>
                 </div>
               )}
             </div>
           )}
 
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-2 bg-black/40 text-white rounded-full hover:bg-black/60 backdrop-blur-sm z-10"
-          >
-            <X className="w-5 h-5" />
-          </button>
-
-          {/* Tab Switcher */}
-          {service.videoUrl && allImages.length > 0 && (
-            <div className="absolute top-4 left-4 flex gap-1 p-1 bg-black/40 rounded-lg backdrop-blur-sm">
-              <button
-                onClick={() => setActiveTab('video')}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all",
-                  activeTab === 'video' ? "bg-white text-gray-900" : "text-white hover:bg-white/10"
-                )}
-              >
-                <Play className="w-4 h-4" />
-                Video
-              </button>
-              <button
-                onClick={() => setActiveTab('gallery')}
-                className={cn(
-                  "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-all",
-                  activeTab === 'gallery' ? "bg-white text-gray-900" : "text-white hover:bg-white/10"
-                )}
-              >
-                <ImageIcon className="w-4 h-4" />
-                Ảnh
-              </button>
+          {/* Top Controls Overlay */}
+          <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start pointer-events-none">
+            <div className="flex gap-2 pointer-events-auto">
+              {service.videoUrl && allImages.length > 0 && (
+                <div className="flex p-1 bg-black/30 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl">
+                  <button
+                    onClick={() => setActiveTab('video')}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300",
+                      activeTab === 'video' 
+                        ? "bg-white text-gray-900 shadow-md scale-100" 
+                        : "text-white/80 hover:text-white hover:bg-white/10"
+                    )}
+                  >
+                    <Play className={cn("w-4 h-4", activeTab === 'video' ? "fill-current" : "")} />
+                    Clip Review
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('gallery')}
+                    className={cn(
+                      "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-300",
+                      activeTab === 'gallery' 
+                        ? "bg-white text-gray-900 shadow-md scale-100" 
+                        : "text-white/80 hover:text-white hover:bg-white/10"
+                    )}
+                  >
+                    <ImageIcon className="w-4 h-4" />
+                    Hình mẫu
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+            
+            <button
+              onClick={onClose}
+              className="w-10 h-10 flex items-center justify-center bg-black/30 hover:bg-white hover:text-gray-900 text-white rounded-full backdrop-blur-xl border border-white/10 shadow-xl transition-all active:scale-90 pointer-events-auto"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6">
-          <div className="flex justify-between items-start mb-4">
+        {/* Info Content Section */}
+        <div className="p-8 pb-10">
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
             <div>
-              <h2 className="text-2xl font-heading font-bold text-gray-900">{service.name}</h2>
-              <div className="flex items-center gap-4 mt-1 text-gray-500 text-sm">
-                <span className="flex items-center gap-1">⏱ {service.duration} phút</span>
-                <span>•</span>
-                <span className="text-accent font-bold text-lg">{formatPrice(service.price)}</span>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="px-2.5 py-1 rounded-full bg-accent/10 border border-accent/20 text-[10px] font-bold text-accent tracking-widest uppercase">
+                  {service.category}
+                </span>
+                <span className="w-1 h-1 rounded-full bg-gray-300" />
+                <span className="text-xs font-medium text-gray-400 flex items-center gap-1">
+                  ⏱ {service.duration} phút thực hiện
+                </span>
               </div>
+              <h2 className="text-3xl font-heading font-black text-gray-900 tracking-tight">{service.name}</h2>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-3xl font-black text-accent drop-shadow-sm">
+                {formatPrice(service.price)}
+              </span>
+              <span className="text-[10px] font-medium text-gray-400 uppercase tracking-tighter">Giá dịch vụ trọn gói</span>
             </div>
           </div>
 
-          <p className="text-gray-600 mb-8 leading-relaxed">
-            {service.description || 'Không có mô tả cho dịch vụ này.'}
-          </p>
+          <div className="bg-gray-50/50 rounded-2xl p-5 border border-gray-100 mb-10">
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+               Chi tiết dịch vụ
+            </h3>
+            <p className="text-gray-600 leading-relaxed text-sm whitespace-pre-line">
+              {service.description || 'Barber của chúng tôi sẽ tư vấn phong cách phù hợp nhất với khuôn mặt và chất tóc của bạn.'}
+            </p>
+          </div>
 
-          <div className="flex gap-4">
+          <div className="flex gap-4 items-center">
             <button
               onClick={onClose}
-              className="flex-1 px-6 py-3 border border-gray-300 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+              className="px-8 py-4 rounded-2xl font-bold text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all active:scale-95"
             >
-              Đóng
+              Quay lại
             </button>
             {onSelect && (
               <button
@@ -165,13 +195,23 @@ export default function ServiceDetailModal({
                   onClose();
                 }}
                 className={cn(
-                  "flex-1 px-6 py-3 rounded-xl font-semibold transition-all shadow-lg shadow-accent/20",
+                  "flex-1 px-8 py-4 rounded-2xl font-black transition-all shadow-2xl active:scale-95 flex items-center justify-center gap-3",
                   isSelected 
-                    ? "bg-gray-200 text-gray-600" 
-                    : "bg-accent text-white hover:bg-accent/90"
+                    ? "bg-gray-100 text-gray-400 shadow-none" 
+                    : "bg-gradient-to-r from-accent to-accent/80 text-white shadow-accent/20 hover:shadow-accent/40 hover:-translate-y-0.5"
                 )}
               >
-                {isSelected ? 'Đã chọn' : 'Chọn dịch vụ'}
+                {isSelected ? (
+                  <>
+                    <Check className="w-5 h-5" />
+                    Đã thêm vào lịch
+                  </>
+                ) : (
+                  <>
+                    Thêm vào lịch hẹn
+                    <ChevronRight className="w-5 h-5" />
+                  </>
+                )}
               </button>
             )}
           </div>

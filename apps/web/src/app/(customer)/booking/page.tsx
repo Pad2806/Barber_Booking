@@ -182,69 +182,83 @@ export default function BookingPage() {
         </div>
       </header>
 
-      {/* Progress */}
-      <div className="bg-white border-b py-6">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center justify-center gap-4">
+      {/* Progress Stepper */}
+      <div className="bg-white/80 backdrop-blur-md sticky top-[72px] z-40 border-b shadow-sm overflow-x-auto no-scrollbar">
+        <div className="container mx-auto px-4 py-6">
+          <div className="flex items-center justify-between max-w-xl mx-auto relative">
+            {/* Background Line */}
+            <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-gray-100 -translate-y-1/2 z-0" />
+            
             {[
-              { step: 1, label: 'Chọn Stylist', icon: User },
-              { step: 2, label: 'Chọn ngày', icon: Calendar },
-              { step: 3, label: 'Chọn giờ', icon: Clock },
-            ].map((item, index) => (
-              <div key={item.step} className="flex items-center">
-                <button
-                  onClick={() => item.step < currentStep && setStep(item.step)}
-                  className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-full transition-all',
-                    currentStep === item.step
-                      ? 'bg-accent text-white'
-                      : currentStep > item.step
-                        ? 'bg-accent/10 text-accent cursor-pointer'
-                        : 'bg-gray-100 text-gray-400'
-                  )}
-                >
-                  <item.icon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{item.label}</span>
-                </button>
-                {index < 2 && <ChevronRight className="w-5 h-5 text-gray-300 mx-2" />}
-              </div>
-            ))}
+              { step: 1, label: 'Thợ cạo', icon: User },
+              { step: 2, label: 'Lịch hẹn', icon: Calendar },
+              { step: 3, label: 'Giờ đẹp', icon: Clock },
+            ].map((item, index) => {
+              const isActive = currentStep === item.step;
+              const isCompleted = currentStep > item.step;
+              
+              return (
+                <div key={item.step} className="relative z-10 flex flex-col items-center gap-2">
+                  <button
+                    onClick={() => (isCompleted || isActive) && setStep(item.step)}
+                    className={cn(
+                      'w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-lg',
+                      isActive 
+                        ? 'bg-accent text-white scale-110' 
+                        : isCompleted 
+                          ? 'bg-accent/20 text-accent' 
+                          : 'bg-white text-gray-400 border border-gray-100'
+                    )}
+                  >
+                    {isCompleted ? <Check className="w-6 h-6" /> : <item.icon className="w-5 h-5" />}
+                  </button>
+                  <span className={cn(
+                    "text-[10px] font-black uppercase tracking-widest transition-colors duration-300",
+                    isActive ? "text-accent" : "text-gray-400"
+                  )}>
+                    {item.label}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
 
       {/* Content */}
       <div className="container mx-auto px-4 py-8">
-        {/* Step 1: Choose Staff */}
         {currentStep === 1 && (
-          <div>
-            <h2 className="text-2xl font-heading font-bold mb-6">Chọn Stylist</h2>
-            <p className="text-gray-500 mb-8">
-              Bạn có thể bỏ qua để hệ thống tự động chọn stylist phù hợp
-            </p>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-heading font-black text-gray-900 mb-2 mt-4 tracking-tight">AI KHUYÊN DÙNG</h2>
+              <p className="text-gray-400 text-sm">
+                Hãy chọn người thợ mà bạn tin tưởng nhất
+              </p>
+            </div>
+
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
               {/* Any Stylist option */}
               <div
                 onClick={() => setStaff(null)}
                 className={cn(
-                  'bg-white rounded-xl p-5 cursor-pointer transition-all border-2',
+                  'bg-white rounded-[24px] p-6 cursor-pointer transition-all duration-300 border-2 relative group overflow-hidden',
                   !selectedStaff
-                    ? 'border-accent bg-accent/5'
-                    : 'border-transparent hover:shadow-md'
+                    ? 'border-accent bg-accent/5 shadow-2xl shadow-accent/10'
+                    : 'border-transparent hover:border-accent/10 hover:shadow-xl'
                 )}
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center text-2xl">
-                    🎲
+                <div className="flex items-center gap-6">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center text-3xl shadow-inner group-hover:scale-110 transition-transform">
+                    ✨
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-gray-800">Bất kỳ Stylist</h4>
-                    <p className="text-sm text-gray-500">Để hệ thống tự động chọn</p>
+                    <h4 className="font-heading font-bold text-lg text-gray-800 tracking-tight">Chọn ngẫu nhiên</h4>
+                    <p className="text-xs text-gray-400 font-medium">Salon sẽ tự xếp thợ giỏi nhất</p>
                   </div>
                   <div
                     className={cn(
-                      'w-6 h-6 rounded-full border-2 flex items-center justify-center',
-                      !selectedStaff ? 'bg-accent border-accent' : 'border-gray-300'
+                      'w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-500',
+                      !selectedStaff ? 'bg-accent border-accent scale-110' : 'border-gray-200'
                     )}
                   >
                     {!selectedStaff && <Check className="w-4 h-4 text-white" />}
@@ -257,42 +271,45 @@ export default function BookingPage() {
                   key={member.id}
                   onClick={() => setStaff(member)}
                   className={cn(
-                    'bg-white rounded-xl p-5 cursor-pointer transition-all border-2',
+                    'bg-white rounded-[24px] p-6 cursor-pointer transition-all duration-300 border-2 relative group overflow-hidden',
                     selectedStaff?.id === member.id
-                      ? 'border-accent bg-accent/5'
-                      : 'border-transparent hover:shadow-md'
+                      ? 'border-accent bg-accent/5 shadow-2xl shadow-accent/10'
+                      : 'border-transparent hover:border-accent/10 hover:shadow-xl'
                   )}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full overflow-hidden bg-gray-100 relative">
+                  <div className="flex items-center gap-6">
+                    <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gray-100 relative shadow-inner group-hover:scale-110 transition-transform">
                       {member.user.avatar ? (
                         <Image
                           src={member.user.avatar}
                           alt={member.user.name}
                           fill
                           className="object-cover"
+                          sizes="80px"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-2xl">
+                        <div className="w-full h-full flex items-center justify-center text-3xl bg-gray-50">
                           👤
                         </div>
                       )}
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-semibold text-gray-800">{member.user.name}</h4>
-                      <p className="text-sm text-accent">
+                      <h4 className="font-heading font-bold text-lg text-gray-800 tracking-tight">{member.user.name}</h4>
+                      <p className="text-[10px] font-black text-accent uppercase tracking-tighter mb-1">
                         {STAFF_POSITIONS[member.position] || member.position}
                       </p>
-                      <p className="text-xs text-gray-400">
-                        ⭐ {member.rating.toFixed(1)} ({member.totalReviews} đánh giá)
-                      </p>
+                      <div className="flex items-center gap-1">
+                        <span className="text-yellow-400 text-xs">★</span>
+                        <span className="text-xs font-bold text-gray-500">{member.rating.toFixed(1)}</span>
+                        <span className="text-[10px] text-gray-300 font-medium font-mono">({member.totalReviews})</span>
+                      </div>
                     </div>
                     <div
                       className={cn(
-                        'w-6 h-6 rounded-full border-2 flex items-center justify-center',
+                        'w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-500',
                         selectedStaff?.id === member.id
-                          ? 'bg-accent border-accent'
-                          : 'border-gray-300'
+                          ? 'bg-accent border-accent scale-110'
+                          : 'border-gray-200'
                       )}
                     >
                       {selectedStaff?.id === member.id && <Check className="w-4 h-4 text-white" />}
@@ -306,9 +323,15 @@ export default function BookingPage() {
 
         {/* Step 2: Choose Date */}
         {currentStep === 2 && (
-          <div>
-            <h2 className="text-2xl font-heading font-bold mb-6">Chọn ngày</h2>
-            <div className="grid grid-cols-7 gap-2">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-heading font-black text-gray-900 mb-2 mt-4 tracking-tight">CHỌN NGÀY ĐẸP</h2>
+              <p className="text-gray-400 text-sm">
+                Xem lịch thư thả, hớt tóc cực bảnh
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-4 sm:grid-cols-7 gap-3 max-w-4xl mx-auto">
               {DATES.map(date => {
                 const dateStr = date.toISOString().split('T')[0];
                 const isSelected = selectedDate === dateStr;
@@ -319,21 +342,23 @@ export default function BookingPage() {
                     key={dateStr}
                     onClick={() => setDate(dateStr)}
                     className={cn(
-                      'p-4 rounded-xl transition-all text-center',
-                      isSelected ? 'bg-accent text-white' : 'bg-white hover:shadow-md'
+                      'p-4 rounded-3xl transition-all duration-300 text-center flex flex-col items-center justify-center aspect-[4/5] sm:aspect-auto border-2',
+                      isSelected 
+                        ? 'bg-accent border-accent text-white shadow-xl shadow-accent/30 scale-105 z-10' 
+                        : 'bg-white border-transparent hover:border-accent/20 hover:shadow-lg'
                     )}
                   >
                     <p
                       className={cn(
-                        'text-xs font-medium',
-                        isSelected ? 'text-white/80' : 'text-gray-400'
+                        'text-[10px] font-black uppercase tracking-tighter mb-1',
+                        isSelected ? 'text-white/70' : 'text-gray-300'
                       )}
                     >
                       {DAYS[date.getDay()]}
                     </p>
                     <p
                       className={cn(
-                        'text-xl font-bold mt-1',
+                        'text-2xl font-black mb-1',
                         isSelected ? 'text-white' : 'text-gray-800'
                       )}
                     >
@@ -341,9 +366,9 @@ export default function BookingPage() {
                     </p>
                     {isToday && (
                       <p
-                        className={cn('text-xs mt-1', isSelected ? 'text-white/80' : 'text-accent')}
+                        className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full', isSelected ? 'bg-white/20 text-white' : 'bg-accent/10 text-accent')}
                       >
-                        Hôm nay
+                        Hnay
                       </p>
                     )}
                   </button>
@@ -355,30 +380,37 @@ export default function BookingPage() {
 
         {/* Step 3: Choose Time */}
         {currentStep === 3 && (
-          <div>
-            <h2 className="text-2xl font-heading font-bold mb-6">Chọn giờ</h2>
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-heading font-black text-gray-900 mb-2 mt-4 tracking-tight">CHỐN GIỜ ĐẸP</h2>
+              <p className="text-gray-400 text-sm">
+                Hãy chọn khung giờ bạn thấy thoải mái nhất
+              </p>
+            </div>
+
             {loading ? (
-              <div className="flex justify-center py-12">
-                <div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+              <div className="flex flex-col items-center justify-center py-20 gap-4">
+                <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+                <p className="text-sm font-bold text-gray-300 uppercase tracking-widest">Đang tải lịch rảnh...</p>
               </div>
             ) : timeSlots.length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500">Không có khung giờ khả dụng</p>
+              <div className="text-center py-20 bg-white rounded-[32px] shadow-inner shadow-gray-100">
+                <p className="text-gray-500 font-medium">Hết giờ đẹp hôm nay rồi, thử ngày khác nhé!</p>
               </div>
             ) : (
-              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 max-w-5xl mx-auto">
                 {timeSlots.map(slot => (
                   <button
                     key={slot.time}
                     onClick={() => slot.available && setTimeSlot(slot.time)}
                     disabled={!slot.available}
                     className={cn(
-                      'p-3 rounded-xl font-medium transition-all',
+                      'p-4 rounded-2xl font-black text-lg transition-all duration-300 border-2',
                       selectedTimeSlot === slot.time
-                        ? 'bg-accent text-white'
+                        ? 'bg-accent border-accent text-white shadow-xl shadow-accent/30 scale-105'
                         : slot.available
-                          ? 'bg-white hover:shadow-md text-gray-800'
-                          : 'bg-gray-100 text-gray-300 cursor-not-allowed'
+                          ? 'bg-white border-transparent hover:border-accent/20 hover:shadow-xl text-gray-800'
+                          : 'bg-gray-50 border-transparent text-gray-200 cursor-not-allowed grayscale'
                     )}
                   >
                     {slot.time}
@@ -404,21 +436,23 @@ export default function BookingPage() {
         )}
       </div>
 
-      {/* Floating Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg p-4">
-        <div className="container mx-auto">
-          {/* Summary */}
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <p className="text-sm text-gray-500">Tại {salon.name}</p>
-              <p className="text-sm text-gray-600">
-                <Scissors className="w-4 h-4 inline mr-1" />
-                {selectedServices.length} dịch vụ • {totalDuration} phút
-              </p>
+      {/* Floating Global Summary Footer */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-2xl border-t shadow-[0_-8px_30px_rgb(0,0,0,0.04)] p-4 sm:p-6 z-[60]">
+        <div className="container mx-auto max-w-lg">
+          {/* Detailed Summary Pill */}
+          <div className="flex items-center justify-between mb-6 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
+                <Scissors className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-black text-gray-400 uppercase tracking-tighter">Đã chọn ({selectedServices.length})</p>
+                <p className="text-lg font-black text-accent">{formatPrice(totalAmount)}</p>
+              </div>
             </div>
             <div className="text-right">
-              <p className="text-sm text-gray-500">Tổng cộng</p>
-              <p className="text-xl font-bold text-accent">{formatPrice(totalAmount)}</p>
+              <p className="text-xs font-bold text-gray-400">{totalDuration} phút thư giãn</p>
+              <p className="text-[10px] font-medium text-gray-300 line-clamp-1">{salon.name}</p>
             </div>
           </div>
 
@@ -426,14 +460,14 @@ export default function BookingPage() {
             onClick={handleContinue}
             disabled={!canContinue()}
             className={cn(
-              'w-full py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all',
+              'w-full py-5 rounded-[20px] font-black text-lg flex items-center justify-center gap-3 transition-all duration-300 shadow-2xl active:scale-95',
               canContinue()
-                ? 'bg-accent hover:bg-accent/90 text-white'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                ? 'bg-gradient-to-r from-accent to-accent/80 text-white shadow-accent/25 hover:shadow-accent/40'
+                : 'bg-gray-100 text-gray-300 cursor-not-allowed'
             )}
           >
-            {currentStep === 3 ? 'Xác nhận đặt lịch' : 'Tiếp tục'}
-            <ChevronRight className="w-5 h-5" />
+            {currentStep === 3 ? 'Xác nhận ngay' : 'Tiếp theo'}
+            <ChevronRight className="w-6 h-6" />
           </button>
         </div>
       </div>

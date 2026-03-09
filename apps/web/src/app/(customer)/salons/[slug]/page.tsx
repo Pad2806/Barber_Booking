@@ -200,70 +200,77 @@ export default function SalonDetailPage() {
                         key={service.id}
                         onClick={() => toggleService(service)}
                         className={cn(
-                          'bg-white rounded-xl p-3 cursor-pointer transition-all border-2 relative group',
+                          'bg-white rounded-2xl p-4 cursor-pointer transition-all border-2 relative group flex gap-4',
                           isServiceSelected(service.id)
-                            ? 'border-accent bg-accent/5'
-                            : 'border-transparent hover:shadow-md'
+                            ? 'border-accent bg-accent/5 ring-4 ring-accent/5'
+                            : 'border-gray-50 hover:border-accent/20 hover:shadow-xl hover:shadow-gray-200/50'
                         )}
                       >
-                        <div className="flex gap-4">
-                          {/* Thumbnail */}
-                          {(service.image || service.videoUrl) && (
-                            <div className="relative w-24 h-24 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-                              <Image
-                                src={service.image || '/images/service-placeholder.jpg'}
-                                alt={service.name}
-                                fill
-                                className="object-cover group-hover:scale-105 transition-transform"
-                                sizes="96px"
-                              />
-                              {service.videoUrl && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/40 transition-colors">
-                                  <div className="w-8 h-8 rounded-full bg-white/30 backdrop-blur-md flex items-center justify-center text-white">
-                                    <Play className="w-4 h-4 fill-white" />
-                                  </div>
-                                </div>
-                              )}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedDetailService(service);
-                                  setIsModalOpen(true);
-                                }}
-                                className="absolute bottom-1 right-1 p-1.5 bg-white/90 rounded-md text-xs font-medium text-gray-700 hover:bg-white shadow-sm transition-colors"
-                              >
-                                Xem kĩ
-                              </button>
+                        {/* Thumbnail Wrap */}
+                        <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-2xl overflow-hidden flex-shrink-0 bg-gray-100 shadow-inner">
+                          <Image
+                            src={service.image || '/images/service-placeholder.jpg'}
+                            alt={service.name}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-500"
+                            sizes="(max-width: 768px) 112px, 128px"
+                          />
+                          
+                          {/* Media Overlays */}
+                          <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                          
+                          {service.videoUrl && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shadow-lg">
+                                <Play className="w-4 h-4 fill-white" />
+                              </div>
                             </div>
                           )}
 
-                          <div className="flex-1 flex justify-between gap-2">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-gray-800 line-clamp-1">{service.name}</h4>
-                              {service.description && (
-                                <p className="text-sm text-gray-500 mt-1 line-clamp-2">{service.description}</p>
-                              )}
-                              <div className="flex items-center gap-3 mt-2">
-                                <span className="text-lg font-bold text-accent">
-                                  {formatPrice(service.price)}
-                                </span>
-                                <span className="text-xs text-gray-400">
-                                  ⏱ {service.duration} phút
-                                </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDetailService(service);
+                              setIsModalOpen(true);
+                            }}
+                            className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-white/90 hover:bg-white text-[10px] font-black text-gray-900 rounded-xl shadow-xl backdrop-blur-sm transition-all active:scale-95 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0"
+                          >
+                            KHÁM PHÁ
+                          </button>
+                        </div>
+
+                        <div className="flex-1 flex flex-col justify-between py-1">
+                          <div>
+                            <div className="flex justify-between items-start gap-2">
+                              <h4 className="font-heading font-bold text-lg text-gray-900 line-clamp-1 leading-tight">{service.name}</h4>
+                              <div
+                                className={cn(
+                                  'w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all duration-300',
+                                  isServiceSelected(service.id)
+                                    ? 'bg-accent border-accent scale-110 shadow-lg shadow-accent/20'
+                                    : 'border-gray-200 group-hover:border-accent/30'
+                                )}
+                              >
+                                {isServiceSelected(service.id) && (
+                                  <Check className="w-3.5 h-3.5 text-white" />
+                                )}
                               </div>
                             </div>
-                            <div
-                              className={cn(
-                                'w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-1',
-                                isServiceSelected(service.id)
-                                  ? 'bg-accent border-accent'
-                                  : 'border-gray-300'
-                              )}
-                            >
-                              {isServiceSelected(service.id) && (
-                                <Check className="w-4 h-4 text-white" />
-                              )}
+                            {service.description && (
+                              <p className="text-xs text-gray-500 mt-1.5 line-clamp-2 leading-relaxed">{service.description}</p>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-end justify-between mt-auto">
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-gray-400 uppercase tracking-tighter">Chỉ từ</span>
+                              <span className="text-xl font-black text-accent tracking-tighter">
+                                {formatPrice(service.price)}
+                              </span>
                             </div>
+                            <span className="text-[10px] font-bold text-gray-400 bg-gray-50 px-2 py-1 rounded-lg">
+                              ⏱ {service.duration} PHÚT
+                            </span>
                           </div>
                         </div>
                       </div>

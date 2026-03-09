@@ -94,75 +94,82 @@ export default function MyBookingsPage() {
 
         {/* Bookings List */}
         {filteredBookings.length === 0 ? (
-          <div className="bg-white rounded-2xl p-12 text-center">
-            <div className="text-6xl mb-4">📅</div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">
-              Không có lịch hẹn {filter === 'upcoming' ? 'sắp tới' : 'đã qua'}
+          <div className="bg-white rounded-[40px] p-20 text-center shadow-sm border border-gray-100 animate-in fade-in zoom-in-95 duration-700">
+            <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-8 text-4xl shadow-inner">
+               📅
+            </div>
+            <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">
+              {filter === 'upcoming' ? 'CHƯA CÓ LỊCH SẮP TỚI' : 'CHƯA CÓ LỊCH CŨ'}
             </h2>
-            <p className="text-gray-500 mb-6">
+            <p className="text-gray-400 font-medium mb-10 max-w-xs mx-auto">
               {filter === 'upcoming'
-                ? 'Đặt lịch ngay để trải nghiệm dịch vụ của chúng tôi'
-                : 'Các lịch hẹn đã hoàn thành sẽ hiển thị ở đây'}
+                ? 'Đừng để bản thân luộm thuộm, đặt lịch ngay nhé!'
+                : 'Bạn chưa có trải nghiệm nào với Reetro'}
             </p>
             {filter === 'upcoming' && (
               <Link
                 href="/salons"
-                className="inline-block bg-accent text-white px-8 py-3 rounded-xl font-semibold hover:bg-accent/90 transition-colors"
+                className="inline-flex items-center gap-3 bg-accent text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all duration-500 shadow-xl shadow-accent/20 active:scale-95"
               >
-                Đặt lịch ngay
+                Tìm Salon để đặt lịch
+                <ChevronRight className="w-4 h-4" />
               </Link>
             )}
           </div>
         ) : (
-          <div className="space-y-4">
-            {filteredBookings.map(booking => (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-2 gap-8">
+            {filteredBookings.map((booking, idx) => (
               <Link
                 key={booking.id}
                 href={`/my-bookings/${booking.id}`}
-                className="block bg-white rounded-xl p-6 hover:shadow-md transition-shadow"
+                className="group relative bg-white rounded-[32px] p-8 shadow-sm hover:shadow-2xl hover:shadow-gray-200 transition-all duration-700 border border-transparent hover:border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-8"
+                style={{ animationDelay: `${idx * 100}ms` }}
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-800">{booking.salon.name}</h3>
-                    <p className="text-sm text-gray-500 flex items-center gap-1 mt-1">
-                      <MapPin className="w-4 h-4" />
-                      {booking.salon.address}
-                    </p>
-                  </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                {/* Decorative background number/letter */}
+                <div className="absolute -top-4 -right-4 font-black text-9xl text-gray-50/50 pointer-events-none select-none">
+                   {idx + 1}
                 </div>
 
-                <div className="flex flex-wrap gap-4 mb-4">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Calendar className="w-4 h-4" />
-                    {formatDate(booking.date)}
+                <div className="relative z-10">
+                  <div className="flex items-start justify-between mb-8">
+                    <div>
+                      <p className="text-[10px] font-black text-accent uppercase tracking-widest mb-2">Salon {idx + 1}</p>
+                      <h3 className="text-2xl font-heading font-black text-gray-900 tracking-tighter leading-none mb-2">{booking.salon.name}</h3>
+                      <p className="text-xs text-gray-400 font-bold flex items-center gap-1.5 uppercase transition-colors group-hover:text-gray-900">
+                        <MapPin className="w-3.5 h-3.5" />
+                        {booking.salon.address}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Clock className="w-4 h-4" />
-                    {booking.timeSlot} - {booking.endTime}
-                  </div>
-                </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <span
-                      className={cn(
-                        'px-3 py-1 rounded-full text-xs font-medium',
-                        BOOKING_STATUS[booking.status]?.color || 'bg-gray-100 text-gray-600'
-                      )}
-                    >
-                      {BOOKING_STATUS[booking.status]?.label || booking.status}
-                    </span>
-                    <span
-                      className={cn(
-                        'px-3 py-1 rounded-full text-xs font-medium',
-                        PAYMENT_STATUS[booking.paymentStatus]?.color || 'bg-gray-100 text-gray-600'
-                      )}
-                    >
-                      {PAYMENT_STATUS[booking.paymentStatus]?.label || booking.paymentStatus}
-                    </span>
+                  <div className="flex flex-wrap gap-3 mb-8">
+                    <div className="px-4 py-2.5 rounded-2xl bg-gray-50 flex items-center gap-3 group-hover:bg-white border border-transparent group-hover:border-gray-100 transition-all">
+                      <Calendar className="w-4 h-4 text-accent" />
+                      <span className="text-xs font-black text-gray-900">{formatDate(booking.date)}</span>
+                    </div>
+                    <div className="px-4 py-2.5 rounded-2xl bg-gray-50 flex items-center gap-3 group-hover:bg-white border border-transparent group-hover:border-gray-100 transition-all">
+                      <Clock className="w-4 h-4 text-accent" />
+                      <span className="text-xs font-black text-gray-900 uppercase">{booking.timeSlot}</span>
+                    </div>
                   </div>
-                  <p className="font-bold text-accent">{formatPrice(booking.totalAmount)}</p>
+
+                  <div className="pt-6 border-t border-dashed border-gray-100 flex items-center justify-between">
+                    <div className="flex -space-x-2">
+                       {/* Status Pills */}
+                      <span
+                        className={cn(
+                          'px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all',
+                          BOOKING_STATUS[booking.status]?.color?.includes('bg-green') ? 'bg-green-50 text-green-600 border-green-100' : 
+                          BOOKING_STATUS[booking.status]?.color?.includes('bg-yellow') ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
+                          BOOKING_STATUS[booking.status]?.color?.includes('bg-red') ? 'bg-red-50 text-red-600 border-red-100' :
+                          'bg-gray-50 text-gray-500 border-gray-100'
+                        )}
+                      >
+                        {BOOKING_STATUS[booking.status]?.label || booking.status}
+                      </span>
+                    </div>
+                    <p className="text-xl font-black text-gray-900">{formatPrice(booking.totalAmount)}</p>
+                  </div>
                 </div>
               </Link>
             ))}
