@@ -5,12 +5,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ChevronLeft, MapPin, Calendar, Clock, User, Scissors, Phone, XCircle } from 'lucide-react';
+import { ChevronLeft, MapPin, User, Scissors, Phone } from 'lucide-react';
 import { bookingApi, Booking } from '@/lib/api';
 import {
   formatPrice,
   formatDate,
-  formatDateTime,
   BOOKING_STATUS,
   PAYMENT_STATUS,
   cn,

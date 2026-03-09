@@ -10,8 +10,6 @@ import {
   ChevronRight,
   MapPin,
   Calendar,
-  Clock,
-  User,
   Scissors,
   Check,
   AlertCircle,

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Check, Calendar, Clock, User, Scissors } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Scissors } from 'lucide-react';
 import { staffApi, Staff } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
 import { formatPrice, STAFF_POSITIONS, cn } from '@/lib/utils';
@@ -193,7 +193,7 @@ export default function BookingPage() {
               { step: 1, label: 'BƯỚC 1', sub: 'THỢ CẠO' },
               { step: 2, label: 'BƯỚC 2', sub: 'NGÀY HỨT' },
               { step: 3, label: 'BƯỚC 3', sub: 'GIỜ ĐẸP' },
-            ].map((item, index) => {
+            ].map((item) => {
               const isActive = currentStep === item.step;
               const isCompleted = currentStep > item.step;
               

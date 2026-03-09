@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { MapPin, Star, Clock, Phone, ChevronRight, Check, Play, ArrowRight, User as UserIcon } from 'lucide-react';
+import { MapPin, Star, Clock, Phone, Check, Play, ArrowRight, User as UserIcon } from 'lucide-react';
 import { salonApi, serviceApi, staffApi, Salon, Service, Staff } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
-import { formatPrice, SERVICE_CATEGORIES, STAFF_POSITIONS, cn } from '@/lib/utils';
+import { formatPrice, STAFF_POSITIONS, cn } from '@/lib/utils';
 import ServiceDetailModal from '@/components/ServiceDetailModal';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
@@ -311,7 +311,7 @@ export default function SalonDetailPage() {
                       </div>
                     </div>
                   </div>
-                  {member.bio && <p className="text-sm font-light text-gray-400 mt-8 text-center leading-relaxed italic line-clamp-3">"{member.bio}"</p>}
+                  {member.bio && <p className="text-sm font-light text-gray-400 mt-8 text-center leading-relaxed italic line-clamp-3">&quot;{member.bio}&quot;</p>}
                 </div>
               ))}
             </div>
@@ -343,7 +343,7 @@ export default function SalonDetailPage() {
               {salon.description && (
                 <div className="bg-white rounded-[48px] p-12 border border-gray-50 shadow-sm space-y-6">
                    <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em] mb-2 block">THE PHILOSOPHY</span>
-                  <p className="text-xl font-light text-gray-500 leading-relaxed italic italic-serif">"{salon.description}"</p>
+                  <p className="text-xl font-light text-gray-500 leading-relaxed italic italic-serif">&quot;{salon.description}&quot;</p>
                 </div>
               )}
             </div>

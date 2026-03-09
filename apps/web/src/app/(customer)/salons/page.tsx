@@ -7,7 +7,6 @@ import { MapPin, Star, Clock, Search, ArrowRight } from 'lucide-react';
 import { salonApi, Salon } from '@/lib/api';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
-import { cn } from '@/lib/utils';
 
 export default function SalonsPage() {
   const [salons, setSalons] = useState<Salon[]>([]);

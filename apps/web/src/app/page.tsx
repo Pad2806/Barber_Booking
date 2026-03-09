@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Calendar, Clock, Users, Shield, Star, MapPin, ChevronRight, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, Users, Shield, Star, MapPin, ArrowRight } from 'lucide-react';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 

@@ -8,7 +8,7 @@ import Footer from '@/components/footer';
 import { useRouter } from 'next/navigation';
 import { Calendar, Clock, MapPin, ChevronRight } from 'lucide-react';
 import { bookingApi, Booking } from '@/lib/api';
-import { formatPrice, formatDate, BOOKING_STATUS, PAYMENT_STATUS, cn } from '@/lib/utils';
+import { formatPrice, formatDate, BOOKING_STATUS, cn } from '@/lib/utils';
 
 export default function MyBookingsPage() {
   const { status } = useSession();
