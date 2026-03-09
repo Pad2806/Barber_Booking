@@ -4,75 +4,71 @@
 
 @layer base {
   :root {
-    /* Vintage Old Paper Theme */
-    --background: 42 62% 97%;
-    /* Soft Tan / Old Paper #FDF8EE */
-    --foreground: 18 31% 13%;
-    /* Deep Espresso Brown #2D1E17 */
+    /* Deepened Vintage Old Paper Theme */
+    --background: 42 45% 91%;
+    /* Much Darker Tan #EAE1CF */
+    --foreground: 18 31% 10%;
+    /* Mahogany #251812 */
 
-    --card: 42 62% 98%;
-    /* Lighter Tan for cards */
-    --card-foreground: 18 31% 13%;
+    --card: 42 45% 93%;
+    --card-foreground: 18 31% 10%;
 
-    --popover: 42 62% 97%;
-    --popover-foreground: 18 31% 13%;
+    --popover: 42 45% 91%;
+    --popover-foreground: 18 31% 10%;
 
-    --primary: 40 46% 56%;
-    /* Vintage Gold / Brass #C5A059 */
-    --primary-foreground: 18 31% 13%;
+    --primary: 35 45% 45%;
+    /* Darker Gold/Bronze #A57C52 */
+    --primary-foreground: 42 45% 98%;
 
-    --secondary: 0 56% 38%;
-    /* Heritage Red (from hat) #9B2C2C */
-    --secondary-foreground: 42 62% 97%;
+    --secondary: 18 31% 15%;
+    /* Espresso */
+    --secondary-foreground: 42 45% 91%;
 
-    --muted: 36 24% 88%;
-    /* Muted Tan */
-    --muted-foreground: 18 20% 40%;
+    --muted: 18 20% 85%;
+    --muted-foreground: 18 15% 40%;
 
-    --accent: 18 31% 25%;
-    /* Mahogany Brown */
-    --accent-foreground: 42 62% 97%;
+    --accent: 35 45% 40%;
+    --accent-foreground: 42 45% 98%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 50% 40%;
+    --destructive-foreground: 42 45% 98%;
 
-    --border: 36 24% 85%;
-    --input: 36 24% 85%;
-    --ring: 40 46% 56%;
+    --border: 18 31% 10% / 0.1;
+    --input: 18 31% 10% / 0.1;
+    --ring: 35 45% 45%;
 
     --radius: 0.75rem;
   }
 
   .dark {
-    /* Night Mode / Luxury Lounge Theme */
-    --background: 18 31% 8%;
-    /* Deepest Mahogany Black */
-    --foreground: 42 62% 90%;
-    /* Bone White */
+    /* Night Mode - Like a dark wooden lounge */
+    --background: 18 35% 8%;
+    /* Dark Wood Black #180F0B */
+    --foreground: 42 45% 92%;
 
-    --card: 18 31% 10%;
-    --card-foreground: 42 62% 90%;
+    --card: 18 35% 10%;
+    --card-foreground: 42 45% 92%;
 
-    --popover: 0 0% 0%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 18 35% 8%;
+    --popover-foreground: 42 45% 92%;
 
-    --primary: 40 46% 56%;
-    /* Gold stays same but looks like brass in dark */
-    --primary-foreground: 18 31% 8%;
+    --primary: 35 45% 45%;
+    --primary-foreground: 18 35% 8%;
 
-    --secondary: 0 56% 38%;
-    --secondary-foreground: 42 62% 90%;
+    --secondary: 35 45% 30%;
+    --secondary-foreground: 42 45% 92%;
 
-    --muted: 18 31% 15%;
-    --muted-foreground: 42 20% 60%;
+    --muted: 18 35% 15%;
+    --muted-foreground: 42 30% 60%;
 
-    --accent: 40 46% 30%;
-    --accent-foreground: 42 62% 90%;
+    --accent: 35 45% 50%;
+    --accent-foreground: 18 35% 8%;
+
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
+    --destructive-foreground: 42 45% 98%;
+    --border: 42 45% 92% / 0.1;
+    --input: 42 45% 92% / 0.1;
+    --ring: 35 45% 45%;
   }
 }
 

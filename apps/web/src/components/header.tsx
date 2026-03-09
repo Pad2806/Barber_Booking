@@ -18,7 +18,7 @@ export default function Header(): React.ReactNode {
       <div className="container mx-auto px-4 py-4 sm:py-6">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <span className="text-2xl sm:text-3xl font-heading font-black tracking-[-0.05em] text-foreground group-hover:scale-105 transition-transform duration-500 uppercase italic">
+            <span className="text-xl sm:text-2xl font-heading font-bold tracking-tight text-foreground group-hover:scale-105 transition-transform duration-500 uppercase">
               REETRO<span className="text-primary ml-1">BARBER</span>
             </span>
           </Link>
@@ -33,7 +33,7 @@ export default function Header(): React.ReactNode {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'text-[10px] font-black uppercase tracking-[0.3em] transition-all duration-500 relative group',
+                    'text-[11px] font-bold uppercase tracking-wider transition-all duration-500 relative group',
                     pathname === item.href ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
@@ -71,7 +71,7 @@ export default function Header(): React.ReactNode {
           </nav>
           <Link
             href="/salons"
-            className="hidden md:block bg-foreground hover:bg-primary border-2 border-foreground text-background px-10 py-3.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em] transition-all duration-700 shadow-2xl shadow-foreground/10 active:scale-95"
+            className="hidden md:block bg-foreground hover:bg-primary border-2 border-foreground text-background px-8 py-3 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-700 shadow-xl shadow-foreground/5 active:scale-95"
           >
             ĐẶT LỊCH NGAY
           </Link>

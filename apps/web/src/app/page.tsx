@@ -115,20 +115,20 @@ export default function HomePage() {
       <Header />
 
       {/* Hero Section - Minimalist Bold */}
-      <section className="bg-accent py-32 md:py-48 overflow-hidden relative">
+      <section className="bg-foreground py-24 md:py-32 overflow-hidden relative border-b border-primary/20">
         <div className="absolute inset-0 opacity-40 pointer-events-none">
           <div className="absolute inset-0 grayscale bg-[url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2000&auto=format')] bg-cover bg-center mix-blend-overlay" />
         </div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-5xl mx-auto text-center text-white">
-             <span className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mb-6 block">ESTABLISHED 2024</span>
-            <h1 className="text-6xl md:text-9xl font-heading font-black mb-8 tracking-tighter leading-none uppercase italic text-background">
+             <span className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mb-4 block">ESTABLISHED 2024</span>
+            <h1 className="text-5xl md:text-7xl font-heading font-bold mb-6 tracking-tight leading-none uppercase text-background">
               REETRO<br />
-              <span className="text-primary bg-background/5 px-4 inline-block italic">BARBER</span>
+              <span className="text-primary bg-background/5 px-2 inline-block">BARBER</span>
             </h1>
-            <p className="text-xl md:text-2xl text-background/70 mb-12 max-w-2xl mx-auto font-light tracking-tight italic">
+            <p className="text-lg md:text-xl text-background/60 mb-10 max-w-2xl mx-auto font-medium tracking-tight">
               Hệ thống salon tóc nam chuyên nghiệp hàng đầu Việt Nam. <br />
-              Nơi định hình <span className="text-primary font-black italic">PHONG CÁCH QUÝ TỘC</span> của bạn.
+              Nơi định hình <span className="text-primary font-bold">PHONG CÁCH QUÝ TỘC</span> của bạn.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <Link
@@ -147,22 +147,22 @@ export default function HomePage() {
             </div>
 
             {/* Stats - Monochrome contrast */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mt-24 pt-24 border-t border-background/10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16 pt-16 border-t border-background/10">
               <div className="text-center group">
-                <div className="text-5xl font-heading font-black text-primary mb-2 tracking-tighter transition-transform group-hover:scale-110 duration-500 italic">100+</div>
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-background/50 italic">SALONS</div>
+                <div className="text-4xl font-heading font-bold text-primary mb-1 tracking-tight transition-transform group-hover:scale-105 duration-500">100+</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-background/40">SALONS</div>
               </div>
               <div className="text-center group">
-                <div className="text-5xl font-heading font-black text-primary mb-2 tracking-tighter transition-transform group-hover:scale-110 duration-500 italic">500K</div>
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-background/50 italic">CLIENTS</div>
+                <div className="text-4xl font-heading font-bold text-primary mb-1 tracking-tight transition-transform group-hover:scale-105 duration-500">500K</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-background/40">CLIENTS</div>
               </div>
               <div className="text-center group">
-                <div className="text-5xl font-heading font-black text-primary mb-2 tracking-tighter transition-transform group-hover:scale-110 duration-500 italic">4.9</div>
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-background/50 italic">RATING</div>
+                <div className="text-4xl font-heading font-bold text-primary mb-1 tracking-tight transition-transform group-hover:scale-105 duration-500">4.9</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-background/40">RATING</div>
               </div>
               <div className="text-center group">
-                <div className="text-5xl font-heading font-black text-primary mb-2 tracking-tighter transition-transform group-hover:scale-110 duration-500 italic">1000+</div>
-                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-background/50 italic">STYLISTS</div>
+                <div className="text-4xl font-heading font-bold text-primary mb-1 tracking-tight transition-transform group-hover:scale-105 duration-500">1000+</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-background/40">STYLISTS</div>
               </div>
             </div>
           </div>
@@ -297,11 +297,11 @@ export default function HomePage() {
                   </p>
                     <div className="flex items-center justify-between pt-6 border-t border-border">
                     <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1 bg-primary text-foreground px-2 py-1 rounded-sm font-black italic">
-                        <Star className="w-3 h-3 fill-white" />
-                        <span className="text-[10px] font-black">{salon.rating}</span>
+                      <div className="flex items-center gap-1 bg-primary text-background px-2 py-0.5 rounded-sm font-bold">
+                        <Star className="w-3 h-3 fill-current" />
+                        <span className="text-[10px] uppercase">{salon.rating}</span>
                       </div>
-                      <span className="text-[10px] font-black text-gray-300 uppercase tracking-tight italic">({salon.reviews} REVIEWS)</span>
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">({salon.reviews} REVIEWS)</span>
                     </div>
                   </div>
                 </div>
@@ -311,27 +311,27 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA - Bold High Contrast */}
-      <section className="py-48 bg-black relative overflow-hidden">
+      {/* CTA - Deep Vintage Lounge */}
+      <section className="py-32 bg-accent relative overflow-hidden border-t border-primary/10">
         <div className="absolute top-0 right-0 w-1/2 h-full opacity-5 pointer-events-none">
              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=2000&auto=format')] bg-cover grayscale" />
         </div>
         <div className="container mx-auto px-4 text-center relative z-10">
           <div className="max-w-4xl mx-auto text-white">
-            <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.5em] mb-8 block">RESERVE YOUR TIME</span>
-            <h2 className="text-5xl md:text-8xl font-heading font-black mb-12 tracking-tighter uppercase italic leading-none">
+            <span className="text-[10px] font-bold text-background/40 uppercase tracking-[0.3em] mb-6 block">RESERVE YOUR TIME</span>
+            <h2 className="text-4xl md:text-6xl font-heading font-bold mb-10 tracking-tight uppercase leading-none text-background">
                BẠN ĐÃ SẴN SÀNG ĐỂ<br />
-               <span className="bg-white text-black px-6 py-2 inline-block">TRỞ NÊN KHÁC BIỆT?</span>
+               <span className="text-primary bg-background/5 px-4 inline-block">TRỞ NÊN KHÁC BIỆT?</span>
             </h2>
-            <p className="text-xl text-gray-400 mb-16 tracking-tight max-w-2xl mx-auto">
-               Đặt lịch ngay hôm nay để trải nghiệm dịch vụ cắt tóc thượng lưu và nhận ưu đãi <span className="text-white font-black italic">WHITELIST 20%</span>.
+            <p className="text-lg text-background/60 mb-12 tracking-tight max-w-2xl mx-auto font-medium">
+               Đặt lịch ngay hôm nay để trải nghiệm dịch vụ cắt tóc thượng lưu và nhận ưu đãi <span className="text-primary font-bold">WHITELIST 20%</span>.
             </p>
             <Link
               href="/booking"
-              className="inline-flex items-center gap-6 bg-white text-black hover:bg-black hover:text-white border-2 border-white px-16 py-6 rounded-full font-black text-sm uppercase tracking-[0.4em] transition-all duration-700 shadow-2xl shadow-white/10 group active:scale-95"
+              className="inline-flex items-center gap-4 bg-primary text-background hover:bg-background hover:text-foreground border-2 border-primary px-12 py-4 rounded-full font-bold text-xs uppercase tracking-[0.2em] transition-all duration-700 shadow-xl shadow-primary/10 group active:scale-95"
             >
               BOOK NOW
-              <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
             </Link>
           </div>
         </div>
