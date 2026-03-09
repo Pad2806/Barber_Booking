@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import Header from '@/components/header';
+import Footer from '@/components/footer';
 import { useRouter } from 'next/navigation';
 import { Calendar, Clock, MapPin, ChevronRight } from 'lucide-react';
 import { bookingApi, Booking } from '@/lib/api';
@@ -54,29 +55,33 @@ export default function MyBookingsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="w-16 h-16 border-[6px] border-black border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       {/* Header */}
       <Header />
 
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-heading font-bold mb-6">Lịch hẹn của tôi</h1>
+      <div className="container mx-auto px-4 py-16 max-w-6xl">
+        <div className="text-center mb-16">
+          <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em] mb-4 block">HISTORY</span>
+          <h1 className="text-5xl font-heading font-black text-gray-900 tracking-tighter leading-none mb-4 uppercase">Lịch hẹn của tôi</h1>
+          <div className="w-16 h-1 bg-black mx-auto" />
+        </div>
 
         {/* Filter Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex justify-center gap-4 mb-16">
           <button
             onClick={() => setFilter('upcoming')}
             className={cn(
-              'px-6 py-2 rounded-full font-medium transition-colors',
+              'px-10 py-4 rounded-full text-xs font-black uppercase tracking-widest transition-all duration-700',
               filter === 'upcoming'
-                ? 'bg-accent text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-50'
+                ? 'bg-black text-white shadow-2xl shadow-black/20 scale-105'
+                : 'bg-gray-50 text-gray-300 hover:bg-gray-100'
             )}
           >
             Sắp tới
@@ -84,8 +89,10 @@ export default function MyBookingsPage() {
           <button
             onClick={() => setFilter('past')}
             className={cn(
-              'px-6 py-2 rounded-full font-medium transition-colors',
-              filter === 'past' ? 'bg-accent text-white' : 'bg-white text-gray-600 hover:bg-gray-50'
+              'px-10 py-4 rounded-full text-xs font-black uppercase tracking-widest transition-all duration-700',
+              filter === 'past' 
+                ? 'bg-black text-white shadow-2xl shadow-black/20 scale-105' 
+                : 'bg-gray-50 text-gray-300 hover:bg-gray-100'
             )}
           >
             Đã qua
@@ -94,14 +101,14 @@ export default function MyBookingsPage() {
 
         {/* Bookings List */}
         {filteredBookings.length === 0 ? (
-          <div className="bg-white rounded-[40px] p-20 text-center shadow-sm border border-gray-100 animate-in fade-in zoom-in-95 duration-700">
-            <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-8 text-4xl shadow-inner">
+          <div className="bg-white rounded-[48px] py-32 text-center border-2 border-dashed border-gray-100 animate-in fade-in zoom-in-95 duration-1000">
+            <div className="w-32 h-32 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-10 text-5xl shadow-inner">
                📅
             </div>
-            <h2 className="text-2xl font-black text-gray-900 mb-2 tracking-tight">
+            <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tighter uppercase">
               {filter === 'upcoming' ? 'CHƯA CÓ LỊCH SẮP TỚI' : 'CHƯA CÓ LỊCH CŨ'}
             </h2>
-            <p className="text-gray-400 font-medium mb-10 max-w-xs mx-auto">
+            <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mb-12 max-w-xs mx-auto">
               {filter === 'upcoming'
                 ? 'Đừng để bản thân luộm thuộm, đặt lịch ngay nhé!'
                 : 'Bạn chưa có trải nghiệm nào với Reetro'}
@@ -109,66 +116,65 @@ export default function MyBookingsPage() {
             {filter === 'upcoming' && (
               <Link
                 href="/salons"
-                className="inline-flex items-center gap-3 bg-accent text-white px-10 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-black transition-all duration-500 shadow-xl shadow-accent/20 active:scale-95"
+                className="inline-flex items-center gap-4 bg-black text-white px-12 py-5 rounded-full font-black text-xs uppercase tracking-[0.2em] transition-all duration-700 shadow-2xl shadow-black/20 hover:-translate-y-2 active:scale-95"
               >
-                Tìm Salon để đặt lịch
-                <ChevronRight className="w-4 h-4" />
+                Đặt lịch mới ngay
+                <ChevronRight className="w-5 h-5" />
               </Link>
             )}
           </div>
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-2 gap-8">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-2 gap-10">
             {filteredBookings.map((booking, idx) => (
               <Link
                 key={booking.id}
                 href={`/my-bookings/${booking.id}`}
-                className="group relative bg-white rounded-[32px] p-8 shadow-sm hover:shadow-2xl hover:shadow-gray-200 transition-all duration-700 border border-transparent hover:border-gray-100 overflow-hidden animate-in fade-in slide-in-from-bottom-8"
+                className="group relative bg-white rounded-[40px] p-10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.04)] hover:shadow-2xl hover:shadow-black/5 transition-all duration-700 border border-gray-100 hover:border-black overflow-hidden animate-in fade-in slide-in-from-bottom-8"
                 style={{ animationDelay: `${idx * 100}ms` }}
               >
-                {/* Decorative background number/letter */}
-                <div className="absolute -top-4 -right-4 font-black text-9xl text-gray-50/50 pointer-events-none select-none">
-                   {idx + 1}
+                {/* Decorative background label */}
+                <div className="absolute top-8 right-10 font-black text-[10px] text-gray-100 uppercase tracking-[0.4em] pointer-events-none select-none">
+                   #{booking.bookingCode}
                 </div>
 
                 <div className="relative z-10">
-                  <div className="flex items-start justify-between mb-8">
+                  <div className="flex items-start justify-between mb-10">
                     <div>
-                      <p className="text-[10px] font-black text-accent uppercase tracking-widest mb-2">Salon {idx + 1}</p>
-                      <h3 className="text-2xl font-heading font-black text-gray-900 tracking-tighter leading-none mb-2">{booking.salon.name}</h3>
-                      <p className="text-xs text-gray-400 font-bold flex items-center gap-1.5 uppercase transition-colors group-hover:text-gray-900">
-                        <MapPin className="w-3.5 h-3.5" />
+                      <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mb-3 block">SALON NO.{idx + 1}</span>
+                      <h3 className="text-3xl font-heading font-black text-gray-900 tracking-tighter leading-none mb-4 group-hover:text-black transition-colors">{booking.salon.name}</h3>
+                      <p className="text-[10px] text-gray-400 font-black flex items-center gap-2 uppercase tracking-tight transition-colors group-hover:text-black">
+                        <MapPin className="w-4 h-4 text-gray-300 group-hover:text-black" />
                         {booking.salon.address}
                       </p>
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap gap-3 mb-8">
-                    <div className="px-4 py-2.5 rounded-2xl bg-gray-50 flex items-center gap-3 group-hover:bg-white border border-transparent group-hover:border-gray-100 transition-all">
-                      <Calendar className="w-4 h-4 text-accent" />
-                      <span className="text-xs font-black text-gray-900">{formatDate(booking.date)}</span>
+                  <div className="flex flex-wrap gap-4 mb-10">
+                    <div className="px-5 py-3 rounded-2xl bg-gray-50 flex items-center gap-3 transition-all group-hover:bg-black group-hover:text-white border border-transparent">
+                      <Calendar className="w-4 h-4 text-gray-400 group-hover:text-white/50" />
+                      <span className="text-xs font-black tracking-tight">{formatDate(booking.date)}</span>
                     </div>
-                    <div className="px-4 py-2.5 rounded-2xl bg-gray-50 flex items-center gap-3 group-hover:bg-white border border-transparent group-hover:border-gray-100 transition-all">
-                      <Clock className="w-4 h-4 text-accent" />
-                      <span className="text-xs font-black text-gray-900 uppercase">{booking.timeSlot}</span>
+                    <div className="px-5 py-3 rounded-2xl bg-gray-50 flex items-center gap-3 transition-all group-hover:bg-black group-hover:text-white border border-transparent">
+                      <Clock className="w-4 h-4 text-gray-400 group-hover:text-white/50" />
+                      <span className="text-xs font-black tracking-tight uppercase">{booking.timeSlot}</span>
                     </div>
                   </div>
 
-                  <div className="pt-6 border-t border-dashed border-gray-100 flex items-center justify-between">
-                    <div className="flex -space-x-2">
-                       {/* Status Pills */}
+                  <div className="pt-8 border-t border-dashed border-gray-100 flex items-center justify-between">
+                    <div>
                       <span
                         className={cn(
-                          'px-3.5 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all',
-                          BOOKING_STATUS[booking.status]?.color?.includes('bg-green') ? 'bg-green-50 text-green-600 border-green-100' : 
-                          BOOKING_STATUS[booking.status]?.color?.includes('bg-yellow') ? 'bg-yellow-50 text-yellow-600 border-yellow-100' :
+                          'px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all duration-500',
+                          BOOKING_STATUS[booking.status]?.color?.includes('bg-green') ? 'bg-black text-white border-black' : 
+                          BOOKING_STATUS[booking.status]?.color?.includes('bg-yellow') ? 'bg-gray-100 text-gray-900 border-gray-200' :
                           BOOKING_STATUS[booking.status]?.color?.includes('bg-red') ? 'bg-red-50 text-red-600 border-red-100' :
-                          'bg-gray-50 text-gray-500 border-gray-100'
+                          'bg-gray-50 text-gray-400 border-gray-100'
                         )}
                       >
                         {BOOKING_STATUS[booking.status]?.label || booking.status}
                       </span>
                     </div>
-                    <p className="text-xl font-black text-gray-900">{formatPrice(booking.totalAmount)}</p>
+                    <p className="text-2xl font-black text-gray-900 tracking-tighter">{formatPrice(booking.totalAmount)}</p>
                   </div>
                 </div>
               </Link>
@@ -176,6 +182,7 @@ export default function MyBookingsPage() {
           </div>
         )}
       </div>
+      <Footer />
     </div>
   );
 }

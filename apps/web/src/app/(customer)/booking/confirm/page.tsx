@@ -20,6 +20,7 @@ import {
 import { bookingApi } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
 import { formatPrice, formatDate, cn, STAFF_POSITIONS } from '@/lib/utils';
+import Footer from '@/components/footer';
 
 export default function BookingConfirmPage() {
   const router = useRouter();
@@ -77,7 +78,7 @@ export default function BookingConfirmPage() {
         <div className="text-6xl mb-4">⚠️</div>
         <h2 className="text-2xl font-semibold mb-2">Thiếu thông tin đặt lịch</h2>
         <p className="text-gray-500 mb-4">Vui lòng chọn đầy đủ dịch vụ và thời gian</p>
-        <Link href="/salons" className="bg-accent text-white px-6 py-3 rounded-xl font-medium">
+        <Link href="/salons" className="bg-black text-white px-10 py-4 rounded-full font-black text-[10px] uppercase tracking-widest shadow-2xl shadow-black/20 active:scale-95 transition-all">
           Quay lại chọn salon
         </Link>
       </div>
@@ -85,71 +86,70 @@ export default function BookingConfirmPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFCFB] pb-40">
+    <div className="min-h-screen bg-white pb-40">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur-xl border-b sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-5 flex items-center justify-between">
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-6 flex items-center justify-between">
           <button
             onClick={() => prevStep()}
-            className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-50 text-gray-400 hover:text-accent hover:bg-accent/10 transition-all active:scale-90"
+            className="w-12 h-12 flex items-center justify-center rounded-full bg-gray-50 text-gray-900 hover:bg-black hover:text-white transition-all duration-500 active:scale-90"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
-          <h1 className="text-sm font-black uppercase tracking-widest text-gray-400">Bước cuối: Xác nhận</h1>
-          <div className="w-10" />
+          <span className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-300">CONFIRMATION</span>
+          <div className="w-12" />
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-10 max-w-2xl animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="text-center mb-10">
-          <h2 className="text-4xl font-heading font-black text-gray-900 mb-2 tracking-tight">KIỂM TRA LẠI</h2>
-          <p className="text-gray-400">Một chút nữa thôi là lịch hẹn đã sẵn sàng</p>
+      <div className="container mx-auto px-4 py-16 max-w-2xl animate-in fade-in slide-in-from-bottom-8 duration-1000">
+        <div className="text-center mb-16">
+          <h2 className="text-5xl font-heading font-black text-gray-900 mb-4 tracking-tighter leading-none">KIỂM TRA LẠI</h2>
+          <div className="w-16 h-1 bg-black mx-auto mb-4" />
+          <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest">Xem kỹ trước khi chốt lịch</p>
         </div>
 
-        {/* Main Card */}
-        <div className="bg-white rounded-[40px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] overflow-hidden border border-gray-100">
+        {/* Main Card - Receipt Style */}
+        <div className="bg-white rounded-[40px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.06)] overflow-hidden border border-gray-100">
           {/* Salon Spot */}
-          <div className="p-8 bg-gradient-to-br from-gray-50 to-white border-b border-dashed border-gray-100 relative overflow-hidden">
-             <div className="absolute top-0 right-0 p-8 opacity-5">
-                <MapPin className="w-32 h-32" />
-             </div>
+          <div className="p-10 border-b border-dashed border-gray-100 relative">
              <div className="relative z-10">
-               <h3 className="text-xs font-black text-accent uppercase tracking-widest mb-2 flex items-center gap-2">
-                  Địa điểm hớt tóc
-               </h3>
-               <h2 className="text-2xl font-heading font-black text-gray-900 mb-2">{salon.name}</h2>
-               <p className="text-sm text-gray-400 font-medium">{salon.address}</p>
+               <h3 className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mb-3">ĐỊA ĐIỂM</h3>
+               <h2 className="text-3xl font-heading font-black text-gray-900 mb-2 mt-2 tracking-tighter">{salon.name}</h2>
+               <p className="text-sm text-gray-400 font-black uppercase flex items-center gap-2">
+                 <MapPin className="w-4 h-4 text-gray-300" />
+                 {salon.address}
+               </p>
              </div>
           </div>
 
           {/* Time & Stylist Row */}
-          <div className="grid sm:grid-cols-2">
-             <div className="p-8 border-b sm:border-b-0 sm:border-r border-dashed border-gray-100">
-                <h3 className="text-xs font-black text-gray-300 uppercase tracking-widest mb-4">Thời gian</h3>
-                <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 rounded-2xl bg-accent/5 flex items-center justify-center text-accent">
-                      <Calendar className="w-6 h-6" />
+          <div className="grid sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-dashed divide-gray-100">
+             <div className="p-10">
+                <h3 className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mb-6">THỜI GIAN</h3>
+                <div className="flex items-center gap-5">
+                   <div className="w-14 h-14 rounded-3xl bg-gray-50 flex items-center justify-center text-black shadow-sm">
+                      <Calendar className="w-7 h-7" />
                    </div>
                    <div>
-                      <p className="text-lg font-black text-gray-900">{formatDate(selectedDate)}</p>
-                      <p className="text-xs font-bold text-accent uppercase tracking-tighter">Lúc {selectedTimeSlot}</p>
+                      <p className="text-xl font-black text-gray-900 tracking-tighter leading-tight">{formatDate(selectedDate)}</p>
+                      <p className="text-[10px] font-black text-black bg-gray-100 px-2 py-1 rounded inline-block mt-1 uppercase">Lúc {selectedTimeSlot}</p>
                    </div>
                 </div>
              </div>
-             <div className="p-8 border-b border-dashed border-gray-100">
-                <h3 className="text-xs font-black text-gray-300 uppercase tracking-widest mb-4">Người thực hiện</h3>
-                <div className="flex items-center gap-4">
-                   <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white ring-4 ring-gray-50 flex-shrink-0">
+             <div className="p-10">
+                <h3 className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mb-6">THỢ CẠO</h3>
+                <div className="flex items-center gap-5">
+                   <div className="w-14 h-14 rounded-full overflow-hidden border-2 border-white ring-4 ring-gray-50 flex-shrink-0 grayscale">
                       {selectedStaff?.user.avatar ? (
-                        <Image src={selectedStaff.user.avatar} alt="Staff" width={48} height={48} className="object-cover" />
+                        <Image src={selectedStaff.user.avatar} alt="Staff" width={56} height={56} className="object-cover" />
                       ) : (
                         <div className="w-full h-full bg-gray-100 flex items-center justify-center text-xl">👤</div>
                       )}
                    </div>
                    <div>
-                      <p className="text-lg font-black text-gray-900">{selectedStaff?.user.name || 'Bất kỳ Stylist'}</p>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-tighter">
-                         {selectedStaff ? STAFF_POSITIONS[selectedStaff.position] : 'Hệ thống tự xếp'}
+                      <p className="text-xl font-black text-gray-900 tracking-tighter leading-tight">{selectedStaff?.user.name || 'Bất kỳ Stylist'}</p>
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">
+                         {selectedStaff ? STAFF_POSITIONS[selectedStaff.position] : 'QUẢN LÝ TỰ XẾP'}
                       </p>
                    </div>
                 </div>
@@ -157,95 +157,99 @@ export default function BookingConfirmPage() {
           </div>
 
           {/* Services List */}
-          <div className="p-8 border-b border-dashed border-gray-100 bg-gray-50/30">
-             <h3 className="text-xs font-black text-gray-300 uppercase tracking-widest mb-6">Combo dịch vụ</h3>
-             <div className="space-y-4">
+          <div className="p-10 border-t border-dashed border-gray-100 bg-gray-50/50">
+             <h3 className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mb-8">DỊCH VỤ ĐÃ CHỌN</h3>
+             <div className="space-y-6">
                 {selectedServices.map(service => (
                   <div key={service.id} className="flex items-center justify-between group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 group-hover:text-accent transition-colors">
-                        <Scissors className="w-5 h-5" />
+                    <div className="flex items-center gap-5">
+                      <div className="w-12 h-12 rounded-3xl bg-white border border-gray-100 flex items-center justify-center text-gray-900 shadow-sm group-hover:scale-110 transition-transform duration-500">
+                        <Scissors className="w-6 h-6" />
                       </div>
                       <div>
-                        <p className="font-bold text-gray-900 tracking-tight">{service.name}</p>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase">{service.duration} phút</p>
+                        <p className="font-black text-gray-900 tracking-tight leading-tight">{service.name}</p>
+                        <p className="text-[10px] text-gray-400 font-black uppercase mt-1 tracking-widest">{service.duration} PHÚT THƯ GIÃN</p>
                       </div>
                     </div>
-                    <p className="font-black text-gray-900">{formatPrice(service.price)}</p>
+                    <p className="text-xl font-black text-gray-900 tracking-tighter">{formatPrice(service.price)}</p>
                   </div>
                 ))}
              </div>
           </div>
 
           {/* Total & Deposit */}
-          <div className="p-8 bg-gray-900 text-white">
-             <div className="flex justify-between items-end mb-8">
-                <div>
-                   <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Tổng chi phí</p>
-                   <p className="text-3xl font-black text-white">{formatPrice(totalAmount)}</p>
+          <div className="p-12 bg-black text-white relative overflow-hidden">
+             <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+             <div className="relative z-10">
+                <div className="flex justify-between items-end mb-10 pb-10 border-b border-white/10">
+                   <div>
+                      <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em] mb-2">TỔNG CHI PHÍ</p>
+                      <p className="text-5xl font-black text-white tracking-tighter leading-none">{formatPrice(totalAmount)}</p>
+                   </div>
+                   <div className="text-right">
+                      <p className="text-[10px] font-black text-white/50 uppercase tracking-[0.3em] mb-2">TỔNG GIỜ</p>
+                      <p className="text-2xl font-black text-white/80 tracking-tighter leading-none">{totalDuration} PHÚT</p>
+                   </div>
                 </div>
-                <div className="text-right">
-                   <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Thời gian hớt</p>
-                   <p className="text-lg font-black text-white/80">{totalDuration} phút</p>
+                
+                <div className="bg-white text-black p-8 rounded-[32px] shadow-2xl flex justify-between items-center transition-transform hover:scale-[1.02] duration-500">
+                  <div>
+                    <p className="text-[10px] font-black text-black/40 uppercase tracking-[0.3em] mb-2">TIỀN CỌC GIỮ LỊCH (50%)</p>
+                    <p className="text-4xl font-black text-black tracking-tighter leading-none">{formatPrice(Math.round(totalAmount * 0.5))}</p>
+                  </div>
+                  <div className="w-16 h-16 rounded-full bg-black text-white flex items-center justify-center shadow-xl">
+                    <Check className="w-8 h-8" />
+                  </div>
                 </div>
+                <p className="text-[8px] text-center mt-8 font-black text-white/20 uppercase tracking-[0.4em]">CAM KẾT DỊCH VỤ PREMIUM - KHÔNG HÀI LÒNG KHÔNG LẤY TIỀN</p>
              </div>
-             
-             <div className="bg-white/10 backdrop-blur-md rounded-3xl p-6 border border-white/10 flex justify-between items-center transition-transform active:scale-95">
-               <div>
-                 <p className="text-[10px] font-black text-accent uppercase tracking-widest mb-1">Cọc giữ lịch (50%)</p>
-                 <p className="text-2xl font-black text-white">{formatPrice(Math.round(totalAmount * 0.5))}</p>
-               </div>
-               <div className="w-12 h-12 rounded-2xl bg-accent text-white flex items-center justify-center shadow-lg shadow-accent/20">
-                 <Check className="w-6 h-6" />
-               </div>
-             </div>
-             <p className="text-[10px] text-center mt-6 font-bold text-white/30 uppercase tracking-wider">Lịch hẹn của bạn sẽ được giữ ngay sau khi chuyển khoản</p>
           </div>
         </div>
 
         {/* Error/Notice */}
         {error && (
-          <div className="mt-8 p-6 bg-red-50 border-2 border-red-100 rounded-3xl flex items-start gap-4 animate-in shake-100">
-            <AlertCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
-            <p className="text-red-700 font-bold text-sm tracking-tight">{error}</p>
+          <div className="mt-12 p-8 bg-red-50 border-2 border-red-100 rounded-[32px] flex items-center gap-5 animate-in shake-100">
+            <AlertCircle className="w-8 h-8 text-black flex-shrink-0" />
+            <p className="text-black font-black text-sm uppercase tracking-tight leading-relaxed">{error}</p>
           </div>
         )}
 
         {status !== 'authenticated' && (
-          <div className="mt-8 p-6 bg-accent/5 border-2 border-accent/10 rounded-3xl flex items-start gap-4">
-            <AlertCircle className="w-6 h-6 text-accent flex-shrink-0" />
+          <div className="mt-12 p-8 bg-gray-50 border-2 border-black/5 rounded-[32px] flex items-center gap-5">
+            <AlertCircle className="w-8 h-8 text-black flex-shrink-0" />
             <div>
-              <p className="font-black text-gray-900 leading-none mb-1">CHƯA ĐĂNG NHẬP</p>
-              <p className="text-sm text-gray-400 font-medium">Bạn sẽ tự động được đưa tới trang đăng nhập để lưu trữ lịch hẹn này</p>
+              <p className="font-black text-gray-900 uppercase tracking-widest leading-none mb-2">YÊU CẦU ĐĂNG NHẬP</p>
+              <p className="text-xs text-gray-400 font-bold uppercase tracking-tight">Hệ thống cần lưu thông tin để bạn quản lý lịch hẹn sau này.</p>
             </div>
           </div>
         )}
       </div>
 
       {/* Floating Action */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 sm:p-10 pointer-events-none z-[60]">
+      <div className="fixed bottom-0 left-0 right-0 p-8 sm:p-12 pointer-events-none z-[60]">
         <div className="container mx-auto max-w-lg pointer-events-auto">
           <button
             onClick={handleConfirm}
             disabled={loading}
             className={cn(
-              'w-full py-6 rounded-[32px] font-black text-xl flex items-center justify-center gap-4 transition-all duration-500 shadow-2xl active:scale-95',
+              'w-full py-8 rounded-full font-black text-2xl flex items-center justify-center gap-5 transition-all duration-700 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.4)] active:scale-95 transform hover:-translate-y-2 uppercase tracking-widest',
               loading
-                ? 'bg-gray-100 text-gray-300'
-                : 'bg-accent text-white shadow-accent/40 hover:shadow-accent/60'
+                ? 'bg-gray-100 text-gray-300 scale-95'
+                : 'bg-black text-white'
             )}
           >
             {loading ? (
-              <RefreshCw className="w-6 h-6 animate-spin" />
+              <RefreshCw className="w-8 h-8 animate-spin" />
             ) : (
               <>
-                XÁC NHẬN NGAY
-                <ChevronRight className="w-6 h-6" />
+                XÁC NHẬN & THANH TOÁN
+                <ChevronRight className="w-8 h-8" />
               </>
             )}
           </button>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

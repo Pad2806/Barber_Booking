@@ -179,123 +179,126 @@ export default function PaymentPage() {
 
   // Payment Pending - Show QR
   return (
-    <div className="min-h-screen bg-[#FDFCFB] py-12 pb-32">
-      <div className="container mx-auto px-4 max-w-lg animate-in fade-in zoom-in-95 duration-700">
-        <div className="bg-white rounded-[40px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.08)] border border-gray-100">
+    <div className="min-h-screen bg-white py-12 pb-32">
+      <div className="container mx-auto px-4 max-w-lg animate-in fade-in zoom-in-95 duration-1000">
+        <div className="bg-white rounded-[40px] overflow-hidden shadow-[0_64px_128px_-32px_rgba(0,0,0,0.12)] border border-gray-100">
           {/* Status Header */}
-          <div className="bg-gray-900 p-10 text-center relative overflow-hidden">
-             <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-accent/20 to-transparent pointer-events-none" />
+          <div className="bg-black p-12 text-center relative overflow-hidden">
+             <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.05),transparent)] pointer-events-none" />
              <div className="relative z-10">
-               <div className="w-20 h-20 rounded-full bg-white/10 flex items-center justify-center mx-auto mb-6 backdrop-blur-md border border-white/20">
-                 <QrCode className="w-10 h-10 text-accent animate-pulse" />
+               <div className="w-24 h-24 rounded-3xl bg-white/5 flex items-center justify-center mx-auto mb-8 backdrop-blur-3xl border border-white/10 ring-1 ring-white/20">
+                 <QrCode className="w-12 h-12 text-white animate-pulse" />
                </div>
-               <h1 className="text-3xl font-heading font-black text-white mb-2 tracking-tight">THANH TOÁN</h1>
-               <p className="text-gray-400 text-xs font-bold uppercase tracking-[0.2em] opacity-60">Quét mã bằng App ngân hàng</p>
+               <h1 className="text-4xl font-heading font-black text-white mb-3 tracking-tighter">PAYMENT</h1>
+               <div className="h-0.5 w-12 bg-white/20 mx-auto mb-4" />
+               <p className="text-white/40 text-[10px] font-black uppercase tracking-[0.4em]">Quét mã để giữ chỗ ngay</p>
              </div>
           </div>
 
           {/* QR & Bank Section */}
-          <div className="p-8">
-            <div className="text-center mb-8 bg-gray-50 rounded-2xl py-4 border border-gray-100">
-              <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">Mã đặt lịch của bạn</p>
-              <p className="text-xl font-black text-gray-900 tracking-tighter">{booking?.bookingCode}</p>
+          <div className="p-10">
+            <div className="text-center mb-10 bg-gray-50 rounded-3xl py-6 border border-gray-100">
+              <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mb-2">MÃ ĐẶT LỊCH</p>
+              <p className="text-3xl font-black text-gray-900 tracking-tighter font-mono">{booking?.bookingCode}</p>
             </div>
 
             <div className="relative flex flex-col items-center">
               {/* Amount Pill */}
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20 px-6 py-2 bg-accent rounded-full text-white font-black text-lg shadow-xl shadow-accent/20 scale-110">
+              <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-20 px-10 py-4 bg-black rounded-full text-white font-black text-2xl shadow-2xl scale-110 tracking-tighter">
                 {formatPrice(qrData?.amount || (booking?.totalAmount ? booking.totalAmount * 0.5 : 0))}
               </div>
 
               {/* QR Image Frame */}
-              <div className="bg-white p-6 pt-10 rounded-[32px] border-2 border-gray-100 inline-block mb-10 shadow-2xl relative">
+              <div className="bg-white p-10 pt-16 rounded-[48px] border-2 border-gray-50 inline-block mb-12 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.08)] relative transform hover:scale-[1.02] transition-transform duration-700">
                 {qrData?.qrCode ? (
-                  <div className="relative group grayscale hover:grayscale-0 transition-all duration-700">
-                    <Image src={qrData.qrCode} alt="QR Code" width={260} height={260} unoptimized className="block rounded-xl" />
-                    <div className="absolute inset-x-0 -bottom-2 flex justify-center translate-y-full opacity-0 group-hover:opacity-100 transition-opacity">
-                       <span className="text-[10px] font-bold text-gray-400 whitespace-nowrap">ĐÃ TỐI ƯU CHO MOBILE BANKING</span>
+                  <div className="relative group grayscale hover:grayscale-0 transition-all duration-1000">
+                    <Image src={qrData.qrCode} alt="QR Code" width={300} height={300} unoptimized className="block rounded-3xl" />
+                    <div className="absolute inset-x-0 -bottom-4 flex justify-center translate-y-full opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                       <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Sử dụng App Ngân hàng bất kỳ</span>
                     </div>
                   </div>
                 ) : (
-                  <div className="w-[260px] h-[260px] flex flex-col items-center justify-center gap-4 text-gray-200">
-                    <RefreshCw className="w-12 h-12 animate-spin" />
-                    <span className="text-xs font-bold uppercase tracking-widest">Đang tạo mã...</span>
+                  <div className="w-[300px] h-[300px] flex flex-col items-center justify-center gap-6 text-gray-100">
+                    <RefreshCw className="w-16 h-16 animate-spin text-gray-200" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em]">TẠO MÃ THANH TOÁN...</span>
                   </div>
                 )}
               </div>
 
               {/* Bank Details Visual Card */}
-              <div className="w-full bg-gradient-to-br from-gray-50 to-white rounded-3xl p-6 border border-gray-100 space-y-5">
-                 <div className="flex justify-between items-center group">
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-tight">Ngân hàng</span>
-                    <span className="text-sm font-black text-gray-900">{qrData?.bankName || qrData?.bankCode}</span>
-                 </div>
-                 <div className="h-px bg-dashed border-t border-gray-200" />
-                 <div className="flex justify-between items-center bg-white p-3 rounded-2xl border border-gray-100 group">
-                    <div>
-                       <p className="text-[10px] font-bold text-gray-400 uppercase leading-none mb-1">Số tài khoản</p>
-                       <p className="text-lg font-black text-gray-900 font-mono tracking-tighter">{qrData?.bankAccount}</p>
+              <div className="w-full space-y-4">
+                 <div className="bg-gray-50 rounded-[32px] p-8 border border-gray-100 group transition-all duration-500 hover:bg-white hover:shadow-xl">
+                    <div className="flex justify-between items-start mb-6">
+                       <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em]">NGÂN HÀNG</p>
+                       <span className="text-sm font-black text-gray-900 uppercase tracking-tight">{qrData?.bankName || qrData?.bankCode}</span>
                     </div>
-                    <button
-                      onClick={() => copyToClipboard(qrData?.bankAccount || '')}
-                      className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 hover:text-accent hover:bg-accent/10 transition-all active:scale-90"
-                    >
-                      {copied ? <Check className="w-5 h-5 text-green-500" /> : <Copy className="w-5 h-5" />}
-                    </button>
-                 </div>
-                 <div className="flex justify-between items-center bg-accent/5 p-3 rounded-2xl border border-accent/10 group">
-                    <div>
-                       <p className="text-[10px] font-bold text-accent uppercase leading-none mb-1">Nội dung (BẮT BUỘC)</p>
-                       <p className="text-lg font-black text-accent font-mono tracking-tighter">{booking?.bookingCode}</p>
+                    <div className="flex justify-between items-center group">
+                       <div>
+                          <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mb-1">SỐ TÀI KHOẢN</p>
+                          <p className="text-2xl font-black text-gray-900 font-mono tracking-tighter">{qrData?.bankAccount}</p>
+                       </div>
+                       <button
+                         onClick={() => copyToClipboard(qrData?.bankAccount || '')}
+                         className="w-14 h-14 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-400 hover:text-black hover:border-black transition-all duration-500 active:scale-90 shadow-sm"
+                       >
+                         {copied ? <Check className="w-6 h-6 text-gray-900" /> : <Copy className="w-6 h-6" />}
+                       </button>
                     </div>
-                    <button
-                      onClick={() => booking && copyToClipboard(booking.bookingCode)}
-                      className="w-10 h-10 rounded-xl bg-accent text-white flex items-center justify-center shadow-lg shadow-accent/20 transition-all active:scale-90"
-                    >
-                      {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                    </button>
+                 </div>
+
+                 <div className="bg-black text-white rounded-[32px] p-8 group transition-all duration-500 shadow-2xl shadow-black/10">
+                    <div className="flex justify-between items-center">
+                       <div>
+                          <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em] mb-1">NỘI DUNG (BẮT BUỘC)</p>
+                          <p className="text-2xl font-black text-white font-mono tracking-tighter underline decoration-white/20 underline-offset-8">{booking?.bookingCode}</p>
+                       </div>
+                       <button
+                         onClick={() => booking && copyToClipboard(booking.bookingCode)}
+                         className="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center text-white hover:bg-white hover:text-black transition-all duration-500 active:scale-90"
+                       >
+                         {copied ? <Check className="w-6 h-6" /> : <Copy className="w-6 h-6" />}
+                       </button>
+                    </div>
                  </div>
               </div>
             </div>
 
             {/* Expiring Timer */}
-            <div className="mt-10 flex flex-col items-center">
-               <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] mb-3">Mã sẽ hết hạn sau</p>
+            <div className="mt-14 flex flex-col items-center">
+               <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em] mb-5 italic font-mono">EXPIRES IN</p>
                <div className={cn(
-                 "flex items-center gap-3 px-8 py-3 rounded-2xl border-2 transition-all duration-500",
-                 countdown <= 60 ? "border-red-100 bg-red-50 text-red-500 shadow-lg shadow-red-200/50" : "border-gray-50 bg-gray-50 text-accent font-black"
+                 "flex items-center gap-4 px-12 py-4 rounded-full border-2 transition-all duration-700",
+                 countdown <= 60 ? "border-black bg-black text-white shadow-2xl" : "border-gray-50 bg-gray-50 text-black font-black"
                )}>
-                 <Clock className={cn("w-6 h-6", countdown <= 60 ? "animate-bounce" : "")} />
-                 <span className="text-2xl font-black font-mono tracking-tighter">{formatTime(countdown)}</span>
+                 <Clock className={cn("w-7 h-7", countdown <= 60 ? "animate-spin duration-[3000ms]" : "")} />
+                 <span className="text-4xl font-black font-mono tracking-tighter leading-none">{formatTime(countdown)}</span>
                </div>
             </div>
 
             {/* Waiting State */}
-            <div className="mt-10 pt-8 border-t border-dashed border-gray-100 flex flex-col items-center gap-4">
-               <div className="flex gap-1.5 items-center">
-                 <div className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce" />
-                 <div className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce [animation-delay:0.2s]" />
-                 <div className="w-1.5 h-1.5 bg-accent rounded-full animate-bounce [animation-delay:0.4s]" />
+            <div className="mt-16 pt-10 border-t border-dashed border-gray-100 flex flex-col items-center gap-6">
+               <div className="flex gap-2 items-center">
+                 <div className="w-2 h-2 bg-black rounded-full animate-pulse" />
+                 <div className="w-2 h-2 bg-black rounded-full animate-pulse [animation-delay:0.2s]" />
+                 <div className="w-2 h-2 bg-black rounded-full animate-pulse [animation-delay:0.4s]" />
                </div>
-               <p className="text-sm font-bold text-gray-400 tracking-tight">Đang đợi tiền về hệ thống...</p>
+               <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Hệ thống đang kiểm tra tiền về...</p>
             </div>
 
             {/* Footer Actions */}
-            <div className="mt-12 space-y-4">
-               <div className="p-4 rounded-3xl bg-blue-50/50 border border-blue-100 flex gap-4 items-center">
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
-                     <span className="font-black text-xs">!</span>
-                  </div>
-                  <p className="text-xs text-blue-600/80 font-bold leading-relaxed">Tiền cọc 50% dùng để giữ lịch, bạn sẽ trả phần còn lại tại Salon sau khi hớt xong.</p>
+            <div className="mt-16 space-y-6">
+               <div className="p-8 rounded-[32px] bg-gray-50 border border-gray-100 flex gap-6 items-center">
+                  <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-black flex-shrink-0 shadow-sm font-black text-lg">!</div>
+                  <p className="text-xs text-gray-500 font-bold leading-relaxed uppercase tracking-tight">Số tiền cọc 50% sẽ được khấu trừ trực tiếp khi bạn thanh toán hóa đơn tại cửa hàng.</p>
                </div>
                <button 
-                className="w-full py-5 text-gray-400 hover:text-gray-900 font-black text-xs uppercase tracking-widest transition-all"
+                className="w-full py-6 text-gray-300 hover:text-black font-black text-xs uppercase tracking-[0.4em] transition-all duration-500 hover:tracking-[0.6em]"
                 onClick={() => {
                   reset();
                   router.replace(`/my-bookings/${bookingId}`);
                 }}
               >
-                Hủy và thanh toán tại Salon sau
+                THANH TOÁN TẠI CỬA HÀNG
               </button>
             </div>
           </div>

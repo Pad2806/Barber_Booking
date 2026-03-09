@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Calendar, Clock, Users, Shield, Star, MapPin, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, Users, Shield, Star, MapPin, ChevronRight, ArrowRight } from 'lucide-react';
 import Header from '@/components/header';
+import Footer from '@/components/footer';
 
 // Mock data
 const services = [
@@ -99,7 +100,7 @@ const features = [
   {
     icon: Users,
     title: 'Stylist chuyên nghiệp',
-    description: 'Đội ngũ được đào tạo bài bản, kinh nghiệm',
+    description: 'Đội ngũ được đào tạo bài bản, kinh nghiệm tại REETRO.',
   },
   {
     icon: Shield,
@@ -110,135 +111,138 @@ const features = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+    <div className="min-h-screen bg-white">
       <Header />
 
-      {/* Hero Section */}
-      <section className="bg-primary py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center text-white">
-            <h1 className="text-4xl md:text-5xl font-heading font-bold mb-6">
-              Phong cách của bạn,
-              <br />
-              <span className="text-accent">Đẳng cấp</span> của chúng tôi
+      {/* Hero Section - Minimalist Bold */}
+      <section className="bg-black py-32 md:py-48 overflow-hidden relative">
+        <div className="absolute inset-0 opacity-20 pointer-events-none">
+          <div className="absolute inset-0 grayscale bg-[url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2000&auto=format')] bg-cover bg-center mix-blend-overlay" />
+        </div>
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="max-w-5xl mx-auto text-center text-white">
+             <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.5em] mb-6 block">ESTABLISHED 2024</span>
+            <h1 className="text-6xl md:text-9xl font-heading font-black mb-8 tracking-tighter leading-none uppercase italic">
+              REETRO<br />
+              <span className="text-white bg-white/10 px-4 inline-block">BARBER</span>
             </h1>
-            <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
-              Hệ thống salon tóc nam chuyên nghiệp hàng đầu Việt Nam với 100+ chi nhánh. Đặt lịch dễ
-              dàng, phục vụ tận tâm.
+            <p className="text-xl md:text-2xl text-gray-400 mb-12 max-w-2xl mx-auto font-light tracking-tight">
+              Hệ thống salon tóc nam chuyên nghiệp hàng đầu Việt Nam. <br />
+              Nơi định hình <span className="text-white font-black italic">PHONG CÁCH QUÝ TỘC</span> của bạn.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
               <Link
                 href="/booking"
-                className="bg-accent hover:bg-accent/90 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-colors inline-flex items-center gap-2"
+                className="bg-white text-black hover:bg-black hover:text-white border-2 border-white px-12 py-5 rounded-full font-black text-xs uppercase tracking-[0.3em] transition-all duration-700 shadow-2xl shadow-white/10 flex items-center gap-3 active:scale-95"
               >
-                <Calendar className="w-5 h-5" />
-                Đặt lịch ngay
+                BOOK APPOINTMENT
+                <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 href="/salons"
-                className="bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-colors inline-flex items-center gap-2"
+                className="bg-transparent hover:bg-white/10 text-white border-2 border-white/20 px-12 py-5 rounded-full font-black text-xs uppercase tracking-[0.3em] transition-all duration-700 flex items-center gap-3 active:scale-95"
               >
-                <MapPin className="w-5 h-5" />
-                Tìm salon
+                LOCATE SALONS
               </Link>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16">
-              <div className="text-center">
-                <div className="text-4xl font-bold text-accent mb-2">100+</div>
-                <div className="text-white/80">Chi nhánh</div>
+            {/* Stats - Monochrome contrast */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mt-24 pt-24 border-t border-white/10">
+              <div className="text-center group">
+                <div className="text-5xl font-black text-white mb-2 tracking-tighter transition-transform group-hover:scale-110 duration-500">100+</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">SALONS</div>
               </div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-accent mb-2">500K+</div>
-                <div className="text-white/80">Khách hàng</div>
+              <div className="text-center group">
+                <div className="text-5xl font-black text-white mb-2 tracking-tighter transition-transform group-hover:scale-110 duration-500">500K</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">CLIENTS</div>
               </div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-accent mb-2">4.9</div>
-                <div className="text-white/80">Đánh giá</div>
+              <div className="text-center group">
+                <div className="text-5xl font-black text-white mb-2 tracking-tighter transition-transform group-hover:scale-110 duration-500">4.9</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">RATING</div>
               </div>
-              <div className="text-center">
-                <div className="text-4xl font-bold text-accent mb-2">1000+</div>
-                <div className="text-white/80">Stylist</div>
+              <div className="text-center group">
+                <div className="text-5xl font-black text-white mb-2 tracking-tighter transition-transform group-hover:scale-110 duration-500">1000+</div>
+                <div className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">STYLISTS</div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="py-16 bg-white">
+      {/* Features - White clean layout */}
+      <section className="py-32 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-heading font-bold text-center text-gray-900 mb-12">
-            Tại sao chọn chúng tôi?
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="text-center mb-24">
+            <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em] mb-4 block">EXCELLENCE</span>
+            <h2 className="text-5xl font-heading font-black text-gray-900 tracking-tighter uppercase italic">
+              Tại sao chọn REETRO?
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 max-w-6xl mx-auto">
             {features.map((feature, index) => (
-              <div key={index} className="text-center">
-                <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <feature.icon className="w-8 h-8 text-accent" />
+              <div key={index} className="text-center group">
+                <div className="w-20 h-20 bg-gray-50 rounded-[32px] flex items-center justify-center mx-auto mb-8 border border-gray-100 transition-all duration-700 group-hover:bg-black group-hover:border-black group-hover:rounded-full">
+                  <feature.icon className="w-8 h-8 text-black transition-all duration-700 group-hover:text-white" />
                 </div>
-                <h3 className="font-semibold text-lg text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600 text-sm">{feature.description}</p>
+                <h3 className="font-black text-xs uppercase tracking-[0.2em] text-gray-900 mb-4">{feature.title}</h3>
+                <p className="text-gray-400 text-sm leading-relaxed tracking-tight">{feature.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Services */}
-      <section className="py-16 bg-gray-50">
+      {/* Services - Minimalist Monochrome cards */}
+      <section className="py-32 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-heading font-bold text-gray-900 mb-2">
-                Dịch vụ của chúng tôi
+          <div className="flex flex-col md:flex-row items-end justify-between mb-20 gap-8">
+            <div className="max-w-xl">
+               <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em] mb-4 block text-left">COLLECTIONS</span>
+              <h2 className="text-5xl font-heading font-black text-gray-900 tracking-tighter uppercase italic">
+                Dịch vụ thượng hạng
               </h2>
-              <p className="text-gray-600">Trải nghiệm dịch vụ chất lượng cao</p>
             </div>
             <Link
               href="/services"
-              className="hidden md:flex items-center gap-2 text-accent hover:text-accent/80 font-medium"
+              className="flex items-center gap-4 text-black hover:translate-x-2 transition-all duration-500 font-black text-[10px] uppercase tracking-[0.3em]"
             >
-              Xem tất cả
-              <ChevronRight className="w-5 h-5" />
+              EXPLORE ALL SERVICES
+              <ArrowRight className="w-5 h-5 px-1 py-1 bg-black text-white rounded-full" />
             </Link>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
             {services.map(service => (
               <div
                 key={service.id}
-                className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all"
+                className="group bg-white rounded-[40px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.04)] border border-gray-100 hover:shadow-2xl hover:shadow-black/5 transition-all duration-700"
               >
-                <div className="relative h-48">
+                <div className="relative h-72">
                   <Image
                     src={service.image}
                     alt={service.name}
                     fill
                     loading="lazy"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="text-xl font-semibold text-white mb-1">{service.name}</h3>
-                    <div className="flex items-center gap-3 text-sm text-white/90">
-                      <span className="font-semibold text-accent">{service.price}</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+                  <div className="absolute bottom-6 left-8 right-8">
+                    <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter italic">{service.name}</h3>
+                    <div className="flex items-center gap-4 text-[10px] font-black uppercase text-white tracking-[0.2em]">
+                      <span className="bg-white text-black px-3 py-1 rounded-sm">{service.price}</span>
+                      <span className="flex items-center gap-2">
+                        <Clock className="w-3 h-3" />
                         {service.duration}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="p-4">
+                <div className="p-8">
                   <Link
                     href="/booking"
-                    className="block w-full bg-accent/10 hover:bg-accent hover:text-white text-accent text-center py-2.5 rounded-xl font-medium transition-all"
+                    className="block w-full bg-black text-white text-center py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] transition-all duration-500 hover:bg-gray-900 shadow-xl shadow-black/10 active:scale-95"
                   >
-                    Đặt lịch
+                    SELECT SERVICE
                   </Link>
                 </div>
               </div>
@@ -247,55 +251,58 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Salons */}
-      <section className="py-16 bg-white">
+      {/* Salons - High contrast clean cards */}
+      <section className="py-32 bg-white">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-heading font-bold text-gray-900 mb-2">
-                Hệ thống salon của chúng tôi
+          <div className="flex flex-col md:flex-row items-end justify-between mb-20 gap-8">
+            <div className="max-w-xl">
+               <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em] mb-4 block text-left">LOCATIONS</span>
+              <h2 className="text-5xl font-heading font-black text-gray-900 tracking-tighter uppercase italic">
+                Hệ thống REETRO
               </h2>
-              <p className="text-gray-600">Tìm salon gần bạn nhất</p>
             </div>
             <Link
               href="/salons"
-              className="hidden md:flex items-center gap-2 text-accent hover:text-accent/80 font-medium"
+              className="flex items-center gap-4 text-black hover:translate-x-2 transition-all duration-500 font-black text-[10px] uppercase tracking-[0.3em]"
             >
-              Xem tất cả
-              <ChevronRight className="w-5 h-5" />
+               VIEW ALL LOCATIONS
+              <ArrowRight className="w-5 h-5 px-1 py-1 bg-black text-white rounded-full" />
             </Link>
           </div>
-          <div className="grid md:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-3 gap-10">
             {salons.map(salon => (
               <Link
                 key={salon.id}
                 href={`/salons/${salon.id}`}
-                className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-lg transition-all border border-gray-100"
+                className="group bg-white rounded-[40px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.04)] hover:shadow-2xl hover:shadow-black/5 transition-all duration-700 border border-gray-100"
               >
-                <div className="relative h-48">
+                <div className="relative h-64">
                   <Image
                     src={salon.image}
                     alt={salon.name}
                     fill
                     loading="lazy"
                     sizes="(max-width: 768px) 100vw, 33vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    className="object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110"
                   />
+                  <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
                 </div>
-                <div className="p-5">
-                  <h3 className="text-xl font-semibold text-gray-900 group-hover:text-accent transition-colors mb-2">
+                <div className="p-8">
+                  <h3 className="text-2xl font-black text-gray-900 group-hover:text-black transition-colors mb-4 uppercase tracking-tighter italic">
                     {salon.name}
                   </h3>
-                  <p className="text-sm text-gray-600 flex items-start gap-2 mb-3">
-                    <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0 text-accent" />
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-start gap-3 mb-6 leading-relaxed">
+                    <MapPin className="w-4 h-4 mt-[-2px] flex-shrink-0 text-black" />
                     {salon.address}
                   </p>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
-                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                      <span className="text-sm font-medium">{salon.rating}</span>
+                  <div className="flex items-center justify-between pt-6 border-t border-gray-50">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 bg-black text-white px-2 py-1 rounded-sm">
+                        <Star className="w-3 h-3 fill-white" />
+                        <span className="text-[10px] font-black">{salon.rating}</span>
+                      </div>
+                      <span className="text-[10px] font-black text-gray-300 uppercase tracking-tight italic">({salon.reviews} REVIEWS)</span>
                     </div>
-                    <span className="text-xs text-gray-500">({salon.reviews} đánh giá)</span>
                   </div>
                 </div>
               </Link>
@@ -304,101 +311,33 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-20 bg-gradient-to-br from-primary to-secondary">
-        <div className="container mx-auto px-4 text-center">
-          <div className="max-w-2xl mx-auto text-white">
-            <h2 className="text-3xl md:text-4xl font-heading font-bold mb-4">
-              Sẵn sàng đổi mới phong cách?
+      {/* CTA - Bold High Contrast */}
+      <section className="py-48 bg-black relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-1/2 h-full opacity-5 pointer-events-none">
+             <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=2000&auto=format')] bg-cover grayscale" />
+        </div>
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <div className="max-w-4xl mx-auto text-white">
+            <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.5em] mb-8 block">RESERVE YOUR TIME</span>
+            <h2 className="text-5xl md:text-8xl font-heading font-black mb-12 tracking-tighter uppercase italic leading-none">
+               BẠN ĐÃ SẴN SÀNG ĐỂ<br />
+               <span className="bg-white text-black px-6 py-2 inline-block">TRỞ NÊN KHÁC BIỆT?</span>
             </h2>
-            <p className="text-lg text-white/90 mb-8">
-              Đặt lịch ngay hôm nay và nhận ưu đãi 20% cho lần đầu tiên
+            <p className="text-xl text-gray-400 mb-16 tracking-tight max-w-2xl mx-auto">
+               Đặt lịch ngay hôm nay để trải nghiệm dịch vụ cắt tóc thượng lưu và nhận ưu đãi <span className="text-white font-black italic">WHITELIST 20%</span>.
             </p>
             <Link
               href="/booking"
-              className="inline-flex items-center gap-2 bg-accent hover:bg-accent/90 text-white px-8 py-4 rounded-xl font-semibold text-lg transition-colors"
+              className="inline-flex items-center gap-6 bg-white text-black hover:bg-black hover:text-white border-2 border-white px-16 py-6 rounded-full font-black text-sm uppercase tracking-[0.4em] transition-all duration-700 shadow-2xl shadow-white/10 group active:scale-95"
             >
-              <Calendar className="w-5 h-5" />
-              Đặt lịch ngay
+              BOOK NOW
+              <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-primary text-white py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h3 className="font-heading font-bold text-xl mb-4">
-                Reetro<span className="text-accent">BarberShop</span>
-              </h3>
-              <p className="text-white/70 text-sm">
-                Hệ thống salon tóc nam chuyên nghiệp hàng đầu Việt Nam
-              </p>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Về chúng tôi</h4>
-              <ul className="space-y-2 text-sm text-white/70">
-                <li>
-                  <Link href="/about" className="hover:text-white transition-colors">
-                    Giới thiệu
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/careers" className="hover:text-white transition-colors">
-                    Tuyển dụng
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/franchise" className="hover:text-white transition-colors">
-                    Nhượng quyền
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Dịch vụ</h4>
-              <ul className="space-y-2 text-sm text-white/70">
-                <li>
-                  <Link href="/services" className="hover:text-white transition-colors">
-                    Cắt tóc
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/services" className="hover:text-white transition-colors">
-                    Uốn/Nhuộm
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/services" className="hover:text-white transition-colors">
-                    Combo VIP
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="font-semibold mb-4">Liên hệ</h4>
-              <ul className="space-y-2 text-sm text-white/70">
-                <li>Hotline: 1900.27.27.30</li>
-                <li>Email: contact@reetro.vn</li>
-                <li>Giờ phục vụ: 8h30 - 20h30</li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-white/60">© 2024 ReetroBarberShop. All rights reserved.</p>
-            <div className="flex items-center gap-4">
-              <Link href="/privacy" className="text-sm text-white/60 hover:text-white">
-                Chính sách bảo mật
-              </Link>
-              <Link href="/terms" className="text-sm text-white/60 hover:text-white">
-                Điều khoản sử dụng
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }
