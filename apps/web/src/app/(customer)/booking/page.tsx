@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Check, Scissors, Star, Clock, CalendarDays, User, Sparkles, X, MessageSquare } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Scissors, Star, CalendarDays, Sparkles, X, MessageSquare } from 'lucide-react';
 import { staffApi, serviceApi, Staff, Service } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
 import { formatPrice, STAFF_POSITIONS, cn } from '@/lib/utils';
@@ -30,10 +30,6 @@ export default function BookingPage() {
     setTimeSlot,
     setNote,
     setStep,
-    nextStep,
-    prevStep,
-    isServiceSelected,
-    toggleService,
   } = useBookingStore();
 
   const [services, setServices] = useState<Service[]>([]);
@@ -175,15 +171,6 @@ export default function BookingPage() {
     if (internalStep === 1) return true; // Staff is optional
     return !!selectedDate && !!selectedTimeSlot;
   };
-
-  const groupedServices = useMemo(() => {
-    return services.reduce((acc, service) => {
-      const cat = service.category || 'Dịch vụ khác';
-      if (!acc[cat]) acc[cat] = [];
-      acc[cat].push(service);
-      return acc;
-    }, {} as Record<string, Service[]>);
-  }, [services]);
 
   // Format selected date for display
   const formattedDate = useMemo(() => {

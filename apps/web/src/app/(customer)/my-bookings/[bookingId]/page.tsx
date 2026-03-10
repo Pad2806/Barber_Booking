@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
@@ -16,7 +16,7 @@ import {
 } from '@/lib/utils';
 import Footer from '@/components/footer';
 
-export default function BookingDetailPage() {
+export default function BookingDetailPage(): React.ReactNode {
   const params = useParams();
   const router = useRouter();
   const { status } = useSession();

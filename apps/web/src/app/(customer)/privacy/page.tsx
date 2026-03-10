@@ -1,10 +1,11 @@
 'use client';
 
+import React from 'react';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { Shield, Lock, Eye, Share2, UserCheck } from 'lucide-react';
 
-export default function PrivacyPolicyPage() {
+export default function PrivacyPolicyPage(): React.ReactNode {
   const sections = [
     {
       icon: Eye,

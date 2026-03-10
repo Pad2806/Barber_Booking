@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MapPin, Star, Clock, Search, ArrowRight } from 'lucide-react';
@@ -8,7 +8,7 @@ import { salonApi, Salon } from '@/lib/api';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 
-export default function SalonsPage() {
+export default function SalonsPage(): React.ReactNode {
   const [salons, setSalons] = useState<Salon[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

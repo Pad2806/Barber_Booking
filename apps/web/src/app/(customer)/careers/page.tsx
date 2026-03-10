@@ -1,10 +1,11 @@
 'use client';
 
+import React from 'react';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { Briefcase, UserPlus, Heart, Zap, Globe } from 'lucide-react';
 
-export default function CareersPage() {
+export default function CareersPage(): React.ReactNode {
   const values = [
     { icon: Heart, title: 'Tận tâm', desc: 'Phục vụ từ tâm, đặt sự hài lòng lên hàng đầu.' },
     { icon: Zap, title: 'Sáng tạo', desc: 'Luôn dẫn đầu xu hướng, không ngừng học hỏi.' },

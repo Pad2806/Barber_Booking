@@ -19,7 +19,6 @@ import {
 import { bookingApi } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
 import { formatPrice, formatDate, cn, STAFF_POSITIONS } from '@/lib/utils';
-import Footer from '@/components/footer';
 
 export default function BookingConfirmPage() {
   const router = useRouter();
@@ -30,7 +29,6 @@ export default function BookingConfirmPage() {
     selectedStaff,
     selectedDate,
     selectedTimeSlot,
-    totalDuration,
     totalAmount,
     note,
     prevStep,

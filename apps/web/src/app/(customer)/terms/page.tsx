@@ -1,10 +1,11 @@
 'use client';
 
+import React from 'react';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { FileText, CalendarCheck, CreditCard, RotateCcw, AlertCircle } from 'lucide-react';
 
-export default function TermsPage() {
+export default function TermsPage(): React.ReactNode {
   const terms = [
     {
       icon: CalendarCheck,

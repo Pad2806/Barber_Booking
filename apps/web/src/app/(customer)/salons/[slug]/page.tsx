@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { MapPin, Star, Clock, Phone, Check, Play, ArrowRight, ChevronRight } from 'lucide-react';
+import { MapPin, Star, Clock, Phone, Check, Play, ChevronRight } from 'lucide-react';
 import { salonApi, serviceApi, staffApi, Salon, Service, Staff } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
 import { formatPrice, STAFF_POSITIONS, cn } from '@/lib/utils';

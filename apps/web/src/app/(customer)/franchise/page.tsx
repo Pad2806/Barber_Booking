@@ -1,10 +1,11 @@
 'use client';
 
+import React from 'react';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { BadgeCheck, BarChart3, Coins, PieChart, ShieldCheck, TrendingUp } from 'lucide-react';
 
-export default function FranchisePage() {
+export default function FranchisePage(): React.ReactNode {
   const benefits = [
     { icon: TrendingUp, title: 'Thương hiệu hàng đầu', desc: 'Sở hữu quyền sử dụng thương hiệu REETRO BARBER uy tín.' },
     { icon: BadgeCheck, title: 'Hệ thống vận hành', desc: 'Quy trình phục vụ chuẩn 5 sao được tối ưu hóa sẵn.' },

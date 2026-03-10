@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { User, Mail, Phone, Lock, LogOut, Loader2, Save, Calendar } from 'lucide-react';
@@ -20,7 +20,7 @@ interface UserProfile {
   createdAt: string;
 }
 
-export default function ProfilePage() {
+export default function ProfilePage(): React.ReactNode {
   const { data: session, status, update } = useSession();
   const router = useRouter();
 

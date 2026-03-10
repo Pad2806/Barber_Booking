@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import Header from '@/components/header';
@@ -10,7 +10,7 @@ import { Calendar, Clock, MapPin, ChevronRight } from 'lucide-react';
 import { bookingApi, Booking } from '@/lib/api';
 import { formatPrice, formatDate, BOOKING_STATUS, cn } from '@/lib/utils';
 
-export default function MyBookingsPage() {
+export default function MyBookingsPage(): React.ReactNode {
   const { status } = useSession();
   const router = useRouter();
   const [bookings, setBookings] = useState<Booking[]>([]);
