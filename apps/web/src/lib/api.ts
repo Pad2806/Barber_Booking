@@ -202,7 +202,7 @@ export const salonApi = {
 
 // Service APIs
 export const serviceApi = {
-  getAll: async (params?: { category?: string; search?: string; page?: number; limit?: number }) => {
+  getAll: async (params?: { category?: string; search?: string; page?: number; limit?: number; sortBy?: string }) => {
     const response = await apiClient.get<PaginatedResponse<Service>>('/services', { params });
     return response.data;
   },

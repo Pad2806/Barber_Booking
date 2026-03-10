@@ -39,7 +39,7 @@ export default async function HomePage(): Promise<React.ReactNode> {
   try {
     const [salonsRes, servicesRes] = await Promise.all([
       salonApi.getAll({ limit: 6 }).catch(() => ({ data: [] })),
-      serviceApi.getAll({ limit: 6 }).catch(() => ({ data: [] }))
+      serviceApi.getAll({ limit: 6, sortBy: 'most_booked' }).catch(() => ({ data: [] }))
     ]);
     
     salons = salonsRes.data || [];

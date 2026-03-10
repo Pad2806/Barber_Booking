@@ -38,8 +38,9 @@ export class ServicesService {
     category?: ServiceCategory;
     isActive?: boolean;
     search?: string;
+    sortBy?: 'most_booked' | 'newest' | 'order';
   } = {}) {
-    const { skip = 0, take = 20, category, isActive = true, search } = params;
+    const { skip = 0, take = 20, category, isActive = true, search, sortBy = 'order' } = params;
 
     const where: any = { isActive };
 
@@ -54,12 +55,23 @@ export class ServicesService {
       ];
     }
 
+    let orderBy: any = [{ order: 'asc' }, { createdAt: 'desc' }];
+    if (sortBy === 'most_booked') {
+      orderBy = {
+        bookingServices: {
+          _count: 'desc'
+        }
+      };
+    } else if (sortBy === 'newest') {
+      orderBy = { createdAt: 'desc' };
+    }
+
     const [services, total] = await Promise.all([
       this.prisma.service.findMany({
         where,
         skip,
         take,
-        orderBy: [{ category: 'asc' }, { order: 'asc' }],
+        orderBy,
         include: {
           salon: {
             select: {
@@ -68,6 +80,11 @@ export class ServicesService {
               slug: true,
             },
           },
+          _count: {
+            select: {
+              bookingServices: true
+            }
+          }
         },
       }),
       this.prisma.service.count({ where }),

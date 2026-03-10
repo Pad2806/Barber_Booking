@@ -24,7 +24,7 @@ import { Public } from '../auth/decorators/public.decorator';
 @ApiTags('Salons')
 @Controller('salons')
 export class SalonsController {
-  constructor(private readonly salonsService: SalonsService) {}
+  constructor(private readonly salonsService: SalonsService) { }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -40,19 +40,22 @@ export class SalonsController {
   @ApiOperation({ summary: 'Get all salons (public)' })
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'city', required: false })
   @ApiQuery({ name: 'district', required: false })
   @ApiQuery({ name: 'search', required: false })
   findAll(
     @Query('skip') skip?: string,
     @Query('take') take?: string,
+    @Query('limit') limit?: string,
     @Query('city') city?: string,
     @Query('district') district?: string,
     @Query('search') search?: string,
   ) {
+    const takeValue = take || limit;
     return this.salonsService.findAll({
       skip: skip ? parseInt(skip) : undefined,
-      take: take ? parseInt(take) : undefined,
+      take: takeValue ? parseInt(takeValue) : undefined,
       city,
       district,
       search,

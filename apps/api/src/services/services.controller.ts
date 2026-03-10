@@ -40,19 +40,25 @@ export class ServicesController {
   @ApiOperation({ summary: 'Get all services (public)' })
   @ApiQuery({ name: 'skip', required: false })
   @ApiQuery({ name: 'take', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'category', required: false, enum: ServiceCategory })
   @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'sortBy', required: false, enum: ['most_booked', 'newest', 'order'] })
   findAll(
     @Query('skip') skip?: string,
     @Query('take') take?: string,
+    @Query('limit') limit?: string,
     @Query('category') category?: ServiceCategory,
     @Query('search') search?: string,
+    @Query('sortBy') sortBy?: any,
   ) {
+    const takeValue = take || limit;
     return this.servicesService.findAll({
       skip: skip ? parseInt(skip) : undefined,
-      take: take ? parseInt(take) : undefined,
+      take: takeValue ? parseInt(takeValue) : undefined,
       category,
       search,
+      sortBy,
     });
   }
 
