@@ -11,6 +11,7 @@ import { formatPrice, STAFF_POSITIONS, cn } from '@/lib/utils';
 import ServiceDetailModal from '@/components/ServiceDetailModal';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
+import Avatar from '@/components/Avatar';
 
 export default function SalonDetailPage() {
   const params = useParams();
@@ -283,19 +284,14 @@ export default function SalonDetailPage() {
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
               {staff.map(member => (
                 <div key={member.id} className="group bg-background rounded-[56px] p-12 border border-border shadow-[0_32px_64px_-16px_rgba(0,0,0,0.06)] hover:shadow-2xl hover:shadow-foreground/5 transition-all duration-700 flex flex-col items-center text-center">
-                  <div className="w-40 h-40 rounded-full overflow-hidden bg-accent/5 relative mb-10 border-4 border-background shadow-2xl transition-transform duration-700 group-hover:scale-105">
-                    {member.user.avatar ? (
-                      <Image
-                        src={member.user.avatar}
-                        alt={member.user.name}
-                        fill
-                        className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-4xl bg-accent/5 text-primary/20">
-                        <UserIcon className="w-16 h-16" />
-                      </div>
-                    )}
+                  <div className="mb-10 transition-transform duration-700 group-hover:scale-105">
+                    <Avatar 
+                      src={member.user.avatar} 
+                      name={member.user.name} 
+                      size="xl" 
+                      variant="square" 
+                      className="ring-8 ring-primary/5 group-hover:ring-primary/10 transition-all"
+                    />
                   </div>
                   <div className="space-y-4 mb-8">
                     <h4 className="text-3xl font-heading font-bold text-foreground uppercase tracking-tight italic leading-none">{member.user.name}</h4>

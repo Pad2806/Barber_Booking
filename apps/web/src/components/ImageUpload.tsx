@@ -80,42 +80,40 @@ export default function ImageUpload({
   if (variant === 'avatar') {
     return (
       <div className={cn('relative inline-block', className)}>
-        <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-200">
+        <div className="w-32 h-32 rounded-[2.5rem] overflow-hidden bg-accent/5 border-4 border-background shadow-2xl relative group">
           {value ? (
             <Image
               src={value}
               alt="Avatar"
-              width={96}
-              height={96}
-              className="w-full h-full object-cover"
+              fill
+              className="object-cover transition-all duration-700 group-hover:scale-110"
+              sizes="128px"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              <Upload className="w-8 h-8" />
+            <div className="w-full h-full flex items-center justify-center text-primary/20 bg-accent/5">
+              <Upload className="w-10 h-10" />
             </div>
           )}
+          
+          <div 
+            onClick={() => inputRef.current?.click()}
+            className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+          >
+            {uploading ? (
+              <Loader2 className="w-8 h-8 text-white animate-spin" />
+            ) : (
+              <Camera className="w-8 h-8 text-white" />
+            )}
+          </div>
         </div>
-
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={disabled || uploading}
-          className="absolute bottom-0 right-0 w-8 h-8 bg-accent rounded-full flex items-center justify-center text-white shadow-md hover:bg-accent/90 transition-colors disabled:opacity-50"
-        >
-          {uploading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Camera className="w-4 h-4" />
-          )}
-        </button>
 
         {value && !uploading && (
           <button
             type="button"
             onClick={handleRemove}
-            className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 rounded-full flex items-center justify-center text-white shadow-md hover:bg-red-600"
+            className="absolute -top-3 -right-3 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center text-white shadow-xl hover:bg-red-600 transition-all active:scale-90 z-10"
           >
-            <X className="w-3 h-3" />
+            <X className="w-4 h-4" />
           </button>
         )}
 
