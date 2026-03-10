@@ -82,7 +82,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         }));
 
     // Always add profile link
-    adminItems.push({ key: 'profile', href: '/profile', label: 'Tài khoản', icon: User });
+    adminItems.push({ key: 'profile', href: '/admin/profile', label: 'Tài khoản', icon: User });
 
     return adminItems;
   }, [me]);

@@ -72,10 +72,10 @@ function ResetPasswordForm() {
 
   if (verifying) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex items-center justify-center p-12">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-accent mx-auto mb-4" />
-          <p className="text-gray-600">Đang xác thực...</p>
+          <Loader2 className="w-10 h-10 animate-spin text-[#C8A97E] mx-auto mb-4" />
+          <p className="text-sm font-medium text-[#8B7355]">Đang xác thực...</p>
         </div>
       </div>
     );
@@ -83,144 +83,116 @@ function ResetPasswordForm() {
 
   if (status === 'error') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="max-w-md w-full text-center">
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <XCircle className="w-8 h-8 text-red-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Link không hợp lệ</h1>
-            <p className="text-gray-600 mb-6">
-              Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu link mới.
-            </p>
-            <Link
-              href="/forgot-password"
-              className="block w-full py-3 bg-accent text-white rounded-xl font-medium hover:bg-accent/90 transition-colors"
-            >
-              Yêu cầu link mới
-            </Link>
-          </div>
+      <div className="bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-[#E8E0D4] text-center">
+        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+          <XCircle className="w-8 h-8 text-red-500" />
         </div>
+        <h1 className="text-2xl font-bold text-[#2C1E12] mb-2">Link không hợp lệ</h1>
+        <p className="text-sm text-[#8B7355] mb-6 leading-relaxed">
+          Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu link mới.
+        </p>
+        <Link
+          href="/forgot-password"
+          className="block w-full py-3.5 bg-[#C8A97E] text-white rounded-xl font-bold hover:bg-[#B8975E] transition-colors"
+        >
+          Yêu cầu link mới
+        </Link>
       </div>
     );
   }
 
   if (status === 'success') {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <div className="max-w-md w-full text-center">
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Đặt lại mật khẩu thành công!</h1>
-            <p className="text-gray-600 mb-6">
-              Mật khẩu của bạn đã được cập nhật. Bạn có thể đăng nhập với mật khẩu mới.
-            </p>
-            <Link
-              href="/login"
-              className="block w-full py-3 bg-primary text-white rounded-xl font-medium hover:bg-primary/90 transition-colors"
-            >
-              Đăng nhập ngay
-            </Link>
-          </div>
+      <div className="bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-[#E8E0D4] text-center">
+        <div className="w-16 h-16 bg-[#F0EBE3] rounded-full flex items-center justify-center mx-auto mb-6">
+          <CheckCircle className="w-8 h-8 text-[#C8A97E]" />
         </div>
+        <h1 className="text-2xl font-bold text-[#2C1E12] mb-2">Thành công!</h1>
+        <p className="text-sm text-[#8B7355] mb-6 leading-relaxed">
+          Mật khẩu của bạn đã được cập nhật. Bạn có thể đăng nhập với mật khẩu mới.
+        </p>
+        <Link
+          href="/login"
+          className="block w-full py-3.5 bg-[#C8A97E] text-white rounded-xl font-bold hover:bg-[#B8975E] transition-colors"
+        >
+          Đăng nhập ngay
+        </Link>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex">
-      {/* Left side - Image */}
-      <div className="hidden lg:flex lg:w-1/2 bg-primary relative">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary via-secondary to-primary" />
-        <div className="relative z-10 flex flex-col justify-center items-center text-white p-12">
-          <h1 className="text-4xl font-heading font-bold mb-4">
-            Reetro<span className="text-accent">BarberShop</span>
-          </h1>
-          <p className="text-xl text-white/80 text-center max-w-md">
-            Phong cách - Đẳng cấp - Chất lượng
-          </p>
-        </div>
+    <div className="bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-[#E8E0D4] space-y-8 animate-in fade-in slide-in-from-bottom-4 transition-all duration-500">
+      <div>
+        <h2 className="text-3xl font-bold text-[#2C1E12]">Đặt lại mật khẩu</h2>
+        <p className="text-sm font-medium text-[#8B7355] mt-2">Nhập mật khẩu mới cho tài khoản của bạn</p>
       </div>
 
-      {/* Right side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
-        <div className="w-full max-w-md space-y-8">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900">Đặt lại mật khẩu</h2>
-            <p className="text-gray-600 mt-2">Nhập mật khẩu mới cho tài khoản của bạn</p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Mật khẩu mới</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="Nhập mật khẩu mới"
-                  className="w-full pl-12 pr-12 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                  required
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                </button>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Xác nhận mật khẩu
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={confirmPassword}
-                  onChange={e => setConfirmPassword(e.target.value)}
-                  placeholder="Nhập lại mật khẩu"
-                  className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-                  required
-                  minLength={6}
-                />
-              </div>
-            </div>
-
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-[#2C1E12]">Mật khẩu mới</label>
+          <div className="relative group">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8B7355] transition-colors group-focus-within:text-[#C8A97E]" />
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Nhập mật khẩu mới"
+              className="w-full pl-12 pr-12 py-3 bg-[#FAF8F5] border border-[#E8E0D4] rounded-xl focus:outline-none focus:border-[#C8A97E] focus:ring-2 focus:ring-[#C8A97E]/20 transition-all font-medium text-[#2C1E12]"
+              required
+              minLength={6}
+            />
             <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-4 bg-accent text-white rounded-xl font-semibold hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8B7355] hover:text-[#C8A97E] transition-colors"
             >
-              {isLoading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Đang xử lý...
-                </>
-              ) : (
-                'Đặt lại mật khẩu'
-              )}
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
-          </form>
+          </div>
         </div>
-      </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-[#2C1E12]">Xác nhận mật khẩu</label>
+          <div className="relative group">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8B7355] transition-colors group-focus-within:text-[#C8A97E]" />
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              placeholder="Nhập lại mật khẩu"
+              className="w-full pl-12 pr-4 py-3 bg-[#FAF8F5] border border-[#E8E0D4] rounded-xl focus:outline-none focus:border-[#C8A97E] focus:ring-2 focus:ring-[#C8A97E]/20 transition-all font-medium text-[#2C1E12]"
+              required
+              minLength={6}
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full py-3.5 bg-[#C8A97E] text-white rounded-xl font-bold hover:bg-[#B8975E] transition-all disabled:opacity-70 flex items-center justify-center gap-2 shadow-sm active:scale-[0.98]"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="w-5 h-5 animate-spin" />
+              Đang xử lý...
+            </>
+          ) : (
+            'Đặt lại mật khẩu'
+          )}
+        </button>
+      </form>
     </div>
   );
 }
 
 function ResetPasswordLoading() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="flex items-center justify-center p-12">
       <div className="text-center">
-        <Loader2 className="w-12 h-12 animate-spin text-accent mx-auto mb-4" />
-        <p className="text-gray-600">Đang tải...</p>
+        <Loader2 className="w-10 h-10 animate-spin text-[#C8A97E] mx-auto mb-4" />
+        <p className="text-sm font-medium text-[#8B7355]">Đang tải...</p>
       </div>
     </div>
   );

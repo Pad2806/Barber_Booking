@@ -96,13 +96,13 @@ export default function BookingDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen bg-[#FAF8F5] pb-32">
       {/* Header */}
-      <header className="bg-background/80 backdrop-blur-md border-b border-border sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-6">
+      <header className="bg-white/80 backdrop-blur-md border-b border-[#E8E0D4] sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 md:py-6 max-w-2xl">
           <button
             onClick={() => router.push('/my-bookings')}
-            className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground hover:text-primary transition-colors active:scale-95"
+            className="flex items-center gap-2 text-sm font-bold text-[#8B7355] hover:text-[#C8A97E] transition-colors active:scale-95"
           >
             <ChevronLeft className="w-5 h-5" />
             Về danh sách
@@ -110,126 +110,125 @@ export default function BookingDetailPage() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-12 max-w-2xl animate-in fade-in duration-1000">
+      <div className="container mx-auto px-4 py-8 md:py-12 max-w-2xl animate-in fade-in duration-500">
         {/* Booking Code Card */}
-        <div className="bg-foreground text-background rounded-[48px] p-12 text-center mb-10 relative overflow-hidden shadow-2xl shadow-foreground/20 border border-border/5">
-          <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="bg-[#2C1E12] text-white rounded-2xl p-8 md:p-12 text-center mb-8 relative overflow-hidden shadow-sm border border-[#2C1E12]">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="relative z-10">
-            <p className="text-[10px] font-bold text-background/40 uppercase tracking-[0.4em] mb-4">YOUR BOOKING CODE</p>
-            <p className="text-6xl font-heading font-bold tracking-tight text-primary leading-none">{booking.bookingCode}</p>
+            <p className="text-xs font-bold text-white/50 uppercase tracking-wider mb-2">MÃ ĐẶT LỊCH</p>
+            <p className="text-4xl md:text-5xl font-bold tracking-tight text-[#C8A97E]">{booking.bookingCode}</p>
           </div>
         </div>
 
         {/* Status Section */}
-        <div className="flex gap-4 mb-10">
+        <div className="flex flex-col sm:flex-row gap-4 mb-8">
             <div className={cn(
-              'flex-1 p-8 rounded-[40px] border-2 transition-all duration-700',
-              BOOKING_STATUS[booking.status]?.color?.includes('bg-green') ? 'bg-primary text-background border-primary' : 
-              'bg-accent/5 border-border text-foreground'
+              'flex-1 p-6 rounded-2xl border transition-all',
+              BOOKING_STATUS[booking.status]?.color?.includes('bg-green') ? 'bg-[#E8F5E9] text-[#2E7D32] border-[#C8E6C9]' : 
+              'bg-white border-[#E8E0D4] text-[#2C1E12]'
             )}>
-               <p className={cn("text-[10px] font-bold uppercase tracking-[0.3em] mb-2", booking.status === 'COMPLETED' ? "text-background/40" : "text-muted-foreground")}>TRẠNG THÁI LỊCH</p>
-               <p className="text-xl font-heading font-bold uppercase tracking-tight">
+               <p className={cn("text-xs font-bold uppercase tracking-wider mb-1", booking.status === 'COMPLETED' ? "text-[#2E7D32]/70" : "text-[#8B7355]")}>TRẠNG THÁI</p>
+               <p className="text-lg font-bold">
                  {BOOKING_STATUS[booking.status]?.label || booking.status}
                </p>
             </div>
             <div className={cn(
-              'flex-1 p-8 rounded-[40px] border-2 transition-all duration-700',
-              PAYMENT_STATUS[booking.paymentStatus]?.color?.includes('bg-green') ? 'bg-primary text-background border-primary' : 
-              'bg-accent/5 border-border text-foreground'
+              'flex-1 p-6 rounded-2xl border transition-all',
+              PAYMENT_STATUS[booking.paymentStatus]?.color?.includes('bg-green') ? 'bg-[#E8F5E9] text-[#2E7D32] border-[#C8E6C9]' : 
+              'bg-white border-[#E8E0D4] text-[#2C1E12]'
             )}>
-               <p className={cn("text-[10px] font-bold uppercase tracking-[0.3em] mb-2", booking.paymentStatus === 'PAID' ? "text-background/40" : "text-muted-foreground")}>THANH TOÁN</p>
-               <p className="text-xl font-heading font-bold uppercase tracking-tight">
+               <p className={cn("text-xs font-bold uppercase tracking-wider mb-1", booking.paymentStatus === 'PAID' ? "text-[#2E7D32]/70" : "text-[#8B7355]")}>THANH TOÁN</p>
+               <p className="text-lg font-bold">
                  {PAYMENT_STATUS[booking.paymentStatus]?.label || booking.paymentStatus}
                </p>
             </div>
         </div>
 
         {/* Global Details Card */}
-        <div className="bg-background rounded-[48px] shadow-2xl border border-border overflow-hidden mb-10">
+        <div className="bg-white rounded-2xl shadow-sm border border-[#E8E0D4] overflow-hidden mb-8">
            {/* Top: Salon & Time */}
-           <div className="p-10 space-y-10">
-              <div className="flex items-start justify-between">
+           <div className="p-6 md:p-8 space-y-8">
+              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                  <div className="flex-1">
-                   <h2 className="text-3xl font-heading font-bold text-foreground tracking-tight leading-none mb-4 uppercase">{booking.salon.name}</h2>
-                   <p className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-2 mb-6 tracking-wide">
-                      <MapPin className="w-4 h-4 text-primary" />
+                   <h2 className="text-2xl font-bold text-[#2C1E12] mb-2">{booking.salon.name}</h2>
+                   <p className="text-sm font-medium text-[#5C4A32] flex items-center gap-1.5 mb-4">
+                      <MapPin className="w-4 h-4 text-[#C8A97E]" />
                       {booking.salon.address}
                    </p>
                    <a
                     href={`tel:${booking.salon.phone}`}
-                    className="inline-flex items-center gap-3 px-6 py-3 bg-accent/5 hover:bg-primary hover:text-background rounded-full transition-all duration-500 text-[10px] font-bold uppercase tracking-widest text-muted-foreground shadow-sm border border-border"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#F0EBE3] hover:bg-[#E8E0D4] rounded-lg transition-colors text-sm font-bold text-[#2C1E12]"
                    >
                     <Phone className="w-4 h-4" />
                     {booking.salon.phone}
                    </a>
                  </div>
-                 <div className="text-right pl-6 border-l border-border">
-                    <p className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] mb-2 italic">TIME IN</p>
-                    <p className="text-2xl font-heading font-bold text-foreground tracking-tight mb-1">{booking.timeSlot}</p>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{formatDate(booking.date)}</p>
+                 <div className="text-left md:text-right md:pl-6 md:border-l border-[#E8E0D4] pt-6 md:pt-0 border-t md:border-t-0">
+                    <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">Thời gian</p>
+                    <p className="text-xl font-bold text-[#2C1E12] mb-0.5">{booking.timeSlot}</p>
+                    <p className="text-sm font-medium text-[#8B7355]">{formatDate(booking.date)}</p>
                  </div>
               </div>
 
-              {/* Staff Row */}
-              <div className="flex items-center gap-6 p-8 bg-accent/5 rounded-[32px] group transition-all duration-700 hover:bg-primary border border-border">
-                 <div className="w-16 h-16 rounded-full bg-background border border-border flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-700">
-                    {booking.staff?.user.avatar ? (
-                       <Image src={booking.staff.user.avatar} alt="Staff" width={64} height={64} className="rounded-full object-cover" />
-                    ) : (
-                       <User className="w-8 h-8 text-primary group-hover:text-background" />
-                    )}
-                 </div>
-                 <div>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em] mb-2 group-hover:text-background/40">THỢ CẠO PHỤ TRÁCH</p>
-                    <p className="text-2xl font-heading font-bold tracking-tight uppercase group-hover:text-background">{booking.staff?.user.name || 'BẤT KỲ STYLIST'}</p>
-                 </div>
-              </div>
+               {/* Staff Row */}
+               <div className="flex items-center gap-4 p-4 md:p-6 bg-[#FAF8F5] rounded-xl border border-[#E8E0D4]">
+                  <div className="w-14 h-14 rounded-full bg-white border border-[#E8E0D4] flex items-center justify-center shrink-0">
+                     {booking.staff?.user.avatar ? (
+                        <Image src={booking.staff.user.avatar} alt="Staff" width={56} height={56} className="rounded-full object-cover" />
+                     ) : (
+                        <User className="w-6 h-6 text-[#C8A97E]" />
+                     )}
+                  </div>
+                  <div>
+                     <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">Thợ cạo</p>
+                     <p className="text-lg font-bold text-[#2C1E12]">{booking.staff?.user.name || 'Bất kỳ Stylist'}</p>
+                  </div>
+               </div>
            </div>
 
            {/* Services List */}
-           <div className="bg-accent/5 p-10 border-t border-dashed border-border">
-             <h3 className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.4em] mb-8 italic">SERVICES RENDERED</h3>
-             <div className="space-y-6">
+           <div className="bg-[#FAF8F5] p-6 md:p-8 border-t border-[#E8E0D4]">
+             <h3 className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-6">Dịch vụ đã chọn</h3>
+             <div className="space-y-4">
                 {booking.services.map(item => (
-                  <div key={item.id} className="flex items-center justify-between group">
-                    <div className="flex items-center gap-6">
-                      <div className="w-12 h-12 rounded-3xl bg-background border border-border flex items-center justify-center text-primary shadow-sm group-hover:scale-110 transition-transform duration-500">
-                        <Scissors className="w-6 h-6" />
+                  <div key={item.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 bg-white border border-[#E8E0D4] rounded-lg flex items-center justify-center text-[#C8A97E] shrink-0">
+                        <Scissors className="w-5 h-5" />
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-foreground tracking-tight leading-tight uppercase">{item.service.name}</p>
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1 italic">{item.duration} MIN SESSION</p>
+                        <p className="text-base font-bold text-[#2C1E12]">{item.service.name}</p>
+                        <p className="text-sm font-medium text-[#8B7355] mt-0.5">{item.duration} Phút</p>
                       </div>
                     </div>
-                    <p className="text-xl font-heading font-bold text-foreground tracking-tight">{formatPrice(item.price)}</p>
+                    <p className="text-lg font-bold text-[#2C1E12] shrink-0 ml-4">{formatPrice(item.price)}</p>
                   </div>
                 ))}
              </div>
            </div>
 
            {/* Financial Summary */}
-           <div className="p-12 bg-foreground text-background relative overflow-hidden">
-              <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.02),transparent)] pointer-events-none" />
-              <div className="relative z-10 space-y-8">
-                <div className="flex justify-between items-center pb-8 border-b border-background/10">
+           <div className="p-6 md:p-8 bg-[#F0EBE3] border-t border-[#E8E0D4]">
+              <div className="space-y-6">
+                <div className="flex justify-between items-center pb-6 border-b border-[#E8E0D4]">
                    <div>
-                     <p className="text-[10px] font-bold text-background/40 uppercase tracking-[0.4em] mb-3">TỔNG CHI PHÍ</p>
-                     <p className="text-5xl font-heading font-bold text-primary tracking-tight leading-none">{formatPrice(booking.totalAmount)}</p>
+                     <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">Tổng cộng</p>
+                     <p className="text-3xl font-bold text-[#2C1E12]">{formatPrice(booking.totalAmount)}</p>
                    </div>
                    <div className="text-right">
-                      <p className="text-[10px] font-bold text-background/40 uppercase tracking-[0.4em] mb-3">THỜI GIAN</p>
-                      <p className="text-2xl font-heading font-bold text-background/70 tracking-tight">{booking.totalDuration} PHÚT</p>
+                      <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">Thời gian</p>
+                      <p className="text-lg font-bold text-[#5C4A32]">{booking.totalDuration} Phút</p>
                    </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8">
-                  <div className="bg-background/5 rounded-3xl p-6 border border-background/5">
-                    <p className="text-[9px] font-bold text-background/30 uppercase tracking-[0.3em] mb-2">ĐÃ CỌC ONLINE</p>
-                    <p className="text-2xl font-heading font-bold text-background tracking-tight">{formatPrice(totalPaid)}</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-white rounded-xl p-4 border border-[#E8E0D4]">
+                    <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">Đã cọc</p>
+                    <p className="text-lg font-bold text-[#2C1E12]">{formatPrice(totalPaid)}</p>
                   </div>
-                  <div className="bg-background text-foreground rounded-3xl p-6 shadow-2xl transition-transform hover:scale-[1.02] duration-500 border border-border">
-                    <p className="text-[9px] font-bold text-foreground/40 uppercase tracking-[0.3em] mb-2">CÒN LẠI TẠI SALON</p>
-                    <p className="text-2xl font-heading font-bold tracking-tight">{formatPrice(remainingAmount)}</p>
+                  <div className="bg-white rounded-xl p-4 border border-[#E8E0D4]">
+                    <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">Còn lại</p>
+                    <p className="text-lg font-bold text-[#2E7D32]">{formatPrice(remainingAmount)}</p>
                   </div>
                 </div>
               </div>
@@ -237,23 +236,23 @@ export default function BookingDetailPage() {
         </div>
 
         {/* Actions */}
-        <div className="space-y-6">
+        <div className="space-y-4">
            {(booking.paymentStatus === 'UNPAID' || booking.paymentStatus === 'PENDING') &&
             ['PENDING', 'CONFIRMED'].includes(booking.status) && (
               <Link
                 href={`/payment/${booking.id}`}
-                className="block w-full py-8 bg-primary text-background rounded-full font-bold text-[11px] text-center shadow-xl shadow-primary/20 active:scale-95 transition-all duration-700 transform hover:scale-[1.02] uppercase tracking-widest border border-primary"
+                className="block w-full py-4 bg-[#C8A97E] hover:bg-[#B8975E] text-white rounded-xl font-bold text-center transition-colors shadow-sm"
               >
-                THANH TOÁN CỌC GIỮ CHỖ
+                Thanh toán cọc giữ chỗ
               </Link>
             )}
 
            {canCancel && (
             <button
               onClick={() => setShowCancelModal(true)}
-              className="w-full py-6 text-muted-foreground/40 font-bold text-[10px] uppercase tracking-[0.4em] hover:text-primary transition-all duration-500 active:scale-95"
+              className="w-full py-4 text-[#8B7355] hover:text-[#2C1E12] font-bold text-sm bg-white border border-[#E8E0D4] rounded-xl transition-colors hover:bg-[#F0EBE3]"
             >
-              HỦY LỊCH HẸN CỦA BẠN
+              Hủy lịch hẹn
             </button>
            )}
         </div>
@@ -261,33 +260,33 @@ export default function BookingDetailPage() {
 
       {/* Cancel Modal */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-foreground/90 backdrop-blur-sm flex items-center justify-center p-6 z-[100] animate-in fade-in duration-500">
-          <div className="bg-background rounded-[40px] p-10 max-w-md w-full shadow-2xl animate-in zoom-in-95 duration-500 border border-border">
-            <h3 className="text-2xl font-heading font-bold text-foreground mb-4 tracking-tight uppercase">XÁC NHẬN HỦY</h3>
-            <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest mb-8 italic">Bạn có chắc chắn muốn bỏ lịch hẹn này?</p>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-in fade-in duration-300">
+          <div className="bg-white rounded-2xl p-6 md:p-8 max-w-sm w-full shadow-lg border border-[#E8E0D4] animate-in zoom-in-95 duration-300">
+            <h3 className="text-xl font-bold text-[#2C1E12] mb-2">Xác nhận hủy</h3>
+            <p className="text-sm font-medium text-[#5C4A32] mb-6">Bạn có chắc chắn muốn bỏ lịch hẹn này?</p>
             <textarea
               value={cancelReason}
               onChange={e => setCancelReason(e.target.value)}
               placeholder="Lý do hủy (không bắt buộc)..."
               rows={3}
-              className="w-full p-5 bg-accent/5 border-2 border-border rounded-[24px] mb-8 focus:outline-none focus:border-primary transition-all font-bold text-sm text-foreground"
+              className="w-full p-4 bg-[#FAF8F5] border border-[#E8E0D4] rounded-xl mb-6 focus:outline-none focus:border-[#C8A97E] focus:ring-1 focus:ring-[#C8A97E] transition-all text-sm text-[#2C1E12] placeholder:text-[#8B7355]/50"
             />
-            <div className="flex gap-4">
+            <div className="flex gap-3">
               <button
                 onClick={() => setShowCancelModal(false)}
-                className="flex-1 py-5 bg-accent/5 text-muted-foreground rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-accent/10 transition-all active:scale-95 border border-border"
+                className="flex-1 py-3 bg-[#F0EBE3] text-[#5C4A32] rounded-xl font-bold text-sm hover:bg-[#E8E0D4] transition-colors border border-[#E8E0D4]"
               >
-                ĐÓNG
+                Đóng
               </button>
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
                 className={cn(
-                  'flex-1 py-5 bg-primary text-background rounded-full font-bold uppercase text-[10px] tracking-widest transition-all duration-700 active:scale-95 shadow-xl shadow-primary/20',
-                  cancelling ? 'opacity-50 cursor-not-allowed' : 'hover:bg-foreground hover:text-background border border-primary'
+                  'flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-sm transition-colors',
+                  cancelling ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700'
                 )}
               >
-                {cancelling ? 'Đang hủy...' : 'Xác nhận hủy'}
+                {cancelling ? 'Đang xử lý...' : 'Đệ trình'}
               </button>
             </div>
           </div>

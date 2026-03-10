@@ -59,70 +59,69 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="space-y-12 transition-all duration-1000 animate-in fade-in slide-in-from-bottom-8 pb-12">
-      <div className="space-y-4">
-         <span className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.4em] block font-mono">JOIN THE CLUB</span>
-        <h2 className="text-4xl font-heading font-bold text-foreground tracking-tight uppercase leading-none">Đăng ký</h2>
-        <p className="text-[11px] font-bold text-muted-foreground tracking-widest uppercase italic leading-relaxed">Trở thành thành viên của REETRO để tận hưởng dịch vụ tốt nhất.</p>
+    <div className="space-y-8 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-[#E8E0D4] mb-12">
+      <div className="space-y-2 text-center">
+        <h2 className="text-3xl font-bold text-[#2C1E12]">Đăng ký</h2>
+        <p className="text-sm font-medium text-[#8B7355]">Trở thành thành viên của Reetro để tận hưởng dịch vụ tốt nhất</p>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <label htmlFor="name" className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] font-mono italic px-2">FULL NAME</label>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <label htmlFor="name" className="text-sm font-bold text-[#2C1E12]">Họ và tên</label>
             <div className="relative group">
-              <User className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30 transition-colors group-focus-within:text-primary" />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8B7355] transition-colors group-focus-within:text-[#C8A97E]" />
               <input
                 id="name"
                 name="name"
                 type="text"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="NGUYỄN VĂN A"
+                placeholder="Nguyễn Văn A"
                 required
-                className="w-full pl-16 pr-8 py-5 bg-accent/5 border-2 border-border rounded-[24px] focus:outline-none focus:border-primary focus:bg-background transition-all font-bold text-[11px] tracking-widest placeholder:text-muted-foreground/20 text-foreground"
+                className="w-full pl-12 pr-4 py-3 bg-[#FAF8F5] border border-[#E8E0D4] rounded-xl focus:outline-none focus:border-[#C8A97E] focus:ring-2 focus:ring-[#C8A97E]/20 transition-all font-medium text-[#2C1E12] placeholder:text-[#8B7355]/50"
               />
             </div>
           </div>
 
-          <div className="space-y-3">
-            <label htmlFor="email" className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] font-mono italic px-2">EMAIL ADDRESS</label>
+          <div className="space-y-2">
+            <label htmlFor="email" className="text-sm font-bold text-[#2C1E12]">Địa chỉ Email</label>
             <div className="relative group">
-              <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30 transition-colors group-focus-within:text-primary" />
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8B7355] transition-colors group-focus-within:text-[#C8A97E]" />
               <input
                 id="email"
                 name="email"
                 type="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="CLIENT@EXAMPLE.COM"
+                placeholder="client@example.com"
                 required
-                className="w-full pl-16 pr-8 py-5 bg-accent/5 border-2 border-border rounded-[24px] focus:outline-none focus:border-primary focus:bg-background transition-all font-bold text-[11px] tracking-widest placeholder:text-muted-foreground/20 text-foreground"
+                className="w-full pl-12 pr-4 py-3 bg-[#FAF8F5] border border-[#E8E0D4] rounded-xl focus:outline-none focus:border-[#C8A97E] focus:ring-2 focus:ring-[#C8A97E]/20 transition-all font-medium text-[#2C1E12] placeholder:text-[#8B7355]/50"
               />
             </div>
           </div>
 
-          <div className="space-y-3">
-             <label htmlFor="phone" className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] font-mono italic px-2">PHONE (OPTIONAL)</label>
+          <div className="space-y-2">
+             <label htmlFor="phone" className="text-sm font-bold text-[#2C1E12]">Số điện thoại <span className="text-[#8B7355] font-normal">(Tùy chọn)</span></label>
             <div className="relative group">
-              <Phone className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30 transition-colors group-focus-within:text-primary" />
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8B7355] transition-colors group-focus-within:text-[#C8A97E]" />
               <input
                 id="phone"
                 name="phone"
                 type="tel"
                 value={formData.phone}
                 onChange={handleChange}
-                placeholder="0912345678"
-                className="w-full pl-16 pr-8 py-5 bg-accent/5 border-2 border-border rounded-[24px] focus:outline-none focus:border-primary focus:bg-background transition-all font-bold text-[11px] tracking-widest placeholder:text-muted-foreground/20 text-foreground"
+                placeholder="0912 345 678"
+                className="w-full pl-12 pr-4 py-3 bg-[#FAF8F5] border border-[#E8E0D4] rounded-xl focus:outline-none focus:border-[#C8A97E] focus:ring-2 focus:ring-[#C8A97E]/20 transition-all font-medium text-[#2C1E12] placeholder:text-[#8B7355]/50"
               />
             </div>
           </div>
 
-          <div className="space-y-3">
-             <label htmlFor="password" className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] font-mono italic px-2">CREATE PASSWORD</label>
+          <div className="space-y-2">
+             <label htmlFor="password" className="text-sm font-bold text-[#2C1E12]">Mật khẩu</label>
             <div className="relative group">
-              <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30 transition-colors group-focus-within:text-primary" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8B7355] transition-colors group-focus-within:text-[#C8A97E]" />
               <input
                 id="password"
                 name="password"
@@ -132,22 +131,22 @@ export default function RegisterPage() {
                 placeholder="••••••••"
                 required
                 minLength={6}
-                className="w-full pl-16 pr-16 py-5 bg-accent/5 border-2 border-border rounded-[24px] focus:outline-none focus:border-primary focus:bg-background transition-all font-bold text-foreground"
+                className="w-full pl-12 pr-12 py-3 bg-[#FAF8F5] border border-[#E8E0D4] rounded-xl focus:outline-none focus:border-[#C8A97E] focus:ring-2 focus:ring-[#C8A97E]/20 transition-all font-medium text-[#2C1E12]"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-6 top-1/2 -translate-y-1/2 text-muted-foreground/30 hover:text-primary transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-[#8B7355] hover:text-[#C8A97E] transition-colors"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>
 
-          <div className="space-y-3">
-             <label htmlFor="confirmPassword" className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] font-mono italic px-2">CONFIRM PASSWORD</label>
+          <div className="space-y-2">
+             <label htmlFor="confirmPassword" className="text-sm font-bold text-[#2C1E12]">Xác nhận mật khẩu</label>
             <div className="relative group">
-              <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30 transition-colors group-focus-within:text-primary" />
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8B7355] transition-colors group-focus-within:text-[#C8A97E]" />
               <input
                 id="confirmPassword"
                 name="confirmPassword"
@@ -156,43 +155,43 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 placeholder="••••••••"
                 required
-                className="w-full pl-16 pr-8 py-5 bg-accent/5 border-2 border-border rounded-[24px] focus:outline-none focus:border-primary focus:bg-background transition-all font-bold text-foreground"
+                className="w-full pl-12 pr-4 py-3 bg-[#FAF8F5] border border-[#E8E0D4] rounded-xl focus:outline-none focus:border-[#C8A97E] focus:ring-2 focus:ring-[#C8A97E]/20 transition-all font-medium text-[#2C1E12]"
               />
             </div>
           </div>
         </div>
 
-        <div className="flex items-start gap-4 px-2">
+        <div className="flex items-start gap-3">
           <input
             type="checkbox"
             id="terms"
             required
-            className="w-5 h-5 mt-0.5 border-2 border-border rounded-sm text-primary focus:ring-primary accent-primary cursor-pointer"
+            className="w-4 h-4 mt-0.5 border-[#E8E0D4] rounded text-[#C8A97E] focus:ring-[#C8A97E] accent-[#C8A97E] cursor-pointer"
           />
-          <label htmlFor="terms" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-relaxed cursor-pointer italic">
-            I AGREE TO THE <Link href="/terms" className="text-primary underline underline-offset-4 decoration-1 hover:text-foreground">TERMS</Link> AND <Link href="/privacy" className="text-primary underline underline-offset-4 decoration-1 hover:text-foreground">PRIVACY POLICY</Link>
+          <label htmlFor="terms" className="text-xs font-medium text-[#8B7355] leading-relaxed cursor-pointer">
+            Tôi đồng ý với các <Link href="/terms" className="text-[#C8A97E] font-bold hover:underline">Điều Khoản</Link> và <Link href="/privacy" className="text-[#C8A97E] font-bold hover:underline">Chính Sách Bảo Mật</Link>
           </label>
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-primary text-background py-6 rounded-full font-bold text-[11px] uppercase tracking-[0.4em] hover:bg-foreground transition-all duration-700 shadow-xl shadow-primary/20 flex items-center justify-center gap-4 group active:scale-95 border border-primary/20"
+          className="w-full bg-[#C8A97E] text-white py-3.5 rounded-xl font-bold text-sm hover:bg-[#B8975E] transition-all shadow-sm flex items-center justify-center gap-2 group disabled:opacity-70 active:scale-[0.98]"
         >
           {isLoading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
-            <div className="flex items-center gap-4">
-               CREATE ACCOUNT <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform duration-500" />
+            <div className="flex items-center gap-2">
+               Tạo tài khoản mới <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           )}
         </button>
       </form>
 
-      <div className="pt-8 text-center border-t border-border">
-         <p className="text-[10px] font-bold text-primary/30 uppercase tracking-[0.2em] mb-4 italic">ALREADY HAVE AN ACCOUNT?</p>
-         <Link href="/login" className="inline-block px-12 py-4 border-2 border-primary rounded-full font-bold text-[10px] uppercase tracking-[0.3em] hover:bg-foreground hover:text-background hover:border-foreground transition-all duration-700 active:scale-95 text-primary">
-           SIGN IN
+      <div className="pt-6 text-center text-sm font-medium text-[#5C4A32] border-t border-[#E8E0D4]">
+         Đã có tài khoản?{' '}
+         <Link href="/login" className="text-[#C8A97E] font-bold hover:text-[#B8975E] transition-colors">
+           Đăng nhập
          </Link>
       </div>
     </div>

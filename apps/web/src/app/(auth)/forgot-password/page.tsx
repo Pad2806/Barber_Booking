@@ -40,25 +40,25 @@ export default function ForgotPasswordPage() {
 
   if (isSubmitted) {
     return (
-      <div className="text-center space-y-6">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <CheckCircle className="w-8 h-8 text-green-600" />
+      <div className="bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-[#E8E0D4] text-center space-y-6">
+        <div className="w-16 h-16 bg-[#F0EBE3] rounded-full flex items-center justify-center mx-auto mb-6">
+          <CheckCircle className="w-8 h-8 text-[#C8A97E]" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Đã gửi email</h2>
-        <p className="text-gray-600 mb-6">
-          Nếu tài khoản tồn tại với email <span className="font-medium">{email}</span>, bạn sẽ
+        <h2 className="text-2xl font-bold text-[#2C1E12] mb-2">Đã gửi email</h2>
+        <p className="text-[#8B7355] text-sm mb-6 leading-relaxed">
+          Nếu tài khoản tồn tại với email <span className="font-bold text-[#2C1E12]">{email}</span>, bạn sẽ
           nhận được hướng dẫn đặt lại mật khẩu trong vài phút.
         </p>
         <div className="space-y-3">
           <Link
             href="/login"
-            className="block w-full py-3 bg-accent text-white rounded-xl font-medium hover:bg-accent/90 transition-colors"
+            className="block w-full py-3.5 bg-[#C8A97E] text-white rounded-xl font-bold hover:bg-[#B8975E] transition-colors"
           >
             Quay lại đăng nhập
           </Link>
           <button
             onClick={() => setIsSubmitted(false)}
-            className="block w-full py-3 text-gray-600 hover:text-gray-900 transition-colors"
+            className="block w-full py-3.5 text-sm font-semibold text-[#8B7355] hover:text-[#5C4A32] hover:bg-[#FAF8F5] rounded-xl transition-colors"
           >
             Thử gửi lại email
           </button>
@@ -68,33 +68,33 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="bg-white p-8 md:p-10 rounded-2xl shadow-sm border border-[#E8E0D4] space-y-8 animate-in fade-in slide-in-from-bottom-4 transition-all duration-500">
       <div>
         <Link
           href="/login"
-          className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mb-8"
+          className="inline-flex items-center gap-2 text-sm font-bold text-[#8B7355] hover:text-[#C8A97E] transition-colors mb-8"
         >
           <ArrowLeft className="w-4 h-4" />
           Quay lại đăng nhập
         </Link>
 
-        <h2 className="text-3xl font-heading font-bold text-gray-900">Quên mật khẩu?</h2>
-        <p className="text-gray-600 mt-2">
+        <h2 className="text-3xl font-bold text-[#2C1E12]">Quên mật khẩu?</h2>
+        <p className="text-sm font-medium text-[#8B7355] mt-2">
           Nhập email của bạn và chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+        <div className="space-y-2">
+          <label className="text-sm font-bold text-[#2C1E12]">Địa chỉ Email</label>
+          <div className="relative group">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8B7355] transition-colors group-focus-within:text-[#C8A97E]" />
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
-              placeholder="email@example.com"
-              className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-all"
+              placeholder="client@example.com"
+              className="w-full pl-12 pr-4 py-3 bg-[#FAF8F5] border border-[#E8E0D4] rounded-xl focus:outline-none focus:border-[#C8A97E] focus:ring-2 focus:ring-[#C8A97E]/20 transition-all font-medium text-[#2C1E12] placeholder:text-[#8B7355]/50"
               required
             />
           </div>
@@ -103,7 +103,7 @@ export default function ForgotPasswordPage() {
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full py-4 bg-accent text-white rounded-xl font-semibold hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full py-3.5 bg-[#C8A97E] text-white rounded-xl font-bold hover:bg-[#B8975E] transition-all disabled:opacity-70 flex items-center justify-center gap-2 shadow-sm active:scale-[0.98]"
         >
           {isLoading ? (
             <>
@@ -116,9 +116,9 @@ export default function ForgotPasswordPage() {
         </button>
       </form>
 
-      <p className="text-center text-gray-600">
+      <p className="text-center text-sm font-medium text-[#5C4A32] border-t border-[#E8E0D4] pt-6">
         Nhớ mật khẩu?{' '}
-        <Link href="/login" className="text-accent font-semibold hover:underline">
+        <Link href="/login" className="text-[#C8A97E] font-bold hover:text-[#B8975E] transition-colors">
           Đăng nhập ngay
         </Link>
       </p>
