@@ -18,7 +18,7 @@ export default function Header(): React.ReactNode {
       <div className="container mx-auto px-4 py-3 sm:py-4">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <span className="text-xl sm:text-2xl font-bold tracking-tight text-[#2C1E12] transition-colors">
+            <span className="text-2xl sm:text-3xl font-heading font-black italic tracking-tighter text-[#2C1E12] transition-all group-hover:scale-105">
               REETRO<span className="text-[#C8A97E] ml-1">BARBER</span>
             </span>
           </Link>

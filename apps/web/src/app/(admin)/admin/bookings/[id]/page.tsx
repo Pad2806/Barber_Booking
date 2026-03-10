@@ -238,7 +238,7 @@ export default function BookingDetailPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-heading font-bold text-gray-800">
+            <h1 className="text-2xl font-bold text-gray-800">
               Chi tiết đặt lịch #{booking.bookingCode}
             </h1>
             <p className="text-gray-500">Quản lý thông tin đặt lịch</p>

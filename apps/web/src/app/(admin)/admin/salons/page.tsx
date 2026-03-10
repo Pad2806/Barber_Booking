@@ -111,7 +111,7 @@ export default function AdminSalonsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-gray-800">Quản lý chi nhánh</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Quản lý chi nhánh</h1>
           <p className="text-gray-500">Quản lý thông tin các salon</p>
         </div>
         <Link

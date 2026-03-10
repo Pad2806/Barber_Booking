@@ -105,7 +105,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-heading font-bold text-gray-800">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
         <p className="text-gray-500">Tổng quan hoạt động kinh doanh</p>
       </div>
 

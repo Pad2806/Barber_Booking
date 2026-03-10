@@ -386,7 +386,7 @@ export default function AdminStaffPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-heading font-bold text-gray-800">Quản lý nhân viên</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Quản lý nhân viên</h1>
           <p className="text-gray-500">Quản lý thông tin nhân viên và stylist</p>
         </div>
         <button
@@ -606,7 +606,7 @@ export default function AdminStaffPage() {
           <div className="absolute right-0 top-0 h-full w-full max-w-lg bg-white shadow-lg border-l overflow-y-auto">
             <div className="p-6 border-b flex items-start justify-between gap-4">
               <div>
-                <h2 className="text-xl font-heading font-bold text-gray-800">
+                <h2 className="text-xl font-bold text-gray-800">
                   {panelMode === 'create'
                     ? 'Thêm nhân viên'
                     : panelMode === 'edit'

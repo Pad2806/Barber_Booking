@@ -81,11 +81,7 @@ export default function StaffDashboardPage() {
   const fetchStaffData = async () => {
     try {
       setLoading(true);
-      // Mock data - Replace with actual API calls
-      // const response = await apiClient.get('/staff/my-bookings/today');
-      // setBookings(response.data);
-
-      // For now, show empty state
+      // Use actual API calls here in the future
       setBookings([]);
       setStats({
         todayBookings: 0,
@@ -128,8 +124,8 @@ export default function StaffDashboardPage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
-              <span className="text-2xl font-heading font-bold text-primary">
-                Reetro<span className="text-accent">Staff</span>
+              <span className="text-2xl font-bold text-[#2C1E12]">
+                Reetro<span className="text-[#C8A97E]">Staff</span>
               </span>
             </Link>
             <div className="flex items-center gap-4">

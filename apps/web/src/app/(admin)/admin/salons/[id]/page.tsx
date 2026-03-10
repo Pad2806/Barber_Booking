@@ -59,7 +59,7 @@ export default function SalonDetailPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-heading font-bold text-gray-800">{salon.name}</h1>
+            <h1 className="text-2xl font-bold text-gray-800">{salon.name}</h1>
             <p className="text-gray-500">Chi tiết chi nhánh và thống kê</p>
           </div>
         </div>

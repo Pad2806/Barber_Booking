@@ -75,7 +75,7 @@ export default function BookingConfirmPage() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <div className="text-6xl mb-6">⚠️</div>
-        <h2 className="text-2xl font-heading font-bold mb-2">Thiếu thông tin đặt lịch</h2>
+        <h2 className="text-2xl font-bold mb-2 text-[#2C1E12]">Thiếu thông tin đặt lịch</h2>
         <p className="text-muted-foreground mb-6 text-sm font-medium">Vui lòng chọn đầy đủ dịch vụ và thời gian</p>
         <Link href="/salons" className="bg-primary text-background px-10 py-4 rounded-full font-bold text-[11px] uppercase tracking-wider shadow-xl shadow-primary/20 active:scale-95 transition-all">
           Quay lại chọn salon

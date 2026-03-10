@@ -162,7 +162,7 @@ export default function AdminCustomersPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-heading font-bold text-gray-800">Quản lý khách hàng</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Quản lý khách hàng</h1>
         <p className="text-gray-500">Xem thông tin và lịch sử đặt lịch của khách hàng</p>
       </div>
 

@@ -3,6 +3,7 @@ import Image from 'next/image';
 import { Calendar, Clock, Users, Shield, Star, MapPin, ArrowRight } from 'lucide-react';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
+import { HeroCarousel } from '@/components/home/hero-carousel';
 
 // Mock data
 const services = [
@@ -114,56 +115,27 @@ export default function HomePage(): React.ReactNode {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Hero Section - Clean Light */}
-      <section className="bg-[#FAF8F5] py-20 md:py-28 overflow-hidden relative border-b border-[#E8E0D4]">
-        <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
-          <div className="absolute inset-0 grayscale bg-[url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2000&auto=format')] bg-cover bg-center" />
-        </div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-             <span className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-4 block">THÀNH LẬP NĂM 2024</span>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black mb-6 tracking-tight leading-none text-[#2C1E12]">
-              REETRO<br />
-              <span className="text-[#C8A97E]">BARBER</span>
-            </h1>
-            <p className="text-base md:text-lg text-[#5C4A32] mb-8 max-w-2xl mx-auto font-medium">
-              Hệ thống salon tóc nam chuyên nghiệp hàng đầu Việt Nam. <br />
-              Nơi định hình <span className="text-[#C8A97E] font-bold">PHONG CÁCH QUÝ TỘC</span> của bạn.
-            </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="/booking"
-                className="bg-[#C8A97E] text-white hover:bg-[#B8975E] px-8 py-3.5 rounded-xl font-bold text-sm transition-all shadow-sm flex items-center gap-2 active:scale-95"
-              >
-                Đặt Lịch Hẹn
-                <ArrowRight className="w-4 h-4" />
-              </Link>
-              <Link
-                href="/salons"
-                className="bg-white hover:bg-[#F0EBE3] text-[#2C1E12] border border-[#E8E0D4] px-8 py-3.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 active:scale-95"
-              >
-                Tìm Salon Gần Nhất
-              </Link>
+      <HeroCarousel />
+      
+      {/* Stats */}
+      <section className="bg-white border-b border-[#E8E0D4] py-12">
+        <div className="container mx-auto px-4">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="text-center group">
+              <div className="text-3xl font-bold text-[#2C1E12] mb-1 transition-transform group-hover:scale-105">100+</div>
+              <div className="text-xs font-bold text-[#8B7355] uppercase">Salons</div>
             </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mt-16 pt-12 border-t border-[#E8E0D4]">
-              <div className="text-center group">
-                <div className="text-3xl font-bold text-[#2C1E12] mb-1 transition-transform group-hover:scale-105">100+</div>
-                <div className="text-xs font-bold text-[#8B7355] uppercase">Salons</div>
-              </div>
-              <div className="text-center group">
-                <div className="text-3xl font-bold text-[#2C1E12] mb-1 transition-transform group-hover:scale-105">500K</div>
-                <div className="text-xs font-bold text-[#8B7355] uppercase">Khách hàng</div>
-              </div>
-              <div className="text-center group">
-                <div className="text-3xl font-bold text-[#2C1E12] mb-1 transition-transform group-hover:scale-105">4.9</div>
-                <div className="text-xs font-bold text-[#8B7355] uppercase">Đánh giá</div>
-              </div>
-              <div className="text-center group">
-                <div className="text-3xl font-bold text-[#2C1E12] mb-1 transition-transform group-hover:scale-105">1000+</div>
-                <div className="text-xs font-bold text-[#8B7355] uppercase">Stylists</div>
-              </div>
+            <div className="text-center group">
+              <div className="text-3xl font-bold text-[#2C1E12] mb-1 transition-transform group-hover:scale-105">500K</div>
+              <div className="text-xs font-bold text-[#8B7355] uppercase">Khách hàng</div>
+            </div>
+            <div className="text-center group">
+              <div className="text-3xl font-bold text-[#2C1E12] mb-1 transition-transform group-hover:scale-105">4.9</div>
+              <div className="text-xs font-bold text-[#8B7355] uppercase">Đánh giá</div>
+            </div>
+            <div className="text-center group">
+              <div className="text-3xl font-bold text-[#2C1E12] mb-1 transition-transform group-hover:scale-105">1000+</div>
+              <div className="text-xs font-bold text-[#8B7355] uppercase">Stylists</div>
             </div>
           </div>
         </div>

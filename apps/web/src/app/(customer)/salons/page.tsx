@@ -44,7 +44,7 @@ export default function SalonsPage() {
         </div>
         <div className="container mx-auto px-4 text-center relative z-10">
            <span className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mb-4 block">LOCATIONS</span>
-          <h1 className="text-3xl md:text-4xl lg:text-5xl font-heading font-black text-background mb-8 tracking-tight uppercase leading-none">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-8 tracking-tight uppercase leading-none">
             Tìm Salon của bạn
           </h1>
           <div className="max-w-2xl mx-auto flex flex-col md:flex-row gap-3">
@@ -87,7 +87,7 @@ export default function SalonsPage() {
         ) : salons.length === 0 ? (
           <div className="text-center py-48">
              <span className="text-8xl block mb-12 opacity-20 grayscale">🏪</span>
-            <h2 className="text-3xl font-heading font-bold text-foreground mb-4 uppercase tracking-tight">Không tìm thấy salon</h2>
+            <h2 className="text-3xl font-bold text-[#2C1E12] mb-4 uppercase tracking-tight">Không tìm thấy salon</h2>
             <p className="text-muted-foreground font-bold text-[11px] uppercase tracking-wider">THỬ TÌM KIẾM VỚI TỪ KHÓA KHÁC</p>
           </div>
         ) : (
@@ -117,7 +117,7 @@ export default function SalonsPage() {
                   )}
                 </div>
                   <div className="p-6 pb-8">
-                    <h3 className="text-xl font-heading font-black text-foreground group-hover:text-primary transition-colors uppercase tracking-tight mb-3">
+                    <h3 className="text-xl font-bold text-[#2C1E12] group-hover:text-[#C8A97E] transition-colors uppercase tracking-tight mb-3">
                       {salon.name}
                     </h3>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight flex items-start gap-2 mb-6 leading-relaxed">

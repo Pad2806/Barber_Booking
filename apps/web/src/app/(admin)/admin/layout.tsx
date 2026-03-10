@@ -138,8 +138,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Sidebar */}
       <aside className="w-64 bg-[#0f172a] text-slate-300 fixed inset-y-0 left-0 z-50 hidden lg:block border-r border-[#1e293b]">
         <div className="p-6">
-          <Link href="/admin" className="text-xl font-bold text-white tracking-tight">
-            Reetro<span className="text-blue-500">Admin</span>
+          <Link href="/admin" className="text-2xl font-heading font-black italic tracking-tighter text-white transition-all hover:scale-105 inline-block">
+            REETRO<span className="text-blue-500 ml-1">BARBER</span>
           </Link>
         </div>
 
@@ -199,14 +199,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <button className="lg:hidden">
               <Menu className="w-6 h-6" />
             </button>
-            <div className="flex items-center gap-4">
+            <Link href="/admin/profile" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
               <span className="text-sm text-slate-500">
                 Xin chào, <strong className="text-slate-900 font-semibold">{session?.user?.name}</strong>
               </span>
-              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-bold border border-blue-100 shadow-sm">
+              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-bold border border-blue-100 shadow-sm cursor-pointer">
                 {session?.user?.name?.charAt(0) || 'A'}
               </div>
-            </div>
+            </Link>
           </div>
         </header>
 

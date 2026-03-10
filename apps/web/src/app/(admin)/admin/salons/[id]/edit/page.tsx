@@ -134,7 +134,7 @@ export default function EditSalonPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-heading font-bold text-gray-800">Chỉnh sửa chi nhánh</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Chỉnh sửa chi nhánh</h1>
             <p className="text-gray-500">Cập nhật thông tin chi nhánh {formData.name}</p>
           </div>
         </div>

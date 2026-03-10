@@ -87,7 +87,7 @@ export default function BookingDetailPage() {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
         <div className="text-6xl mb-6">😕</div>
-        <h2 className="text-2xl font-heading font-bold text-foreground mb-4 uppercase tracking-tight">Không tìm thấy lịch hẹn</h2>
+        <h2 className="text-2xl font-bold text-[#2C1E12] mb-4 uppercase tracking-tight">Không tìm thấy lịch hẹn</h2>
         <Link href="/my-bookings" className="text-primary font-bold uppercase tracking-widest text-[11px] border-b-2 border-primary pb-1 hover:text-foreground hover:border-foreground transition-all">
           Quay lại danh sách
         </Link>

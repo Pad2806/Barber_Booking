@@ -121,7 +121,7 @@ export default function EditServicePage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-heading font-bold text-gray-800">Chỉnh sửa dịch vụ</h1>
+            <h1 className="text-2xl font-bold text-gray-800">Chỉnh sửa dịch vụ</h1>
             <p className="text-gray-500">Cập nhật thông tin dịch vụ</p>
           </div>
         </div>
