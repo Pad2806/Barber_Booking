@@ -312,11 +312,11 @@ export default function HomePage(): React.ReactNode {
       </section>
 
       {/* CTA - Deep Vintage Lounge */}
-      <section className="py-20 md:py-24 bg-accent relative overflow-hidden border-t border-primary/10">
+      <section className="py-20 md:py-24 bg-accent relative overflow-hidden border-t border-primary/10 z-10">
         <div className="absolute top-0 right-0 w-1/2 h-full opacity-5 pointer-events-none">
              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=2000&auto=format')] bg-cover grayscale" />
         </div>
-        <div className="container mx-auto px-4 text-center relative z-10">
+        <div className="container mx-auto px-4 text-center relative z-20">
           <div className="max-w-4xl mx-auto text-white">
             <span className="text-[10px] font-bold text-background/40 uppercase tracking-[0.3em] mb-6 block">RESERVE YOUR TIME</span>
             <h2 className="text-3xl md:text-5xl font-heading font-bold mb-8 tracking-tight uppercase leading-none text-background">
@@ -328,10 +328,10 @@ export default function HomePage(): React.ReactNode {
             </p>
             <Link
               href="/booking"
-              className="inline-flex items-center gap-4 bg-primary text-background hover:bg-background hover:text-foreground border-2 border-primary px-12 py-4 rounded-full font-bold text-xs uppercase tracking-[0.2em] transition-all duration-700 shadow-xl shadow-primary/10 group active:scale-95"
+              className="inline-flex items-center gap-4 bg-primary text-background hover:bg-background hover:text-foreground border-2 border-primary px-10 py-4 rounded-full font-bold text-xs uppercase tracking-[0.2em] transition-all duration-700 shadow-xl shadow-primary/10 group active:scale-95"
             >
               BOOK NOW
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform" />
             </Link>
           </div>
         </div>

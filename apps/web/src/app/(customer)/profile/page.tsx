@@ -159,16 +159,13 @@ export default function ProfilePage() {
           <div className="bg-background rounded-[48px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.06)] border border-border p-12 mb-10 transition-all duration-700 hover:shadow-2xl hover:shadow-foreground/5">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-10">
               <div className="relative group shrink-0">
-                <div className="transition-all duration-700 rounded-full overflow-hidden border-4 border-background shadow-xl">
+                <div className="transition-all duration-700 rounded-[40px] overflow-hidden border-4 border-background shadow-2xl bg-background">
                   <ImageUpload
                     value={formData.avatar || profile?.avatar || ''}
                     onChange={url => setFormData({ ...formData, avatar: url })}
                     folder="avatars"
                     variant="avatar"
                   />
-                </div>
-                <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-primary rounded-full flex items-center justify-center text-background shadow-xl scale-110 shadow-primary/20 transition-transform duration-500">
-                   <User className="w-5 h-5 text-background" />
                 </div>
               </div>
               <div className="text-center md:text-left pt-4">

@@ -168,7 +168,7 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32">
+    <div className="min-h-screen bg-background pb-96">
       {/* Header */}
       <header className="bg-background/95 backdrop-blur-3xl border-b border-border sticky top-0 z-50 transition-all duration-700">
         <div className="container mx-auto px-4 py-6">
@@ -440,23 +440,23 @@ export default function BookingPage() {
       </div>
 
       {/* Floating Global Summary Footer */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-3xl border-t border-border shadow-[0_-32px_96px_-16px_rgba(0,0,0,0.1)] p-8 sm:p-10 z-[60]">
+      <div className="fixed bottom-0 left-0 right-0 bg-background/90 backdrop-blur-3xl border-t border-border shadow-[0_-32px_96px_-16px_rgba(0,0,0,0.1)] py-6 px-4 sm:px-6 z-50">
         <div className="container mx-auto max-w-lg">
-          {/* Detailed Summary Pill */}
-          <div className="flex items-center justify-between mb-10 bg-foreground text-background p-8 rounded-[40px] shadow-2xl shadow-foreground/20 relative overflow-hidden border border-primary/20 group">
+          {/* Tighter Summary Bar */}
+          <div className="flex items-center justify-between mb-6 bg-foreground text-background p-4 sm:p-5 rounded-[24px] shadow-2xl shadow-foreground/20 relative overflow-hidden border border-primary/20 group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -translate-y-1/2 translate-x-1/2 group-hover:scale-125 transition-transform duration-1000" />
-            <div className="flex items-center gap-6 relative z-10">
-              <div className="w-14 h-14 rounded-2xl bg-background/5 border border-background/10 flex items-center justify-center text-primary group-hover:rotate-12 transition-transform">
-                <Scissors className="w-7 h-7" />
+            <div className="flex items-center gap-4 relative z-10">
+              <div className="w-10 h-10 rounded-xl bg-background/5 border border-background/10 flex items-center justify-center text-primary group-hover:rotate-12 transition-transform">
+                <Scissors className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-background/30 uppercase tracking-[0.3em] mb-2 font-mono italic">EST. TOTAL AMOUNT</p>
-                <p className="text-3xl font-heading font-bold tracking-tighter italic">{formatPrice(totalAmount)}</p>
+                <p className="text-[8px] font-bold text-background/30 uppercase tracking-[0.3em] font-mono italic">TOTAL AMOUNT</p>
+                <p className="text-xl font-heading font-bold tracking-tighter italic">{formatPrice(totalAmount)}</p>
               </div>
             </div>
-            <div className="text-right relative z-10 border-l border-background/10 pl-8">
-              <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mb-2">{totalDuration} MINS</p>
-              <p className="text-[8px] font-bold text-background/20 truncate max-w-[120px] uppercase tracking-widest font-mono italic">{salon.name}</p>
+            <div className="text-right relative z-10 border-l border-background/10 pl-6">
+              <p className="text-[9px] font-bold text-primary uppercase tracking-[0.2em]">{totalDuration} MINS</p>
+              <p className="text-[8px] font-bold text-background/20 truncate max-w-[100px] uppercase tracking-widest font-mono italic">{salon.name}</p>
             </div>
           </div>
 
@@ -464,14 +464,14 @@ export default function BookingPage() {
             onClick={handleContinue}
             disabled={!canContinue()}
             className={cn(
-              'w-full py-6 rounded-full font-bold text-[11px] flex items-center justify-center gap-4 transition-all duration-1000 active:scale-95 transform hover:-translate-y-1 uppercase tracking-[0.4em] italic shadow-2xl relative overflow-hidden group',
+              'w-full py-5 rounded-full font-bold text-[10px] flex items-center justify-center gap-3 transition-all duration-1000 active:scale-95 transform hover:-translate-y-1 uppercase tracking-[0.3em] italic shadow-2xl relative overflow-hidden group',
               canContinue()
-                ? 'bg-primary text-background shadow-primary/30 hover:tracking-[0.6em] border-2 border-primary'
+                ? 'bg-primary text-background shadow-primary/30 hover:tracking-[0.5em] border-2 border-primary'
                 : 'bg-accent/5 text-muted-foreground/20 cursor-not-allowed border-2 border-border/50'
             )}
           >
             {currentStep === 3 ? 'KẾT THÚC ĐẶT LỊCH' : 'TIẾP TỤC BƯỚC SAU'}
-            <ChevronRight className="w-5 h-5 group-hover:translate-x-4 transition-transform duration-700" />
+            <ChevronRight className="w-4 h-4 group-hover:translate-x-2 transition-transform duration-700" />
           </button>
         </div>
       </div>
