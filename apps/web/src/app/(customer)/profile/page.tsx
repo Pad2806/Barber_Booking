@@ -137,217 +137,221 @@ export default function ProfilePage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-16 h-16 border-[6px] border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+        <div className="w-10 h-10 border-[3px] border-[#E8E0D4] border-t-[#C8A97E] rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#FAF8F5]">
       <Header />
 
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-16">
-            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.4em] mb-4 block">ACCOUNT SETTINGS</span>
-            <h1 className="text-4xl font-heading font-bold text-foreground tracking-tight leading-none mb-4 uppercase">Cá nhân</h1>
-            <div className="w-16 h-0.5 bg-primary mx-auto" />
+      <div className="container mx-auto px-4 py-12 md:py-16">
+        <div className="max-w-3xl mx-auto space-y-8">
+          
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold text-[#2C1E12]">Hồ sơ cá nhân</h1>
+            <p className="text-sm text-[#8B7355]">Quản lý thông tin và bảo mật tài khoản</p>
           </div>
 
           {/* Profile Header Card */}
-          <div className="bg-background rounded-[48px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.06)] border border-border p-12 mb-10 transition-all duration-700 hover:shadow-2xl hover:shadow-foreground/5">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-10">
-              <div className="relative group shrink-0">
-                <div className="transition-all duration-700 rounded-[40px] overflow-hidden border-4 border-background shadow-2xl bg-background">
-                  <ImageUpload
-                    value={formData.avatar || profile?.avatar || ''}
-                    onChange={url => setFormData({ ...formData, avatar: url })}
-                    folder="avatars"
-                    variant="avatar"
-                  />
-                </div>
-              </div>
-              <div className="text-center md:text-left pt-4">
-                <h2 className="text-3xl font-heading font-bold text-foreground tracking-tight mb-2 uppercase">{profile?.name}</h2>
-                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-6">{profile?.email}</p>
-                <div className="inline-flex items-center gap-3 px-6 py-3 bg-accent/5 rounded-full border border-border">
-                   <Calendar className="w-4 h-4 text-primary" />
-                   <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
-                    ESTABLISHED. {profile?.createdAt && new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toUpperCase()}
-                   </p>
-                </div>
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E8E0D4] p-8 md:p-10 flex flex-col md:flex-row items-center md:items-start gap-8">
+            <div className="shrink-0 relative group">
+              <ImageUpload
+                value={formData.avatar || profile?.avatar || ''}
+                onChange={url => setFormData({ ...formData, avatar: url })}
+                folder="avatars"
+                variant="avatar"
+              />
+            </div>
+            <div className="text-center md:text-left pt-2 flex-1">
+              <h2 className="text-2xl font-bold text-[#2C1E12] mb-1">{profile?.name}</h2>
+              <p className="text-sm font-medium text-[#8B7355] mb-4">{profile?.email}</p>
+              
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#F0EBE3] rounded-full">
+                <Calendar className="w-4 h-4 text-[#C8A97E]" />
+                <span className="text-xs font-bold text-[#5C4A32]">
+                  THÀNH VIÊN TỪ {profile?.createdAt && new Date(profile.createdAt).toLocaleDateString('vi-VN', { month: '2-digit', year: 'numeric' })}
+                </span>
               </div>
             </div>
+            <button
+              onClick={handleLogout}
+              className="mt-auto hidden md:flex items-center gap-2 text-sm font-bold text-red-500 hover:text-red-600 transition-colors px-4 py-2 rounded-xl hover:bg-red-50"
+            >
+              <LogOut className="w-4 h-4" />
+              Đăng xuất
+            </button>
           </div>
 
-          {/* Settings Tabs & Form Container */}
-          <div className="bg-background rounded-[48px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.04)] border border-border overflow-hidden mb-10 transition-all duration-700">
-            <div className="flex border-b border-border">
+          {/* Settings Section */}
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E8E0D4] overflow-hidden">
+            {/* Tabs */}
+            <div className="flex border-b border-[#E8E0D4] bg-[#F0EBE3] p-1 gap-1">
               <button
                 onClick={() => setActiveTab('info')}
                 className={cn(
-                  'flex-1 py-8 text-[11px] font-bold uppercase tracking-widest transition-all duration-700 relative',
+                  'flex-1 py-3 text-sm font-bold rounded-lg transition-all duration-300',
                   activeTab === 'info'
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-white text-[#2C1E12] shadow-sm'
+                    : 'text-[#8B7355] hover:text-[#5C4A32]'
                 )}
               >
                 Thông tin cá nhân
-                <span className={cn(
-                    "absolute bottom-0 left-0 w-full h-1 bg-primary transition-all duration-700 origin-left scale-x-0",
-                    activeTab === 'info' && "scale-x-100"
-                  )} />
               </button>
               <button
                 onClick={() => setActiveTab('password')}
                 className={cn(
-                  'flex-1 py-8 text-[11px] font-bold uppercase tracking-widest transition-all duration-700 relative',
+                  'flex-1 py-3 text-sm font-bold rounded-lg transition-all duration-300',
                   activeTab === 'password'
-                    ? 'text-primary'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-white text-[#2C1E12] shadow-sm'
+                    : 'text-[#8B7355] hover:text-[#5C4A32]'
                 )}
               >
                 Đổi mật khẩu
-                <span className={cn(
-                    "absolute bottom-0 left-0 w-full h-1 bg-primary transition-all duration-700 origin-left scale-x-0",
-                    activeTab === 'password' && "scale-x-100"
-                  )} />
               </button>
             </div>
 
-            <div className="p-12">
+            {/* Content */}
+            <div className="p-8 md:p-10">
               {activeTab === 'info' ? (
-                <form onSubmit={handleUpdateProfile} className="space-y-10">
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em] mb-2 block italic">FULL NAME</label>
+                <form onSubmit={handleUpdateProfile} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-[#8B7355] uppercase tracking-wider block">HỌ VÀ TÊN</label>
                     <div className="relative group">
-                      <User className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground transition-colors group-hover:text-primary" />
+                      <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#C8A97E]" />
                       <input
                         type="text"
                         value={formData.name}
                         onChange={e => setFormData({ ...formData, name: e.target.value })}
-                        className="w-full pl-16 pr-8 py-5 bg-accent/5 border-2 border-border rounded-[24px] focus:outline-none focus:border-primary focus:bg-background transition-all font-bold text-lg tracking-tight text-foreground"
+                        className="w-full pl-12 pr-4 py-3.5 bg-white border border-[#E8E0D4] rounded-xl focus:outline-none focus:border-[#C8A97E] focus:ring-4 focus:ring-[#C8A97E]/10 transition-all font-medium text-[#2C1E12]"
                         required
+                        placeholder="Nhập họ và tên..."
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-3 opacity-60">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em] mb-2 block italic">EMAIL ADDRESS</label>
+                  <div className="space-y-2 opacity-70">
+                    <label className="text-xs font-bold text-[#8B7355] uppercase tracking-wider block">ĐỊA CHỈ EMAIL</label>
                     <div className="relative">
-                      <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8B7355]" />
                       <input
                         type="email"
                         value={profile?.email || ''}
-                        className="w-full pl-16 pr-8 py-5 bg-accent/5 border-2 border-transparent rounded-[24px] text-muted-foreground/50 font-bold text-lg tracking-tight cursor-not-allowed"
+                        className="w-full pl-12 pr-4 py-3.5 bg-[#F0EBE3] border border-transparent rounded-xl text-[#5C4A32] font-medium cursor-not-allowed"
                         disabled
                       />
                     </div>
-                    <p className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest mt-2 px-6">! CONTACT SUPPORT TO CHANGE EMAIL</p>
+                    <p className="text-[11px] text-[#8B7355] mt-1 ml-1">Vui lòng liên hệ hỗ trợ nếu bạn cần thay đổi email.</p>
                   </div>
 
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em] mb-2 block italic">PHONE NUMBER</label>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-[#8B7355] uppercase tracking-wider block">SỐ ĐIỆN THOẠI</label>
                     <div className="relative group">
-                      <Phone className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground transition-colors group-hover:text-primary" />
+                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#C8A97E]" />
                       <input
                         type="tel"
                         value={formData.phone}
                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                        placeholder="09xx xxx xxx"
-                        className="w-full pl-16 pr-8 py-5 bg-accent/5 border-2 border-border rounded-[24px] focus:outline-none focus:border-primary focus:bg-background transition-all font-bold text-lg tracking-tight text-foreground"
+                        placeholder="Ví dụ: 0912345678"
+                        className="w-full pl-12 pr-4 py-3.5 bg-white border border-[#E8E0D4] rounded-xl focus:outline-none focus:border-[#C8A97E] focus:ring-4 focus:ring-[#C8A97E]/10 transition-all font-medium text-[#2C1E12]"
                       />
                     </div>
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="w-full py-6 bg-primary text-background rounded-full font-bold text-[11px] uppercase tracking-widest hover:bg-foreground hover:text-background border-2 border-primary transition-all duration-700 shadow-xl shadow-primary/20 flex items-center justify-center gap-4 group active:scale-95"
-                  >
-                    {saving ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <Save className="w-5 h-5 group-hover:scale-125 transition-transform" />
-                    )}
-                    CẬP NHẬT THÔNG TIN
-                  </button>
+                  <div className="pt-4">
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="w-full sm:w-auto px-8 py-3.5 bg-[#C8A97E] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#B8975E] active:scale-[0.98] transition-all disabled:opacity-70"
+                    >
+                      {saving ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <Save className="w-5 h-5" />
+                      )}
+                      Cập nhật thông tin
+                    </button>
+                  </div>
                 </form>
               ) : (
-                <form onSubmit={handleChangePassword} className="space-y-10">
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em] mb-2 block italic">CURRENT PASSWORD</label>
+                <form onSubmit={handleChangePassword} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-[#8B7355] uppercase tracking-wider block">MẬT KHẨU HIỆN TẠI</label>
                     <div className="relative group">
-                      <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground transition-colors group-hover:text-primary" />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#C8A97E]" />
                       <input
                         type="password"
                         value={passwordData.currentPassword}
                         onChange={e =>
                           setPasswordData({ ...passwordData, currentPassword: e.target.value })
                         }
-                        className="w-full pl-16 pr-8 py-5 bg-accent/5 border-2 border-border rounded-[24px] focus:outline-none focus:border-primary focus:bg-background transition-all font-bold text-foreground"
+                        className="w-full pl-12 pr-4 py-3.5 bg-white border border-[#E8E0D4] rounded-xl focus:outline-none focus:border-[#C8A97E] focus:ring-4 focus:ring-[#C8A97E]/10 transition-all text-[#2C1E12]"
                         required
+                        placeholder="••••••••"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em] mb-2 block italic">NEW PASSWORD</label>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-[#8B7355] uppercase tracking-wider block">MẬT KHẨU MỚI</label>
                     <div className="relative group">
-                      <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground transition-colors group-hover:text-primary" />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#C8A97E]" />
                       <input
                         type="password"
                         value={passwordData.newPassword}
                         onChange={e =>
                           setPasswordData({ ...passwordData, newPassword: e.target.value })
                         }
-                        className="w-full pl-16 pr-8 py-5 bg-accent/5 border-2 border-border rounded-[24px] focus:outline-none focus:border-primary focus:bg-background transition-all font-bold text-foreground"
+                        className="w-full pl-12 pr-4 py-3.5 bg-white border border-[#E8E0D4] rounded-xl focus:outline-none focus:border-[#C8A97E] focus:ring-4 focus:ring-[#C8A97E]/10 transition-all text-[#2C1E12]"
                         required
                         minLength={6}
+                        placeholder="••••••••"
                       />
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.3em] mb-2 block italic">CONFIRM NEW PASSWORD</label>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-[#8B7355] uppercase tracking-wider block">XÁC NHẬN MẬT KHẨU MỚI</label>
                     <div className="relative group">
-                      <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground transition-colors group-hover:text-primary" />
+                      <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#C8A97E]" />
                       <input
                         type="password"
                         value={passwordData.confirmPassword}
                         onChange={e =>
                           setPasswordData({ ...passwordData, confirmPassword: e.target.value })
                         }
-                        className="w-full pl-16 pr-8 py-5 bg-accent/5 border-2 border-border rounded-[24px] focus:outline-none focus:border-primary focus:bg-background transition-all font-bold text-foreground"
+                        className="w-full pl-12 pr-4 py-3.5 bg-white border border-[#E8E0D4] rounded-xl focus:outline-none focus:border-[#C8A97E] focus:ring-4 focus:ring-[#C8A97E]/10 transition-all text-[#2C1E12]"
                         required
                         minLength={6}
+                        placeholder="••••••••"
                       />
                     </div>
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={saving}
-                    className="w-full py-6 bg-primary text-background rounded-full font-bold text-[11px] uppercase tracking-widest hover:bg-foreground hover:text-background border-2 border-primary transition-all duration-700 shadow-xl shadow-primary/20 flex items-center justify-center gap-4 group active:scale-95"
-                  >
-                    {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-5 h-5 group-hover:rotate-12 transition-transform" />}
-                    THAY ĐỔI MẬT KHẨU
-                  </button>
+                  <div className="pt-4">
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      className="w-full sm:w-auto px-8 py-3.5 bg-[#C8A97E] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#B8975E] active:scale-[0.98] transition-all disabled:opacity-70"
+                    >
+                      {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Lock className="w-5 h-5" />}
+                      Đổi mật khẩu
+                    </button>
+                  </div>
                 </form>
               )}
             </div>
           </div>
 
-          {/* Logout Section */}
+          {/* Mobile Logout Button */}
           <button
             onClick={handleLogout}
-            className="w-full py-8 text-muted-foreground/30 hover:text-primary font-bold text-[11px] uppercase tracking-[0.6em] transition-all duration-700 group flex items-center justify-center gap-6"
+            className="w-full md:hidden py-4 text-red-500 font-bold flex items-center justify-center gap-2 bg-red-50 rounded-2xl border border-red-100"
           >
-            <div className="w-12 h-12 rounded-full border border-border flex items-center justify-center group-hover:border-primary transition-colors">
-               <LogOut className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </div>
-            SIGN OUT FROM ACCOUNT
+            <LogOut className="w-5 h-5" />
+            Đăng xuất khỏi tài khoản
           </button>
         </div>
       </div>

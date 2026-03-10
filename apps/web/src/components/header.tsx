@@ -14,15 +14,15 @@ export default function Header(): React.ReactNode {
   const isLoggedIn = status === 'authenticated';
 
   return (
-    <header className="bg-background/95 backdrop-blur-3xl border-b border-border sticky top-0 z-50 transition-all duration-700">
+    <header className="bg-[#FAF8F5]/95 backdrop-blur-xl border-b border-[#E8E0D4] sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3 sm:py-4">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <span className="text-lg sm:text-xl font-heading font-bold tracking-tight text-foreground group-hover:text-primary transition-all duration-500 uppercase">
-              REETRO<span className="text-primary ml-1">BARBER</span>
+            <span className="text-xl sm:text-2xl font-bold tracking-tight text-[#2C1E12] transition-colors">
+              REETRO<span className="text-[#C8A97E] ml-1">BARBER</span>
             </span>
           </Link>
-          <nav className="hidden md:flex items-center gap-10">
+          <nav className="hidden md:flex items-center gap-8">
             {[
               { label: 'Trang chủ', href: '/' },
               { label: 'Hệ thống Salon', href: '/salons' },
@@ -33,15 +33,14 @@ export default function Header(): React.ReactNode {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-500 relative group flex flex-col items-center gap-1',
-                    pathname === item.href ? 'text-primary' : 'text-muted-foreground/40 hover:text-foreground'
+                    'text-sm font-bold transition-colors py-2 relative',
+                    pathname === item.href ? 'text-[#C8A97E]' : 'text-[#8B7355] hover:text-[#5C4A32]'
                   )}
                 >
                   {item.label}
-                  <span className={cn(
-                    "w-1 h-1 rounded-full bg-primary transition-all duration-700 opacity-0 transform translate-y-2",
-                    pathname === item.href && "opacity-100 translate-y-0"
-                  )} />
+                  {pathname === item.href && (
+                    <span className="absolute bottom-0 left-0 w-full h-[2.5px] bg-[#C8A97E] rounded-full" />
+                  )}
                 </Link>
               )
             ))}
@@ -49,41 +48,44 @@ export default function Header(): React.ReactNode {
             {isLoggedIn ? (
               <Link
                 href="/profile"
-                className={cn(
-                  'flex items-center gap-3 pl-10 border-l border-border transition-colors group ml-2',
-                  pathname === '/profile' ? 'text-foreground' : 'text-muted-foreground/40 hover:text-foreground'
-                )}
+                className="flex items-center gap-3 pl-8 ml-2 border-l border-[#E8E0D4] transition-colors group"
               >
-                <div className="w-10 h-10 rounded-full bg-accent/5 flex items-center justify-center border border-border group-hover:border-primary transition-all duration-500 overflow-hidden shadow-sm">
+                <div className="w-10 h-10 rounded-full bg-[#F0EBE3] flex items-center justify-center border border-[#E8E0D4] group-hover:border-[#C8A97E] transition-colors overflow-hidden shrink-0">
                   {session?.user?.image ? (
-                    <Image src={session.user.image} alt="User" width={40} height={40} className="object-cover transition-all duration-500 group-hover:scale-110" />
+                    <Image src={session.user.image} alt="User" width={40} height={40} className="object-cover" />
                   ) : (
-                    <User className="w-4 h-4 text-primary" />
+                     <User className="w-5 h-5 text-[#C8A97E]" />
                   )}
                 </div>
-                <div className="flex flex-col items-start leading-none gap-1">
-                   <span className="text-[10px] font-bold uppercase tracking-[0.2em] hidden lg:inline">{session?.user?.name || 'Cá nhân'}</span>
-                   <span className="text-[8px] font-bold uppercase tracking-widest text-primary hidden lg:inline opacity-0 group-hover:opacity-100 transition-opacity">PRO MEMBER</span>
+                <div className="hidden lg:flex flex-col items-start justify-center">
+                   <span className="text-sm font-bold text-[#2C1E12] group-hover:text-[#C8A97E] transition-colors line-clamp-1 max-w-[150px]">
+                     {session?.user?.name || 'Hồ sơ'}
+                   </span>
+                   <span className="text-[11px] font-medium text-[#8B7355]">
+                     Khách hàng
+                   </span>
                 </div>
               </Link>
             ) : (
-              <Link href="/login" className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/40 hover:text-primary transition-all duration-500 hover:tracking-[0.5em] italic">
-                CLIENT LOGIN
-              </Link>
+              <div className="pl-6 ml-2 border-l border-[#E8E0D4]">
+                <Link href="/login" className="text-sm font-bold text-[#8B7355] hover:text-[#C8A97E] transition-colors">
+                  Đăng nhập
+                </Link>
+              </div>
             )}
           </nav>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4">
             <Link
               href="/salons"
-              className="hidden md:flex bg-foreground text-background px-10 py-3.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-700 hover:bg-primary hover:tracking-[0.4em] active:scale-95 shadow-xl shadow-foreground/10 border border-foreground hover:border-primary"
+              className="hidden md:flex bg-[#C8A97E] text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-colors hover:bg-[#B8975E] active:scale-[0.98] shadow-sm"
             >
-              ĐẶT LỊCH NGAY
+              Đặt lịch ngay
             </Link>
             
             {/* Mobile indicator for logged in */}
             {isLoggedIn && (
-              <Link href="/profile" className="md:hidden w-12 h-12 rounded-full bg-accent/5 flex items-center justify-center border border-border group active:scale-95 shadow-sm">
-                <User className="w-6 h-6 text-primary group-active:scale-90 transition-transform" />
+              <Link href="/profile" className="md:hidden w-10 h-10 rounded-full bg-[#F0EBE3] flex items-center justify-center border border-[#E8E0D4] active:scale-95 transition-transform">
+                <User className="w-5 h-5 text-[#C8A97E]" />
               </Link>
             )}
           </div>

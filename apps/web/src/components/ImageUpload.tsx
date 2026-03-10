@@ -80,18 +80,18 @@ export default function ImageUpload({
   if (variant === 'avatar') {
     return (
       <div className={cn('relative inline-block', className)}>
-        <div className="w-32 h-32 rounded-[2.5rem] overflow-hidden bg-accent/5 border-4 border-background shadow-2xl relative group">
+        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden bg-[#F0EBE3] border-4 border-white shadow-sm relative group">
           {value ? (
             <Image
               src={value}
               alt="Avatar"
               fill
-              className="object-cover transition-all duration-700 group-hover:scale-110"
-              sizes="128px"
+              className="object-cover transition-all duration-700 group-hover:scale-105"
+              sizes="112px"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-primary/20 bg-accent/5">
-              <Upload className="w-10 h-10" />
+            <div className="w-full h-full flex items-center justify-center text-[#C8A97E]/40 bg-[#F0EBE3]">
+              <Upload className="w-8 h-8" />
             </div>
           )}
           
