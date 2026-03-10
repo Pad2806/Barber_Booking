@@ -58,49 +58,50 @@ const MyBookingsPage: React.FC = () => {
     <Box
       key={booking.id}
       p={4}
-      mt={3}
+      mt={4}
       style={{
-        background: 'var(--zaui-light-header-background-color, #fff)',
-        borderRadius: 16,
-        border: '1px solid var(--zaui-light-header-divider, #e9ebed)',
+        background: 'var(--brand-background)',
+        borderRadius: 32,
+        border: '1px solid var(--brand-border)',
+        boxShadow: '0 8px 16px rgba(0,0,0,0.03)'
       }}
       onClick={() => navigate(`/booking-detail?id=${booking.id}`)}
     >
-      <Box flex justifyContent="space-between" alignItems="flex-start" mb={3}>
+      <Box flex justifyContent="space-between" alignItems="flex-start" mb={4}>
         <Box>
-          <Text bold>{booking.salon.name}</Text>
-          <Text size="xxSmall" style={{ opacity: 0.65 }}>
-            {booking.bookingCode}
+          <Text style={{ fontSize: 16, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase' }}>{booking.salon.name}</Text>
+          <Text style={{ fontSize: 10, fontWeight: 800, color: 'var(--brand-primary)', opacity: 0.6 }}>
+            ID: {booking.bookingCode}
           </Text>
         </Box>
         <StatusBadge status={booking.status as keyof typeof BOOKING_STATUS} size="sm" />
       </Box>
 
-      <Box flex alignItems="center" style={{ gap: 8, opacity: 0.8 }}>
-        <Icon icon="zi-calendar" />
-        <Text size="small">
-          {dayjs(booking.date).format('DD/MM/YYYY')} lúc {booking.timeSlot}
+      <Box flex alignItems="center" style={{ gap: 8, opacity: 0.7 }}>
+        <Icon icon="zi-calendar" style={{ color: 'var(--brand-primary)', fontSize: 14 }} />
+        <Text style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase' }}>
+          {dayjs(booking.date).format('DD/MM/YYYY')} · {booking.timeSlot}
         </Text>
       </Box>
 
-      <Box flex alignItems="center" mt={2} style={{ gap: 8, opacity: 0.8 }}>
-        <Icon icon="zi-star" />
-        <Text size="small">{booking.services.map(s => s.service.name).join(', ')}</Text>
+      <Box flex alignItems="center" mt={2} style={{ gap: 8, opacity: 0.7 }}>
+        <Icon icon="zi-star" style={{ color: 'var(--brand-primary)', fontSize: 14 }} />
+        <Text style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase' }}>{booking.services.map(s => s.service.name).join(', ')}</Text>
       </Box>
 
       <Box
         flex
         justifyContent="space-between"
         alignItems="center"
-        mt={3}
-        pt={3}
-        style={{ borderTop: '1px solid var(--zaui-light-header-divider, #e9ebed)' }}
+        mt={4}
+        pt={4}
+        style={{ borderTop: '1px dashed var(--brand-border)' }}
       >
-        <Box flex alignItems="center" style={{ gap: 6, opacity: 0.75 }}>
-          <Icon icon="zi-clock-1" />
-          <Text size="small">{booking.totalDuration} phút</Text>
+        <Box flex alignItems="center" style={{ gap: 6, opacity: 0.5 }}>
+          <Icon icon="zi-clock-1" style={{ fontSize: 12 }} />
+          <Text style={{ fontSize: 10, fontWeight: 800 }}>{booking.totalDuration} PHÚT</Text>
         </Box>
-        <Text bold style={{ color: 'var(--zaui-light-color-primary, var(--brand-accent))' }}>
+        <Text style={{ fontSize: 18, fontWeight: 900, color: 'var(--brand-primary)' }}>
           {formatPrice(booking.totalAmount)}
         </Text>
       </Box>
@@ -112,18 +113,18 @@ const MyBookingsPage: React.FC = () => {
   }
 
   return (
-    <Page style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)' }}>
-      <Header title="Lịch hẹn" showBackIcon={false} />
+    <Page style={{ background: 'var(--brand-background)' }}>
+      <Header title="LỊCH HẸN CỦA TÔI" showBackIcon={false} />
       <Box style={{ height: 44 }} />
       <Tabs activeKey={activeTab} onChange={setActiveTab}>
-        <Tabs.Tab key="upcoming" label="Sắp tới">
-          <Box p={4}>
+        <Tabs.Tab key="upcoming" label="SẮP TỚI">
+          <Box p={4} pb={10}>
             {filterBookings('upcoming').length === 0 ? (
               <EmptyState
                 icon="zi-calendar"
-                title="Chưa có lịch hẹn"
-                description="Đặt lịch ngay để trải nghiệm dịch vụ"
-                action={<Button onClick={() => navigate('/salons')}>Đặt lịch ngay</Button>}
+                title="CHƯA CÓ LỊCH HẸN"
+                description="ĐẶT LỊCH NGAY ĐỂ TRẢI NGHIỆM DỊCH VỤ"
+                action={<Button style={{ height: 48, borderRadius: 24, background: 'var(--brand-primary)', color: 'var(--brand-background)', fontWeight: 900, letterSpacing: 1 }} onClick={() => navigate('/salons')}>ĐẶT LỊCH NGAY</Button>}
               />
             ) : (
               filterBookings('upcoming').map(renderBookingCard)
@@ -131,13 +132,13 @@ const MyBookingsPage: React.FC = () => {
           </Box>
         </Tabs.Tab>
 
-        <Tabs.Tab key="history" label="Lịch sử">
-          <Box p={4}>
+        <Tabs.Tab key="history" label="LỊCH SỬ">
+          <Box p={4} pb={10}>
             {filterBookings('history').length === 0 ? (
               <EmptyState
                 icon="zi-inbox"
-                title="Chưa có lịch sử"
-                description="Các lịch hẹn đã hoàn thành sẽ hiển thị ở đây"
+                title="CHƯA CÓ LỊCH SỬ"
+                description="CÁC LỊCH HẸN ĐÃ HOÀN THÀNH SẼ HIỂN THỊ Ở ĐÂY"
               />
             ) : (
               filterBookings('history').map(renderBookingCard)

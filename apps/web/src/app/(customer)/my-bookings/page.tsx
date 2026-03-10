@@ -55,22 +55,22 @@ export default function MyBookingsPage() {
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="w-16 h-16 border-[6px] border-black border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="w-16 h-16 border-[6px] border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
       <Header />
 
       <div className="container mx-auto px-4 py-16 max-w-6xl">
         <div className="text-center mb-16">
-          <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em] mb-4 block">HISTORY</span>
-          <h1 className="text-5xl font-heading font-black text-gray-900 tracking-tighter leading-none mb-4 uppercase">Lịch hẹn của tôi</h1>
-          <div className="w-16 h-1 bg-black mx-auto" />
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.4em] mb-4 block text-primary/40">HISTORY</span>
+          <h1 className="text-3xl font-heading font-bold text-foreground tracking-tight leading-none mb-4 uppercase">Lịch hẹn của tôi</h1>
+          <div className="w-16 h-0.5 bg-primary mx-auto" />
         </div>
 
         {/* Filter Tabs */}
@@ -78,10 +78,10 @@ export default function MyBookingsPage() {
           <button
             onClick={() => setFilter('upcoming')}
             className={cn(
-              'px-10 py-4 rounded-full text-xs font-black uppercase tracking-widest transition-all duration-700',
+              'px-10 py-4 rounded-full text-[11px] font-bold uppercase tracking-widest transition-all duration-700 active:scale-95',
               filter === 'upcoming'
-                ? 'bg-black text-white shadow-2xl shadow-black/20 scale-105'
-                : 'bg-gray-50 text-gray-300 hover:bg-gray-100'
+                ? 'bg-primary text-background shadow-xl shadow-primary/20 scale-105'
+                : 'bg-accent/5 text-muted-foreground hover:bg-accent/10 border border-border'
             )}
           >
             Sắp tới
@@ -89,10 +89,10 @@ export default function MyBookingsPage() {
           <button
             onClick={() => setFilter('past')}
             className={cn(
-              'px-10 py-4 rounded-full text-xs font-black uppercase tracking-widest transition-all duration-700',
+              'px-10 py-4 rounded-full text-[11px] font-bold uppercase tracking-widest transition-all duration-700 active:scale-95',
               filter === 'past' 
-                ? 'bg-black text-white shadow-2xl shadow-black/20 scale-105' 
-                : 'bg-gray-50 text-gray-300 hover:bg-gray-100'
+                ? 'bg-primary text-background shadow-xl shadow-primary/20 scale-105' 
+                : 'bg-accent/5 text-muted-foreground hover:bg-accent/10 border border-border'
             )}
           >
             Đã qua
@@ -101,14 +101,14 @@ export default function MyBookingsPage() {
 
         {/* Bookings List */}
         {filteredBookings.length === 0 ? (
-          <div className="bg-white rounded-[48px] py-32 text-center border-2 border-dashed border-gray-100 animate-in fade-in zoom-in-95 duration-1000">
-            <div className="w-32 h-32 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-10 text-5xl shadow-inner">
+          <div className="bg-background rounded-[48px] py-32 text-center border-2 border-dashed border-border animate-in fade-in zoom-in-95 duration-1000 shadow-inner">
+            <div className="w-32 h-32 bg-accent/5 rounded-[40px] flex items-center justify-center mx-auto mb-10 text-5xl shadow-sm border border-border">
                📅
             </div>
-            <h2 className="text-3xl font-black text-gray-900 mb-4 tracking-tighter uppercase">
+            <h2 className="text-2xl font-heading font-bold text-foreground mb-4 uppercase tracking-tight">
               {filter === 'upcoming' ? 'CHƯA CÓ LỊCH SẮP TỚI' : 'CHƯA CÓ LỊCH CŨ'}
             </h2>
-            <p className="text-gray-400 font-bold uppercase text-[10px] tracking-widest mb-12 max-w-xs mx-auto">
+            <p className="text-[11px] text-muted-foreground font-bold uppercase tracking-widest mb-12 max-w-xs mx-auto leading-relaxed">
               {filter === 'upcoming'
                 ? 'Đừng để bản thân luộm thuộm, đặt lịch ngay nhé!'
                 : 'Bạn chưa có trải nghiệm nào với Reetro'}
@@ -116,10 +116,10 @@ export default function MyBookingsPage() {
             {filter === 'upcoming' && (
               <Link
                 href="/salons"
-                className="inline-flex items-center gap-4 bg-black text-white px-12 py-5 rounded-full font-black text-xs uppercase tracking-[0.2em] transition-all duration-700 shadow-2xl shadow-black/20 hover:-translate-y-2 active:scale-95"
+                className="inline-flex items-center gap-4 bg-primary text-background px-12 py-5 rounded-full font-bold text-[11px] uppercase tracking-widest transition-all duration-700 shadow-xl shadow-primary/20 hover:scale-105 active:scale-95"
               >
                 Đặt lịch mới ngay
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4" />
               </Link>
             )}
           </div>
@@ -129,52 +129,52 @@ export default function MyBookingsPage() {
               <Link
                 key={booking.id}
                 href={`/my-bookings/${booking.id}`}
-                className="group relative bg-white rounded-[40px] p-10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.04)] hover:shadow-2xl hover:shadow-black/5 transition-all duration-700 border border-gray-100 hover:border-black overflow-hidden animate-in fade-in slide-in-from-bottom-8"
+                className="group relative bg-background rounded-[40px] p-10 shadow-lg hover:shadow-2xl transition-all duration-700 border border-border hover:border-primary overflow-hidden animate-in fade-in slide-in-from-bottom-8 overflow-hidden"
                 style={{ animationDelay: `${idx * 100}ms` }}
               >
                 {/* Decorative background label */}
-                <div className="absolute top-8 right-10 font-black text-[10px] text-gray-100 uppercase tracking-[0.4em] pointer-events-none select-none">
+                <div className="absolute top-8 right-10 font-bold text-[10px] text-primary/5 uppercase tracking-[0.4em] pointer-events-none select-none">
                    #{booking.bookingCode}
                 </div>
 
                 <div className="relative z-10">
                   <div className="flex items-start justify-between mb-10">
                     <div>
-                      <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] mb-3 block">SALON NO.{idx + 1}</span>
-                      <h3 className="text-3xl font-heading font-black text-gray-900 tracking-tighter leading-none mb-4 group-hover:text-black transition-colors">{booking.salon.name}</h3>
-                      <p className="text-[10px] text-gray-400 font-black flex items-center gap-2 uppercase tracking-tight transition-colors group-hover:text-black">
-                        <MapPin className="w-4 h-4 text-gray-300 group-hover:text-black" />
+                      <span className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] mb-3 block">SALON NO.{idx + 1}</span>
+                      <h3 className="text-2xl font-heading font-bold text-foreground tracking-tight leading-none mb-4 group-hover:text-primary transition-colors uppercase">{booking.salon.name}</h3>
+                      <p className="text-[10px] text-muted-foreground font-bold flex items-center gap-2 uppercase tracking-wide transition-colors group-hover:text-foreground">
+                        <MapPin className="w-4 h-4 text-primary" />
                         {booking.salon.address}
                       </p>
                     </div>
                   </div>
 
                   <div className="flex flex-wrap gap-4 mb-10">
-                    <div className="px-5 py-3 rounded-2xl bg-gray-50 flex items-center gap-3 transition-all group-hover:bg-black group-hover:text-white border border-transparent">
-                      <Calendar className="w-4 h-4 text-gray-400 group-hover:text-white/50" />
-                      <span className="text-xs font-black tracking-tight">{formatDate(booking.date)}</span>
+                    <div className="px-5 py-3 rounded-2xl bg-accent/5 flex items-center gap-3 transition-all group-hover:bg-primary group-hover:text-background border border-border group-hover:border-primary">
+                      <Calendar className="w-4 h-4 text-primary group-hover:text-background/50" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">{formatDate(booking.date)}</span>
                     </div>
-                    <div className="px-5 py-3 rounded-2xl bg-gray-50 flex items-center gap-3 transition-all group-hover:bg-black group-hover:text-white border border-transparent">
-                      <Clock className="w-4 h-4 text-gray-400 group-hover:text-white/50" />
-                      <span className="text-xs font-black tracking-tight uppercase">{booking.timeSlot}</span>
+                    <div className="px-5 py-3 rounded-2xl bg-accent/5 flex items-center gap-3 transition-all group-hover:bg-primary group-hover:text-background border border-border group-hover:border-primary">
+                      <Clock className="w-4 h-4 text-primary group-hover:text-background/50" />
+                      <span className="text-[10px] font-bold uppercase tracking-wider">{booking.timeSlot}</span>
                     </div>
                   </div>
 
-                  <div className="pt-8 border-t border-dashed border-gray-100 flex items-center justify-between">
+                  <div className="pt-8 border-t border-dashed border-border flex items-center justify-between">
                     <div>
                       <span
                         className={cn(
-                          'px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all duration-500',
-                          BOOKING_STATUS[booking.status]?.color?.includes('bg-green') ? 'bg-black text-white border-black' : 
-                          BOOKING_STATUS[booking.status]?.color?.includes('bg-yellow') ? 'bg-gray-100 text-gray-900 border-gray-200' :
+                          'px-4 py-2 rounded-xl text-[9px] font-bold uppercase tracking-widest border transition-all duration-500',
+                          BOOKING_STATUS[booking.status]?.color?.includes('bg-green') ? 'bg-primary text-background border-primary' : 
+                          BOOKING_STATUS[booking.status]?.color?.includes('bg-yellow') ? 'bg-accent/5 text-foreground border-border' :
                           BOOKING_STATUS[booking.status]?.color?.includes('bg-red') ? 'bg-red-50 text-red-600 border-red-100' :
-                          'bg-gray-50 text-gray-400 border-gray-100'
+                          'bg-accent/5 text-muted-foreground border-border'
                         )}
                       >
                         {BOOKING_STATUS[booking.status]?.label || booking.status}
                       </span>
                     </div>
-                    <p className="text-2xl font-black text-gray-900 tracking-tighter">{formatPrice(booking.totalAmount)}</p>
+                    <p className="text-xl font-heading font-bold text-foreground tracking-tight">{formatPrice(booking.totalAmount)}</p>
                   </div>
                 </div>
               </Link>

@@ -14,15 +14,15 @@ export default function Header(): React.ReactNode {
   const isLoggedIn = status === 'authenticated';
 
   return (
-    <header className="bg-background/80 backdrop-blur-2xl border-b border-border sticky top-0 z-50 transition-all duration-500">
+    <header className="bg-background/95 backdrop-blur-3xl border-b border-border sticky top-0 z-50 transition-all duration-700">
       <div className="container mx-auto px-4 py-4 sm:py-6">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <span className="text-xl sm:text-2xl font-heading font-bold tracking-tight text-foreground group-hover:scale-105 transition-transform duration-500 uppercase">
+            <span className="text-xl sm:text-2xl font-heading font-bold tracking-tight text-foreground group-hover:text-primary transition-all duration-500 uppercase">
               REETRO<span className="text-primary ml-1">BARBER</span>
             </span>
           </Link>
-          <nav className="hidden md:flex items-center gap-12">
+          <nav className="hidden md:flex items-center gap-10">
             {[
               { label: 'Trang chủ', href: '/' },
               { label: 'Hệ thống Salon', href: '/salons' },
@@ -33,14 +33,14 @@ export default function Header(): React.ReactNode {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'text-[11px] font-bold uppercase tracking-wider transition-all duration-500 relative group',
-                    pathname === item.href ? 'text-foreground' : 'text-muted-foreground hover:text-foreground'
+                    'text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-500 relative group flex flex-col items-center gap-1',
+                    pathname === item.href ? 'text-primary' : 'text-muted-foreground/40 hover:text-foreground'
                   )}
                 >
                   {item.label}
                   <span className={cn(
-                    "absolute -bottom-2 left-0 w-full h-0.5 bg-primary transition-all duration-700 origin-left scale-x-0 group-hover:scale-x-100",
-                    pathname === item.href && "scale-x-100"
+                    "w-1 h-1 rounded-full bg-primary transition-all duration-700 opacity-0 transform translate-y-2",
+                    pathname === item.href && "opacity-100 translate-y-0"
                   )} />
                 </Link>
               )
@@ -50,37 +50,43 @@ export default function Header(): React.ReactNode {
               <Link
                 href="/profile"
                 className={cn(
-                  'flex items-center gap-3 pl-6 border-l border-gray-100 transition-colors',
-                  pathname === '/profile' ? 'text-black' : 'text-gray-300 hover:text-black'
+                  'flex items-center gap-3 pl-10 border-l border-border transition-colors group ml-2',
+                  pathname === '/profile' ? 'text-foreground' : 'text-muted-foreground/40 hover:text-foreground'
                 )}
               >
-                <div className="w-9 h-9 rounded-full bg-gray-50 flex items-center justify-center border border-transparent hover:border-black transition-all duration-500 overflow-hidden">
+                <div className="w-10 h-10 rounded-full bg-accent/5 flex items-center justify-center border border-border group-hover:border-primary transition-all duration-500 overflow-hidden shadow-sm">
                   {session?.user?.image ? (
-                    <Image src={session.user.image} alt="User" width={36} height={36} className="object-cover grayscale" />
+                    <Image src={session.user.image} alt="User" width={40} height={40} className="object-cover transition-all duration-500 group-hover:scale-110" />
                   ) : (
-                    <User className="w-4 h-4" />
+                    <User className="w-4 h-4 text-primary" />
                   )}
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] hidden lg:inline">{session?.user?.name || 'Cá nhân'}</span>
+                <div className="flex flex-col items-start leading-none gap-1">
+                   <span className="text-[10px] font-bold uppercase tracking-[0.2em] hidden lg:inline">{session?.user?.name || 'Cá nhân'}</span>
+                   <span className="text-[8px] font-bold uppercase tracking-widest text-primary hidden lg:inline opacity-0 group-hover:opacity-100 transition-opacity">PRO MEMBER</span>
+                </div>
               </Link>
             ) : (
-              <Link href="/login" className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground hover:text-foreground transition-all duration-500">
+              <Link href="/login" className="text-[10px] font-bold uppercase tracking-[0.3em] text-muted-foreground/40 hover:text-primary transition-all duration-500 hover:tracking-[0.5em] italic">
                 CLIENT LOGIN
               </Link>
             )}
           </nav>
-          <Link
-            href="/salons"
-            className="hidden md:block bg-foreground hover:bg-primary border-2 border-foreground text-background px-8 py-3 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all duration-700 shadow-xl shadow-foreground/5 active:scale-95"
-          >
-            ĐẶT LỊCH NGAY
-          </Link>
-          {/* Mobile indicator for logged in */}
-          {isLoggedIn && (
-            <Link href="/profile" className="md:hidden w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center border border-gray-100">
-              <User className="w-6 h-6 text-gray-400" />
+          <div className="flex items-center gap-6">
+            <Link
+              href="/salons"
+              className="hidden md:flex bg-foreground text-background px-10 py-3.5 rounded-full text-[10px] font-bold uppercase tracking-[0.2em] transition-all duration-700 hover:bg-primary hover:tracking-[0.4em] active:scale-95 shadow-xl shadow-foreground/10 border border-foreground hover:border-primary"
+            >
+              ĐẶT LỊCH NGAY
             </Link>
-          )}
+            
+            {/* Mobile indicator for logged in */}
+            {isLoggedIn && (
+              <Link href="/profile" className="md:hidden w-12 h-12 rounded-full bg-accent/5 flex items-center justify-center border border-border group active:scale-95 shadow-sm">
+                <User className="w-6 h-6 text-primary group-active:scale-90 transition-transform" />
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </header>

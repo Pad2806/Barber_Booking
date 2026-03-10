@@ -121,47 +121,44 @@ const PaymentPage: React.FC = () => {
 
   if (isPaid) {
     return (
-      <Page style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)' }}>
-        <Header title="Thanh toán" onBackClick={() => navigate(-1)} />
+      <Page style={{ background: 'var(--brand-background)' }}>
+        <Header title="THANH TOÁN" onBackClick={() => navigate(-1)} />
         <Box style={{ height: 44 }} />
         <Box
-          p={6}
+          p={8}
           flex
           flexDirection="column"
           alignItems="center"
           justifyContent="center"
-          style={{ minHeight: 'calc(100vh - 56px)' }}
+          style={{ minHeight: 'calc(100vh - 100px)', textAlign: 'center' }}
         >
           <Box
             flex
             alignItems="center"
             justifyContent="center"
             style={{
-              width: 96,
-              height: 96,
-              borderRadius: 999,
-              background: 'rgba(52, 183, 100, 0.15)',
-              marginBottom: 16,
+              width: 100,
+              height: 100,
+              borderRadius: 32,
+              background: 'var(--brand-secondary)',
+              border: '2px solid var(--brand-primary)',
+              marginBottom: 32,
+              boxShadow: '0 16px 32px rgba(165, 124, 82, 0.2)'
             }}
           >
-            <Icon icon="zi-check" />
+            <Icon icon="zi-check" style={{ color: 'var(--brand-primary)', fontSize: 40 }} />
           </Box>
-          <Text.Title size="large" style={{ textAlign: 'center' }}>
-            Thanh toán thành công!
-          </Text.Title>
-          <Text
-            size="small"
-            style={{ opacity: 0.7, textAlign: 'center', marginTop: 6, marginBottom: 16 }}
-          >
-            Cảm ơn bạn đã thanh toán. Đang chuyển đến trang xác nhận...
-          </Text>
+          <Text style={{ fontSize: 28, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase', letterSpacing: -1 }}>THANH TOÁN THÀNH CÔNG</Text>
+          <Box mt={4} mb={8}>
+            <Text style={{ fontSize: 13, fontWeight: 700, opacity: 0.6, textTransform: 'uppercase', letterSpacing: 1 }}>
+              CẢM ƠN QUÝ KHÁCH ĐÃ TIN TƯỞNG SỬ DỤNG DỊCH VỤ. ĐANG CHUYỂN HƯỚNG...
+            </Text>
+          </Box>
 
-          {/* Follow OA Prompt */}
-          <Box style={{ width: '100%', maxWidth: 420, marginBottom: 12 }}>
+          <Box style={{ width: '100%', maxWidth: 420, marginBottom: 24 }}>
             <FollowOAPrompt variant="banner" />
           </Box>
 
-          {/* Share Option */}
           {booking && (
             <ShareButton
               type="booking"
@@ -173,7 +170,7 @@ const PaymentPage: React.FC = () => {
                 services: booking.services.map(s => s.service.name),
               }}
               variant="button"
-              label="Chia sẻ với bạn bè"
+              label="CHIA SẺ VỚI BẠN BÈ"
             />
           )}
         </Box>
@@ -182,166 +179,149 @@ const PaymentPage: React.FC = () => {
   }
 
   return (
-    <Page style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)' }}>
-      <Header title="Thanh toán" onBackClick={() => navigate(-1)} />
+    <Page style={{ background: 'var(--brand-background)' }}>
+      <Header title="THANH TOÁN" onBackClick={() => navigate(-1)} />
       <Box style={{ height: 44 }} />
 
-      <Box p={4}>
-        <Text size="xxSmall" style={{ opacity: 0.7 }}>
-          Mã đặt lịch: {booking.bookingCode}
+      <Box p={4} flex justifyContent="center">
+        <Text style={{ fontSize: 10, fontWeight: 800, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: 2 }}>
+          MÃ ĐẶT LỊCH: <span style={{ color: 'var(--brand-secondary)' }}>{booking.bookingCode}</span>
         </Text>
       </Box>
 
-      {/* QR Code */}
+      {/* QR Code Section - Premium Vintage */}
       <Box p={4}>
         <Box
           p={6}
           style={{
-            background: 'var(--zaui-light-header-background-color, #fff)',
-            borderRadius: 16,
-            border: '1px solid var(--zaui-light-header-divider, #e9ebed)',
+            background: 'var(--brand-background)',
+            borderRadius: 32,
+            border: '1px solid var(--brand-border)',
+            boxShadow: '0 16px 32px rgba(0,0,0,0.05)'
           }}
         >
-          {/* Amount */}
-          <Box style={{ textAlign: 'center', marginBottom: 16 }}>
-            <Text size="xxSmall" style={{ opacity: 0.7 }}>
-              Số tiền đặt cọc (50%)
-            </Text>
-            <Text.Title style={{ color: 'var(--zaui-light-color-primary, var(--brand-accent))' }}>
+          {/* Amount Box */}
+          <Box 
+            p={6}
+            mb={6}
+            style={{ 
+                background: 'var(--brand-secondary)', 
+                borderRadius: 24, 
+                textAlign: 'center',
+                border: '1px solid var(--brand-primary)'
+            }}
+          >
+            <Text style={{ fontSize: 10, fontWeight: 800, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: 2 }}>SỐ TIỀN ĐẶT CỌC (50%)</Text>
+            <Text style={{ fontSize: 32, fontWeight: 900, color: 'var(--brand-background)', marginTop: 4 }}>
               {formatPrice(Math.round(booking.totalAmount * 0.5))}
-            </Text.Title>
+            </Text>
           </Box>
 
-          {/* QR Code Image */}
+          {/* QR Code Area */}
           {qrData && (
-            <Box flex justifyContent="center" style={{ marginBottom: 16 }}>
+            <Box flex justifyContent="center" mb={6}>
               <Box
                 p={4}
                 style={{
                   background: '#fff',
-                  borderRadius: 16,
-                  border: '1px solid var(--zaui-light-header-divider, #e9ebed)',
+                  borderRadius: 24,
+                  border: '1px solid var(--brand-border)',
+                  boxShadow: '0 8px 16px rgba(0,0,0,0.05)'
                 }}
               >
                 <img
                   src={qrData.qrCodeUrl || qrData.qrCode}
                   alt="QR Code"
-                  style={{ width: 224, height: 224, display: 'block' }}
+                  style={{ width: 220, height: 220, display: 'block' }}
                 />
               </Box>
             </Box>
           )}
 
-          {/* Bank Info */}
+          {/* Bank Info Cards */}
           {qrData && (
-            <Box
-              p={4}
+            <Box 
+              p={5}
               style={{
-                background: 'var(--zaui-light-button-secondary-neutral-background, #e9ebed)',
-                borderRadius: 16,
+                background: 'var(--brand-muted)',
+                borderRadius: 24,
+                border: '1px solid var(--brand-border)'
               }}
             >
-              <Box flex justifyContent="space-between" alignItems="center" style={{ gap: 12 }}>
-                <Text size="xxSmall" style={{ opacity: 0.7 }}>
-                  Ngân hàng
-                </Text>
-                <Text bold size="small">
-                  {qrData.bankName || qrData.bankCode || 'N/A'}
-                </Text>
+              <Box flex justifyContent="space-between" alignItems="center" mb={4}>
+                <Text style={{ fontSize: 9, fontWeight: 800, opacity: 0.4, textTransform: 'uppercase' }}>NGÂN HÀNG</Text>
+                <Text style={{ fontSize: 13, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase' }}>{qrData.bankName || qrData.bankCode || 'N/A'}</Text>
               </Box>
-              <Box
-                flex
-                justifyContent="space-between"
-                alignItems="center"
-                mt={2}
-                style={{ gap: 12 }}
-              >
-                <Text size="xxSmall" style={{ opacity: 0.7 }}>
-                  Số tài khoản
-                </Text>
-                <Text bold size="small">
-                  {qrData.bankAccount}
-                </Text>
+              <Box flex justifyContent="space-between" alignItems="center" mb={4}>
+                <Text style={{ fontSize: 9, fontWeight: 800, opacity: 0.4, textTransform: 'uppercase' }}>SỐ TÀI KHOẢN</Text>
+                <Text style={{ fontSize: 13, fontWeight: 900, color: 'var(--brand-secondary)' }}>{qrData.bankAccount}</Text>
               </Box>
-              <Box
-                flex
-                justifyContent="space-between"
-                alignItems="center"
-                mt={2}
-                style={{ gap: 12 }}
-              >
-                <Text size="xxSmall" style={{ opacity: 0.7 }}>
-                  Nội dung CK
-                </Text>
-                <Text
-                  bold
-                  size="small"
-                  style={{ color: 'var(--zaui-light-color-primary, var(--brand-accent))' }}
-                >
-                  {booking.bookingCode}
-                </Text>
+              <Box flex justifyContent="space-between" alignItems="center">
+                <Text style={{ fontSize: 9, fontWeight: 800, opacity: 0.4, textTransform: 'uppercase' }}>NỘI DUNG CK</Text>
+                <Text style={{ fontSize: 13, fontWeight: 900, color: 'var(--brand-primary)', textTransform: 'uppercase' }}>{booking.bookingCode}</Text>
               </Box>
             </Box>
           )}
 
-          {/* Timer */}
-          <Box style={{ textAlign: 'center', marginTop: 16 }}>
-            <Text size="xxSmall" style={{ opacity: 0.7 }}>
-              Thời gian còn lại
-            </Text>
-            <Text.Title
-              style={{
+          {/* Timer Section */}
+          <Box style={{ textAlign: 'center', marginTop: 24 }}>
+            <Text style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', opacity: 0.4 }}>THỜI GIAN CÒN LẠI</Text>
+            <Text style={{ 
+                fontSize: 24, 
+                fontWeight: 900, 
                 marginTop: 4,
-                color:
-                  timeLeft < 60
-                    ? 'rgb(220, 0, 0)'
-                    : 'var(--zaui-light-color-primary, var(--brand-accent))',
-              }}
-            >
+                color: timeLeft < 60 ? '#ef4444' : 'var(--brand-secondary)'
+            }}>
               {formatTime(timeLeft)}
-            </Text.Title>
+            </Text>
           </Box>
 
-          {/* Checking Status */}
-          <Box flex alignItems="center" justifyContent="center" mt={2} style={{ gap: 10 }}>
+          {/* Status Bar */}
+          <Box flex alignItems="center" justifyContent="center" mt={4} style={{ gap: 12 }}>
             <Spinner visible />
-            <Text size="small" style={{ opacity: 0.7 }}>
-              Đang chờ xác nhận thanh toán...
-            </Text>
+            <Text style={{ fontSize: 11, fontWeight: 800, opacity: 0.5, textTransform: 'uppercase' }}>ĐANG CHỜ XÁC NHẬN...</Text>
           </Box>
         </Box>
 
-        {/* Instructions */}
+        {/* Instructions - Vintage Note */}
         <Box
-          p={4}
+          p={6}
           mt={4}
           style={{
-            background: 'rgba(0, 97, 193, 0.08)',
-            borderRadius: 16,
-            border: '1px solid rgba(0, 97, 193, 0.14)',
+            background: 'rgba(165, 124, 82, 0.05)',
+            borderRadius: 32,
+            border: '1px solid var(--brand-primary)',
           }}
         >
-          <Box flex alignItems="center" style={{ gap: 8, marginBottom: 8 }}>
-            <Icon icon="zi-file" />
-            <Text bold size="small">
-              Hướng dẫn thanh toán
-            </Text>
+          <Box flex alignItems="center" style={{ gap: 10, marginBottom: 12 }}>
+            <Icon icon="zi-info-circle-solid" style={{ color: 'var(--brand-primary)', fontSize: 20 }} />
+            <Text style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: 'var(--brand-secondary)' }}>HƯỚNG DẪN</Text>
           </Box>
-          <Text size="small">1. Mở app ngân hàng của bạn</Text>
-          <Text size="small">2. Quét mã QR phía trên</Text>
-          <Text size="small">3. Kiểm tra thông tin và xác nhận chuyển khoản</Text>
-          <Text size="small">4. Hệ thống sẽ tự động xác nhận sau khi nhận được tiền</Text>
+          <Box style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Text style={{ fontSize: 12, fontWeight: 700, opacity: 0.7 }}>1. MỞ ỨNG DỤNG NGÂN HÀNG CỦA QUÝ KHÁCH</Text>
+            <Text style={{ fontSize: 12, fontWeight: 700, opacity: 0.7 }}>2. QUÉT MÃ QR HOẶC CHUYỂN KHOẢN ĐÚNG NỘI DUNG</Text>
+            <Text style={{ fontSize: 12, fontWeight: 700, opacity: 0.7 }}>3. XÁC NHẬN CHUYỂN KHOẢN ĐỂ HOÀN TẤT ĐẶT LỊCH</Text>
+          </Box>
         </Box>
 
-        {/* Pay Later Option */}
-        <Box mt={4}>
+        {/* Actions */}
+        <Box mt={6} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <Button
             fullWidth
-            variant="secondary"
             type="neutral"
             onClick={() => navigate(`/booking-confirm?id=${bookingId}`)}
+            style={{ 
+                height: 56, 
+                borderRadius: 28, 
+                border: '1px solid var(--brand-primary)', 
+                background: 'transparent',
+                color: 'var(--brand-primary)', 
+                fontWeight: 900,
+                fontSize: 13,
+                letterSpacing: 1
+            }}
           >
-            Thanh toán sau tại salon
+            THANH TOÁN SAU TẠI SALON
           </Button>
         </Box>
       </Box>

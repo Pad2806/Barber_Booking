@@ -61,8 +61,8 @@ const NotificationsPage: React.FC = () => {
     }
 
     return (
-        <Page style={{ background: '#f5f5f5' }}>
-            <Header title="Thông báo" showBackIcon onBackClick={() => navigate(-1)} />
+        <Page style={{ background: 'var(--brand-background)' }}>
+            <Header title="THÔNG BÁO" showBackIcon onBackClick={() => navigate(-1)} />
             <Box style={{ height: 44 }} />
             
             {loading ? (
@@ -70,45 +70,74 @@ const NotificationsPage: React.FC = () => {
                     <Spinner visible />
                 </Box>
             ) : (
-                <Box p={2}>
+                <Box p={4}>
                     {notifications.length > 0 ? (
-                        <List>
+                        <>
                             {notifications.map((notification) => {
                                 const { icon, color } = getIconAndColor(notification.type);
                                 return (
                                 <Box 
                                     key={notification.id}
-                                    mt={2}
-                                    p={3}
+                                    mb={3}
+                                    p={5}
                                     style={{
-                                        background: notification.isRead ? '#fff' : '#eefffa',
-                                        borderRadius: 8,
-                                        borderLeft: `4px solid ${getColorHex(color)}`
+                                        background: notification.isRead ? 'var(--brand-background)' : 'rgba(165, 124, 82, 0.05)',
+                                        borderRadius: 24,
+                                        border: notification.isRead ? '1px solid var(--brand-border)' : '1px solid var(--brand-primary)',
+                                        boxShadow: notification.isRead ? 'none' : '0 8px 16px rgba(165, 124, 82, 0.1)',
+                                        opacity: notification.isRead ? 0.7 : 1
                                     }}
                                     onClick={() => handleMarkAsRead(notification.id, notification.isRead)}
                                 >
-                                    <Box flex flexDirection="row" justifyContent="space-between">
-                                        <Box flex flexDirection="row" alignItems="center">
-                                            <Icon icon={icon as any} style={{ color: getColorHex(color), marginRight: 12 }} />
-                                            <Text.Title size="small" style={{ fontWeight: notification.isRead ? 'normal' : 'bold' }}>
+                                    <Box flex flexDirection="row" justifyContent="space-between" alignItems="flex-start">
+                                        <Box flex flexDirection="row" alignItems="center" style={{ gap: 12 }}>
+                                            <Box 
+                                                flex 
+                                                alignItems="center" 
+                                                justifyContent="center"
+                                                style={{ 
+                                                    width: 40, 
+                                                    height: 40, 
+                                                    borderRadius: 14, 
+                                                    background: 'var(--brand-background)',
+                                                    border: `1px solid ${getColorHex(color)}`
+                                                }}
+                                            >
+                                                <Icon icon={icon as any} style={{ color: getColorHex(color), fontSize: 18 }} />
+                                            </Box>
+                                            <Text style={{ fontSize: 14, fontWeight: notification.isRead ? 700 : 900, color: 'var(--brand-secondary)', textTransform: 'uppercase' }}>
                                                 {notification.title}
-                                            </Text.Title>
+                                            </Text>
                                         </Box>
-                                        <Text size="xxSmall" style={{ opacity: 0.5 }}>
+                                        <Text style={{ fontSize: 9, fontWeight: 800, opacity: 0.4 }}>
                                             {dayjs(notification.createdAt).format('HH:mm DD/MM')}
                                         </Text>
                                     </Box>
-                                    <Text size="xSmall" style={{ marginTop: 8, marginLeft: 36, opacity: 0.8 }}>
+                                    <Text style={{ marginTop: 12, marginLeft: 52, fontSize: 13, fontWeight: 600, opacity: 0.7, lineHeight: '1.4' }}>
                                         {notification.message}
                                     </Text>
                                 </Box>
                                 );
                             })}
-                        </List>
+                        </>
                     ) : (
-                        <Box p={6} flex flexDirection="column" alignItems="center" justifyContent="center" style={{ minHeight: '60vh' }}>
-                            <Icon icon="zi-notif" size={48} style={{ opacity: 0.3, marginBottom: 16 }} />
-                            <Text size="small" style={{ opacity: 0.5 }}>Không có thông báo mới</Text>
+                        <Box p={8} flex flexDirection="column" alignItems="center" justifyContent="center" style={{ minHeight: '70vh', textAlign: 'center' }}>
+                            <Box 
+                                flex 
+                                alignItems="center" 
+                                justifyContent="center" 
+                                style={{ 
+                                    width: 100, 
+                                    height: 100, 
+                                    borderRadius: 32, 
+                                    background: 'var(--brand-muted)',
+                                    marginBottom: 24
+                                }}
+                            >
+                                <Icon icon="zi-notif" style={{ opacity: 0.2, fontSize: 48, color: 'var(--brand-secondary)' }} />
+                            </Box>
+                            <Text style={{ fontSize: 18, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase' }}>KHÔNG CÓ THÔNG BÁO</Text>
+                            <Text style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', opacity: 0.4, marginTop: 8 }}>QUÝ KHÁCH CHƯA CÓ THÔNG BÁO NÀO</Text>
                         </Box>
                     )}
                 </Box>

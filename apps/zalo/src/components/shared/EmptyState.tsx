@@ -20,24 +20,36 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
       flexDirection="column"
       alignItems="center"
       justifyContent="center"
-      p={6}
-      style={{ textAlign: 'center', minHeight: 220 }}
+      p={8}
+      style={{ textAlign: 'center', minHeight: 280 }}
     >
-      <Box mb={4}>
-        <Icon icon={icon} />
+      <Box 
+        mb={6}
+        flex
+        alignItems="center"
+        justifyContent="center"
+        style={{ 
+            width: 80, 
+            height: 80, 
+            borderRadius: 24, 
+            background: 'var(--brand-secondary)',
+            border: '2px solid var(--brand-primary)',
+            boxShadow: '0 16px 32px rgba(165, 124, 82, 0.2)'
+        }}
+      >
+        <Icon icon={icon as any} style={{ color: 'var(--brand-primary)', fontSize: 32 }} />
       </Box>
-      <Text.Title size="normal">{title}</Text.Title>
+      <Text style={{ fontSize: 18, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase' }}>{title}</Text>
       {description && (
-        <Box mt={2} style={{ maxWidth: 280 }}>
+        <Box mt={3} style={{ maxWidth: 280 }}>
           <Text
-            size="small"
-            style={{ color: 'var(--zaui-light-text-color, #141415)', opacity: 0.7 }}
+            style={{ fontSize: 11, fontWeight: 700, opacity: 0.5, textTransform: 'uppercase', letterSpacing: 1 }}
           >
             {description}
           </Text>
         </Box>
       )}
-      {action && <Box mt={3}>{action}</Box>}
+      {action && <Box mt={6}>{action}</Box>}
     </Box>
   );
 };
@@ -49,8 +61,8 @@ interface ErrorStateProps {
 }
 
 export const ErrorState: React.FC<ErrorStateProps> = ({
-  title = 'Đã có lỗi xảy ra',
-  message = 'Vui lòng thử lại sau',
+  title = 'ĐÃ CÓ LỖI XẢY RA',
+  message = 'VUI LÒNG THỬ LẠI SAU',
   onRetry,
 }) => {
   return (
@@ -59,22 +71,39 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
       flexDirection="column"
       alignItems="center"
       justifyContent="center"
-      p={6}
-      style={{ textAlign: 'center', minHeight: 240 }}
+      p={8}
+      style={{ textAlign: 'center', minHeight: 300 }}
     >
-      <Box mb={4}>
-        <Icon icon="zi-warning" />
+      <Box 
+        mb={6}
+        flex
+        alignItems="center"
+        justifyContent="center"
+        style={{ 
+            width: 80, 
+            height: 80, 
+            borderRadius: 24, 
+            background: 'rgba(239, 68, 68, 0.1)',
+            border: '2px solid #ef4444',
+            boxShadow: '0 16px 32px rgba(239, 68, 68, 0.1)'
+        }}
+      >
+        <Icon icon="zi-warning" style={{ color: '#ef4444', fontSize: 32 }} />
       </Box>
-      <Text.Title size="normal">{title}</Text.Title>
-      <Box mt={2} style={{ maxWidth: 320 }}>
-        <Text size="small" style={{ opacity: 0.75 }}>
+      <Text style={{ fontSize: 18, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase' }}>{title}</Text>
+      <Box mt={3} style={{ maxWidth: 320 }}>
+        <Text style={{ fontSize: 11, fontWeight: 700, opacity: 0.5, textTransform: 'uppercase' }}>
           {message}
         </Text>
       </Box>
       {onRetry && (
-        <Box mt={4} style={{ width: '100%' }}>
-          <Button fullWidth onClick={onRetry}>
-            Thử lại
+        <Box mt={8} style={{ width: '100%', maxWidth: 240 }}>
+          <Button 
+            fullWidth 
+            onClick={onRetry}
+            style={{ height: 56, borderRadius: 28, background: 'var(--brand-primary)', color: 'var(--brand-background)', fontWeight: 900, letterSpacing: 1 }}
+          >
+            THỬ LẠI
           </Button>
         </Box>
       )}

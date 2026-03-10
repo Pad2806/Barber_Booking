@@ -4,13 +4,13 @@ import Link from 'next/link';
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-white flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row text-foreground font-sans">
       {/* Left Side - Form */}
-      <div className="flex-1 flex items-center justify-center p-8 md:p-12 lg:p-24 bg-white">
+      <div className="flex-1 flex items-center justify-center p-8 md:p-12 lg:p-24 bg-background">
         <div className="w-full max-w-lg">
           <Link href="/" className="flex items-center gap-2 group mb-16">
-            <span className="text-3xl font-black tracking-[-0.08em] text-black group-hover:scale-105 transition-transform duration-500">
-              REETRO<span className="bg-black text-white px-2 py-0.5 ml-1 rounded-sm">BARBER</span>
+            <span className="text-3xl font-heading font-bold tracking-tight text-foreground group-hover:text-primary transition-all duration-500">
+              REETRO<span className="text-primary ml-1">BARBER</span>
             </span>
           </Link>
           {children}
@@ -18,39 +18,39 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </div>
 
       {/* Right Side - Premium Dark Panel */}
-      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden bg-black">
-        <div className="absolute inset-0 opacity-40 grayscale pointer-events-none">
+      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden bg-foreground">
+        <div className="absolute inset-0 opacity-50 pointer-events-none">
           <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2000&auto=format')] bg-cover bg-center" />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-black/80 to-transparent" />
-        <div className="absolute inset-0 flex flex-col items-start justify-center text-white p-24">
-           <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.5em] mb-8 block">THE EXPERIENCE</span>
-          <h2 className="text-7xl font-heading font-black mb-8 tracking-tighter leading-none uppercase italic">
+        <div className="absolute inset-0 bg-gradient-to-br from-foreground via-foreground/80 to-transparent" />
+        <div className="absolute inset-0 flex flex-col items-start justify-center text-background p-24">
+           <span className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.5em] mb-8 block font-mono">EST. 2024</span>
+          <h2 className="text-6xl font-heading font-bold mb-8 tracking-tight leading-none uppercase italic">
             NÂNG TẦM<br />
-            <span className="text-white bg-white/10 px-4 inline-block">BẢN LĨNH</span>
+            <span className="text-primary bg-background/10 px-4 inline-block transform -rotate-1">BẢN LĨNH</span>
           </h2>
-          <p className="text-gray-400 text-xl max-w-md font-light tracking-tight leading-relaxed mb-16">
+          <p className="text-background/60 text-lg max-w-md font-bold tracking-tight leading-relaxed mb-16 uppercase italic">
             Đặt lịch cắt tóc nhanh chóng, trải nghiệm dịch vụ đẳng cấp thượng lưu cùng REETRO BARBER CO.
           </p>
           
-          <div className="grid grid-cols-3 gap-12 pt-12 border-t border-white/10 w-full">
+          <div className="grid grid-cols-3 gap-12 pt-12 border-t border-background/10 w-full">
             <div className="text-left">
-              <p className="text-4xl font-black tracking-tighter mb-1 uppercase italic">50+</p>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">STYLISTS</p>
+              <p className="text-4xl font-heading font-bold tracking-tight mb-1 uppercase italic text-primary">50+</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-background/40">STYLISTS</p>
             </div>
             <div className="text-left">
-              <p className="text-4xl font-black tracking-tighter mb-1 uppercase italic">10K+</p>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">CLIENTS</p>
+              <p className="text-4xl font-heading font-bold tracking-tight mb-1 uppercase italic text-primary">10K+</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-background/40">CLIENTS</p>
             </div>
             <div className="text-left">
-              <p className="text-4xl font-black tracking-tighter mb-1 uppercase italic">4.9</p>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">RATING</p>
+              <p className="text-4xl font-heading font-bold tracking-tight mb-1 uppercase italic text-primary">4.9</p>
+              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-background/40">RATING</p>
             </div>
           </div>
         </div>
         
         {/* Decorative elements */}
-        <div className="absolute top-12 right-12 text-[10px] font-black text-white/20 uppercase tracking-[1em] rotate-90 origin-right">
+        <div className="absolute top-12 right-12 text-[10px] font-bold text-background/10 uppercase tracking-[1em] rotate-90 origin-right pointer-events-none select-none">
            REETRO BARBER SHOP © 2024
         </div>
       </div>

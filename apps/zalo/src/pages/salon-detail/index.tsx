@@ -131,38 +131,40 @@ const SalonDetailPage: React.FC = () => {
 
   return (
     <Page
-      style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)', paddingBottom: 96 }}
+      style={{ background: 'var(--brand-background)', paddingBottom: 110 }}
     >
-      <Header title="Chi tiết salon" onBackClick={() => navigate(-1)} />
+      <Header title="CHI TIẾT SALON" onBackClick={() => navigate(-1)} />
       <Box style={{ height: 44 }} />
-      {/* Hero Section */}
-      <Box style={{ position: 'relative', height: 200 }}>
+      {/* Hero Section - Vintage Aesthetic */}
+      <Box style={{ position: 'relative', height: 240 }}>
         <img
           src={salon.coverImage || salon.images?.[0] || 'https://images.unsplash.com/photo-1585747860019-8e2e0c35c0e1?w=600&h=300&fit=crop'}
           alt={salon.name}
-          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(0.3) contrast(1.1) brightness(0.8)' }}
         />
         <Box
           style={{
             position: 'absolute',
             inset: 0,
-            background: 'linear-gradient(180deg, rgba(0,0,0,0.0) 0%, rgba(0,0,0,0.6) 100%)',
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.1) 0%, var(--brand-secondary) 100%)',
           }}
         />
-        <Box style={{ position: 'absolute', top: 12, right: 12, zIndex: 10, display: 'flex', gap: 8 }}>
+        <Box style={{ position: 'absolute', top: 16, right: 16, zIndex: 10, display: 'flex', gap: 12 }}>
           <Box
             onClick={handleToggleFavorite}
             style={{
-                background: 'rgba(255,255,255,0.8)',
-                borderRadius: '50%',
-                width: 32,
-                height: 32,
+                background: 'rgba(255,255,255,0.1)',
+                backdropFilter: 'blur(8px)',
+                borderRadius: 14,
+                width: 40,
+                height: 40,
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                justifyContent: 'center',
+                border: '1px solid rgba(255,255,255,0.2)'
             }}
           >
-              <Icon icon={isFavorited ? 'zi-heart-solid' : 'zi-heart'} style={{ color: isFavorited ? '#e94560' : '#333' }} />
+              <Icon icon={isFavorited ? 'zi-heart-solid' : 'zi-heart'} style={{ color: isFavorited ? 'var(--brand-primary)' : '#fff' }} />
           </Box>
           <ShareButton
             type="salon"
@@ -176,14 +178,15 @@ const SalonDetailPage: React.FC = () => {
             onShareError={err => console.error(err)}
           />
         </Box>
-        <Box style={{ position: 'absolute', bottom: 12, left: 12, right: 12, color: '#fff' }}>
-          <Text.Title size="large" style={{ color: '#fff' }}>
+        <Box style={{ position: 'absolute', bottom: 32, left: 20, right: 20, color: 'var(--brand-background)' }}>
+           <Text style={{ fontSize: 10, fontWeight: 800, color: 'var(--brand-primary)', letterSpacing: 2, textTransform: 'uppercase' }}>ESTABLISHED SALON</Text>
+          <Text style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -1, lineHeight: 1.1, marginTop: 4 }}>
             {salon.name}
-          </Text.Title>
-          <Box mt={1}>
+          </Text>
+          <Box mt={2}>
             <Box flex alignItems="center" style={{ gap: 8 }}>
-              <Icon icon="zi-location" />
-              <Text size="small" style={{ color: '#fff', opacity: 0.85 }}>
+              <Icon icon="zi-location" style={{ color: 'var(--brand-primary)', fontSize: 16 }} />
+              <Text style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 0.5, opacity: 0.8 }}>
                 {salon.address}
               </Text>
             </Box>
@@ -191,38 +194,40 @@ const SalonDetailPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Info Cards */}
-      <Box flex px={4} style={{ gap: 12, marginTop: -24, position: 'relative', zIndex: 10 }}>
+      {/* Info Cards - Premium Vintage */}
+      <Box flex px={4} style={{ gap: 10, marginTop: -20, position: 'relative', zIndex: 10 }}>
         {[
           {
             icon: 'zi-star',
             value: salon.rating?.toFixed(1) || '5.0',
-            sub: `${salon.totalReviews || 0} đánh giá`,
+            sub: 'RATING',
           },
           {
             icon: 'zi-clock-1',
-            value: `${salon.openTime} - ${salon.closeTime}`,
-            sub: 'Giờ mở cửa',
+            value: `${salon.openTime}-${salon.closeTime}`,
+            sub: 'OPENING',
           },
-          { icon: 'zi-call', value: salon.phone, sub: 'Liên hệ' },
+          { icon: 'zi-call', value: 'GỌI NGAY', sub: 'HOTLINE' },
         ].map(item => (
           <Box
             key={item.sub}
             p={3}
             style={{
               flex: 1,
-              background: 'var(--zaui-light-header-background-color, #fff)',
-              borderRadius: 16,
-              border: '1px solid var(--zaui-light-header-divider, #e9ebed)',
+              background: 'var(--brand-background)',
+              borderRadius: 24,
+              border: item.sub === 'HOTLINE' ? '1px solid var(--brand-primary)' : '1px solid var(--brand-border)',
               textAlign: 'center',
+              boxShadow: '0 12px 24px -6px rgba(0,0,0,0.1)'
             }}
+            onClick={item.sub === 'HOTLINE' ? () => window.open(`tel:${salon.phone}`) : undefined}
           >
-            <Box flex alignItems="center" justifyContent="center" style={{ gap: 8 }}>
-              <Icon icon={item.icon as any} />
-              <Text bold>{item.value}</Text>
+            <Box flex alignItems="center" justifyContent="center" style={{ gap: 6 }}>
+              <Icon icon={item.icon as any} style={{ color: 'var(--brand-primary)', fontSize: 14 }} />
+              <Text style={{ fontSize: 13, fontWeight: 900, color: 'var(--brand-secondary)' }}>{item.value}</Text>
             </Box>
             <Box mt={1}>
-              <Text size="xxSmall" style={{ opacity: 0.7 }}>
+              <Text style={{ fontSize: 8, fontWeight: 800, textTransform: 'uppercase', opacity: 0.4 }}>
                 {item.sub}
               </Text>
             </Box>
@@ -230,61 +235,64 @@ const SalonDetailPage: React.FC = () => {
         ))}
       </Box>
 
-      {/* Tabs */}
-      <Box mt={4}>
+      {/* Tabs - Vintage Styling */}
+      <Box mt={6}>
         <Tabs activeKey={activeTab} onChange={setActiveTab}>
-          <Tabs.Tab key="services" label="Dịch vụ">
-            <Box p={4}>
+          <Tabs.Tab key="services" label="DỊCH VỤ">
+            <Box p={4} pb={10}>
               {groupedServices.map(group => (
-                <Box key={group.category} mb={4}>
-                  <Box flex alignItems="center" style={{ gap: 8, marginBottom: 8 }}>
-                    <Icon icon={getCategoryIcon(group.category) as any} />
-                    <Text bold>{group.categoryLabel}</Text>
+                <Box key={group.category} mb={8}>
+                  <Box flex alignItems="center" style={{ gap: 10, marginBottom: 12, paddingLeft: 4 }}>
+                    <Icon icon={getCategoryIcon(group.category) as any} style={{ color: 'var(--brand-primary)', fontSize: 18 }} />
+                    <Text style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: 'var(--brand-secondary)', letterSpacing: 1 }}>{group.categoryLabel}</Text>
                   </Box>
                   <Box>
                     {group.services.map(service => (
                       <Box
                         key={service.id}
                         p={4}
-                        mt={2}
+                        mt={3}
                         style={{
-                          background: 'var(--zaui-light-header-background-color, #fff)',
-                          borderRadius: 16,
+                          background: isServiceSelected(service.id) ? 'rgba(165, 124, 82, 0.05)' : 'var(--brand-background)',
+                          borderRadius: 24,
                           border: `2px solid ${
                             isServiceSelected(service.id)
-                              ? 'var(--zaui-light-color-primary, var(--brand-accent))'
-                              : 'var(--zaui-light-header-divider, #e9ebed)'
+                              ? 'var(--brand-primary)'
+                              : 'var(--brand-border)'
                           }`,
+                          boxShadow: isServiceSelected(service.id) ? '0 8px 24px -4px rgba(165, 124, 82, 0.2)' : 'none',
+                          transition: 'all 0.2s ease'
                         }}
                         onClick={() => toggleService(service)}
                       >
                         <Box
                           flex
                           justifyContent="space-between"
-                          alignItems="flex-start"
-                          style={{ gap: 12 }}
+                          alignItems="center"
+                          style={{ gap: 16 }}
                         >
                           <Box style={{ flex: 1 }}>
-                            <Text bold>{service.name}</Text>
+                            <Text style={{ fontSize: 16, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase' }}>{service.name}</Text>
                             {service.description && (
                               <Box mt={1}>
-                                <Text size="small" style={{ opacity: 0.75 }}>
-                                  {service.description}
+                                <Text style={{ fontSize: 10, fontWeight: 700, fontStyle: 'italic', opacity: 0.4 }}>
+                                  {service.description.toUpperCase()}
                                 </Text>
                               </Box>
                             )}
-                            <Box flex alignItems="center" mt={2} style={{ gap: 12 }}>
+                            <Box flex alignItems="center" mt={3} style={{ gap: 16 }}>
                               <Text
-                                bold
                                 style={{
-                                  color: 'var(--zaui-light-color-primary, var(--brand-accent))',
+                                  fontSize: 16,
+                                  fontWeight: 900,
+                                  color: 'var(--brand-primary)',
                                 }}
                               >
                                 {formatPrice(service.price)}
                               </Text>
-                              <Box flex alignItems="center" style={{ gap: 6, opacity: 0.7 }}>
-                                <Icon icon="zi-clock-1" />
-                                <Text size="xxSmall">{service.duration} phút</Text>
+                              <Box flex alignItems="center" style={{ gap: 6, opacity: 0.4 }}>
+                                <Icon icon="zi-clock-1" style={{ fontSize: 12 }} />
+                                <Text style={{ fontSize: 9, fontWeight: 800 }}>{service.duration} PHÚT</Text>
                               </Box>
                             </Box>
                           </Box>
@@ -293,20 +301,20 @@ const SalonDetailPage: React.FC = () => {
                             alignItems="center"
                             justifyContent="center"
                             style={{
-                              width: 28,
-                              height: 28,
-                              borderRadius: 999,
+                              width: 32,
+                              height: 32,
+                              borderRadius: 14,
                               border: `2px solid ${
                                 isServiceSelected(service.id)
-                                  ? 'var(--zaui-light-color-primary, var(--brand-accent))'
-                                  : 'var(--zaui-light-input-border-color, #b9bdc1)'
+                                  ? 'var(--brand-primary)'
+                                  : 'var(--brand-border)'
                               }`,
                               background: isServiceSelected(service.id)
-                                ? 'var(--zaui-light-color-primary, var(--brand-accent))'
+                                ? 'var(--brand-primary)'
                                 : 'transparent',
                             }}
                           >
-                            {isServiceSelected(service.id) && <Icon icon="zi-check" />}
+                            {isServiceSelected(service.id) && <Icon icon="zi-check" style={{ color: 'var(--brand-background)', fontSize: 18 }} />}
                           </Box>
                         </Box>
                       </Box>
@@ -317,42 +325,42 @@ const SalonDetailPage: React.FC = () => {
             </Box>
           </Tabs.Tab>
 
-          <Tabs.Tab key="staff" label="Stylist">
-            <Box p={4}>
+          <Tabs.Tab key="staff" label="STYLIST">
+            <Box p={4} pb={10}>
               {staff.map(member => (
                 <Box
                   key={member.id}
                   p={4}
-                  mt={2}
+                  mt={4}
                   flex
                   alignItems="center"
                   style={{
-                    gap: 12,
-                    background: 'var(--zaui-light-header-background-color, #fff)',
-                    borderRadius: 16,
-                    border: '1px solid var(--zaui-light-header-divider, #e9ebed)',
+                    gap: 16,
+                    background: 'var(--brand-background)',
+                    borderRadius: 32,
+                    border: '1px solid var(--brand-border)',
+                    boxShadow: '0 8px 16px rgba(0,0,0,0.05)'
                   }}
                 >
-                  <Box style={{ width: 56, height: 56, borderRadius: 999, overflow: 'hidden' }}>
+                  <Box style={{ width: 64, height: 64, borderRadius: 24, overflow: 'hidden', border: '1px solid var(--brand-border)' }}>
                     <img
                       src={member.user.avatar || '/assets/images/default-avatar.jpg'}
                       alt={member.user.name}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(0.2)' }}
                     />
                   </Box>
                   <Box style={{ flex: 1 }}>
-                    <Text bold>{member.user.name}</Text>
+                    <Text style={{ fontSize: 16, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase' }}>{member.user.name}</Text>
                     <Text
-                      size="small"
-                      style={{ color: 'var(--zaui-light-color-primary, var(--brand-accent))' }}
+                      style={{ fontSize: 10, fontWeight: 800, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: 1 }}
                     >
                       {STAFF_POSITIONS[member.position as keyof typeof STAFF_POSITIONS] ||
                         member.position}
                     </Text>
-                    <Box flex alignItems="center" mt={1} style={{ gap: 6, opacity: 0.8 }}>
-                      <Icon icon="zi-star" />
-                      <Text size="small">
-                        {member.rating.toFixed(1)} ({member.totalReviews})
+                    <Box flex alignItems="center" mt={2} style={{ gap: 6, opacity: 0.6 }}>
+                      <Icon icon="zi-star" style={{ color: 'var(--brand-primary)', fontSize: 12 }} />
+                      <Text style={{ fontSize: 11, fontWeight: 800 }}>
+                        {member.rating.toFixed(1)} <span style={{ opacity: 0.5 }}>({member.totalReviews} REVIEWS)</span>
                       </Text>
                     </Box>
                   </Box>
@@ -361,58 +369,58 @@ const SalonDetailPage: React.FC = () => {
             </Box>
           </Tabs.Tab>
 
-          <Tabs.Tab key="info" label="Thông tin">
-            <Box p={4}>
+          <Tabs.Tab key="info" label="THÔNG TIN">
+            <Box p={4} pb={10}>
               <Box
-                p={4}
+                p={6}
                 style={{
-                  background: 'var(--zaui-light-header-background-color, #fff)',
-                  borderRadius: 16,
-                  border: '1px solid var(--zaui-light-header-divider, #e9ebed)',
+                  background: 'var(--brand-background)',
+                  borderRadius: 32,
+                  border: '1px solid var(--brand-border)',
                 }}
               >
-                <Text bold>Địa chỉ</Text>
-                <Box mt={2}>
-                  <Text size="small" style={{ opacity: 0.8 }}>
+                <Text style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: 'var(--brand-secondary)' }}>ĐỊA CHỈ SALON</Text>
+                <Box mt={3}>
+                  <Text style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-secondary)', opacity: 0.8 }}>
                     {salon.address}, {salon.ward && `${salon.ward}, `}
                     {salon.district}, {salon.city}
                   </Text>
                 </Box>
               </Box>
               <Box
-                p={4}
-                mt={3}
+                p={6}
+                mt={4}
                 style={{
-                  background: 'var(--zaui-light-header-background-color, #fff)',
-                  borderRadius: 16,
-                  border: '1px solid var(--zaui-light-header-divider, #e9ebed)',
+                  background: 'var(--brand-background)',
+                  borderRadius: 32,
+                  border: '1px solid var(--brand-border)',
                 }}
               >
-                <Text bold>Giờ làm việc</Text>
-                <Box mt={2}>
-                  <Text size="small" style={{ opacity: 0.8 }}>
+                <Text style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: 'var(--brand-secondary)' }}>GIỜ LÀM VIỆC</Text>
+                <Box mt={3}>
+                  <Text style={{ fontSize: 16, fontWeight: 900, color: 'var(--brand-primary)' }}>
                     {salon.openTime} - {salon.closeTime}
                   </Text>
                 </Box>
                 <Box mt={1}>
-                  <Text size="xxSmall" style={{ opacity: 0.6 }}>
+                  <Text style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', opacity: 0.4 }}>
                     {salon.workingDays.join(', ')}
                   </Text>
                 </Box>
               </Box>
               {salon.description && (
                 <Box
-                  p={4}
-                  mt={3}
+                  p={6}
+                  mt={4}
                   style={{
-                    background: 'var(--zaui-light-header-background-color, #fff)',
-                    borderRadius: 16,
-                    border: '1px solid var(--zaui-light-header-divider, #e9ebed)',
+                    background: 'var(--brand-background)',
+                    borderRadius: 32,
+                    border: '1px solid var(--brand-border)',
                   }}
                 >
-                  <Text bold>Giới thiệu</Text>
-                  <Box mt={2}>
-                    <Text size="small" style={{ opacity: 0.8 }}>
+                  <Text style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: 'var(--brand-secondary)' }}>GIỚI THIỆU</Text>
+                  <Box mt={3}>
+                    <Text style={{ fontSize: 13, fontWeight: 700, color: 'var(--brand-secondary)', lineHeight: 1.6, opacity: 0.8 }}>
                       {salon.description}
                     </Text>
                   </Box>
@@ -423,7 +431,7 @@ const SalonDetailPage: React.FC = () => {
         </Tabs>
       </Box>
 
-      {/* Floating Book Button */}
+      {/* Floating Book Button - Deep Mahogany */}
       <Box
         className="safe-area-bottom"
         p={4}
@@ -432,22 +440,33 @@ const SalonDetailPage: React.FC = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'var(--zaui-light-header-background-color, #fff)',
-          borderTop: '1px solid var(--zaui-light-header-divider, #e9ebed)',
+          background: 'var(--brand-secondary)',
+          borderTop: '1px solid rgba(165, 124, 82, 0.2)',
+          boxShadow: '0 -16px 32px rgba(0,0,0,0.2)',
+          zIndex: 100
         }}
       >
-        <Box flex alignItems="center" justifyContent="space-between" mb={3}>
-          <Text size="small" style={{ opacity: 0.8 }}>
-            Đã chọn: <Text bold>{selectedServices.length} dịch vụ</Text>
-          </Text>
+        <Box flex alignItems="center" justifyContent="space-between" mb={4}>
+          <Box>
+            <Text style={{ fontSize: 9, fontWeight: 800, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: 1 }}>DỊCH VỤ ĐÃ CHỌN</Text>
+            <Text style={{ fontSize: 15, fontWeight: 900, color: 'var(--brand-background)' }}>{selectedServices.length} STYLINGS</Text>
+          </Box>
           {selectedServices.length > 0 && (
-            <Text bold style={{ color: 'var(--zaui-light-color-primary, var(--brand-accent))' }}>
-              {formatPrice(selectedServices.reduce((sum, s) => sum + Number(s.price), 0))}
-            </Text>
+            <Box style={{ textAlign: 'right' }}>
+               <Text style={{ fontSize: 9, fontWeight: 800, color: 'var(--brand-primary)', textTransform: 'uppercase', opacity: 0.6 }}>TỔNG CỘNG</Text>
+               <Text style={{ fontSize: 18, fontWeight: 900, color: 'var(--brand-primary)' }}>
+                {formatPrice(selectedServices.reduce((sum, s) => sum + Number(s.price), 0))}
+               </Text>
+            </Box>
           )}
         </Box>
-        <Button fullWidth onClick={handleBooking} disabled={selectedServices.length === 0}>
-          {selectedServices.length === 0 ? 'Chọn dịch vụ để đặt lịch' : 'Tiếp tục đặt lịch'}
+        <Button 
+           fullWidth 
+           onClick={handleBooking} 
+           disabled={selectedServices.length === 0}
+           style={{ height: 64, borderRadius: 32, fontWeight: 900, letterSpacing: 2, background: 'var(--brand-primary)', color: 'var(--brand-background)', border: 'none' }}
+        >
+          {selectedServices.length === 0 ? 'CHỌN DỊCH VỤ ĐỂ ĐẶT LỊCH' : 'TIẾP TỤC ĐẶT LỊCH'}
         </Button>
       </Box>
     </Page>

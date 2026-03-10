@@ -19,16 +19,16 @@ export const ZALO_OA_ID = (import.meta.env.VITE_ZALO_OA_ID as string | undefined
 
 // Brand Configuration (for Zalo Mini App)
 export const BRAND_CONFIG = {
-  name: 'ReetroBarberShop',
-  appName: 'ReetroBarberShop',
-  tagline: 'Phong cách - Đẳng cấp - Chất lượng',
-  phone: '1900 xxxx xx',
-  logoUrl: 'https://reetrobarber.paduy.tech/logo.png',
+  name: 'REETRO BARBER',
+  appName: 'REETRO BARBER',
+  tagline: 'PHONG CÁCH CỔ ĐIỂN - ĐẲNG CẤP THĂNG HOA',
+  phone: '09XX XXX XXX',
+  logoUrl: 'https://barber-api.paduy.tech/favicon.png',
   zaloOAId: ZALO_OA_ID,
   colors: {
-    primary: '#1a1a2e',
-    secondary: '#16213e',
-    accent: '#e94560',
+    primary: '#a57c52', /* Gold/Bronze */
+    secondary: '#251812', /* Mahogany */
+    accent: '#a57c52', /* Gold */
   },
 } as const;
 

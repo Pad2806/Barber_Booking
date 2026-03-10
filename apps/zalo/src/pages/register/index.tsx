@@ -51,9 +51,9 @@ const RegisterPage: React.FC = () => {
   const busy = submitting || isLoading;
 
   return (
-    <Page style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)' }}>
+    <Page style={{ background: 'var(--brand-background)' }}>
       <Header
-        title="Đăng ký tài khoản"
+        title="ĐĂNG KÝ"
         showBackIcon
         onBackClick={() => navigate(-1)}
       />
@@ -64,7 +64,7 @@ const RegisterPage: React.FC = () => {
         flexDirection="column"
         alignItems="center"
         justifyContent="center"
-        p={4}
+        p={8}
         style={{ minHeight: '80vh' }}
       >
         <Box
@@ -72,63 +72,95 @@ const RegisterPage: React.FC = () => {
           alignItems="center"
           justifyContent="center"
           style={{
-            width: 80,
-            height: 80,
-            borderRadius: 999,
-            background: 'var(--zaui-light-button-secondary-neutral-background, #e9ebed)',
-            marginBottom: 24,
+            width: 96,
+            height: 96,
+            borderRadius: 32,
+            background: 'var(--brand-secondary)',
+            marginBottom: 32,
+            border: '2px solid var(--brand-primary)',
+            boxShadow: '0 16px 32px -8px rgba(0,0,0,0.2)'
           }}
         >
-          <Icon icon="zi-add-user" size={32} />
+          <Icon icon="zi-add-user" size={32} style={{ color: 'var(--brand-primary)' }} />
         </Box>
 
-        <Text.Title size="large">Tạo tài khoản mới</Text.Title>
-        <Box mt={2} mb={6}>
-          <Text size="small" style={{ opacity: 0.75 }}>
-            Điền thông tin để bắt đầu
+        <Text style={{ fontSize: 24, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase', letterSpacing: -1 }}>TẠO TÀI KHOẢN MỚI</Text>
+        <Box mt={2} mb={10}>
+          <Text style={{ fontSize: 10, fontWeight: 800, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: 2, fontStyle: 'italic', opacity: 0.6 }}>
+            ĐIỀN THÔNG TIN ĐỂ BẮT ĐẦU TRẢI NGHIỆM
           </Text>
         </Box>
 
         {error && (
-          <Box mb={4} p={3} style={{ background: '#fee2e2', borderRadius: 8, width: '100%' }}>
-            <Text size="xSmall" style={{ color: '#ef4444' }}>{error}</Text>
+          <Box mb={6} p={4} style={{ background: 'rgba(239, 68, 68, 0.1)', borderRadius: 20, width: '100%', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+            <Text style={{ color: '#ef4444', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', textAlign: 'center' }}>{error}</Text>
           </Box>
         )}
 
         <Box style={{ width: '100%', maxWidth: 360 }}>
-          <div className="zaui-input-group" style={{ marginBottom: 16 }}>
+          <div className="zaui-input-group" style={{ marginBottom: 12 }}>
             <input 
               type="text"
               className="zaui-input"
-              placeholder="Họ và tên"
+              placeholder="HỌ VÀ TÊN"
               value={name}
               onChange={(e) => setName(e.target.value)}
               disabled={busy}
-              style={{ width: '100%', padding: '12px', borderRadius: 8, border: '1px solid #ddd' }}
+              style={{ 
+                width: '100%', 
+                padding: '16px 20px', 
+                borderRadius: 24, 
+                border: '1px solid var(--brand-border)', 
+                background: 'var(--brand-muted)',
+                fontWeight: 700,
+                fontSize: 12,
+                letterSpacing: 1,
+                color: 'var(--brand-secondary)'
+              }}
             />
           </div>
 
-          <div className="zaui-input-group" style={{ marginBottom: 16 }}>
+          <div className="zaui-input-group" style={{ marginBottom: 12 }}>
             <input 
               type="tel"
               className="zaui-input"
-              placeholder="Số điện thoại"
+              placeholder="SỐ ĐIỆN THOẠI"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               disabled={busy}
-              style={{ width: '100%', padding: '12px', borderRadius: 8, border: '1px solid #ddd' }}
+              style={{ 
+                width: '100%', 
+                padding: '16px 20px', 
+                borderRadius: 24, 
+                border: '1px solid var(--brand-border)', 
+                background: 'var(--brand-muted)',
+                fontWeight: 700,
+                fontSize: 12,
+                letterSpacing: 1,
+                color: 'var(--brand-secondary)'
+              }}
             />
           </div>
           
-          <div className="zaui-input-group" style={{ marginBottom: 16 }}>
+          <div className="zaui-input-group" style={{ marginBottom: 12 }}>
             <input 
               type="password"
               className="zaui-input"
-              placeholder="Mật khẩu"
+              placeholder="MẬT KHẨU"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={busy}
-              style={{ width: '100%', padding: '12px', borderRadius: 8, border: '1px solid #ddd' }}
+              style={{ 
+                width: '100%', 
+                padding: '16px 20px', 
+                borderRadius: 24, 
+                border: '1px solid var(--brand-border)', 
+                background: 'var(--brand-muted)',
+                fontWeight: 700,
+                fontSize: 12,
+                letterSpacing: 1,
+                color: 'var(--brand-secondary)'
+              }}
             />
           </div>
 
@@ -136,16 +168,32 @@ const RegisterPage: React.FC = () => {
             <input 
               type="password"
               className="zaui-input"
-              placeholder="Nhập lại mật khẩu"
+              placeholder="NHẬP LẠI MẬT KHẨU"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               disabled={busy}
-              style={{ width: '100%', padding: '12px', borderRadius: 8, border: '1px solid #ddd' }}
+              style={{ 
+                width: '100%', 
+                padding: '16px 20px', 
+                borderRadius: 24, 
+                border: '1px solid var(--brand-border)', 
+                background: 'var(--brand-muted)',
+                fontWeight: 700,
+                fontSize: 12,
+                letterSpacing: 1,
+                color: 'var(--brand-secondary)'
+              }}
             />
           </div>
 
-          <Button fullWidth onClick={handleRegister} disabled={busy} size="large">
-            {busy ? <Spinner visible /> : 'Đăng ký'}
+          <Button 
+            fullWidth 
+            onClick={handleRegister} 
+            disabled={busy} 
+            size="large"
+            style={{ height: 60, borderRadius: 30, fontWeight: 900, letterSpacing: 2, background: 'var(--brand-primary)', color: 'var(--brand-background)' }}
+          >
+            {busy ? <Spinner visible /> : 'ĐĂNG KÝ'}
           </Button>
         </Box>
 

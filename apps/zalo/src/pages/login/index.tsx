@@ -67,9 +67,9 @@ const LoginPage: React.FC = () => {
   const busy = submitting || isLoading;
 
   return (
-    <Page style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)' }}>
+    <Page style={{ background: 'var(--brand-background)' }}>
       <Header
-        title="Đăng nhập"
+        title="ĐĂNG NHẬP"
         showBackIcon={location.key !== 'default'}
         onBackClick={() => navigate(-1)}
       />
@@ -80,7 +80,7 @@ const LoginPage: React.FC = () => {
         flexDirection="column"
         alignItems="center"
         justifyContent="center"
-        p={4}
+        p={8}
         style={{ minHeight: '80vh' }}
       >
         <Box
@@ -88,26 +88,28 @@ const LoginPage: React.FC = () => {
           alignItems="center"
           justifyContent="center"
           style={{
-            width: 80,
-            height: 80,
-            borderRadius: 999,
-            background: 'var(--zaui-light-button-secondary-neutral-background, #e9ebed)',
-            marginBottom: 24,
+            width: 96,
+            height: 96,
+            borderRadius: 32,
+            background: 'var(--brand-secondary)',
+            marginBottom: 32,
+            border: '2px solid var(--brand-primary)',
+            boxShadow: '0 16px 32px -8px rgba(0,0,0,0.2)'
           }}
         >
-          <Icon icon="zi-user" size={32} />
+          <Icon icon="zi-user" size={32} style={{ color: 'var(--brand-primary)' }} />
         </Box>
 
-        <Text.Title size="large">Chào mừng quay lại</Text.Title>
-        <Box mt={2} mb={6}>
-          <Text size="small" style={{ opacity: 0.75 }}>
-            Quản lý lịch hẹn và nhận ưu đãi
+        <Text style={{ fontSize: 28, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase', letterSpacing: -1 }}>CHÀO MỪNG QUAY LẠI</Text>
+        <Box mt={2} mb={10}>
+          <Text style={{ fontSize: 10, fontWeight: 800, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: 2, fontStyle: 'italic', opacity: 0.6 }}>
+            QUẢN LÝ LỊCH HẸN & ƯU ĐÃI THÀNH VIÊN
           </Text>
         </Box>
 
         {error && (
-          <Box mb={4} p={3} style={{ background: '#fee2e2', borderRadius: 8, width: '100%' }}>
-            <Text size="xSmall" style={{ color: '#ef4444' }}>{error}</Text>
+          <Box mb={6} p={4} style={{ background: 'rgba(239, 68, 68, 0.1)', borderRadius: 20, width: '100%', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+            <Text style={{ color: '#ef4444', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', textAlign: 'center' }}>{error}</Text>
           </Box>
         )}
 
@@ -116,28 +118,54 @@ const LoginPage: React.FC = () => {
             <input 
               type="tel"
               className="zaui-input"
-              placeholder="Số điện thoại"
+              placeholder="SỐ ĐIỆN THOẠI"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               disabled={busy}
-              style={{ width: '100%', padding: '12px', borderRadius: 8, border: '1px solid #ddd' }}
+              style={{ 
+                width: '100%', 
+                padding: '20px 24px', 
+                borderRadius: 28, 
+                border: '1px solid var(--brand-border)', 
+                background: 'var(--brand-muted)',
+                fontWeight: 700,
+                fontSize: 13,
+                letterSpacing: 1,
+                color: 'var(--brand-secondary)'
+              }}
             />
           </div>
           
-          <div className="zaui-input-group" style={{ marginBottom: 24 }}>
+          <div className="zaui-input-group" style={{ marginBottom: 32 }}>
             <input 
               type="password"
               className="zaui-input"
-              placeholder="Mật khẩu"
+              placeholder="MẬT KHẨU"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={busy}
-              style={{ width: '100%', padding: '12px', borderRadius: 8, border: '1px solid #ddd' }}
+              style={{ 
+                width: '100%', 
+                padding: '20px 24px', 
+                borderRadius: 28, 
+                border: '1px solid var(--brand-border)', 
+                background: 'var(--brand-muted)',
+                fontWeight: 700,
+                fontSize: 13,
+                letterSpacing: 1,
+                color: 'var(--brand-secondary)'
+              }}
             />
           </div>
 
-          <Button fullWidth onClick={handlePasswordLogin} disabled={busy} size="large">
-            {busy ? <Spinner visible /> : 'Đăng nhập'}
+          <Button 
+             fullWidth 
+             onClick={handlePasswordLogin} 
+             disabled={busy} 
+             size="large"
+             style={{ height: 64, borderRadius: 32, fontWeight: 900, letterSpacing: 2, background: 'var(--brand-primary)', color: 'var(--brand-background)' }}
+          >
+            {busy ? <Spinner visible /> : 'ĐĂNG NHẬP'}
           </Button>
         </Box>
         

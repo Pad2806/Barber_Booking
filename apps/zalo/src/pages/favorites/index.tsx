@@ -44,8 +44,8 @@ const FavoritesPage: React.FC = () => {
     };
 
     return (
-        <Page style={{ background: '#f5f5f5' }}>
-            <Header title="Salon yêu thích" showBackIcon onBackClick={() => navigate(-1)} />
+        <Page style={{ background: 'var(--brand-background)' }}>
+            <Header title="SALON YÊU THÍCH" showBackIcon onBackClick={() => navigate(-1)} />
             <Box style={{ height: 44 }} />
             
             {loading ? (
@@ -54,37 +54,73 @@ const FavoritesPage: React.FC = () => {
                 </Box>
             ) : favorites.length > 0 ? (
                 <Box p={4}>
-                    <List>
-                        {favorites.map((salon) => (
-                            <List.Item
-                                key={salon.id}
-                                prefix={
-                                    <Box style={{ width: 48, height: 48, borderRadius: 8, overflow: 'hidden', marginRight: 12 }}>
-                                        <img 
-                                            src={salon.coverImage || salon.images?.[0] || 'https://images.unsplash.com/photo-1585747860019-8e2e0c35c0e1?w=100&h=100&fit=crop'} 
-                                            alt={salon.name} 
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                                        />
-                                    </Box>
-                                }
-                                title={salon.name}
-                                subTitle={salon.address}
-                                suffix={
-                                    <Box onClick={(e: any) => handleRemove(e, salon.id)}>
-                                        <Icon icon="zi-heart-solid" style={{ color: '#e94560' }} />
-                                    </Box>
-                                }
-                                onClick={() => navigate(`/salon-detail?id=${salon.id}`)}
-                            />
-                        ))}
-                    </List>
+                    {favorites.map((salon) => (
+                        <Box
+                           key={salon.id}
+                           p={4}
+                           mb={4}
+                           onClick={() => navigate(`/salon-detail?id=${salon.id}`)}
+                           style={{
+                               background: 'var(--brand-background)',
+                               borderRadius: 32,
+                               border: '1px solid var(--brand-border)',
+                               boxShadow: '0 8px 16px rgba(0,0,0,0.03)',
+                               display: 'flex',
+                               alignItems: 'center',
+                               gap: 16
+                           }}
+                        >
+                            <Box style={{ width: 64, height: 64, borderRadius: 24, overflow: 'hidden', border: '1px solid var(--brand-border)' }}>
+                                <img 
+                                    src={salon.coverImage || salon.images?.[0] || 'https://images.unsplash.com/photo-1585747860019-8e2e0c35c0e1?w=100&h=100&fit=crop'} 
+                                    alt={salon.name} 
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(0.3)' }} 
+                                />
+                            </Box>
+                            <Box style={{ flex: 1 }}>
+                                <Text style={{ fontSize: 16, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase' }}>{salon.name}</Text>
+                                <Text style={{ fontSize: 11, fontWeight: 700, opacity: 0.5, textTransform: 'uppercase', letterSpacing: 0.5 }}>{salon.address}</Text>
+                            </Box>
+                            <Box onClick={(e: any) => handleRemove(e, salon.id)} p={2}>
+                                <Icon icon="zi-heart-solid" style={{ color: '#e94560', fontSize: 24 }} />
+                            </Box>
+                        </Box>
+                    ))}
                 </Box>
             ) : (
-                <Box p={6} flex flexDirection="column" alignItems="center" justifyContent="center" style={{ minHeight: '60vh' }}>
-                    <Icon icon="zi-heart" size={48} style={{ opacity: 0.3, marginBottom: 16 }} />
-                    <Text size="small" style={{ opacity: 0.5 }}>Chưa có salon yêu thích</Text>
-                    <Box mt={4}>
-                        <Button size="small" onClick={() => navigate('/salons')}>Khám phá ngay</Button>
+                <Box p={8} flex flexDirection="column" alignItems="center" justifyContent="center" style={{ minHeight: '70vh', textAlign: 'center' }}>
+                    <Box 
+                        flex 
+                        alignItems="center" 
+                        justifyContent="center" 
+                        style={{ 
+                            width: 100, 
+                            height: 100, 
+                            borderRadius: 32, 
+                            background: 'var(--brand-muted)',
+                            marginBottom: 24
+                        }}
+                    >
+                        <Icon icon="zi-heart" style={{ opacity: 0.2, fontSize: 48, color: 'var(--brand-secondary)' }} />
+                    </Box>
+                    <Text style={{ fontSize: 18, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase' }}>DANH SÁCH TRỐNG</Text>
+                    <Text style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', opacity: 0.4, marginTop: 8 }}>QUÝ KHÁCH CHƯA CÓ SALON YÊU THÍCH NÀO</Text>
+                    <Box mt={8} style={{ width: '100%', maxWidth: 240 }}>
+                        <Button 
+                            fullWidth 
+                            onClick={() => navigate('/salons')}
+                            style={{
+                                height: 56,
+                                borderRadius: 28,
+                                background: 'var(--brand-primary)',
+                                color: 'var(--brand-background)',
+                                fontWeight: 900,
+                                fontSize: 13,
+                                letterSpacing: 1
+                            }}
+                        >
+                            KHÁM PHÁ NGAY
+                        </Button>
                     </Box>
                 </Box>
             )}

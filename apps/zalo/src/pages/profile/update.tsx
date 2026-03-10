@@ -70,16 +70,28 @@ const UpdateProfilePage: React.FC = () => {
   };
 
   return (
-    <Page style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)' }}>
-      <Header title="Cập nhật thông tin" showBackIcon onBackClick={() => navigate(-1)} />
+    <Page style={{ background: 'var(--brand-background)' }}>
+      <Header title="CẬP NHẬT THÔNG TIN" showBackIcon onBackClick={() => navigate(-1)} />
       <Box style={{ height: 44 }} />
 
       {/* Avatar Section */}
-      <Box p={4} flex flexDirection="column" alignItems="center" style={{ background: '#fff', paddingBottom: 24 }}>
+      <Box p={8} flex flexDirection="column" alignItems="center" style={{ background: 'var(--brand-background)', borderBottom: '1px solid var(--brand-border)' }}>
         <Box style={{ position: 'relative' }}>
-          <Avatar size={96} src={avatarUrl || ''}>
-            {user?.name?.charAt(0) || '?'}
-          </Avatar>
+          <Box
+            style={{
+                width: 120,
+                height: 120,
+                borderRadius: 40,
+                padding: 4,
+                border: '2px solid var(--brand-primary)',
+                background: 'var(--brand-background)',
+                boxShadow: '0 16px 32px rgba(165, 124, 82, 0.2)'
+            }}
+          >
+            <Avatar size={112} src={avatarUrl || ''} style={{ borderRadius: 36 }}>
+                {user?.name?.charAt(0) || '?'}
+            </Avatar>
+          </Box>
           <Box
             flex
             alignItems="center"
@@ -87,34 +99,36 @@ const UpdateProfilePage: React.FC = () => {
             onClick={() => !uploading && fileInputRef.current?.click()}
             style={{
               position: 'absolute',
-              bottom: 0,
-              right: 0,
-              width: 32,
-              height: 32,
-              borderRadius: 999,
-              background: 'var(--zaui-light-color-primary, var(--brand-accent))',
-              border: '2px solid #fff',
+              bottom: -4,
+              right: -4,
+              width: 40,
+              height: 40,
+              borderRadius: 14,
+              background: 'var(--brand-secondary)',
+              border: '2px solid var(--brand-background)',
+              boxShadow: '0 8px 16px rgba(0,0,0,0.2)',
               cursor: 'pointer',
+              zIndex: 10
             }}
           >
             {uploading ? (
               <Box
                 style={{
-                  width: 14,
-                  height: 14,
-                  border: '2px solid #fff',
+                  width: 18,
+                  height: 18,
+                  border: '2px solid var(--brand-primary)',
                   borderTopColor: 'transparent',
                   borderRadius: 999,
                   animation: 'spin 0.8s linear infinite',
                 }}
               />
             ) : (
-              <Icon icon="zi-camera" style={{ color: '#fff', fontSize: 16 }} />
+              <Icon icon="zi-camera" style={{ color: 'var(--brand-primary)', fontSize: 20 }} />
             )}
           </Box>
         </Box>
-        <Text size="xSmall" style={{ marginTop: 8, opacity: 0.6 }}>
-          Nhấn vào biểu tượng máy ảnh để đổi avatar
+        <Text style={{ marginTop: 16, fontSize: 10, fontWeight: 800, textTransform: 'uppercase', opacity: 0.4, letterSpacing: 1 }}>
+          NHẤN VÀO MÁY ẢNH ĐỂ ĐỔI ẢNH ĐẠI DIỆN
         </Text>
         <input
           ref={fileInputRef}
@@ -126,32 +140,68 @@ const UpdateProfilePage: React.FC = () => {
       </Box>
 
       {/* Form  */}
-      <Box p={4} mt={3} style={{ background: '#fff' }}>
-        <Text.Title size="small" style={{ marginBottom: 12 }}>Thông tin cá nhân</Text.Title>
-        <Box mb={4}>
-          <Text size="xSmall" style={{ marginBottom: 4, opacity: 0.7 }}>Họ và tên</Text>
+      <Box p={6} mt={2}>
+        <Text style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: 'var(--brand-secondary)', marginBottom: 20, letterSpacing: 1 }}>HỒ SƠ CÁ NHÂN</Text>
+        
+        <Box mb={6}>
+          <Text style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', marginBottom: 8, opacity: 0.5 }}>HỌ VÀ TÊN</Text>
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Nhập họ và tên của bạn"
+            placeholder="NHẬP HỌ VÀ TÊN..."
+            style={{
+                height: 56,
+                borderRadius: 24,
+                background: 'var(--brand-background)',
+                border: '1px solid var(--brand-border)',
+                fontWeight: 700,
+                fontSize: 14,
+                color: 'var(--brand-secondary)'
+            }}
           />
         </Box>
-        <Box mb={4}>
-          <Text size="xSmall" style={{ marginBottom: 4, opacity: 0.7 }}>Số điện thoại</Text>
+
+        <Box mb={6}>
+          <Text style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase', marginBottom: 8, opacity: 0.5 }}>SỐ ĐIỆN THOẠI</Text>
           <Input
             value={user?.phone || ''}
             disabled
-            placeholder="Số điện thoại"
+            placeholder="SỐ ĐIỆN THOẠI"
+            style={{
+                height: 56,
+                borderRadius: 24,
+                background: 'var(--brand-muted)',
+                border: '1px solid var(--brand-border)',
+                fontWeight: 700,
+                fontSize: 14,
+                color: 'var(--brand-secondary)',
+                opacity: 0.6
+            }}
           />
-          <Text size="xxSmall" style={{ marginTop: 4, opacity: 0.5, fontStyle: 'italic' }}>
-            Không thể thay đổi số điện thoại đăng ký
+          <Text style={{ marginTop: 8, fontSize: 9, fontWeight: 700, fontStyle: 'italic', opacity: 0.3, textTransform: 'uppercase' }}>
+            KHÔNG THỂ THAY ĐỔI SỐ ĐIỆN THOẠI ĐÃ ĐĂNG KÝ
           </Text>
         </Box>
       </Box>
 
-      <Box p={4} mt={4}>
-        <Button fullWidth onClick={handleUpdate} loading={loading} disabled={uploading}>
-          Lưu thay đổi
+      <Box p={6} style={{ marginTop: 'auto' }}>
+        <Button 
+            fullWidth 
+            onClick={handleUpdate} 
+            loading={loading} 
+            disabled={uploading}
+            style={{
+                height: 64,
+                borderRadius: 32,
+                background: 'var(--brand-primary)',
+                color: 'var(--brand-background)',
+                fontWeight: 900,
+                fontSize: 15,
+                letterSpacing: 2,
+                boxShadow: '0 16px 32px rgba(165, 124, 82, 0.2)'
+            }}
+        >
+          LƯU THAY ĐỔI
         </Button>
       </Box>
 

@@ -12,7 +12,7 @@ const services = [
     price: '80.000đ',
     duration: '30 phút',
     image:
-      'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&h=300&fit=crop&q=80&auto=format',
+      'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=800&h=600&fit=crop&q=80',
   },
   {
     id: 2,
@@ -20,7 +20,7 @@ const services = [
     price: '350.000đ',
     duration: '90 phút',
     image:
-      'https://images.unsplash.com/photo-1622286342621-4bd786c2447c?w=400&h=300&fit=crop&q=80&auto=format',
+      'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=800&h=600&fit=crop&q=80',
   },
   {
     id: 3,
@@ -28,7 +28,7 @@ const services = [
     price: '300.000đ',
     duration: '60 phút',
     image:
-      'https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=300&fit=crop&q=80&auto=format',
+      'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&h=600&fit=crop&q=80',
   },
   {
     id: 4,
@@ -36,7 +36,7 @@ const services = [
     price: '50.000đ',
     duration: '20 phút',
     image:
-      'https://images.unsplash.com/photo-1519823551278-64ac92734fb1?w=400&h=300&fit=crop&q=80&auto=format',
+      'https://images.unsplash.com/photo-1512690199101-83ca6490c370?w=800&h=600&fit=crop&q=80',
   },
   {
     id: 5,
@@ -44,7 +44,7 @@ const services = [
     price: '200.000đ',
     duration: '60 phút',
     image:
-      'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&h=300&fit=crop&q=80&auto=format',
+      'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&h=600&fit=crop&q=80',
   },
   {
     id: 6,
@@ -52,7 +52,7 @@ const services = [
     price: '70.000đ',
     duration: '25 phút',
     image:
-      'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=400&h=300&fit=crop&q=80&auto=format',
+      'https://images.unsplash.com/photo-1516733725897-1aa73b87c8e8?w=800&h=600&fit=crop&q=80',
   },
 ];
 
@@ -64,7 +64,7 @@ const salons = [
     rating: 4.9,
     reviews: 1250,
     image:
-      'https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?w=400&h=300&fit=crop&q=80&auto=format',
+      'https://images.unsplash.com/photo-1592647420148-bfcc1a004eb7?w=800&h=600&fit=crop&q=80',
   },
   {
     id: 2,
@@ -73,7 +73,7 @@ const salons = [
     rating: 4.8,
     reviews: 980,
     image:
-      'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=400&h=300&fit=crop&q=80&auto=format',
+      'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&h=600&fit=crop&q=80',
   },
   {
     id: 3,
@@ -82,7 +82,7 @@ const salons = [
     rating: 4.9,
     reviews: 850,
     image:
-      'https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=400&h=300&fit=crop&q=80&auto=format',
+      'https://images.unsplash.com/photo-1512690199101-83ca6490c370?w=800&h=600&fit=crop&q=80',
   },
 ];
 
@@ -223,7 +223,7 @@ export default function HomePage() {
                     fill
                     loading="lazy"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                    className="object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110"
+                    className="object-cover transition-all duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
                   <div className="absolute bottom-6 left-8 right-8">
@@ -283,7 +283,7 @@ export default function HomePage() {
                     fill
                     loading="lazy"
                     sizes="(max-width: 768px) 100vw, 33vw"
-                    className="object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110"
+                    className="object-cover transition-all duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
                 </div>

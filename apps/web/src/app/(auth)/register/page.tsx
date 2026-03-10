@@ -61,18 +61,18 @@ export default function RegisterPage() {
   return (
     <div className="space-y-12 transition-all duration-1000 animate-in fade-in slide-in-from-bottom-8 pb-12">
       <div className="space-y-4">
-         <span className="text-[10px] font-black text-gray-300 uppercase tracking-[0.4em] block">JOIN THE CLUB</span>
-        <h2 className="text-6xl font-heading font-black text-gray-900 tracking-tighter uppercase italic leading-none">Đăng ký</h2>
-        <p className="text-sm font-light text-gray-500 tracking-tight">Trở thành thành viên của REETRO để tận hưởng dịch vụ tốt nhất.</p>
+         <span className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.4em] block font-mono">JOIN THE CLUB</span>
+        <h2 className="text-4xl font-heading font-bold text-foreground tracking-tight uppercase leading-none">Đăng ký</h2>
+        <p className="text-[11px] font-bold text-muted-foreground tracking-widest uppercase italic leading-relaxed">Trở thành thành viên của REETRO để tận hưởng dịch vụ tốt nhất.</p>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="space-y-6">
           <div className="space-y-3">
-            <label htmlFor="name" className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] font-mono italic px-2">FULL NAME</label>
+            <label htmlFor="name" className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] font-mono italic px-2">FULL NAME</label>
             <div className="relative group">
-              <User className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 transition-colors group-hover:text-black" />
+              <User className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30 transition-colors group-focus-within:text-primary" />
               <input
                 id="name"
                 name="name"
@@ -81,15 +81,15 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 placeholder="NGUYỄN VĂN A"
                 required
-                className="w-full pl-16 pr-8 py-5 bg-gray-50 border-2 border-transparent rounded-[24px] focus:outline-none focus:border-black focus:bg-white transition-all font-black text-sm tracking-widest placeholder:text-gray-300"
+                className="w-full pl-16 pr-8 py-5 bg-accent/5 border-2 border-border rounded-[24px] focus:outline-none focus:border-primary focus:bg-background transition-all font-bold text-[11px] tracking-widest placeholder:text-muted-foreground/20 text-foreground"
               />
             </div>
           </div>
 
           <div className="space-y-3">
-            <label htmlFor="email" className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] font-mono italic px-2">EMAIL ADDRESS</label>
+            <label htmlFor="email" className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] font-mono italic px-2">EMAIL ADDRESS</label>
             <div className="relative group">
-              <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 transition-colors group-hover:text-black" />
+              <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30 transition-colors group-focus-within:text-primary" />
               <input
                 id="email"
                 name="email"
@@ -98,15 +98,15 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 placeholder="CLIENT@EXAMPLE.COM"
                 required
-                className="w-full pl-16 pr-8 py-5 bg-gray-50 border-2 border-transparent rounded-[24px] focus:outline-none focus:border-black focus:bg-white transition-all font-black text-sm tracking-widest placeholder:text-gray-300"
+                className="w-full pl-16 pr-8 py-5 bg-accent/5 border-2 border-border rounded-[24px] focus:outline-none focus:border-primary focus:bg-background transition-all font-bold text-[11px] tracking-widest placeholder:text-muted-foreground/20 text-foreground"
               />
             </div>
           </div>
 
           <div className="space-y-3">
-             <label htmlFor="phone" className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] font-mono italic px-2">PHONE (OPTIONAL)</label>
+             <label htmlFor="phone" className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] font-mono italic px-2">PHONE (OPTIONAL)</label>
             <div className="relative group">
-              <Phone className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 transition-colors group-hover:text-black" />
+              <Phone className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30 transition-colors group-focus-within:text-primary" />
               <input
                 id="phone"
                 name="phone"
@@ -114,15 +114,15 @@ export default function RegisterPage() {
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="0912345678"
-                className="w-full pl-16 pr-8 py-5 bg-gray-50 border-2 border-transparent rounded-[24px] focus:outline-none focus:border-black focus:bg-white transition-all font-black text-sm tracking-widest placeholder:text-gray-300"
+                className="w-full pl-16 pr-8 py-5 bg-accent/5 border-2 border-border rounded-[24px] focus:outline-none focus:border-primary focus:bg-background transition-all font-bold text-[11px] tracking-widest placeholder:text-muted-foreground/20 text-foreground"
               />
             </div>
           </div>
 
           <div className="space-y-3">
-             <label htmlFor="password" className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] font-mono italic px-2">CREATE PASSWORD</label>
+             <label htmlFor="password" className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] font-mono italic px-2">CREATE PASSWORD</label>
             <div className="relative group">
-              <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 transition-colors group-hover:text-black" />
+              <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30 transition-colors group-focus-within:text-primary" />
               <input
                 id="password"
                 name="password"
@@ -132,12 +132,12 @@ export default function RegisterPage() {
                 placeholder="••••••••"
                 required
                 minLength={6}
-                className="w-full pl-16 pr-16 py-5 bg-gray-50 border-2 border-transparent rounded-[24px] focus:outline-none focus:border-black focus:bg-white transition-all font-black"
+                className="w-full pl-16 pr-16 py-5 bg-accent/5 border-2 border-border rounded-[24px] focus:outline-none focus:border-primary focus:bg-background transition-all font-bold text-foreground"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-300 hover:text-black transition-colors"
+                className="absolute right-6 top-1/2 -translate-y-1/2 text-muted-foreground/30 hover:text-primary transition-colors"
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
@@ -145,9 +145,9 @@ export default function RegisterPage() {
           </div>
 
           <div className="space-y-3">
-             <label htmlFor="confirmPassword" className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em] font-mono italic px-2">CONFIRM PASSWORD</label>
+             <label htmlFor="confirmPassword" className="text-[10px] font-bold text-primary/40 uppercase tracking-[0.3em] font-mono italic px-2">CONFIRM PASSWORD</label>
             <div className="relative group">
-              <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-300 transition-colors group-hover:text-black" />
+              <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/30 transition-colors group-focus-within:text-primary" />
               <input
                 id="confirmPassword"
                 name="confirmPassword"
@@ -156,7 +156,7 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 placeholder="••••••••"
                 required
-                className="w-full pl-16 pr-8 py-5 bg-gray-50 border-2 border-transparent rounded-[24px] focus:outline-none focus:border-black focus:bg-white transition-all font-black"
+                className="w-full pl-16 pr-8 py-5 bg-accent/5 border-2 border-border rounded-[24px] focus:outline-none focus:border-primary focus:bg-background transition-all font-bold text-foreground"
               />
             </div>
           </div>
@@ -167,31 +167,31 @@ export default function RegisterPage() {
             type="checkbox"
             id="terms"
             required
-            className="w-5 h-5 mt-0.5 border-2 border-gray-100 rounded-sm text-black focus:ring-black accent-black cursor-pointer"
+            className="w-5 h-5 mt-0.5 border-2 border-border rounded-sm text-primary focus:ring-primary accent-primary cursor-pointer"
           />
-          <label htmlFor="terms" className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-relaxed cursor-pointer">
-            I AGREE TO THE <Link href="/terms" className="text-black underline underline-offset-4 decoration-1">TERMS</Link> AND <Link href="/privacy" className="text-black underline underline-offset-4 decoration-1">PRIVACY POLICY</Link>
+          <label htmlFor="terms" className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-relaxed cursor-pointer italic">
+            I AGREE TO THE <Link href="/terms" className="text-primary underline underline-offset-4 decoration-1 hover:text-foreground">TERMS</Link> AND <Link href="/privacy" className="text-primary underline underline-offset-4 decoration-1 hover:text-foreground">PRIVACY POLICY</Link>
           </label>
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-black text-white py-6 rounded-full font-black text-xs uppercase tracking-[0.4em] hover:bg-white hover:text-black border-2 border-black transition-all duration-700 shadow-2xl shadow-black/20 flex items-center justify-center gap-4 group active:scale-95"
+          className="w-full bg-primary text-background py-6 rounded-full font-bold text-[11px] uppercase tracking-[0.4em] hover:bg-foreground transition-all duration-700 shadow-xl shadow-primary/20 flex items-center justify-center gap-4 group active:scale-95 border border-primary/20"
         >
           {isLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
+            <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
             <div className="flex items-center gap-4">
-               CREATE ACCOUNT <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform duration-500" />
+               CREATE ACCOUNT <ArrowRight className="w-4 h-4 group-hover:translate-x-2 transition-transform duration-500" />
             </div>
           )}
         </button>
       </form>
 
-      <div className="pt-8 text-center border-t border-gray-100">
-         <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em] mb-4">ALREADY HAVE AN ACCOUNT?</p>
-         <Link href="/login" className="inline-block px-12 py-4 border-2 border-black rounded-full font-black text-[10px] uppercase tracking-[0.3em] hover:bg-black hover:text-white transition-all duration-700 active:scale-95">
+      <div className="pt-8 text-center border-t border-border">
+         <p className="text-[10px] font-bold text-primary/30 uppercase tracking-[0.2em] mb-4 italic">ALREADY HAVE AN ACCOUNT?</p>
+         <Link href="/login" className="inline-block px-12 py-4 border-2 border-primary rounded-full font-bold text-[10px] uppercase tracking-[0.3em] hover:bg-foreground hover:text-background hover:border-foreground transition-all duration-700 active:scale-95 text-primary">
            SIGN IN
          </Link>
       </div>

@@ -5,42 +5,51 @@
 */
 
 :root {
-  --app-font-sans: Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  /* Vintage Barber Shop Theme (Zalo Mini App) */
+  --brand-primary: #a57c52;
+  /* Gold/Bronze */
+  --brand-secondary: #251812;
+  /* Mahogany */
+  --brand-accent: #a57c52;
+  /* Gold */
 
-  --brand-primary: #1a1a2e;
-  --brand-secondary: #16213e;
-  --brand-accent: #e94560;
+  --brand-background: #eae1cf;
+  /* Darker Tan Old Paper */
+  --brand-foreground: #180f0b;
+  /* Deep Mahogany */
+  --brand-muted: #dad1bf;
+  /* Aged Paper */
+  --brand-muted-foreground: #8a7c6e;
+  /* Faded Wood */
+  --brand-border: rgba(24, 15, 11, 0.1);
 
-  --brand-background: #ffffff;
-  --brand-foreground: #1a1a2e;
-  --brand-muted: #f4f4f5;
-  --brand-muted-foreground: #71717a;
-  --brand-border: #e4e4e7;
+  --app-radius: 24px;
+  --app-radius-lg: 32px;
 
-  --app-radius: 12px;
-  --app-radius-lg: 16px;
+  /* ZaUI (zmp-ui) Customization */
+  --zaui-light-color-primary: var(--brand-primary);
+  --zaui-dark-color-primary: var(--brand-primary);
 
-  /* Map ZaUI primary color to brand accent */
-  --zaui-light-color-primary: var(--brand-accent);
-  --zaui-dark-color-primary: var(--brand-accent);
-
-  /* Core surfaces */
   --zaui-light-text-color: var(--brand-foreground);
-  --zaui-light-body-background-color: var(--brand-muted);
+  --zaui-light-body-background-color: var(--brand-background);
   --zaui-light-header-background-color: var(--brand-background);
   --zaui-light-header-divider: var(--brand-border);
 
-  /* Bottom navigation */
-  --zaui-light-bottom-navigation-active-color: var(--brand-accent);
+  /* Bottom navigation styling */
+  --zaui-light-bottom-navigation-active-color: var(--brand-secondary);
   --zaui-light-bottom-navigation-color: var(--brand-muted-foreground);
   --zaui-light-bottom-navigation-divider-color: var(--brand-border);
   --zaui-light-bottom-navigation-background-color: var(--brand-background);
 
-  /* Buttons */
+  /* Buttons and Inputs */
   --zaui-light-button-secondary-neutral-background: var(--brand-muted);
   --zaui-light-button-secondary-neutral-background-pressed: var(--brand-border);
   --zaui-light-button-secondary-neutral-text: var(--brand-foreground);
   --zaui-light-button-secondary-neutral-icon: var(--brand-foreground);
+
+  /* Tab styling */
+  --zaui-light-tabs-tab-item-active-color: var(--brand-secondary);
+  --zaui-light-tabs-tab-item-color: var(--brand-muted-foreground);
 }
 
 html,
@@ -127,6 +136,7 @@ body {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -141,6 +151,7 @@ body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }

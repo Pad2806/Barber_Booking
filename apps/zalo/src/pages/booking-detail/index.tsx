@@ -76,20 +76,20 @@ const BookingDetailPage: React.FC = () => {
 
   return (
     <Page
-      style={{ background: 'var(--zaui-light-body-background-color, #e9ebed)', paddingBottom: 120 }}
+      style={{ background: 'var(--brand-background)', paddingBottom: 120 }}
     >
-      <Header title="Chi tiết đặt lịch" onBackClick={() => navigate(-1)} />
+      <Header title="CHI TIẾT LỊCH HẸN" onBackClick={() => navigate(-1)} />
       <Box style={{ height: 44 }} />
 
-      <Box p={4}>
+      <Box p={6}>
         <Box flex justifyContent="space-between" alignItems="center" style={{ gap: 12 }}>
           <Box>
-            <Text size="xxSmall" style={{ opacity: 0.7 }}>
-              Mã đặt lịch
+            <Text style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', opacity: 0.4 }}>
+              MÃ ĐẶT LỊCH
             </Text>
-            <Text bold>{booking.bookingCode}</Text>
+            <Text style={{ fontSize: 18, fontWeight: 900, color: 'var(--brand-secondary)' }}>{booking.bookingCode}</Text>
           </Box>
-          <Box flex alignItems="center" style={{ gap: 8 }}>
+          <Box flex alignItems="center" style={{ gap: 12 }}>
             <ShareButton
               type="booking"
               data={{
@@ -107,33 +107,34 @@ const BookingDetailPage: React.FC = () => {
       </Box>
 
       {/* Content */}
-      <Box p={4}>
+      <Box p={4} mt={-4}>
         {/* Salon Info */}
         <Box
-          p={4}
+          p={6}
           style={{
-            background: 'var(--zaui-light-header-background-color, #fff)',
-            borderRadius: 16,
-            border: '1px solid var(--zaui-light-header-divider, #e9ebed)',
+            background: 'var(--brand-background)',
+            borderRadius: 32,
+            border: '1px solid var(--brand-border)',
+            boxShadow: '0 8px 16px rgba(0,0,0,0.03)'
           }}
         >
-          <Box flex alignItems="center" style={{ gap: 12 }}>
-            <Box style={{ width: 64, height: 64, borderRadius: 16, overflow: 'hidden' }}>
+          <Box flex alignItems="center" style={{ gap: 16 }}>
+            <Box style={{ width: 64, height: 64, borderRadius: 24, overflow: 'hidden', border: '1px solid var(--brand-border)' }}>
               <img
                 src={booking.salon.logo || '/assets/images/default-salon.jpg'}
                 alt={booking.salon.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(0.2)' }}
               />
             </Box>
-            <Box>
-              <Text bold>{booking.salon.name}</Text>
-              <Box flex alignItems="center" mt={1} style={{ gap: 6, opacity: 0.75 }}>
-                <Icon icon="zi-location" />
-                <Text size="small">{booking.salon.address}</Text>
+            <Box style={{ flex: 1 }}>
+              <Text style={{ fontSize: 16, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase' }}>{booking.salon.name}</Text>
+              <Box flex alignItems="center" mt={1} style={{ gap: 6, opacity: 0.6 }}>
+                <Icon icon="zi-location" style={{ fontSize: 13 }} />
+                <Text style={{ fontSize: 12, fontWeight: 700 }}>{booking.salon.address}</Text>
               </Box>
-              <Box flex alignItems="center" mt={1} style={{ gap: 6, opacity: 0.75 }}>
-                <Icon icon="zi-call" />
-                <Text size="small">{booking.salon.phone}</Text>
+              <Box flex alignItems="center" mt={1} style={{ gap: 6, opacity: 0.6 }}>
+                <Icon icon="zi-call" style={{ fontSize: 13 }} />
+                <Text style={{ fontSize: 12, fontWeight: 700 }}>{booking.salon.phone}</Text>
               </Box>
             </Box>
           </Box>
@@ -141,29 +142,30 @@ const BookingDetailPage: React.FC = () => {
 
         {/* Booking Info */}
         <Box
-          p={4}
+          p={6}
           mt={4}
           style={{
-            background: 'var(--zaui-light-header-background-color, #fff)',
-            borderRadius: 16,
-            border: '1px solid var(--zaui-light-header-divider, #e9ebed)',
+            background: 'var(--brand-background)',
+            borderRadius: 32,
+            border: '1px solid var(--brand-border)',
+            boxShadow: '0 8px 16px rgba(0,0,0,0.03)'
           }}
         >
-          <Text bold>Thông tin lịch hẹn</Text>
+          <Text style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: 'var(--brand-secondary)', letterSpacing: 1 }}>THÔNG TIN LỊCH HẸN</Text>
 
-          <Box mt={3}>
+          <Box mt={4}>
             <Grid columnCount={2} columnSpace="12px" rowSpace="12px">
               <Box>
-                <Text size="xxSmall" style={{ opacity: 0.7 }}>
-                  Ngày
+                <Text style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', opacity: 0.4 }}>
+                  NGÀY
                 </Text>
-                <Text bold>{dayjs(booking.date).format('DD/MM/YYYY')}</Text>
+                <Text style={{ fontSize: 15, fontWeight: 900 }}>{dayjs(booking.date).format('DD/MM/YYYY')}</Text>
               </Box>
               <Box>
-                <Text size="xxSmall" style={{ opacity: 0.7 }}>
-                  Giờ
+                <Text style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', opacity: 0.4 }}>
+                  GIỜ
                 </Text>
-                <Text bold>
+                <Text style={{ fontSize: 15, fontWeight: 900 }}>
                   {booking.timeSlot} - {booking.endTime}
                 </Text>
               </Box>
@@ -171,21 +173,21 @@ const BookingDetailPage: React.FC = () => {
           </Box>
 
           {booking.staff && (
-            <Box mt={3}>
-              <Text size="xxSmall" style={{ opacity: 0.7 }}>
-                Stylist
+            <Box mt={4} pt={4} style={{ borderTop: '1px dashed var(--brand-border)' }}>
+              <Text style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', opacity: 0.4 }}>
+                STYLIST
               </Text>
-              <Box flex alignItems="center" mt={2} style={{ gap: 10 }}>
-                <Box style={{ width: 40, height: 40, borderRadius: 999, overflow: 'hidden' }}>
+              <Box flex alignItems="center" mt={3} style={{ gap: 12 }}>
+                <Box style={{ width: 48, height: 48, borderRadius: 16, overflow: 'hidden', border: '1px solid var(--brand-border)' }}>
                   <img
                     src={booking.staff.user.avatar || '/assets/images/default-avatar.jpg'}
                     alt={booking.staff.user.name}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(0.3)' }}
                   />
                 </Box>
                 <Box>
-                  <Text bold>{booking.staff.user.name}</Text>
-                  <Text size="xxSmall" style={{ opacity: 0.6 }}>
+                  <Text style={{ fontSize: 15, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase' }}>{booking.staff.user.name}</Text>
+                  <Text style={{ fontSize: 10, fontWeight: 800, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: 1 }}>
                     {STAFF_POSITIONS[booking.staff.position as keyof typeof STAFF_POSITIONS]}
                   </Text>
                 </Box>
@@ -194,46 +196,47 @@ const BookingDetailPage: React.FC = () => {
           )}
 
           {booking.note && (
-            <Box mt={3}>
-              <Text size="xxSmall" style={{ opacity: 0.7 }}>
-                Ghi chú
+            <Box mt={4} p={4} style={{ background: 'rgba(165, 124, 82, 0.05)', borderRadius: 24, border: '1px solid rgba(165, 124, 82, 0.1)' }}>
+              <Text style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', opacity: 0.4, marginBottom: 4 }}>
+                GHI CHÚ
               </Text>
-              <Text size="small">{booking.note}</Text>
+              <Text style={{ fontSize: 13, fontWeight: 700, fontStyle: 'italic' }}>{booking.note}</Text>
             </Box>
           )}
         </Box>
 
         {/* Services */}
         <Box
-          p={4}
+          p={6}
           mt={4}
           style={{
-            background: 'var(--zaui-light-header-background-color, #fff)',
-            borderRadius: 16,
-            border: '1px solid var(--zaui-light-header-divider, #e9ebed)',
+            background: 'var(--brand-background)',
+            borderRadius: 32,
+            border: '1px solid var(--brand-border)',
+            boxShadow: '0 8px 16px rgba(0,0,0,0.03)'
           }}
         >
-          <Text bold>Dịch vụ</Text>
-          <Box mt={3}>
+          <Text style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase', color: 'var(--brand-secondary)', letterSpacing: 1 }}>DỊCH VỤ</Text>
+          <Box mt={4}>
             {booking.services.map(bs => (
               <Box
                 key={bs.id}
                 flex
                 justifyContent="space-between"
                 alignItems="center"
-                pt={2}
-                pb={2}
-                style={{ borderBottom: '1px solid rgba(0,0,0,0.04)' }}
+                pt={3}
+                pb={3}
+                style={{ borderBottom: '1px dashed var(--brand-border)' }}
               >
                 <Box>
-                  <Text bold size="small">
+                  <Text style={{ fontSize: 14, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase' }}>
                     {bs.service.name}
                   </Text>
-                  <Text size="xxSmall" style={{ opacity: 0.65 }}>
-                    {bs.duration} phút
+                  <Text style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', opacity: 0.4 }}>
+                    {bs.duration} PHÚT
                   </Text>
                 </Box>
-                <Text bold size="small">
+                <Text style={{ fontSize: 14, fontWeight: 900, color: 'var(--brand-secondary)' }}>
                   {formatPrice(bs.price)}
                 </Text>
               </Box>
@@ -243,12 +246,11 @@ const BookingDetailPage: React.FC = () => {
             flex
             justifyContent="space-between"
             alignItems="center"
-            mt={3}
-            pt={3}
-            style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}
+            mt={4}
+            pt={4}
           >
-            <Text bold>Tổng cộng</Text>
-            <Text bold style={{ color: 'var(--zaui-light-color-primary, var(--brand-accent))' }}>
+            <Text style={{ fontSize: 13, fontWeight: 900, textTransform: 'uppercase' }}>TỔNG CỘNG</Text>
+            <Text style={{ fontSize: 20, fontWeight: 900, color: 'var(--brand-primary)' }}>
               {formatPrice(booking.totalAmount)}
             </Text>
           </Box>
@@ -256,29 +258,30 @@ const BookingDetailPage: React.FC = () => {
 
         {/* Payment Status */}
         <Box
-          p={4}
+          p={6}
           mt={4}
           style={{
-            background: 'var(--zaui-light-header-background-color, #fff)',
-            borderRadius: 16,
-            border: '1px solid var(--zaui-light-header-divider, #e9ebed)',
+            background: 'var(--brand-background)',
+            borderRadius: 32,
+            border: '1px solid var(--brand-border)',
+            boxShadow: '0 8px 16px rgba(0,0,0,0.03)'
           }}
         >
           <Box flex justifyContent="space-between" alignItems="center" style={{ gap: 12 }}>
             <Box>
-              <Text size="xxSmall" style={{ opacity: 0.7 }}>
-                Thanh toán
+              <Text style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', opacity: 0.4 }}>
+                THANH TOÁN
               </Text>
               <Box flex alignItems="center" mt={1} style={{ gap: 8 }}>
-                <Icon icon={booking.paymentStatus === 'PAID' ? 'zi-check' : 'zi-clock-1'} />
-                <Text bold>
-                  {booking.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                <Icon icon={booking.paymentStatus === 'PAID' ? 'zi-check' : 'zi-clock-1'} style={{ color: booking.paymentStatus === 'PAID' ? '#10b981' : 'var(--brand-primary)', fontSize: 16 }} />
+                <Text style={{ fontSize: 13, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase' }}>
+                  {booking.paymentStatus === 'PAID' ? 'ĐÃ THANH TOÁN' : 'CHƯA THANH TOÁN'}
                 </Text>
               </Box>
             </Box>
             {canPay() && (
-              <Button size="small" onClick={() => navigate(`/payment?bookingId=${booking.id}`)}>
-                Thanh toán
+              <Button style={{ height: 32, padding: '0 16px', borderRadius: 16, fontSize: 10, fontWeight: 900, textTransform: 'uppercase', letterSpacing: 1 }} onClick={() => navigate(`/payment?bookingId=${booking.id}`)}>
+                THANH TOÁN
               </Button>
             )}
           </Box>
@@ -287,25 +290,25 @@ const BookingDetailPage: React.FC = () => {
         {/* Cancellation Info */}
         {booking.status === 'CANCELLED' && (
           <Box
-            p={4}
+            p={6}
             mt={4}
             style={{
-              background: 'rgba(220, 0, 0, 0.08)',
-              borderRadius: 16,
-              border: '1px solid rgba(220, 0, 0, 0.14)',
+              background: 'rgba(233, 69, 96, 0.05)',
+              borderRadius: 32,
+              border: '1px solid rgba(233, 69, 96, 0.2)',
             }}
           >
-            <Text bold style={{ color: 'rgb(220, 0, 0)' }}>
-              Đã hủy
+            <Text style={{ fontSize: 13, fontWeight: 900, color: '#e94560', textTransform: 'uppercase' }}>
+              ĐÃ HỦY LỊCH
             </Text>
             {booking.cancelReason && (
-              <Text size="small" style={{ marginTop: 6, color: 'rgb(220, 0, 0)' }}>
-                Lý do: {booking.cancelReason}
+              <Text style={{ fontSize: 11, fontWeight: 700, fontStyle: 'italic', marginTop: 8, color: '#e94560' }}>
+                LÝ DO: {booking.cancelReason}
               </Text>
             )}
             {booking.cancelledAt && (
-              <Text size="xxSmall" style={{ marginTop: 6, opacity: 0.7 }}>
-                Hủy lúc: {dayjs(booking.cancelledAt).format('DD/MM/YYYY HH:mm')}
+              <Text style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', marginTop: 8, opacity: 0.4 }}>
+                HỦY LÚC: {dayjs(booking.cancelledAt).format('DD/MM/YYYY HH:mm')}
               </Text>
             )}
           </Box>
@@ -322,12 +325,18 @@ const BookingDetailPage: React.FC = () => {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'var(--zaui-light-header-background-color, #fff)',
-            borderTop: '1px solid var(--zaui-light-header-divider, #e9ebed)',
+            background: 'var(--brand-secondary)',
+            borderTop: '1px solid rgba(165, 124, 82, 0.2)',
+            boxShadow: '0 -16px 32px rgba(0,0,0,0.2)',
+            zIndex: 100
           }}
         >
-          <Button fullWidth type="danger" onClick={() => setShowCancelModal(true)}>
-            Hủy lịch hẹn
+          <Button
+            fullWidth
+            onClick={() => setShowCancelModal(true)}
+            style={{ height: 60, borderRadius: 30, background: '#e94560', color: '#fff', fontWeight: 900, letterSpacing: 2, border: 'none' }}
+          >
+            HỦY LỊCH HẸN
           </Button>
         </Box>
       )}
@@ -335,37 +344,41 @@ const BookingDetailPage: React.FC = () => {
       {/* Cancel Modal */}
       <Modal
         visible={showCancelModal}
-        title="Hủy lịch hẹn"
+        title="HỦY LỊCH HẸN"
         onClose={() => setShowCancelModal(false)}
         actions={[
           {
-            text: 'Đóng',
+            text: 'ĐÓNG',
             close: true,
           },
           {
-            text: 'Xác nhận hủy',
+            text: 'XÁC NHẬN HỦY',
             close: false,
             danger: true,
             onClick: handleCancel,
           },
         ]}
       >
-        <Box p={4}>
-          <Text size="small" style={{ opacity: 0.75, marginBottom: 12 }}>
-            Bạn có chắc muốn hủy lịch hẹn này?
+        <Box p={6}>
+          <Text style={{ fontSize: 13, fontWeight: 700, opacity: 0.6, marginBottom: 16 }}>
+            Bạn có chắc chắn muốn hủy lịch hẹn này không? Hành động này không thể hoàn tác.
           </Text>
           <textarea
             value={cancelReason}
             onChange={e => setCancelReason(e.target.value)}
-            placeholder="Lý do hủy (không bắt buộc)"
+            placeholder="Lý do hủy (không bắt buộc)..."
             style={{
               width: '100%',
-              padding: 12,
-              borderRadius: 12,
-              border: '1px solid var(--zaui-light-input-border-color, #b9bdc1)',
-              background: 'var(--zaui-light-input-background-color, #fff)',
+              padding: 16,
+              borderRadius: 24,
+              border: '1px solid var(--brand-border)',
+              background: 'var(--brand-muted)',
               resize: 'none',
               fontFamily: 'inherit',
+              fontSize: 13,
+              fontWeight: 600,
+              outline: 'none',
+              color: 'var(--brand-secondary)'
             }}
             rows={3}
           />

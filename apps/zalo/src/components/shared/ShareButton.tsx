@@ -66,7 +66,7 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
     }
   };
 
-  // Floating Action Button variant
+  // Floating Action Button variant - Vintage Styled
   if (variant === 'fab') {
     return (
       <Box
@@ -78,19 +78,22 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
         style={{
           position: 'fixed',
           bottom: 80,
-          right: 16,
+          right: 20,
           width: 56,
           height: 56,
-          borderRadius: 999,
-          background: 'var(--zaui-light-button-primary-background, var(--brand-accent))',
+          borderRadius: 24,
+          background: 'var(--brand-primary)',
+          boxShadow: '0 16px 32px -8px rgba(0,0,0,0.3)',
+          border: '1px solid rgba(255,255,255,0.2)',
+          zIndex: 99
         }}
       >
-        {loading ? <Icon icon="zi-retry" /> : <Icon icon="zi-share" />}
+        {loading ? <Icon icon="zi-retry" /> : <Icon icon="zi-share" style={{ color: 'var(--brand-background)' }} />}
       </Box>
     );
   }
 
-  // Icon-only variant
+  // Icon-only variant - Vintage Styled
   if (variant === 'icon') {
     return (
       <Box
@@ -100,13 +103,14 @@ export const ShareButton: React.FC<ShareButtonProps> = ({
         justifyContent="center"
         onClick={handleShare}
         style={{
-          width: 40,
-          height: 40,
-          borderRadius: 999,
-          background: 'var(--zaui-light-button-secondary-neutral-background, #e9ebed)',
+          width: 44,
+          height: 44,
+          borderRadius: 14,
+          background: 'var(--brand-muted)',
+          border: '1px solid var(--brand-border)',
         }}
       >
-        {loading ? <Icon icon="zi-retry" /> : <Icon icon="zi-share" />}
+        {loading ? <Icon icon="zi-retry" /> : <Icon icon="zi-share" style={{ color: 'var(--brand-primary)' }} />}
       </Box>
     );
   }

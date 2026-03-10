@@ -10,55 +10,68 @@ const HomePage: React.FC = () => {
 
   return (
     <Page className="animate-fade-in">
-      {/* Hero (clone web - mobile) */}
-      <Box className="web-hero safe-area-top" style={{ padding: 16, paddingBottom: 24 }}>
+      {/* Hero Section - Vintage Aesthetic */}
+      <Box className="web-hero safe-area-top" style={{ padding: 24, paddingBottom: 40, background: 'var(--brand-secondary)' }}>
         <Box style={{ maxWidth: 520, margin: '0 auto' }}>
           <Text
             style={{
-              fontSize: 34,
-              lineHeight: 1.15,
-              fontWeight: 800,
-              color: '#fff',
-              letterSpacing: -0.02,
+              fontSize: 32,
+              lineHeight: 1.1,
+              fontWeight: 900,
+              color: 'var(--brand-background)',
+              letterSpacing: -0.01,
+              textTransform: 'uppercase',
             }}
           >
-            Phong cách của bạn,
+            Phong cách
           </Text>
           <Text
             style={{
-              fontSize: 34,
-              lineHeight: 1.15,
-              fontWeight: 800,
-              color: '#fff',
+              fontSize: 48,
+              lineHeight: 1,
+              fontWeight: 900,
+              color: 'var(--brand-background)',
               letterSpacing: -0.02,
+              textTransform: 'uppercase',
+              fontStyle: 'italic',
             }}
           >
-            <span style={{ color: accent }}>Đẳng cấp</span> của chúng tôi
+            <span style={{ color: 'var(--brand-primary)' }}>Tân cổ</span> điển
           </Text>
 
           <Box mt={3}>
-            <Text className="web-hero-subtitle" style={{ fontSize: 15, lineHeight: 1.55 }}>
-              Hệ thống salon tóc nam chuyên nghiệp. Đặt lịch dễ dàng, phục vụ tận tâm.
+            <Text className="web-hero-subtitle" style={{ fontSize: 13, lineHeight: 1.6, textTransform: 'uppercase', fontWeight: 600, opacity: 0.6, letterSpacing: 1.5 }}>
+              TRẢI NGHIỆM DỊCH VỤ CẮT GỘI ĐẲNG CẤP REETRO
             </Text>
           </Box>
 
-          <Box mt={4} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <Button fullWidth onClick={() => navigate('/salons')}>
-              Đặt lịch ngay
+          <Box mt={5} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <Button 
+               fullWidth 
+               size="large"
+               onClick={() => navigate('/salons')}
+               style={{ height: 56, borderRadius: 28, fontWeight: 800, letterSpacing: 2, background: 'var(--brand-primary)', color: 'var(--brand-background)' }}
+            >
+              ĐẶT LỊCH NGAY
             </Button>
             <button
               type="button"
               className="web-hero-secondaryBtn"
               style={{
                 width: '100%',
-                height: 48,
-                borderRadius: 12,
-                fontWeight: 600,
-                fontSize: 15,
+                height: 56,
+                borderRadius: 28,
+                fontWeight: 700,
+                fontSize: 13,
+                letterSpacing: 1,
+                textTransform: 'uppercase',
+                border: '2px solid rgba(165, 124, 82, 0.3)',
+                background: 'transparent',
+                color: 'var(--brand-primary)'
               }}
               onClick={() => navigate('/salons')}
             >
-              Tìm salon
+              KHÁM PHÁ SALON
             </button>
           </Box>
 
@@ -84,44 +97,42 @@ const HomePage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Features */}
-      <Box p={4} style={{ background: 'var(--brand-background, #fff)' }}>
-        <Text.Title size="large" className="web-sectionTitle" style={{ textAlign: 'center' }}>
-          Tại sao chọn chúng tôi?
+      {/* Features - Vintage Cards */}
+      <Box p={6} style={{ background: 'var(--brand-background)' }}>
+        <Text.Title size="large" className="web-sectionTitle" style={{ textAlign: 'center', fontSize: 24, textTransform: 'uppercase', fontWeight: 900, letterSpacing: -1 }}>
+          DI SẢN REETRO
         </Text.Title>
-        <Box mt={4}>
-          <Grid columnCount={2} columnSpace="12px" rowSpace="12px">
+        <Box mt={6}>
+          <Grid columnCount={2} columnSpace="16px" rowSpace="16px">
             {[
               {
                 icon: 'zi-calendar',
-                title: 'Đặt lịch nhanh chóng',
-                desc: 'Chỉ vài bước để hoàn tất',
+                title: 'ĐẶT LỊCH',
+                desc: 'CHỈ 30 GIÂY THAO TÁC',
               },
               {
                 icon: 'zi-clock-1',
-                title: 'Không chờ đợi',
-                desc: 'Đến đúng giờ hẹn, phục vụ ngay',
+                title: 'ĐÚNG GIỜ',
+                desc: 'KHÔNG PHẢI CHỜ ĐỢI',
               },
-              { icon: 'zi-user', title: 'Stylist chuyên nghiệp', desc: 'Đội ngũ tay nghề cao' },
+              { icon: 'zi-user', title: 'STYLIST', desc: 'TAY NGHỀ ĐIÊU LUYỆN' },
               {
                 icon: 'zi-shield-check',
-                title: 'Cam kết chất lượng',
-                desc: 'Quy trình rõ ràng, minh bạch',
+                title: 'CAM KẾT',
+                desc: 'HÀI LÒNG 100%',
               },
             ].map(item => (
-              <Box key={item.title} className="web-card" p={4}>
-                <Box className="web-softIcon">
-                  <Icon icon={item.icon as any} style={{ color: accent }} />
+              <Box key={item.title} className="web-card" p={4} style={{ borderRadius: 32, background: 'var(--brand-muted)', border: 'none', textAlign: 'center' }}>
+                <Box className="web-softIcon" style={{ background: 'var(--brand-background)', width: 56, height: 56, borderRadius: 20, margin: '0 auto 12px' }}>
+                  <Icon icon={item.icon as any} style={{ color: 'var(--brand-primary)', fontSize: 24 }} />
                 </Box>
-                <Box mt={2}>
-                  <Text bold style={{ lineHeight: 1.25 }}>
-                    {item.title}
+                <Text bold style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: 1 }}>
+                  {item.title}
+                </Text>
+                <Box mt={1}>
+                  <Text style={{ fontSize: 9, opacity: 0.5, fontWeight: 700, fontStyle: 'italic' }}>
+                    {item.desc}
                   </Text>
-                  <Box mt={1}>
-                    <Text size="xxSmall" style={{ opacity: 0.75, lineHeight: 1.45 }}>
-                      {item.desc}
-                    </Text>
-                  </Box>
                 </Box>
               </Box>
             ))}
@@ -129,46 +140,44 @@ const HomePage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Services */}
-      <Box p={4}>
-        <Box flex alignItems="flex-end" justifyContent="space-between" style={{ gap: 12 }}>
+      {/* Services Section */}
+      <Box p={6}>
+        <Box flex alignItems="flex-end" justifyContent="space-between" style={{ gap: 12, marginBottom: 24 }}>
           <Box>
-            <Text.Title size="large" className="web-sectionTitle">
-              Dịch vụ của chúng tôi
+             <Text style={{ fontSize: 10, fontWeight: 800, color: 'var(--brand-primary)', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 4 }}>DỊCH VỤ CỦA CHÚNG TÔI</Text>
+            <Text.Title size="large" className="web-sectionTitle" style={{ fontSize: 28, textTransform: 'uppercase', fontWeight: 900 }}>
+              THỰC ĐƠN STYLING
             </Text.Title>
-            <Text size="xxSmall" style={{ opacity: 0.7 }}>
-              Trải nghiệm dịch vụ chất lượng cao
-            </Text>
           </Box>
-          <Text style={{ color: accent, fontWeight: 600 }} onClick={() => navigate('/salons')}>
-            Xem tất cả
+          <Text style={{ color: 'var(--brand-primary)', fontWeight: 800, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }} onClick={() => navigate('/salons')}>
+            Tất cả →
           </Text>
         </Box>
 
-        <Box mt={3}>
-          <Grid columnCount={2} columnSpace="12px" rowSpace="12px">
+        <Box>
+          <Grid columnCount={1} rowSpace="16px">
             {Object.values(SERVICE_CATEGORIES)
-              .slice(0, 6)
+              .slice(0, 3)
               .map(cat => (
-                <Box key={cat.label} className="web-card" p={4}>
-                  <Box flex alignItems="center" style={{ gap: 10 }}>
-                    <Box className="web-softIcon">
-                      <Icon icon={cat.icon as any} style={{ color: accent }} />
+                <Box key={cat.label} className="web-card" p={5} style={{ borderRadius: 32, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--brand-background)' }}>
+                  <Box flex alignItems="center" style={{ gap: 16 }}>
+                    <Box className="web-softIcon" style={{ background: 'var(--brand-muted)', width: 56, height: 56, borderRadius: 20 }}>
+                      <Icon icon={cat.icon as any} style={{ color: 'var(--brand-primary)', fontSize: 24 }} />
                     </Box>
-                    <Text bold style={{ lineHeight: 1.2 }}>
-                      {cat.label}
-                    </Text>
+                    <Box>
+                       <Text bold style={{ fontSize: 18, textTransform: 'uppercase', letterSpacing: -0.5 }}>
+                        {cat.label}
+                      </Text>
+                      <Text style={{ fontSize: 10, opacity: 0.5, fontWeight: 700, fontStyle: 'italic' }}>TRẢI NGHIỆM ĐỈNH CAO</Text>
+                    </Box>
                   </Box>
-                  <Box mt={3}>
-                    <Button
-                      variant="secondary"
-                      type="neutral"
-                      fullWidth
-                      onClick={() => navigate('/salons')}
-                    >
-                      Đặt lịch
-                    </Button>
-                  </Box>
+                  <Button
+                    size="small"
+                    style={{ borderRadius: 20, background: 'var(--brand-secondary)', color: 'var(--brand-primary)', fontWeight: 800, padding: '0 20px', fontSize: 11 }}
+                    onClick={() => navigate('/salons')}
+                  >
+                    ĐẶT LỊCH
+                  </Button>
                 </Box>
               ))}
           </Grid>
@@ -176,38 +185,58 @@ const HomePage: React.FC = () => {
       </Box>
 
       {/* Salons teaser */}
-      <Box p={4} style={{ background: 'var(--brand-background, #fff)' }}>
-        <Box flex alignItems="flex-end" justifyContent="space-between" style={{ gap: 12 }}>
+      <Box p={6} style={{ background: 'var(--brand-background)' }}>
+        <Box flex alignItems="flex-end" justifyContent="space-between" style={{ gap: 12, marginBottom: 24 }}>
           <Box>
-            <Text.Title size="large" className="web-sectionTitle">
-              Hệ thống salon
+            <Text style={{ fontSize: 10, fontWeight: 800, color: 'var(--brand-primary)', letterSpacing: 3, textTransform: 'uppercase', marginBottom: 4 }}>KHÁM PHÁ KHÔNG GIAN</Text>
+            <Text.Title size="large" className="web-sectionTitle" style={{ fontSize: 24, textTransform: 'uppercase', fontWeight: 900 }}>
+              HỆ THỐNG SALON
             </Text.Title>
-            <Text size="xxSmall" style={{ opacity: 0.7 }}>
-              Tìm salon gần bạn nhất
-            </Text>
           </Box>
-          <Text style={{ color: accent, fontWeight: 600 }} onClick={() => navigate('/salons')}>
-            Xem tất cả
+          <Text style={{ color: 'var(--brand-primary)', fontWeight: 800, fontSize: 10, textTransform: 'uppercase', letterSpacing: 1 }} onClick={() => navigate('/salons')}>
+            Bản đồ →
           </Text>
         </Box>
 
-        <Box mt={3} className="web-card" p={4}>
-          <Box flex alignItems="center" style={{ gap: 10 }}>
-            <Box className="web-softIcon">
-              <Icon icon={'zi-location' as any} style={{ color: accent }} />
-            </Box>
-            <Box style={{ flex: 1 }}>
-              <Text bold>Tìm salon phù hợp</Text>
-              <Box mt={1}>
-                <Text size="xxSmall" style={{ opacity: 0.75 }}>
-                  Xem danh sách salon và chọn lịch trống
-                </Text>
-              </Box>
-            </Box>
+        <Box 
+          p={6} 
+          className="web-card"
+          style={{ 
+            background: 'var(--brand-background)', 
+            borderRadius: 32, 
+            border: '1px solid var(--brand-border)',
+            boxShadow: '0 16px 32px rgba(0,0,0,0.05)',
+            textAlign: 'center'
+          }}
+        >
+          <Box 
+            flex 
+            alignItems="center" 
+            justifyContent="center"
+            style={{ 
+              width: 80, 
+              height: 80, 
+              borderRadius: 24, 
+              background: 'var(--brand-muted)', 
+              margin: '0 auto 20px',
+              border: '1px solid var(--brand-border)'
+            }}
+          >
+            <Icon icon="zi-location" style={{ color: 'var(--brand-primary)', fontSize: 32 }} />
           </Box>
-          <Box mt={3}>
-            <Button fullWidth onClick={() => navigate('/salons')}>
-              Tìm salon
+          <Text style={{ fontSize: 18, fontWeight: 900, color: 'var(--brand-secondary)', textTransform: 'uppercase' }}>CHỌN SALON GẦN BẠN</Text>
+          <Box mt={2}>
+            <Text style={{ fontSize: 11, fontWeight: 700, opacity: 0.5, textTransform: 'uppercase', letterSpacing: 1 }}>
+              Xem danh sách salon và đặt lịch trống ngay lập tức
+            </Text>
+          </Box>
+          <Box mt={6}>
+            <Button 
+                fullWidth 
+                onClick={() => navigate('/salons')}
+                style={{ height: 56, borderRadius: 28, background: 'var(--brand-secondary)', color: 'var(--brand-background)', fontWeight: 800, letterSpacing: 1 }}
+            >
+              TÌM KIẾM NGAY
             </Button>
           </Box>
         </Box>
@@ -215,26 +244,45 @@ const HomePage: React.FC = () => {
 
       {/* CTA */}
       <Box
-        p={4}
+        p={8}
         style={{
-          background:
-            'linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-secondary) 100%)',
-          color: '#fff',
+          background: 'var(--brand-secondary)',
+          color: 'var(--brand-background)',
+          textAlign: 'center'
         }}
       >
         <Box style={{ maxWidth: 520, margin: '0 auto' }}>
-          <Text.Title size="large" style={{ color: '#fff' }}>
-            Sẵn sàng đổi mới phong cách?
-          </Text.Title>
-          <Box mt={2}>
-            <Text className="web-hero-subtitle" style={{ fontSize: 15, lineHeight: 1.55 }}>
-              Đặt lịch ngay hôm nay và trải nghiệm dịch vụ chất lượng.
+          <Text style={{ fontSize: 28, fontWeight: 900, textTransform: 'uppercase', letterSpacing: -1 }}>
+            SẴN SÀNG <span style={{ color: 'var(--brand-primary)' }}>ĐỔI MỚI</span> PHONG CÁCH?
+          </Text>
+          <Box mt={3}>
+            <Text style={{ fontSize: 13, fontWeight: 700, opacity: 0.6, textTransform: 'uppercase', letterSpacing: 1.5, lineHeight: 1.6 }}>
+              Đặt lịch ngay hôm nay và trải nghiệm dịch vụ đẳng cấp từ các Stylist hàng đầu.
             </Text>
           </Box>
-          <Box mt={4}>
-            <Button fullWidth onClick={() => navigate('/salons')}>
-              Đặt lịch ngay
+          <Box mt={8}>
+            <Button 
+                fullWidth 
+                onClick={() => navigate('/salons')}
+                style={{ 
+                    height: 64, 
+                    borderRadius: 32, 
+                    background: 'var(--brand-primary)', 
+                    color: 'var(--brand-background)', 
+                    fontWeight: 900, 
+                    fontSize: 15,
+                    letterSpacing: 2,
+                    border: 'none',
+                    boxShadow: '0 16px 32px rgba(0,0,0,0.3)'
+                }}
+            >
+              ĐẶT LỊCH NGAY
             </Button>
+          </Box>
+          <Box mt={6}>
+             <Text style={{ fontSize: 9, fontWeight: 800, opacity: 0.3, letterSpacing: 2 }}>
+                REETRO BARBER SHOP · SINCE 2024
+             </Text>
           </Box>
         </Box>
       </Box>
