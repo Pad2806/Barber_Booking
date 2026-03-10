@@ -12,7 +12,7 @@ import { Service, Role, User, ServiceCategory } from '@prisma/client';
 export class ServicesService {
   constructor(private readonly prisma: PrismaService) { }
 
-  async create(dto: CreateServiceDto, user: User): Promise<Service> {
+  async create(dto: CreateServiceDto, user: User) {
     // Verify salon ownership
     await this.verifySalonOwnership(dto.salonId, user);
 
@@ -22,12 +22,14 @@ export class ServicesService {
       _max: { order: true },
     });
 
-    return this.prisma.service.create({
+    const service = await this.prisma.service.create({
       data: {
         ...dto,
         order: dto.order ?? (maxOrder._max.order || 0) + 1,
       },
     });
+
+    return this.formatService(service);
   }
 
   async findAll(params: {
@@ -72,7 +74,7 @@ export class ServicesService {
     ]);
 
     return {
-      data: services,
+      data: services.map(s => this.formatService(s)),
       meta: {
         total,
         skip,
@@ -97,13 +99,15 @@ export class ServicesService {
       where.category = category;
     }
 
-    return this.prisma.service.findMany({
+    const services = await this.prisma.service.findMany({
       where,
       orderBy: [{ category: 'asc' }, { order: 'asc' }],
     });
+
+    return services.map(s => this.formatService(s));
   }
 
-  async findOne(id: string): Promise<Service> {
+  async findOne(id: string) {
     const service = await this.prisma.service.findUnique({
       where: { id },
       include: {
@@ -121,19 +125,21 @@ export class ServicesService {
       throw new NotFoundException(`Service with ID ${id} not found`);
     }
 
-    return service;
+    return this.formatService(service);
   }
 
-  async update(id: string, dto: UpdateServiceDto, user: User): Promise<Service> {
+  async update(id: string, dto: UpdateServiceDto, user: User) {
     const service = await this.findOne(id);
 
     // Verify salon ownership
-    await this.verifySalonOwnership(service.salonId, user);
+    await this.verifySalonOwnership((service as any).salonId, user);
 
-    return this.prisma.service.update({
+    const updated = await this.prisma.service.update({
       where: { id },
       data: dto,
     });
+
+    return this.formatService(updated);
   }
 
   async delete(id: string, user: User): Promise<void> {
@@ -160,16 +166,26 @@ export class ServicesService {
     );
   }
 
-  async toggleActive(id: string, user: User): Promise<Service> {
+  async toggleActive(id: string, user: User) {
     const service = await this.findOne(id);
 
     // Verify salon ownership
-    await this.verifySalonOwnership(service.salonId, user);
+    await this.verifySalonOwnership((service as any).salonId, user);
 
-    return this.prisma.service.update({
+    const updated = await this.prisma.service.update({
       where: { id },
-      data: { isActive: !service.isActive },
+      data: { isActive: !(service as any).isActive },
     });
+
+    return this.formatService(updated);
+  }
+
+  private formatService(service: any) {
+    if (!service) return null;
+    return {
+      ...service,
+      price: Number(service.price),
+    };
   }
 
   private async verifySalonOwnership(salonId: string, user: User): Promise<void> {

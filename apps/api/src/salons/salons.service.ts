@@ -7,7 +7,7 @@ import {
 import { PrismaService } from '../database/prisma.service';
 import { CreateSalonDto } from './dto/create-salon.dto';
 import { UpdateSalonDto } from './dto/update-salon.dto';
-import { Salon, Role, User } from '@prisma/client';
+import { Salon, Role, User, Service } from '@prisma/client';
 
 @Injectable()
 export class SalonsService {
@@ -106,7 +106,7 @@ export class SalonsService {
     };
   }
 
-  async findOne(id: string): Promise<Salon & { averageRating: number }> {
+  async findOne(id: string) {
     const salon = await this.prisma.salon.findUnique({
       where: { id },
       include: {
@@ -154,11 +154,15 @@ export class SalonsService {
 
     return {
       ...salon,
-      averageRating: avgRating._avg.rating || 0,
+      services: salon.services.map(s => ({
+        ...s,
+        price: Number(s.price),
+      })),
+      averageRating: Number(avgRating._avg.rating || 0),
     };
   }
 
-  async findBySlug(slug: string): Promise<Salon & { averageRating: number }> {
+  async findBySlug(slug: string) {
     const salon = await this.prisma.salon.findUnique({
       where: { slug },
       include: {
@@ -172,6 +176,7 @@ export class SalonsService {
                 avatar: true,
               },
             },
+            schedules: true,
           },
         },
         services: {
@@ -181,6 +186,7 @@ export class SalonsService {
         _count: {
           select: {
             reviews: true,
+            bookings: true,
           },
         },
       },
@@ -197,7 +203,11 @@ export class SalonsService {
 
     return {
       ...salon,
-      averageRating: avgRating._avg.rating || 0,
+      services: salon.services.map(s => ({
+        ...s,
+        price: Number(s.price),
+      })),
+      averageRating: Number(avgRating._avg.rating || 0),
     };
   }
 
