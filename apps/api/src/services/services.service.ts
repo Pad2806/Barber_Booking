@@ -10,7 +10,7 @@ import { Service, Role, User, ServiceCategory } from '@prisma/client';
 
 @Injectable()
 export class ServicesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async create(dto: CreateServiceDto, user: User): Promise<Service> {
     // Verify salon ownership
@@ -28,6 +28,58 @@ export class ServicesService {
         order: dto.order ?? (maxOrder._max.order || 0) + 1,
       },
     });
+  }
+
+  async findAll(params: {
+    skip?: number;
+    take?: number;
+    category?: ServiceCategory;
+    isActive?: boolean;
+    search?: string;
+  } = {}) {
+    const { skip = 0, take = 20, category, isActive = true, search } = params;
+
+    const where: any = { isActive };
+
+    if (category) {
+      where.category = category;
+    }
+
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [services, total] = await Promise.all([
+      this.prisma.service.findMany({
+        where,
+        skip,
+        take,
+        orderBy: [{ category: 'asc' }, { order: 'asc' }],
+        include: {
+          salon: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+        },
+      }),
+      this.prisma.service.count({ where }),
+    ]);
+
+    return {
+      data: services,
+      meta: {
+        total,
+        skip,
+        take,
+        hasMore: skip + take < total,
+      },
+    };
   }
 
   async findAllBySalon(

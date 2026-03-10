@@ -5,87 +5,8 @@ import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { HeroCarousel } from '@/components/home/hero-carousel';
 
-// Mock data
-const services = [
-  {
-    id: 1,
-    name: 'Cắt tóc nam',
-    price: '80.000đ',
-    duration: '30 phút',
-    image:
-      'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=800&h=600&fit=crop&q=80',
-  },
-  {
-    id: 2,
-    name: 'Uốn tóc Hàn Quốc',
-    price: '350.000đ',
-    duration: '90 phút',
-    image:
-      'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?w=800&h=600&fit=crop&q=80',
-  },
-  {
-    id: 3,
-    name: 'Nhuộm tóc',
-    price: '300.000đ',
-    duration: '60 phút',
-    image:
-      'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=800&h=600&fit=crop&q=80',
-  },
-  {
-    id: 4,
-    name: 'Gội massage',
-    price: '50.000đ',
-    duration: '20 phút',
-    image:
-      'https://images.unsplash.com/photo-1512690199101-83ca6490c370?w=800&h=600&fit=crop&q=80',
-  },
-  {
-    id: 5,
-    name: 'Combo VIP',
-    price: '200.000đ',
-    duration: '60 phút',
-    image:
-      'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&h=600&fit=crop&q=80',
-  },
-  {
-    id: 6,
-    name: 'Cạo mặt',
-    price: '70.000đ',
-    duration: '25 phút',
-    image:
-      'https://images.unsplash.com/photo-1516733725897-1aa73b87c8e8?w=800&h=600&fit=crop&q=80',
-  },
-];
-
-const salons = [
-  {
-    id: 1,
-    name: 'Reetro Quận 1',
-    address: '123 Nguyễn Huệ, Quận 1, TP.HCM',
-    rating: 4.9,
-    reviews: 1250,
-    image:
-      'https://images.unsplash.com/photo-1592647420148-bfcc1a004eb7?w=800&h=600&fit=crop&q=80',
-  },
-  {
-    id: 2,
-    name: 'Reetro Quận 3',
-    address: '456 Võ Văn Tần, Quận 3, TP.HCM',
-    rating: 4.8,
-    reviews: 980,
-    image:
-      'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&h=600&fit=crop&q=80',
-  },
-  {
-    id: 3,
-    name: 'Reetro Quận 7',
-    address: '789 Nguyễn Thị Thập, Quận 7, TP.HCM',
-    rating: 4.9,
-    reviews: 850,
-    image:
-      'https://images.unsplash.com/photo-1512690199101-83ca6490c370?w=800&h=600&fit=crop&q=80',
-  },
-];
+import { salonApi, serviceApi } from '@/lib/api';
+import { formatPrice } from '@/lib/utils';
 
 const features = [
   {
@@ -110,7 +31,23 @@ const features = [
   },
 ];
 
-export default function HomePage(): React.ReactNode {
+export default async function HomePage(): Promise<React.ReactNode> {
+  // Fetch data on the server with fallback to empty arrays
+  let salons: any[] = [];
+  let services: any[] = [];
+  
+  try {
+    const [salonsRes, servicesRes] = await Promise.all([
+      salonApi.getAll({ limit: 6 }).catch(() => ({ data: [] })),
+      serviceApi.getAll({ limit: 6 }).catch(() => ({ data: [] }))
+    ]);
+    
+    salons = salonsRes.data || [];
+    services = servicesRes.data || [];
+  } catch (err) {
+    console.error('Error fetching home data:', err);
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -190,7 +127,7 @@ export default function HomePage(): React.ReactNode {
               >
                 <div className="relative h-64">
                   <Image
-                    src={service.image}
+                    src={service.image || 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=800&h=600&fit=crop&q=80'}
                     alt={service.name}
                     fill
                     loading="lazy"
@@ -201,10 +138,10 @@ export default function HomePage(): React.ReactNode {
                   <div className="absolute bottom-6 left-6 right-6">
                     <h3 className="text-xl font-bold text-white mb-2">{service.name}</h3>
                     <div className="flex items-center gap-3 text-sm font-semibold text-white">
-                      <span className="bg-[#C8A97E] text-white px-2.5 py-1 rounded-md">{service.price}</span>
+                      <span className="bg-[#C8A97E] text-white px-2.5 py-1 rounded-md">{formatPrice(service.price)}</span>
                       <span className="flex items-center gap-1.5 opacity-90">
                         <Clock className="w-4 h-4" />
-                        {service.duration}
+                        {service.duration} phút
                       </span>
                     </div>
                   </div>
@@ -250,7 +187,7 @@ export default function HomePage(): React.ReactNode {
               >
                 <div className="relative h-56">
                   <Image
-                    src={salon.image}
+                    src={salon.coverImage || 'https://images.unsplash.com/photo-1592647420148-bfcc1a004eb7?w=800&h=600&fit=crop&q=80'}
                     alt={salon.name}
                     fill
                     loading="lazy"
@@ -271,9 +208,9 @@ export default function HomePage(): React.ReactNode {
                     <div className="flex items-center gap-2.5">
                       <div className="flex items-center gap-1 bg-[#F0EBE3] text-[#8B7355] px-2.5 py-1 rounded-md font-bold">
                         <Star className="w-3.5 h-3.5 fill-[#C8A97E] text-[#C8A97E]" />
-                        <span className="text-xs">{salon.rating}</span>
+                        <span className="text-xs">{salon.averageRating || salon.rating || '0.0'}</span>
                       </div>
-                      <span className="text-xs font-semibold text-[#8B7355]">({salon.reviews} đánh giá)</span>
+                      <span className="text-xs font-semibold text-[#8B7355]">({salon.totalReviews || 0} đánh giá)</span>
                     </div>
                   </div>
                 </div>

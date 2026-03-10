@@ -202,6 +202,10 @@ export const salonApi = {
 
 // Service APIs
 export const serviceApi = {
+  getAll: async (params?: { category?: string; search?: string; page?: number; limit?: number }) => {
+    const response = await apiClient.get<PaginatedResponse<Service>>('/services', { params });
+    return response.data;
+  },
   getBySalon: async (salonId: string) => {
     const response = await apiClient.get<Service[]>(`/services/salon/${salonId}`);
     return response.data;

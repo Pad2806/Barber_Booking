@@ -24,7 +24,7 @@ import { Public } from '../auth/decorators/public.decorator';
 @ApiTags('Services')
 @Controller('services')
 export class ServicesController {
-  constructor(private readonly servicesService: ServicesService) {}
+  constructor(private readonly servicesService: ServicesService) { }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -33,6 +33,27 @@ export class ServicesController {
   @ApiOperation({ summary: 'Create a new service' })
   create(@Body() dto: CreateServiceDto, @CurrentUser() user: User) {
     return this.servicesService.create(dto, user);
+  }
+
+  @Get()
+  @Public()
+  @ApiOperation({ summary: 'Get all services (public)' })
+  @ApiQuery({ name: 'skip', required: false })
+  @ApiQuery({ name: 'take', required: false })
+  @ApiQuery({ name: 'category', required: false, enum: ServiceCategory })
+  @ApiQuery({ name: 'search', required: false })
+  findAll(
+    @Query('skip') skip?: string,
+    @Query('take') take?: string,
+    @Query('category') category?: ServiceCategory,
+    @Query('search') search?: string,
+  ) {
+    return this.servicesService.findAll({
+      skip: skip ? parseInt(skip) : undefined,
+      take: take ? parseInt(take) : undefined,
+      category,
+      search,
+    });
   }
 
   @Get('salon/:salonId')

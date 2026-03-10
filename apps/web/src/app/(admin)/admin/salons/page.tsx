@@ -210,7 +210,7 @@ export default function AdminSalonsPage() {
                 <div className="text-center">
                   <div className="flex items-center justify-center gap-1 text-yellow-500 font-semibold">
                     <Star className="w-4 h-4 fill-yellow-500" />
-                    {salon.rating?.toFixed(1) || '0.0'}
+                    {(salon as any).averageRating?.toFixed(1) || salon.rating?.toFixed(1) || '0.0'}
                   </div>
                   <p className="text-xs text-gray-500">Đánh giá</p>
                 </div>
