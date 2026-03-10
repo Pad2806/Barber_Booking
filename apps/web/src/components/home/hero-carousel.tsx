@@ -42,7 +42,7 @@ export function HeroCarousel() {
   const prevSlide = () => setCurrentSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
 
   return (
-    <section className="relative h-[80vh] min-h-[600px] w-full overflow-hidden bg-[#2C1E12] flex items-center justify-center border-b border-[#E8E0D4]">
+    <section className="relative h-[70vh] sm:h-[80vh] min-h-[500px] sm:min-h-[600px] w-full overflow-hidden bg-[#2C1E12] flex items-center justify-center border-b border-[#E8E0D4]">
       {/* Slides */}
       {slides.map((slide, index) => (
         <div
@@ -58,29 +58,29 @@ export function HeroCarousel() {
               transform: index === currentSlide ? 'scale(1.05)' : 'scale(1)',
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-[#2C1E12]/90 via-[#2C1E12]/70 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#2C1E12]/90 via-[#2C1E12]/60 to-transparent sm:via-[#2C1E12]/70" />
           <div className="absolute inset-0 bg-[#C8A97E]/10 mix-blend-overlay" />
         </div>
       ))}
 
       {/* Content */}
-      <div className="container mx-auto px-4 relative z-20">
+      <div className="container mx-auto px-6 relative z-20">
         <div className="max-w-3xl">
-          <span className="text-xs font-bold text-[#C8A97E] uppercase tracking-[0.2em] mb-4 block" style={{ animation: 'fadeInUp 1s ease-out' }}>
+          <span className="text-[10px] sm:text-xs font-bold text-[#C8A97E] uppercase tracking-[0.2em] mb-3 sm:mb-4 block" style={{ animation: 'fadeInUp 1s ease-out' }}>
             THÀNH LẬP NĂM 2024
           </span>
           
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-black mb-6 tracking-tight leading-none text-white drop-shadow-md">
+          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-4 sm:mb-6 tracking-tight leading-[1.1] sm:leading-none text-white drop-shadow-md">
             {slides[currentSlide].titleLine1}<br />
             <span className="text-[#C8A97E]">{slides[currentSlide].titleLine2}</span>
           </h1>
           
-          <p className="text-lg md:text-xl text-[#F0EBE3] mb-10 max-w-2xl font-medium leading-relaxed drop-shadow">
-            Hệ thống salon tóc nam chuyên nghiệp hàng đầu Việt Nam. <br />
+          <p className="text-base sm:text-lg md:text-xl text-[#F0EBE3] mb-8 sm:mb-10 max-w-xl font-medium leading-relaxed drop-shadow-sm">
+            Hệ thống salon chuyên nghiệp hàng đầu Việt Nam. <br className="hidden sm:block" />
             {slides[currentSlide].subtitle}
           </p>
           
-          <div className="flex flex-col sm:flex-row items-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 max-w-xs sm:max-w-none">
             <Link
               href="/booking"
               className="w-full sm:w-auto bg-[#C8A97E] text-white hover:bg-[#B8975E] px-8 py-4 rounded-xl font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 active:scale-95 group"
@@ -92,23 +92,23 @@ export function HeroCarousel() {
               href="/salons"
               className="w-full sm:w-auto bg-white/10 hover:bg-white/20 text-white backdrop-blur-md border border-white/20 px-8 py-4 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 active:scale-95"
             >
-              Tìm Salon Gần Nhất
+              Tìm Salon
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Navigation & Controls */}
-      <div className="absolute bottom-10 left-0 right-0 z-30">
-        <div className="container mx-auto px-4 flex items-center justify-between">
+      {/* Navigation & Controls - Hidden on very small screens for cleaner look or adjusted */}
+      <div className="absolute bottom-6 sm:bottom-10 left-0 right-0 z-30">
+        <div className="container mx-auto px-6 flex items-center justify-between">
           {/* Indicators */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {slides.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentSlide(index)}
-                className={`transition-all duration-500 rounded-full h-1.5 ${
-                  index === currentSlide ? 'w-8 bg-[#C8A97E]' : 'w-2 bg-white/40 hover:bg-white/60'
+                className={`transition-all duration-500 rounded-full h-1 sm:h-1.5 ${
+                  index === currentSlide ? 'w-6 sm:w-8 bg-[#C8A97E]' : 'w-1.5 sm:w-2 bg-white/40 hover:bg-white/60'
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
@@ -119,15 +119,15 @@ export function HeroCarousel() {
           <div className="flex flex-row items-center gap-2">
              <button
                 onClick={prevSlide}
-                className="w-10 h-10 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-all active:scale-95"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-all active:scale-95"
               >
-                <ChevronLeft className="w-5 h-5" />
+                <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
               <button
                 onClick={nextSlide}
-                className="w-10 h-10 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-all active:scale-95"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border border-white/20 bg-white/5 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/20 transition-all active:scale-95"
               >
-                <ChevronRight className="w-5 h-5" />
+                <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
           </div>
         </div>

@@ -102,10 +102,10 @@ export default async function HomePage(): Promise<React.ReactNode> {
       </section>
 
       {/* Services - Minimalist cards */}
-      <section className="py-20 md:py-24 bg-[#FAF8F5]">
+      <section className="py-16 md:py-24 bg-[#FAF8F5]">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
-            <div className="max-w-xl text-left">
+          <div className="flex flex-col md:flex-row items-center md:items-end justify-between mb-10 md:mb-12 gap-4 md:gap-6 text-center md:text-left">
+            <div className="max-w-xl">
                <span className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-2 block">DỊCH VỤ</span>
               <h2 className="text-3xl md:text-4xl font-bold text-[#2C1E12] tracking-tight">
                 Dịch vụ thượng hạng
@@ -161,10 +161,10 @@ export default async function HomePage(): Promise<React.ReactNode> {
       </section>
 
       {/* Salons - Clean cards */}
-      <section className="py-20 md:py-24 bg-white border-y border-[#E8E0D4]">
+      <section className="py-16 md:py-24 bg-white border-y border-[#E8E0D4]">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
-            <div className="max-w-xl text-left">
+          <div className="flex flex-col md:flex-row items-center md:items-end justify-between mb-10 md:mb-12 gap-4 md:gap-6 text-center md:text-left">
+            <div className="max-w-xl">
                <span className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-2 block">CHI NHÁNH</span>
               <h2 className="text-3xl md:text-4xl font-bold text-[#2C1E12] tracking-tight">
                 Hệ thống REETRO

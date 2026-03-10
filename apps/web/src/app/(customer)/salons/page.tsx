@@ -140,9 +140,9 @@ export default function SalonsPage(): React.ReactNode {
                       </div>
                     </div>
                     
-                    <div className="mt-6">
-                       <div className="bg-foreground text-background py-3.5 rounded-full text-center text-[9px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-700 flex items-center justify-center gap-3 active:scale-95 shadow-xl shadow-foreground/10">
-                          VIEW SALON DETAILS
+                    <div className="mt-8">
+                       <div className="bg-[#2C1E12] text-white py-4 rounded-2xl text-center text-[10px] sm:text-xs font-bold uppercase tracking-widest opacity-100 md:opacity-0 md:translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-500 flex items-center justify-center gap-3 active:scale-[0.98] shadow-lg shadow-[#2C1E12]/10">
+                          XEM CHI TIẾT SALON
                           <ArrowRight className="w-4 h-4" />
                        </div>
                     </div>
