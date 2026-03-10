@@ -15,10 +15,10 @@ export default function Header(): React.ReactNode {
 
   return (
     <header className="bg-background/95 backdrop-blur-3xl border-b border-border sticky top-0 z-50 transition-all duration-700">
-      <div className="container mx-auto px-4 py-4 sm:py-6">
+      <div className="container mx-auto px-4 py-3 sm:py-4">
         <div className="flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <span className="text-xl sm:text-2xl font-heading font-bold tracking-tight text-foreground group-hover:text-primary transition-all duration-500 uppercase">
+            <span className="text-lg sm:text-xl font-heading font-bold tracking-tight text-foreground group-hover:text-primary transition-all duration-500 uppercase">
               REETRO<span className="text-primary ml-1">BARBER</span>
             </span>
           </Link>

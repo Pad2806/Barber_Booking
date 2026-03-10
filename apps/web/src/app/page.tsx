@@ -109,60 +109,60 @@ const features = [
   },
 ];
 
-export default function HomePage() {
+export default function HomePage(): React.ReactNode {
   return (
     <div className="min-h-screen bg-background">
       <Header />
 
       {/* Hero Section - Minimalist Bold */}
-      <section className="bg-foreground py-24 md:py-32 overflow-hidden relative border-b border-primary/20">
+      <section className="bg-foreground py-20 md:py-28 overflow-hidden relative border-b border-primary/20">
         <div className="absolute inset-0 opacity-40 pointer-events-none">
           <div className="absolute inset-0 grayscale bg-[url('https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=2000&auto=format')] bg-cover bg-center mix-blend-overlay" />
         </div>
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-5xl mx-auto text-center text-white">
+          <div className="max-w-4xl mx-auto text-center text-white">
              <span className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mb-4 block">ESTABLISHED 2024</span>
-            <h1 className="text-5xl md:text-7xl font-heading font-bold mb-6 tracking-tight leading-none uppercase text-background">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-heading font-black mb-6 tracking-tight leading-none uppercase text-background">
               REETRO<br />
               <span className="text-primary bg-background/5 px-2 inline-block">BARBER</span>
             </h1>
-            <p className="text-lg md:text-xl text-background/60 mb-10 max-w-2xl mx-auto font-medium tracking-tight">
+            <p className="text-base md:text-lg text-background/60 mb-8 max-w-2xl mx-auto font-medium tracking-tight">
               Hệ thống salon tóc nam chuyên nghiệp hàng đầu Việt Nam. <br />
               Nơi định hình <span className="text-primary font-bold">PHONG CÁCH QUÝ TỘC</span> của bạn.
             </p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link
                 href="/booking"
-                className="bg-primary text-foreground hover:bg-background border-2 border-primary px-12 py-5 rounded-full font-black text-xs uppercase tracking-[0.3em] transition-all duration-700 shadow-2xl shadow-primary/10 flex items-center gap-3 active:scale-95"
+                className="bg-primary text-foreground hover:bg-background border-2 border-primary px-10 py-4 rounded-full font-black text-[11px] uppercase tracking-[0.25em] transition-all duration-700 shadow-2xl shadow-primary/10 flex items-center gap-3 active:scale-95"
               >
                 BOOK APPOINTMENT
                 <ArrowRight className="w-4 h-4" />
               </Link>
               <Link
                 href="/salons"
-                className="bg-transparent hover:bg-background/10 text-background border-2 border-background/20 px-12 py-5 rounded-full font-black text-xs uppercase tracking-[0.3em] transition-all duration-700 flex items-center gap-3 active:scale-95"
+                className="bg-transparent hover:bg-background/10 text-background border-2 border-background/20 px-10 py-4 rounded-full font-black text-[11px] uppercase tracking-[0.25em] transition-all duration-700 flex items-center gap-3 active:scale-95"
               >
                 LOCATE SALONS
               </Link>
             </div>
 
             {/* Stats - Monochrome contrast */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16 pt-16 border-t border-background/10">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mt-12 pt-12 border-t border-background/10">
               <div className="text-center group">
-                <div className="text-4xl font-heading font-bold text-primary mb-1 tracking-tight transition-transform group-hover:scale-105 duration-500">100+</div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-background/40">SALONS</div>
+                <div className="text-3xl font-heading font-bold text-primary mb-1 tracking-tight transition-transform group-hover:scale-105 duration-500">100+</div>
+                <div className="text-[9px] font-bold uppercase tracking-widest text-background/40">SALONS</div>
               </div>
               <div className="text-center group">
-                <div className="text-4xl font-heading font-bold text-primary mb-1 tracking-tight transition-transform group-hover:scale-105 duration-500">500K</div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-background/40">CLIENTS</div>
+                <div className="text-3xl font-heading font-bold text-primary mb-1 tracking-tight transition-transform group-hover:scale-105 duration-500">500K</div>
+                <div className="text-[9px] font-bold uppercase tracking-widest text-background/40">CLIENTS</div>
               </div>
               <div className="text-center group">
-                <div className="text-4xl font-heading font-bold text-primary mb-1 tracking-tight transition-transform group-hover:scale-105 duration-500">4.9</div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-background/40">RATING</div>
+                <div className="text-3xl font-heading font-bold text-primary mb-1 tracking-tight transition-transform group-hover:scale-105 duration-500">4.9</div>
+                <div className="text-[9px] font-bold uppercase tracking-widest text-background/40">RATING</div>
               </div>
               <div className="text-center group">
-                <div className="text-4xl font-heading font-bold text-primary mb-1 tracking-tight transition-transform group-hover:scale-105 duration-500">1000+</div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-background/40">STYLISTS</div>
+                <div className="text-3xl font-heading font-bold text-primary mb-1 tracking-tight transition-transform group-hover:scale-105 duration-500">1000+</div>
+                <div className="text-[9px] font-bold uppercase tracking-widest text-background/40">STYLISTS</div>
               </div>
             </div>
           </div>
@@ -170,22 +170,22 @@ export default function HomePage() {
       </section>
 
       {/* Features - White clean layout */}
-      <section className="py-32 bg-background border-b border-border">
+      <section className="py-20 md:py-24 bg-background border-b border-border">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-24">
+          <div className="text-center mb-16">
             <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block italic">EXCELLENCE</span>
-            <h2 className="text-5xl font-heading font-black text-foreground tracking-tighter uppercase italic">
+            <h2 className="text-3xl md:text-4xl font-heading font-black text-foreground tracking-tighter uppercase italic">
               Tại sao chọn REETRO?
             </h2>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 max-w-6xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-6xl mx-auto">
             {features.map((feature, index) => (
               <div key={index} className="text-center group">
-                <div className="w-20 h-20 bg-background rounded-[32px] flex items-center justify-center mx-auto mb-8 border border-border transition-all duration-700 group-hover:bg-primary group-hover:border-primary group-hover:rounded-full group-hover:shadow-2xl group-hover:shadow-primary/20">
-                  <feature.icon className="w-8 h-8 text-foreground transition-all duration-700 group-hover:text-background" />
+                <div className="w-16 h-16 bg-background rounded-[24px] flex items-center justify-center mx-auto mb-6 border border-border transition-all duration-700 group-hover:bg-primary group-hover:border-primary group-hover:rounded-full group-hover:shadow-2xl group-hover:shadow-primary/20">
+                  <feature.icon className="w-6 h-6 text-foreground transition-all duration-700 group-hover:text-background" />
                 </div>
-                <h3 className="font-heading font-black text-xs uppercase tracking-[0.2em] text-foreground mb-4 italic">{feature.title}</h3>
-                <p className="text-muted-foreground text-sm leading-relaxed tracking-tight italic font-light">{feature.description}</p>
+                <h3 className="font-heading font-black text-[11px] uppercase tracking-[0.2em] text-foreground mb-3 italic">{feature.title}</h3>
+                <p className="text-muted-foreground text-[13px] leading-relaxed tracking-tight italic font-light">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -193,21 +193,21 @@ export default function HomePage() {
       </section>
 
       {/* Services - Minimalist Monochrome cards */}
-      <section className="py-32 bg-background/50">
+      <section className="py-20 md:py-24 bg-background/50">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-end justify-between mb-20 gap-8">
+          <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-8">
             <div className="max-w-xl text-left">
                <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block">COLLECTIONS</span>
-              <h2 className="text-5xl font-heading font-black text-foreground tracking-tighter uppercase italic leading-none">
+              <h2 className="text-3xl md:text-4xl font-heading font-black text-foreground tracking-tighter uppercase italic leading-none">
                 Dịch vụ thượng hạng
               </h2>
             </div>
             <Link
               href="/salons"
-              className="flex items-center gap-4 text-foreground hover:translate-x-2 transition-all duration-500 font-black text-[10px] uppercase tracking-[0.3em] font-heading"
+              className="flex items-center gap-4 text-foreground hover:translate-x-2 transition-all duration-500 font-black text-[9px] uppercase tracking-[0.3em] font-heading"
             >
               EXPLORE ALL SERVICES
-              <ArrowRight className="w-5 h-5 px-1 py-1 bg-primary text-foreground rounded-full" />
+              <ArrowRight className="w-4 h-4 px-1 py-1 bg-primary text-foreground rounded-full" />
             </Link>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
@@ -227,8 +227,8 @@ export default function HomePage() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
                   <div className="absolute bottom-6 left-8 right-8">
-                    <h3 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter italic">{service.name}</h3>
-                    <div className="flex items-center gap-4 text-[10px] font-black uppercase text-white tracking-[0.2em]">
+                    <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tighter italic">{service.name}</h3>
+                    <div className="flex items-center gap-4 text-[9px] font-black uppercase text-white tracking-[0.2em]">
                       <span className="bg-white text-black px-3 py-1 rounded-sm">{service.price}</span>
                       <span className="flex items-center gap-2">
                         <Clock className="w-3 h-3" />
@@ -237,10 +237,10 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
-                <div className="p-8">
+                <div className="p-6">
                   <Link
                     href="/booking"
-                    className="block w-full bg-foreground text-background text-center py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] transition-all duration-500 hover:bg-primary hover:text-foreground shadow-xl shadow-foreground/10 active:scale-95 italic font-heading"
+                    className="block w-full bg-foreground text-background text-center py-4 rounded-2xl font-black text-[9px] uppercase tracking-[0.3em] transition-all duration-500 hover:bg-primary hover:text-foreground shadow-xl shadow-foreground/10 active:scale-95 italic font-heading"
                   >
                     SELECT SERVICE
                   </Link>
@@ -252,21 +252,21 @@ export default function HomePage() {
       </section>
 
       {/* Salons - High contrast clean cards */}
-      <section className="py-32 bg-background border-y border-border">
+      <section className="py-20 md:py-24 bg-background border-y border-border">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-end justify-between mb-20 gap-8">
+          <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-8">
             <div className="max-w-xl text-left">
                <span className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4 block">LOCATIONS</span>
-              <h2 className="text-5xl font-heading font-black text-foreground tracking-tighter uppercase italic leading-none">
+              <h2 className="text-3xl md:text-4xl font-heading font-black text-foreground tracking-tighter uppercase italic leading-none">
                 Hệ thống REETRO
               </h2>
             </div>
             <Link
               href="/salons"
-              className="flex items-center gap-4 text-foreground hover:translate-x-2 transition-all duration-500 font-black text-[10px] uppercase tracking-[0.3em] font-heading"
+              className="flex items-center gap-4 text-foreground hover:translate-x-2 transition-all duration-500 font-black text-[9px] uppercase tracking-[0.3em] font-heading"
             >
                VIEW ALL LOCATIONS
-              <ArrowRight className="w-5 h-5 px-1 py-1 bg-primary text-foreground rounded-full" />
+              <ArrowRight className="w-4 h-4 px-1 py-1 bg-primary text-foreground rounded-full" />
             </Link>
           </div>
           <div className="grid md:grid-cols-3 gap-10">
@@ -312,18 +312,18 @@ export default function HomePage() {
       </section>
 
       {/* CTA - Deep Vintage Lounge */}
-      <section className="py-32 bg-accent relative overflow-hidden border-t border-primary/10">
+      <section className="py-20 md:py-24 bg-accent relative overflow-hidden border-t border-primary/10">
         <div className="absolute top-0 right-0 w-1/2 h-full opacity-5 pointer-events-none">
              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1621605815971-fbc98d665033?q=80&w=2000&auto=format')] bg-cover grayscale" />
         </div>
         <div className="container mx-auto px-4 text-center relative z-10">
           <div className="max-w-4xl mx-auto text-white">
             <span className="text-[10px] font-bold text-background/40 uppercase tracking-[0.3em] mb-6 block">RESERVE YOUR TIME</span>
-            <h2 className="text-4xl md:text-6xl font-heading font-bold mb-10 tracking-tight uppercase leading-none text-background">
+            <h2 className="text-3xl md:text-5xl font-heading font-bold mb-8 tracking-tight uppercase leading-none text-background">
                BẠN ĐÃ SẴN SÀNG ĐỂ<br />
                <span className="text-primary bg-background/5 px-4 inline-block">TRỞ NÊN KHÁC BIỆT?</span>
             </h2>
-            <p className="text-lg text-background/60 mb-12 tracking-tight max-w-2xl mx-auto font-medium">
+            <p className="text-base text-background/60 mb-10 tracking-tight max-w-2xl mx-auto font-medium">
                Đặt lịch ngay hôm nay để trải nghiệm dịch vụ cắt tóc thượng lưu và nhận ưu đãi <span className="text-primary font-bold">WHITELIST 20%</span>.
             </p>
             <Link

@@ -38,30 +38,30 @@ export default function SalonsPage() {
       {/* Header */}
       <Header />
 
-      <div className="bg-foreground py-24 md:py-32 relative overflow-hidden border-b border-primary/20">
+      <div className="bg-foreground py-16 md:py-20 relative overflow-hidden border-b border-primary/20">
         <div className="absolute inset-0 opacity-20 pointer-events-none">
           <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=2000&auto=format')] bg-cover bg-center grayscale mix-blend-overlay" />
         </div>
         <div className="container mx-auto px-4 text-center relative z-10">
            <span className="text-[10px] font-bold text-primary uppercase tracking-[0.3em] mb-4 block">LOCATIONS</span>
-          <h1 className="text-4xl md:text-6xl font-heading font-bold text-background mb-10 tracking-tight uppercase leading-none">
+          <h1 className="text-3xl md:text-4xl lg:text-5xl font-heading font-black text-background mb-8 tracking-tight uppercase leading-none">
             Tìm Salon của bạn
           </h1>
-          <div className="max-w-2xl mx-auto flex flex-col md:flex-row gap-4">
+          <div className="max-w-2xl mx-auto flex flex-col md:flex-row gap-3">
             <div className="flex-1 relative group">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 transition-colors group-hover:text-white" />
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 transition-colors group-hover:text-white" />
               <input
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleSearch()}
                 placeholder="NHẬP TÊN HOẶC ĐỊA CHỈ..."
-                className="w-full pl-16 pr-8 py-5 bg-background/5 border-2 border-background/10 rounded-full focus:outline-none focus:border-primary focus:bg-background/10 text-background font-bold text-sm tracking-tight transition-all placeholder:text-background/40"
+                className="w-full pl-14 pr-8 py-4 bg-background/5 border-2 border-background/10 rounded-full focus:outline-none focus:border-primary focus:bg-background/10 text-background font-bold text-sm tracking-tight transition-all placeholder:text-background/40"
               />
             </div>
             <button
               onClick={handleSearch}
-              className="bg-primary text-background hover:bg-background hover:text-foreground border-2 border-primary px-10 py-5 rounded-full font-bold text-[11px] uppercase tracking-wider transition-all duration-500 shadow-xl shadow-primary/10 active:scale-95"
+              className="bg-primary text-background hover:bg-background hover:text-foreground border-2 border-primary px-10 py-4 rounded-full font-bold text-[10px] uppercase tracking-wider transition-all duration-500 shadow-xl shadow-primary/10 active:scale-95"
             >
               TÌM KIẾM
             </button>
@@ -70,7 +70,7 @@ export default function SalonsPage() {
       </div>
 
       {/* Salon List */}
-      <div className="container mx-auto px-4 py-32">
+      <div className="container mx-auto px-4 py-16 md:py-20">
         {loading ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-12">
             {[1, 2, 3, 4, 5, 6].map(i => (
@@ -116,37 +116,37 @@ export default function SalonsPage() {
                     </div>
                   )}
                 </div>
-                <div className="p-8 pb-10">
-                  <h3 className="text-xl font-heading font-bold text-foreground transition-colors uppercase tracking-tight mb-3">
-                    {salon.name}
-                  </h3>
-                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-tight flex items-start gap-2 mb-6 leading-relaxed">
-                    <MapPin className="w-3.5 h-3.5 mt-[1px] flex-shrink-0 text-primary" />
-                    {salon.address}, {salon.district}, {salon.city}
-                  </p>
-                  <div className="flex items-center justify-between pt-6 border-t border-border">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1.5 bg-primary text-background px-2.5 py-0.5 rounded-sm">
-                        <Star className="w-3 h-3 fill-current" />
-                        <span className="text-[10px] font-bold">
-                          {salon.rating?.toFixed(1) || '5.0'}
-                        </span>
+                  <div className="p-6 pb-8">
+                    <h3 className="text-xl font-heading font-black text-foreground group-hover:text-primary transition-colors uppercase tracking-tight mb-3">
+                      {salon.name}
+                    </h3>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight flex items-start gap-2 mb-6 leading-relaxed">
+                      <MapPin className="w-3.5 h-3.5 mt-[1px] flex-shrink-0 text-primary" />
+                      {salon.address}, {salon.district}, {salon.city}
+                    </p>
+                    <div className="flex items-center justify-between pt-6 border-t border-border">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 bg-primary text-background px-2.5 py-0.5 rounded-sm">
+                          <Star className="w-3 h-3 fill-current" />
+                          <span className="text-[10px] font-bold">
+                            {salon.rating?.toFixed(1) || '5.0'}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">({salon.totalReviews || 0} REVIEWS)</span>
                       </div>
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">({salon.totalReviews || 0} REVIEWS)</span>
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-tight bg-accent/5 px-2.5 py-1.5 rounded-full border border-border">
+                        <Clock className="w-3 h-3" />
+                        {salon.openTime} - {salon.closeTime}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-tight bg-accent/5 px-3 py-1.5 rounded-full border border-border">
-                      <Clock className="w-3 h-3" />
-                      {salon.openTime} - {salon.closeTime}
+                    
+                    <div className="mt-6">
+                       <div className="bg-foreground text-background py-3.5 rounded-full text-center text-[9px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-700 flex items-center justify-center gap-3 active:scale-95 shadow-xl shadow-foreground/10">
+                          VIEW SALON DETAILS
+                          <ArrowRight className="w-4 h-4" />
+                       </div>
                     </div>
                   </div>
-                  
-                  <div className="mt-8">
-                     <div className="bg-foreground text-background py-4 rounded-full text-center text-[10px] font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-700 flex items-center justify-center gap-3 active:scale-95 shadow-xl shadow-foreground/10">
-                        VIEW SALON DETAILS
-                        <ArrowRight className="w-4 h-4" />
-                     </div>
-                  </div>
-                </div>
               </Link>
             ))}
           </div>
