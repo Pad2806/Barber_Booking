@@ -1,7 +1,8 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
 import { useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi, salonApi } from '@/lib/api';
 import { 
@@ -15,7 +16,6 @@ import {
   Phone,
   Clock,
   Scissors,
-  TrendingDown,
   CheckCircle2,
   XCircle,
   MessageCircle,
@@ -30,8 +30,8 @@ import { DataTable } from '@/components/admin/data-table';
 import { formatCurrency, STAFF_POSITIONS, cn } from '@/lib/utils';
 import { ColumnDef } from '@tanstack/react-table';
 
-export default function BranchDetailPage() {
-  const { id } = useParams() as { id: string };
+export default function BranchDetailPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const router = useRouter();
   
   const { data: salon, isLoading } = useQuery({
@@ -39,7 +39,7 @@ export default function BranchDetailPage() {
     queryFn: () => salonApi.getById(id),
   });
 
-  const { data: staffData, isLoading: isLoadingStaff } = useQuery({
+  const { data: staffData } = useQuery({
     queryKey: ['admin', 'staff', 'list', id],
     queryFn: () => adminApi.getAllStaff({ salonId: id, limit: 100 }),
   });
@@ -49,7 +49,7 @@ export default function BranchDetailPage() {
     queryFn: () => adminApi.getAllBookings({ salonId: id, limit: 10 }),
   });
 
-  const { data: reviewsData, isLoading: isLoadingReviews } = useQuery({
+  const { data: reviewsData } = useQuery({
     queryKey: ['admin', 'reviews', 'list', id],
     queryFn: () => adminApi.getAllReviews({ salonId: id, limit: 50 }),
   });
@@ -93,7 +93,7 @@ export default function BranchDetailPage() {
       cell: ({ row }) => (
         <div className="flex items-center gap-1 text-amber-500 font-bold text-xs">
           <Star className="w-3 h-3 fill-amber-500" />
-          {row.original.rating.toFixed(1)}
+          {row.original.rating?.toFixed(1) || '0.0'}
         </div>
       )
     }
@@ -183,7 +183,6 @@ export default function BranchDetailPage() {
                     <DataTable 
                       columns={staffColumns} 
                       data={staffData?.data || []} 
-                      loading={isLoadingStaff}
                       searchKey="user.name"
                     />
                   </CardContent>
@@ -233,7 +232,7 @@ export default function BranchDetailPage() {
                     <CardContent className="p-4 flex items-center gap-4">
                       <Star className="w-8 h-8 text-amber-500 fill-amber-500" />
                       <div>
-                        <p className="text-2xl font-bold">{(salon as any)?.averageRating?.toFixed(1) || '0.0'}</p>
+                        <p className="text-2xl font-bold">{salon?.averageRating?.toFixed(1) || '0.0'}</p>
                         <p className="text-[10px] font-bold text-amber-600 uppercase">Điểm trung bình</p>
                       </div>
                     </CardContent>
@@ -242,7 +241,7 @@ export default function BranchDetailPage() {
                     <CardContent className="p-4 flex items-center gap-4">
                       <CheckCircle2 className="w-8 h-8 text-emerald-500" />
                       <div>
-                        <p className="text-2xl font-bold">{(reviewsData as any)?.data?.filter((r: any) => r.rating >= 4).length || 0}</p>
+                        <p className="text-2xl font-bold">{reviewsData?.data?.filter(r => r.rating >= 4).length || 0}</p>
                         <p className="text-[10px] font-bold text-emerald-600 uppercase">Đánh giá tốt</p>
                       </div>
                     </CardContent>
@@ -251,7 +250,7 @@ export default function BranchDetailPage() {
                     <CardContent className="p-4 flex items-center gap-4">
                       <XCircle className="w-8 h-8 text-rose-500" />
                       <div>
-                        <p className="text-2xl font-bold">{(reviewsData as any)?.data?.filter((r: any) => r.rating <= 2).length || 0}</p>
+                        <p className="text-2xl font-bold">{reviewsData?.data?.filter(r => r.rating <= 2).length || 0}</p>
                         <p className="text-[10px] font-bold text-rose-600 uppercase">Cần lưu ý</p>
                       </div>
                     </CardContent>
@@ -259,7 +258,7 @@ export default function BranchDetailPage() {
                 </div>
 
                 <div className="space-y-4">
-                  {(reviewsData as any)?.data?.map((review: any) => (
+                  {reviewsData?.data?.map((review) => (
                     <Card key={review.id} className="border-none shadow-sm bg-white overflow-hidden">
                       <CardContent className="p-6">
                         <div className="flex items-start justify-between gap-4">
@@ -287,7 +286,7 @@ export default function BranchDetailPage() {
                                 {new Date(review.createdAt).toLocaleDateString('vi-VN')}
                               </p>
                               <p className="text-sm text-slate-600 leading-relaxed italic border-l-2 border-slate-100 pl-4 bg-slate-50/50 py-2 rounded-r-lg">
-                                "{review.comment || 'Không có bình luận'}"
+                                {`"${review.comment || 'Không có bình luận'}"`}
                               </p>
                               
                               {review.reply && (

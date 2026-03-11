@@ -1,4 +1,5 @@
 'use client';
+export const dynamic = 'force-dynamic';
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -468,7 +469,7 @@ export default function SalonDetailPage() {
                       </div>
 
                       {review.comment && (
-                        <p className="text-sm text-[#5C4A32] leading-relaxed italic pr-4">&quot;{review.comment}&quot;</p>
+                        <p className="text-sm text-[#5C4A32] leading-relaxed italic pr-4">{`"${review.comment}"`}</p>
                       )}
 
                       {review.images && review.images.length > 0 && (
