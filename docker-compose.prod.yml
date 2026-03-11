@@ -38,9 +38,9 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - INTERNAL_API_URL=http://api:3001
+      - INTERNAL_API_URL=http://reetro_api:3001
       - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-reetro-barbershop-dev-secret-key-123456789}
-      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-https://reetrobarber.paduy.tech}
     ports:
       - '${WEB_PORT:-3000}:3000'
     depends_on:
