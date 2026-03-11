@@ -262,6 +262,10 @@ export const staffApi = {
     const response = await apiClient.get<Staff[]>(`/staff/salon/${salonId}`);
     return response.data;
   },
+  getTop: async (limit: number = 10) => {
+    const response = await apiClient.get<Staff[]>('/staff/top', { params: { limit } });
+    return response.data;
+  },
   getAvailableSlots: async (salonId: string, date: string, duration: number, staffId?: string) => {
     if (staffId) {
       const response = await apiClient.get<string[]>(`/staff/${staffId}/available-slots`, {
@@ -514,6 +518,26 @@ export const adminApi = {
     const response = await apiClient.get('/admin/analytics/services', { params: { salonId } });
     return response.data;
   },
+  getBarberRanking: async (limit: number = 10) => {
+    const response = await apiClient.get<any[]>('/admin/analytics/barbers/ranking', { params: { limit } });
+    return response.data;
+  },
+  getBarberOfTheMonth: async () => {
+    const response = await apiClient.get<any>('/admin/analytics/barbers/of-the-month');
+    return response.data;
+  },
+  getBarberHistory: async (limit: number = 6) => {
+    const response = await apiClient.get<any[]>('/admin/analytics/barbers/history', { params: { limit } });
+    return response.data;
+  },
+  getRatingDistribution: async () => {
+    const response = await apiClient.get<Array<{ star: number; count: number }>>('/admin/analytics/ratings/distribution');
+    return response.data;
+  },
+  getBarberAverages: async () => {
+    const response = await apiClient.get<Array<{ id: string; name: string; averageRating: number }>>('/admin/analytics/barbers/averages');
+    return response.data;
+  },
   getStaffAnalytics: async (staffId: string) => {
     const response = await apiClient.get(`/admin/staff/${staffId}/analytics`);
     return response.data;
@@ -546,6 +570,7 @@ export const adminApi = {
     page?: number;
     limit?: number;
     salonId?: string;
+    minRating?: number;
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';

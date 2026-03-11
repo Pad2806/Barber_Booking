@@ -79,6 +79,7 @@ export class StaffService extends BaseQueryService {
     const {
       salonId,
       isActive = true,
+      minRating,
       search,
       sortBy = 'createdAt',
       sortOrder = 'desc',
@@ -92,6 +93,7 @@ export class StaffService extends BaseQueryService {
     const where: any = { isActive };
 
     if (salonId) where.salonId = salonId;
+    if (minRating) where.rating = { gte: minRating };
 
     if (search) {
       where.OR = [
@@ -147,6 +149,183 @@ export class StaffService extends BaseQueryService {
       data: staff,
       meta: this.getPaginationMeta(total, query),
     };
+  }
+
+  async getTopBarbers(limit: number = 10) {
+    const staff = await this.prisma.staff.findMany({
+      where: { isActive: true },
+      include: {
+        user: {
+          select: { name: true, avatar: true }
+        },
+        _count: {
+          select: {
+            bookings: {
+              where: { status: 'COMPLETED' }
+            }
+          }
+        }
+      }
+    });
+
+    const ranking = staff.map(barber => {
+      const avgRating = barber.rating || 0;
+      const totalReviews = barber.totalReviews || 0;
+      const totalBookings = barber._count.bookings;
+
+      // rankingScore = (averageRating * 0.6) + (log(totalReviews + 1) * 0.2) + (log(totalBookings + 1) * 0.2)
+      const rankingScore = (avgRating * 0.6) +
+        (Math.log(totalReviews + 1) * 0.2) +
+        (Math.log(totalBookings + 1) * 0.2);
+
+      return {
+        id: barber.id,
+        name: barber.user.name,
+        avatar: barber.user.avatar,
+        averageRating: avgRating,
+        totalReviews,
+        totalBookings,
+        rankingScore
+      };
+    });
+
+    return ranking.sort((a, b) => b.rankingScore - a.rankingScore).slice(0, limit);
+  }
+
+  async getBarberOfTheMonth() {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+    const monthlyBookings = await this.prisma.booking.groupBy({
+      by: ['staffId'],
+      _count: { id: true },
+      where: {
+        date: { gte: startOfMonth, lte: endOfMonth },
+        status: 'COMPLETED',
+        staffId: { not: null }
+      }
+    });
+
+    const monthlyReviews = await this.prisma.review.groupBy({
+      by: ['staffId'],
+      _count: { id: true },
+      _avg: { rating: true },
+      where: {
+        createdAt: { gte: startOfMonth, lte: endOfMonth },
+        isVisible: true,
+        staffId: { not: null }
+      }
+    });
+
+    const staff = await this.prisma.staff.findMany({
+      where: { isActive: true },
+      include: {
+        user: { select: { name: true, avatar: true } }
+      }
+    });
+
+    const monthlyRanking = staff.map(barber => {
+      const bStat = monthlyBookings.find(b => b.staffId === barber.id);
+      const rStat = monthlyReviews.find(r => r.staffId === barber.id);
+
+      const totalMonthlyBookings = bStat?._count.id || 0;
+      const totalMonthlyReviews = rStat?._count.id || 0;
+      const avgMonthlyRating = rStat?._avg.rating || 0;
+
+      const rankingScore = (avgMonthlyRating * 0.6) +
+        (Math.log(totalMonthlyReviews + 1) * 0.2) +
+        (Math.log(totalMonthlyBookings + 1) * 0.2);
+
+      return {
+        id: barber.id,
+        name: barber.user.name,
+        avatar: barber.user.avatar,
+        averageRating: avgMonthlyRating,
+        totalReviews: totalMonthlyReviews,
+        totalBookings: totalMonthlyBookings,
+        rankingScore,
+        month: now.getMonth() + 1,
+        year: now.getFullYear()
+      };
+    });
+
+    const winner = monthlyRanking.sort((a, b) => b.rankingScore - a.rankingScore)[0];
+    return winner || null;
+  }
+
+  async getBarberHistory(limit: number = 6) {
+    const history = [];
+    const now = new Date();
+
+    for (let i = 1; i <= limit; i++) {
+      const targetDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const month = targetDate.getMonth() + 1;
+      const year = targetDate.getFullYear();
+
+      const startOfMonth = new Date(year, month - 1, 1);
+      const endOfMonth = new Date(year, month, 0, 23, 59, 59);
+
+      const monthlyBookings = await this.prisma.booking.groupBy({
+        by: ['staffId'],
+        _count: { id: true },
+        where: {
+          date: { gte: startOfMonth, lte: endOfMonth },
+          status: 'COMPLETED',
+          staffId: { not: null }
+        }
+      });
+
+      const monthlyReviews = await this.prisma.review.groupBy({
+        by: ['staffId'],
+        _count: { id: true },
+        _avg: { rating: true },
+        where: {
+          createdAt: { gte: startOfMonth, lte: endOfMonth },
+          isVisible: true,
+          staffId: { not: null }
+        }
+      });
+
+      const staff = await this.prisma.staff.findMany({
+        where: { isActive: true },
+        include: {
+          user: { select: { name: true, avatar: true } }
+        }
+      });
+
+      const monthlyRanking = staff.map(barber => {
+        const bStat = monthlyBookings.find(b => b.staffId === barber.id);
+        const rStat = monthlyReviews.find(r => r.staffId === barber.id);
+
+        const totalMonthlyBookings = bStat?._count.id || 0;
+        const totalMonthlyReviews = rStat?._count.id || 0;
+        const avgMonthlyRating = rStat?._avg.rating || 0;
+
+        const rankingScore = (avgMonthlyRating * 0.6) +
+          (Math.log(totalMonthlyReviews + 1) * 0.2) +
+          (Math.log(totalMonthlyBookings + 1) * 0.2);
+
+        return {
+          id: barber.id,
+          name: barber.user.name,
+          avatar: barber.user.avatar,
+          averageRating: avgMonthlyRating,
+          totalReviews: totalMonthlyReviews,
+          totalBookings: totalMonthlyBookings,
+          rankingScore,
+          month,
+          year
+        };
+      });
+
+      const winner = monthlyRanking.sort((a, b) => b.rankingScore - a.rankingScore)[0];
+      if (winner && winner.rankingScore > 0) {
+        history.push(winner);
+      }
+    }
+
+    return history;
   }
 
   async findAllBySalon(salonId: string, includeInactive = false) {

@@ -85,4 +85,44 @@ export class AnalyticsService {
 
         return enrichedStats.sort((a, b) => b.timesBooked - a.timesBooked);
     }
+
+    async getRatingDistribution() {
+        const distribution = await this.prisma.review.groupBy({
+            by: ['rating'],
+            _count: {
+                id: true,
+            },
+            where: { isVisible: true }
+        });
+
+        // Ensure all stars 1-5 are present
+        const result = [1, 2, 3, 4, 5].map(star => {
+            const found = distribution.find(d => d.rating === star);
+            return {
+                star,
+                count: found ? found._count.id : 0,
+            };
+        });
+
+        return result;
+    }
+
+    async getBarberAverageRatings() {
+        const staff = await this.prisma.staff.findMany({
+            where: { isActive: true },
+            select: {
+                id: true,
+                rating: true,
+                user: {
+                    select: { name: true }
+                }
+            }
+        });
+
+        return staff.map(s => ({
+            id: s.id,
+            name: s.user.name,
+            averageRating: s.rating
+        })).sort((a, b) => b.averageRating - a.averageRating);
+    }
 }

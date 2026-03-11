@@ -53,6 +53,9 @@ export default function AdminStaffPage() {
   const [page] = useState(1);
   const [limit] = useState(10);
   const [salonId, setSalonId] = useState<string | undefined>(undefined);
+  const [minRating, setMinRating] = useState<number | undefined>(undefined);
+  const [sortBy, setSortBy] = useState<string>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Sheet states
   const [panelOpen, setPanelOpen] = useState(false);
@@ -71,8 +74,8 @@ export default function AdminStaffPage() {
   });
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin', 'staff', { page, limit, salonId }],
-    queryFn: () => adminApi.getAllStaff({ page, limit, salonId }),
+    queryKey: ['admin', 'staff', { page, limit, salonId, minRating, sortBy, sortOrder }],
+    queryFn: () => adminApi.getAllStaff({ page, limit, salonId, minRating, sortBy, sortOrder }),
   });
 
   const { data: salonsData } = useQuery({
@@ -338,9 +341,10 @@ export default function AdminStaffPage() {
         <CardHeader className="px-6 flex flex-row items-center justify-between space-y-0 pb-6 border-b border-slate-100 text-left">
           <CardTitle className="text-xl font-bold text-slate-800">Danh sách nhân sự</CardTitle>
           <div className="flex items-center gap-3">
-            <Badge variant="outline" className="h-9 px-3 border-slate-200 bg-white font-medium text-slate-600 hidden sm:flex">
+            <Badge variant="outline" className="h-9 px-3 border-slate-200 bg-white font-medium text-slate-600 hidden lg:flex">
               {data?.meta?.total || 0} nhân viên
             </Badge>
+
             <select
               title="Salon Filter"
               value={salonId || 'ALL'}
@@ -353,6 +357,33 @@ export default function AdminStaffPage() {
                   {salon.name}
                 </option>
               ))}
+            </select>
+
+            <select
+              title="Rating Filter"
+              value={minRating || 'ALL'}
+              onChange={e => setMinRating(e.target.value === 'ALL' ? undefined : Number(e.target.value))}
+              className="h-9 px-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer font-medium"
+            >
+              <option value="ALL">⭐ Mọi điểm số</option>
+              <option value="4.5">⭐ 4.5+ (Xuất sắc)</option>
+              <option value="4.0">⭐ 4.0+ (Tốt)</option>
+              <option value="3.0">⭐ 3.0+ (Trung bình)</option>
+            </select>
+
+            <select
+              title="Sort By"
+              value={`${sortBy}:${sortOrder}`}
+              onChange={e => {
+                const [field, order] = e.target.value.split(':');
+                setSortBy(field);
+                setSortOrder(order as 'asc' | 'desc');
+              }}
+              className="h-9 px-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer font-medium"
+            >
+              <option value="createdAt:desc">Mới nhất</option>
+              <option value="rating:desc">⭐ Phổ biến nhất</option>
+              <option value="rating:asc">⭐ Thấp nhất</option>
             </select>
           </div>
         </CardHeader>

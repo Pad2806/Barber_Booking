@@ -47,6 +47,14 @@ export class StaffController {
     return this.staffService.findAll(query);
   }
 
+  @Get('top')
+  @Public()
+  @ApiOperation({ summary: 'Get top rated staff' })
+  @ApiQuery({ name: 'limit', required: false })
+  getTopBarbers(@Query('limit') limit?: string) {
+    return this.staffService.getTopBarbers(limit ? parseInt(limit) : 10);
+  }
+
   @Get('salon/:salonId')
   @Public()
   @ApiOperation({ summary: 'Get all staff for a salon' })

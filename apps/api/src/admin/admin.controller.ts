@@ -38,6 +38,41 @@ export class AdminController {
     return this.analyticsService.getServicePerformance(salonId);
   }
 
+  @Get('analytics/ratings/distribution')
+  @RequirePermissions(Permission.VIEW_REVIEWS)
+  @ApiOperation({ summary: 'Get overall rating distribution' })
+  getRatingDistribution() {
+    return this.analyticsService.getRatingDistribution();
+  }
+
+  @Get('analytics/barbers/averages')
+  @RequirePermissions(Permission.VIEW_STAFF)
+  @ApiOperation({ summary: 'Get average ratings per barber' })
+  getBarberAverages() {
+    return this.analyticsService.getBarberAverageRatings();
+  }
+
+  @Get('analytics/barbers/ranking')
+  @RequirePermissions(Permission.VIEW_STAFF)
+  @ApiOperation({ summary: 'Get barber ranking based on score' })
+  getBarberRanking(@Query('limit') limit?: string) {
+    return this.staffService.getTopBarbers(limit ? parseInt(limit) : 10);
+  }
+
+  @Get('analytics/barbers/of-the-month')
+  @RequirePermissions(Permission.VIEW_STAFF)
+  @ApiOperation({ summary: 'Get barber of the month' })
+  getBarberOfTheMonth() {
+    return this.staffService.getBarberOfTheMonth();
+  }
+
+  @Get('analytics/barbers/history')
+  @RequirePermissions(Permission.VIEW_STAFF)
+  @ApiOperation({ summary: 'Get barber of the month history' })
+  getBarberHistory(@Query('limit') limit?: string) {
+    return this.staffService.getBarberHistory(limit ? parseInt(limit) : 6);
+  }
+
   @Get('staff/:id/analytics')
   @RequirePermissions(Permission.VIEW_STAFF)
   @ApiOperation({ summary: 'Get specific staff performance analytics' })
