@@ -488,13 +488,7 @@ export const adminApi = {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
   }) => {
-    // Map page/limit to skip/take if needed
-    const apiParams = {
-      ...params,
-      skip: params?.page && params?.limit ? (params.page - 1) * params.limit : undefined,
-      take: params?.limit,
-    };
-    const response = await apiClient.get<PaginatedResponse<Booking>>('/admin/bookings', { params: apiParams });
+    const response = await apiClient.get<PaginatedResponse<Booking>>('/admin/bookings', { params });
     return response.data;
   },
   bulkUpdateBookingStatus: async (ids: string[], status: string) => {
