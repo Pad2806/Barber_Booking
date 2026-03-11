@@ -160,6 +160,7 @@ export interface Booking {
     duration: number;
   }>;
   createdAt: string;
+  updatedAt: string;
   review?: Review;
 }
 

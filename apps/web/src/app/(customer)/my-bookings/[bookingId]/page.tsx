@@ -31,6 +31,13 @@ export default function BookingDetailPage(): React.ReactNode {
   const [cancelReason, setCancelReason] = useState('');
   const [showReviewModal, setShowReviewModal] = useState(false);
 
+  const isWithinReviewPeriod = useCallback((completionDate: string) => {
+    const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+    const now = new Date();
+    const completedAt = new Date(completionDate);
+    return now.getTime() - completedAt.getTime() <= threeDaysInMs;
+  }, []);
+
   const totalPaid = booking?.payments
     ? booking.payments.filter(p => p.status === 'PAID').reduce((sum, p) => sum + Number(p.amount), 0)
     : 0;
@@ -295,12 +302,25 @@ export default function BookingDetailPage(): React.ReactNode {
            )}
 
            {booking.status === 'COMPLETED' && !booking.review && (
-             <button
-               onClick={() => setShowReviewModal(true)}
-               className="w-full py-4 bg-[#2C1E12] hover:bg-[#1C130B] text-white rounded-xl font-bold text-center transition-all shadow-lg active:scale-[0.98] animate-bounce-slow"
-             >
-               Đánh giá dịch vụ ngay
-             </button>
+             <>
+               {isWithinReviewPeriod(booking.updatedAt) ? (
+                 <div className="space-y-4">
+                   <p className="text-sm text-[#8B7355] text-center italic bg-[#F0EBE3] p-3 rounded-lg border border-[#E8E0D4]">
+                     📢 Bạn đang ở trong thời gian vàng 3 ngày để đánh giá dịch vụ này!
+                   </p>
+                   <button
+                     onClick={() => setShowReviewModal(true)}
+                     className="w-full py-4 bg-[#2C1E12] hover:bg-[#1C130B] text-white rounded-xl font-bold text-center transition-all shadow-lg active:scale-[0.98] animate-bounce-slow"
+                   >
+                     Đánh giá dịch vụ ngay
+                   </button>
+                 </div>
+               ) : (
+                 <p className="w-full py-4 text-[#8B7355] text-center font-medium bg-[#FAF8F5] border border-[#E8E0D4] rounded-xl italic">
+                   ⏳ Thời hạn 3 ngày để đánh giá dịch vụ này đã kết thúc.
+                 </p>
+               )}
+             </>
            )}
         </div>
       </div>

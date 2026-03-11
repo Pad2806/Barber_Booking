@@ -42,6 +42,13 @@ export class ReviewsService extends BaseQueryService {
       throw new BadRequestException('Booking already has a review');
     }
 
+    // Check if more than 3 days have passed since completion
+    const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+    const completionDate = booking.updatedAt; // Assuming updatedAt is when it was marked COMPLETED
+    if (Date.now() - completionDate.getTime() > threeDaysInMs) {
+      throw new BadRequestException('Review period (3 days) has expired');
+    }
+
     const review = await this.prisma.review.create({
       data: {
         bookingId: dto.bookingId,
