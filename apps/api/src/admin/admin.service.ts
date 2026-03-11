@@ -447,9 +447,13 @@ export class AdminService {
       this.getRevenueTimeline(startDate),
     ]);
 
+    const totalRevenue = Number(total._sum.amount || 0);
+
     return {
-      total: Number(total._sum.amount || 0),
+      totalRevenue,
       transactionCount: total._count,
+      averageOrderValue: total._count > 0 ? totalRevenue / total._count : 0,
+      dailyRevenue: timeline,
       byMethod: byMethod.map(m => ({
         method: m.method,
         amount: Number(m._sum.amount || 0),
@@ -715,21 +719,7 @@ export class AdminService {
     ]);
 
     return {
-      data: staff.map(s => ({
-        id: s.id,
-        name: s.user.name,
-        phone: s.user.phone,
-        email: s.user.email,
-        avatar: s.user.avatar,
-        position: s.position,
-        bio: s.bio,
-        rating: s.rating,
-        totalReviews: s.totalReviews,
-        totalBookings: s._count.bookings,
-        isActive: s.isActive,
-        salon: s.salon,
-        createdAt: s.createdAt,
-      })),
+      data: staff,
       meta: {
         total,
         skip,
