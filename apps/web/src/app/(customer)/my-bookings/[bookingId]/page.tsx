@@ -15,6 +15,8 @@ import {
   cn,
 } from '@/lib/utils';
 import Footer from '@/components/footer';
+import ReviewModal from '@/components/ReviewModal';
+import { Star, MessageSquare } from 'lucide-react';
 
 export default function BookingDetailPage(): React.ReactNode {
   const params = useParams();
@@ -27,6 +29,7 @@ export default function BookingDetailPage(): React.ReactNode {
   const [cancelling, setCancelling] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
+  const [showReviewModal, setShowReviewModal] = useState(false);
 
   const totalPaid = booking?.payments
     ? booking.payments.filter(p => p.status === 'PAID').reduce((sum, p) => sum + Number(p.amount), 0)
@@ -144,6 +147,41 @@ export default function BookingDetailPage(): React.ReactNode {
             </div>
         </div>
 
+        {/* Existing Review Display */}
+        {booking.review && (
+          <div className="bg-white rounded-2xl p-6 md:p-8 border border-[#C8A97E]/30 shadow-sm mb-8 animate-in slide-in-from-top-4 duration-500">
+            <div className="flex items-center justify-between mb-4">
+               <div>
+                 <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">Đánh giá của bạn</p>
+                 <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star 
+                        key={star} 
+                        className={cn(
+                          "w-4 h-4",
+                          star <= booking.review!.rating ? "text-[#C8A97E] fill-current" : "text-[#E8E0D4]"
+                        )} 
+                      />
+                    ))}
+                 </div>
+               </div>
+               <div className="w-10 h-10 rounded-full bg-[#FAF8F5] flex items-center justify-center">
+                  <MessageSquare className="w-5 h-5 text-[#C8A97E]" />
+               </div>
+            </div>
+            <p className="text-[#2C1E12] font-medium italic text-sm leading-relaxed">&ldquo;{booking.review.comment}&rdquo;</p>
+            {booking.review.images && booking.review.images.length > 0 && (
+              <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+                {booking.review.images.map((img: string, i: number) => (
+                  <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-[#E8E0D4] shrink-0">
+                    <Image src={img} alt="Review" fill className="object-cover" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Global Details Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-[#E8E0D4] overflow-hidden mb-8">
            {/* Top: Salon & Time */}
@@ -255,8 +293,25 @@ export default function BookingDetailPage(): React.ReactNode {
               Hủy lịch hẹn
             </button>
            )}
+
+           {booking.status === 'COMPLETED' && !booking.review && (
+             <button
+               onClick={() => setShowReviewModal(true)}
+               className="w-full py-4 bg-[#2C1E12] hover:bg-[#1C130B] text-white rounded-xl font-bold text-center transition-all shadow-lg active:scale-[0.98] animate-bounce-slow"
+             >
+               Đánh giá dịch vụ ngay
+             </button>
+           )}
         </div>
       </div>
+
+      <ReviewModal 
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        bookingId={booking.id}
+        salonName={booking.salon.name}
+        onSuccess={fetchBooking}
+      />
 
       {/* Cancel Modal */}
       {showCancelModal && (

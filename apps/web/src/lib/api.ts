@@ -160,6 +160,7 @@ export interface Booking {
     duration: number;
   }>;
   createdAt: string;
+  review?: Review;
 }
 
 export interface BookingQueryDto {
@@ -187,8 +188,8 @@ export interface AdminBookingDetail extends Booking {
 export interface Review {
   id: string;
   rating: number;
-  comment: string;
-  images: string[];
+  comment?: string;
+  images?: string[];
   reply?: string;
   repliedAt?: string;
   isVisible: boolean;
@@ -650,6 +651,18 @@ export const adminApi = {
   },
   updateSettings: async (data: Record<string, any>) => {
     const response = await apiClient.patch<Record<string, any>>('/admin/settings', data);
+    return response.data;
+  },
+};
+
+// Review APIs
+export const reviewApi = {
+  create: async (data: { bookingId: string; rating: number; comment?: string; images?: string[] }) => {
+    const response = await apiClient.post<Review>('/reviews', data);
+    return response.data;
+  },
+  getBySalon: async (salonId: string, params?: { skip?: number; take?: number; minRating?: number }) => {
+    const response = await apiClient.get<PaginatedResponse<Review>>(`/reviews/salon/${salonId}`, { params });
     return response.data;
   },
 };

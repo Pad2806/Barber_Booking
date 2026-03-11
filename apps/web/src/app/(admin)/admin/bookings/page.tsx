@@ -422,14 +422,6 @@ export default function AdminBookingsPage() {
         </CardContent>
       </Card>
 
-      <div className="flex items-center justify-start gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
-         <Input 
-           placeholder="Tìm theo mã booking..." 
-           value={search}
-           onChange={(e) => setSearch(e.target.value)}
-           className="max-w-xs h-10 rounded-lg"
-         />
-      </div>
     </div>
   );
 }
