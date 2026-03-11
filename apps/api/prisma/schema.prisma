@@ -383,7 +383,8 @@ model Review {
   staffId     String?
   staff       Staff?   @relation(fields: [staffId], references: [id])
 
-  rating      Int      // 1-5
+  rating      Int      // Overall/Salon rating 1-5
+  staffRating Int?     // Specific rating for barber 1-5
   comment     String?
   images      String[]
 

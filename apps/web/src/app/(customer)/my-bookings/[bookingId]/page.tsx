@@ -330,6 +330,7 @@ export default function BookingDetailPage(): React.ReactNode {
         onClose={() => setShowReviewModal(false)}
         bookingId={booking.id}
         salonName={booking.salon.name}
+        staffName={booking.staff?.user.name}
         onSuccess={fetchBooking}
       />
 

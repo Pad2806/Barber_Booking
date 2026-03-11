@@ -54,7 +54,9 @@ export class ReviewsService extends BaseQueryService {
         bookingId: dto.bookingId,
         customerId,
         salonId: booking.salonId,
+        staffId: booking.staffId,
         rating: dto.rating,
+        staffRating: dto.staffRating,
         comment: dto.comment,
         images: dto.images || [],
       },
@@ -395,7 +397,7 @@ export class ReviewsService extends BaseQueryService {
     if (reviews.length === 0) return;
 
     const avgRating =
-      reviews.reduce((sum, r) => sum + (r?.rating || 0), 0) / reviews.length;
+      reviews.reduce((sum, r) => sum + (r?.staffRating || r?.rating || 0), 0) / reviews.length;
 
     await this.prisma.staff.update({
       where: { id: staffId },

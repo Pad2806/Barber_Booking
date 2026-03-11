@@ -190,7 +190,8 @@ export interface AdminBookingDetail extends Booking {
 
 export interface Review {
   id: string;
-  rating: number;
+  rating: number; // Overall/Salon
+  staffRating?: number; // Barber
   comment?: string;
   images?: string[];
   reply?: string;
@@ -687,7 +688,7 @@ export const adminApi = {
 
 // Review APIs
 export const reviewApi = {
-  create: async (data: { bookingId: string; rating: number; comment?: string; images?: string[] }) => {
+  create: async (data: { bookingId: string; rating: number; staffRating?: number; comment?: string; images?: string[] }) => {
     const response = await apiClient.post<Review>('/reviews', data);
     return response.data;
   },

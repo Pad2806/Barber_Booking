@@ -20,6 +20,13 @@ export class CreateReviewDto {
   @Max(5)
   rating: number;
 
+  @ApiPropertyOptional({ example: 5, minimum: 1, maximum: 5 })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  @Max(5)
+  staffRating?: number;
+
   @ApiPropertyOptional({ example: 'Great service, very professional!' })
   @IsOptional()
   @IsString()
