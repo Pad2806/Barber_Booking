@@ -167,7 +167,7 @@ export class ReviewsService extends BaseQueryService {
       this.prisma.review.groupBy({
         by: ['rating'],
         where,
-        _count: true,
+        _count: { _all: true },
       }),
     ]);
 
@@ -177,12 +177,12 @@ export class ReviewsService extends BaseQueryService {
       meta: {
         ...meta,
         averageRating: avgRating._avg.rating || 0,
-        distribution: distribution.reduce(
+        distribution: (distribution as any[]).reduce(
           (acc, d) => {
-            acc[d.rating] = d._count;
+            acc[d.rating] = d._count._all;
             return acc;
           },
-          {} as Record<number, number> | any,
+          {} as Record<number, number>,
         ),
       },
     };
@@ -221,7 +221,7 @@ export class ReviewsService extends BaseQueryService {
       }
     }
 
-    const [reviews, total, avgRating] = await Promise.all([
+    const [reviews, total, avgRating, distribution] = await Promise.all([
       this.prisma.review.findMany({
         where,
         skip,
@@ -251,17 +251,15 @@ export class ReviewsService extends BaseQueryService {
       }),
       this.prisma.review.count({ where }),
       this.prisma.review.aggregate({
-        where: { salonId, isVisible: true },
+        where,
         _avg: { rating: true },
       }),
+      this.prisma.review.groupBy({
+        by: ['rating'],
+        where,
+        _count: { _all: true },
+      }),
     ]);
-
-    // Rating distribution
-    const distribution = await this.prisma.review.groupBy({
-      by: ['rating'],
-      where: { salonId, isVisible: true },
-      _count: true,
-    });
 
     return {
       data: reviews,
@@ -270,13 +268,13 @@ export class ReviewsService extends BaseQueryService {
         skip,
         take,
         hasMore: skip + take < total,
-        averageRating: avgRating._avg.rating || 0,
-        distribution: distribution.reduce(
+        averageRating: Number(avgRating._avg.rating || 0),
+        distribution: (distribution as any[]).reduce(
           (acc, d) => {
-            acc[d.rating] = d._count;
+            acc[d.rating] = d._count._all;
             return acc;
           },
-          {} as Record<number, number> | any,
+          {} as Record<number, number>,
         ),
       },
     };

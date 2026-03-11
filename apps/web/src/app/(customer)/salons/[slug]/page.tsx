@@ -70,7 +70,7 @@ export default function SalonDetailPage() {
         take: 20,
       });
       setReviews(reviewsData.data);
-      setReviewMeta((prev: any) => ({ ...prev, total: reviewsData.meta.total }));
+      setReviewMeta(reviewsData.meta);
     } catch (error) {
       console.error('Failed to fetch reviews:', error);
     } finally {
@@ -161,8 +161,8 @@ export default function SalonDetailPage() {
               <Star className="w-4 h-4 text-[#C8A97E] fill-[#C8A97E]" />
             </div>
             <div>
-              <p className="text-lg font-bold text-[#2C1E12] leading-tight">{salon.rating?.toFixed(1) || '5.0'}</p>
-              <p className="text-[11px] text-[#8B7355]">{salon.totalReviews || 0} đánh giá</p>
+              <p className="text-lg font-bold text-[#2C1E12] leading-tight">{salon.averageRating?.toFixed(1) || '0.0'}</p>
+              <p className="text-[11px] text-[#8B7355]">{salon._count?.reviews || 0} đánh giá</p>
             </div>
           </div>
           <div className="flex items-center gap-3 border-x border-[#E8E0D4] px-4">
@@ -192,7 +192,7 @@ export default function SalonDetailPage() {
           {[
             { id: 'services', label: 'Dịch vụ' },
             { id: 'staff', label: 'Đội ngũ' },
-            { id: 'reviews', label: `Đánh giá (${salon.totalReviews || 0})` },
+            { id: 'reviews', label: `Đánh giá (${salon._count?.reviews || 0})` },
             { id: 'info', label: 'Thông tin' },
           ].map(tab => (
             <button
@@ -327,25 +327,25 @@ export default function SalonDetailPage() {
               {/* Distribution & Stats */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="bg-white rounded-2xl p-6 border border-[#E8E0D4] flex flex-col items-center justify-center text-center">
-                  <p className="text-5xl font-black text-[#2C1E12] mb-1">{salon.rating?.toFixed(1) || '5.0'}</p>
+                  <p className="text-5xl font-black text-[#2C1E12] mb-1 font-heading italic">{salon.averageRating?.toFixed(1) || '0.0'}</p>
                   <div className="flex items-center gap-1 mb-2">
                     {[1, 2, 3, 4, 5].map((s) => (
                       <Star
                         key={s}
                         className={cn(
                           "w-5 h-5",
-                          s <= Math.round(salon.rating || 5) ? "text-[#C8A97E] fill-[#C8A97E]" : "text-[#D4C9BA]"
+                          s <= Math.round(salon.averageRating || 0) ? "text-[#C8A97E] fill-[#C8A97E]" : "text-[#D4C9BA]"
                         )}
                       />
                     ))}
                   </div>
-                  <p className="text-sm font-bold text-[#8B7355]">{salon.totalReviews || 0} lượt đánh giá</p>
+                  <p className="text-sm font-bold text-[#8B7355]">{salon._count?.reviews || 0} lượt đánh giá</p>
                 </div>
 
                 <div className="md:col-span-2 bg-white rounded-2xl p-6 border border-[#E8E0D4] space-y-2">
                   {[5, 4, 3, 2, 1].map((star) => {
                     const count = reviewMeta?.distribution?.[star] || 0;
-                    const percentage = salon.totalReviews ? (count / salon.totalReviews) * 100 : 0;
+                    const percentage = salon._count?.reviews ? (count / salon._count.reviews) * 100 : 0;
                     return (
                       <div key={star} className="flex items-center gap-4">
                         <div className="flex items-center gap-1 min-w-[40px]">

@@ -75,7 +75,7 @@ export class SalonsService extends BaseQueryService {
 
     const orderBy: any = sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' };
 
-    const [salons, total] = await Promise.all([
+    const [salons, total, averages] = await Promise.all([
       this.prisma.salon.findMany({
         where,
         skip,
@@ -87,15 +87,28 @@ export class SalonsService extends BaseQueryService {
               staff: true,
               services: true,
               reviews: true,
+              bookings: true,
             },
           },
         },
       }),
       this.prisma.salon.count({ where }),
+      this.prisma.review.groupBy({
+        by: ['salonId'],
+        _avg: { rating: true },
+      }),
     ]);
 
+    const data = salons.map((salon) => {
+      const avg = averages.find((a) => a.salonId === salon.id);
+      return {
+        ...salon,
+        averageRating: avg?._avg?.rating || 0,
+      };
+    });
+
     return {
-      data: salons,
+      data,
       meta: this.getPaginationMeta(total, query),
     };
   }
