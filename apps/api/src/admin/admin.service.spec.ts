@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { AdminService } from './admin.service';
 import { PrismaService } from '../database/prisma.service';
+import { BookingsService } from '../bookings/bookings.service';
 
 describe('AdminService', () => {
   let service: AdminService;
@@ -22,6 +23,7 @@ describe('AdminService', () => {
       count: jest.fn(),
       findMany: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
       groupBy: jest.fn(),
     },
     payment: {
@@ -43,11 +45,20 @@ describe('AdminService', () => {
     },
   };
 
+  const mockBookingsService = {
+    findAll: jest.fn(),
+    findOne: jest.fn(),
+    updateStatus: jest.fn(),
+    bulkUpdateStatus: jest.fn(),
+    exportToExcel: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: BookingsService, useValue: mockBookingsService },
       ],
     }).compile();
 
@@ -92,36 +103,36 @@ describe('AdminService', () => {
 
   describe('getAllBookings', () => {
     it('should return paginated bookings', async () => {
-      const mockBookings = [
-        {
-          id: 'booking-1',
-          bookingCode: 'BK001',
-          customer: { name: 'Test User' },
-          salon: { name: 'Test Salon' },
-          staff: { id: 'staff-1', user: { name: 'Staff Name' } },
-          services: [{ service: { name: 'Haircut', price: 100000 } }],
-        },
-      ];
-      mockPrismaService.booking.findMany.mockResolvedValue(mockBookings);
-      mockPrismaService.booking.count.mockResolvedValue(1);
+      const mockResult = {
+        data: [
+          {
+            id: 'booking-1',
+            bookingCode: 'BK001',
+            customer: { name: 'Test User' },
+            salon: { name: 'Test Salon' },
+            staff: { id: 'staff-1', user: { name: 'Staff Name' } },
+            services: [{ service: { name: 'Haircut', price: 100000 } }],
+          },
+        ],
+        meta: { total: 1, page: 1, limit: 10, totalPages: 1 },
+      };
+      mockBookingsService.findAll.mockResolvedValue(mockResult);
 
       const result = await service.getAllBookings({ skip: 0, take: 10 });
 
-      expect(result).toHaveProperty('bookings');
+      expect(result).toHaveProperty('data');
       expect(result).toHaveProperty('meta');
       expect(result.meta.total).toBe(1);
+      expect(mockBookingsService.findAll).toHaveBeenCalled();
     });
 
     it('should filter by status', async () => {
-      mockPrismaService.booking.findMany.mockResolvedValue([]);
-      mockPrismaService.booking.count.mockResolvedValue(0);
+      mockBookingsService.findAll.mockResolvedValue({ data: [], meta: { total: 0 } });
 
       await service.getAllBookings({ status: 'PENDING' as any });
 
-      expect(mockPrismaService.booking.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ status: 'PENDING' }),
-        }),
+      expect(mockBookingsService.findAll).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'PENDING' }),
       );
     });
   });
@@ -134,17 +145,16 @@ describe('AdminService', () => {
         customer: { name: 'Test User' },
         salon: { name: 'Test Salon' },
       };
-      mockPrismaService.booking.update.mockResolvedValue(updatedBooking);
+      mockBookingsService.updateStatus.mockResolvedValue(updatedBooking);
 
       const mockAdminUser = { id: 'admin-1', role: 'ADMIN' } as any;
       const result = await service.updateBookingStatus('booking-1', 'CONFIRMED' as any, mockAdminUser);
 
       expect(result.status).toBe('CONFIRMED');
-      expect(mockPrismaService.booking.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'booking-1' },
-          data: { status: 'CONFIRMED' },
-        }),
+      expect(mockBookingsService.updateStatus).toHaveBeenCalledWith(
+        'booking-1',
+        { status: 'CONFIRMED' },
+        mockAdminUser,
       );
     });
   });
