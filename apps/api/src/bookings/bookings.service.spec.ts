@@ -4,10 +4,10 @@ import { BadRequestException, NotFoundException, ForbiddenException } from '@nes
 import { BookingsService } from './bookings.service';
 import { PrismaService } from '../database/prisma.service';
 
-// Mock uuid module
-jest.mock('uuid', () => ({
-  v4: jest.fn().mockReturnValue('mock-uuid-1234'),
-}));
+import * as crypto from 'crypto';
+
+// Setup crypto spy before tests
+jest.spyOn(crypto, 'randomUUID').mockReturnValue('mock-uuid-1234' as `${string}-${string}-${string}-${string}-${string}`);
 
 describe('BookingsService', () => {
   let service: BookingsService;
@@ -173,8 +173,8 @@ describe('BookingsService', () => {
   });
 
   describe('cancel', () => {
-    const mockUser = { 
-      id: 'user-1', 
+    const mockUser = {
+      id: 'user-1',
       role: 'CUSTOMER',
       name: 'Test User',
       email: 'test@example.com',
@@ -191,9 +191,9 @@ describe('BookingsService', () => {
     };
 
     it('should cancel a booking successfully', async () => {
-      const pendingBooking = { 
-        ...mockBooking, 
-        customerId: 'user-1', 
+      const pendingBooking = {
+        ...mockBooking,
+        customerId: 'user-1',
         status: 'PENDING',
         customer: { id: 'user-1' },
       };
@@ -211,8 +211,8 @@ describe('BookingsService', () => {
     });
 
     it('should throw ForbiddenException if user is not the owner', async () => {
-      const otherUserBooking = { 
-        ...mockBooking, 
+      const otherUserBooking = {
+        ...mockBooking,
         customerId: 'other-user',
         customer: { id: 'other-user' },
       };
@@ -225,9 +225,9 @@ describe('BookingsService', () => {
     });
 
     it('should throw BadRequestException if booking is already completed', async () => {
-      const completedBooking = { 
-        ...mockBooking, 
-        customerId: 'user-1', 
+      const completedBooking = {
+        ...mockBooking,
+        customerId: 'user-1',
         status: 'COMPLETED',
         customer: { id: 'user-1' },
       };

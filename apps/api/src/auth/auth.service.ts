@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 import * as bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid';
+
 import * as crypto from 'crypto';
 
 import { PrismaService } from '../database/prisma.service';

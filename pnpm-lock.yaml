@@ -119,9 +119,6 @@ importers:
       swagger-ui-express:
         specifier: ^5.0.1
         version: 5.0.1(express@4.22.1)
-      uuid:
-        specifier: ^13.0.0
-        version: 13.0.0
     devDependencies:
       '@nestjs/cli':
         specifier: ^10.3.0
@@ -162,9 +159,6 @@ importers:
       '@types/passport-local':
         specifier: ^1.0.38
         version: 1.0.38
-      '@types/uuid':
-        specifier: ^11.0.0
-        version: 11.0.0
       '@typescript-eslint/eslint-plugin':
         specifier: ^6.18.0
         version: 6.21.0(@typescript-eslint/parser@6.21.0)(eslint@8.57.1)(typescript@5.9.3)
@@ -4869,13 +4863,6 @@ packages:
   /@types/use-sync-external-store@0.0.6:
     resolution: {integrity: sha512-zFDAD+tlpf2r4asuHEj0XH6pY6i0g5NeAHPn+15wk3BV6JA69eERFXC1gyGThDkVa1zCyKr5jox1+2LbV/AMLg==}
     dev: false
-
-  /@types/uuid@11.0.0:
-    resolution: {integrity: sha512-HVyk8nj2m+jcFRNazzqyVKiZezyhDKrGUA3jlEcg/nZ6Ms+qHwocba1Y/AaVaznJTAM9xpdFSh+ptbNrhOGvZA==}
-    deprecated: This is a stub types definition. uuid provides its own type definitions, so you do not need this installed.
-    dependencies:
-      uuid: 13.0.0
-    dev: true
 
   /@types/validator@13.15.10:
     resolution: {integrity: sha512-T8L6i7wCuyoK8A/ZeLYt1+q0ty3Zb9+qbSSvrIVitzT3YjZqkTZ40IbRsPanlB4h1QB3JVL1SYCdR6ngtFYcuA==}
@@ -17260,10 +17247,6 @@ packages:
     resolution: {integrity: sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==}
     hasBin: true
     dev: false
-
-  /uuid@13.0.0:
-    resolution: {integrity: sha512-XQegIaBTVUjSHliKqcnFqYypAd4S+WCYt5NIeRs6w/UAry7z8Y9j5ZwRRL4kzq9U3sD6v+85er9FvkEaBpji2w==}
-    hasBin: true
 
   /uuid@8.3.2:
     resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}

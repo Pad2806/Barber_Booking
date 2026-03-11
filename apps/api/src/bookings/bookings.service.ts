@@ -8,7 +8,8 @@ import { PrismaService } from '../database/prisma.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 import { Booking, BookingStatus, PaymentStatus, Role, User } from '@prisma/client';
-import { v4 as uuidv4 } from 'uuid';
+import * as crypto from 'crypto';
+
 
 import { BaseQueryService } from '../common/services/base-query.service';
 import { BookingQueryDto } from './dto/booking-query.dto';
@@ -602,7 +603,7 @@ export class BookingsService extends BaseQueryService {
 
   private generateBookingCode(): string {
     const timestamp = Date.now().toString(36).toUpperCase();
-    const random = uuidv4().split('-')[0].toUpperCase();
+    const random = crypto.randomUUID().split('-')[0].toUpperCase();
     return `RB${timestamp}${random}`.substring(0, 12);
   }
 
