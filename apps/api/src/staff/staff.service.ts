@@ -372,11 +372,15 @@ export class StaffService extends BaseQueryService {
     const staff = await this.findOne(staffId);
 
     // Check if staff has leave on this date
+    // Zero out time for date comparison with @db.Date
+    const searchDate = new Date(date);
+    searchDate.setHours(0, 0, 0, 0);
+
     const onLeave = await (this.prisma as any).staffLeave.findFirst({
       where: {
         staffId,
-        startDate: { lte: date },
-        endDate: { gte: date },
+        startDate: { lte: searchDate },
+        endDate: { gte: searchDate },
         status: 'APPROVED',
       },
     });
@@ -391,7 +395,7 @@ export class StaffService extends BaseQueryService {
       throw new NotFoundException('Salon not found');
     }
 
-    const dayOfWeek = date.getDay();
+    const dayOfWeek = searchDate.getDay();
     const schedule = await this.prisma.staffSchedule.findUnique({
       where: {
         staffId_dayOfWeek: {
@@ -410,7 +414,7 @@ export class StaffService extends BaseQueryService {
     const bookings = await this.prisma.booking.findMany({
       where: {
         staffId,
-        date,
+        date: searchDate,
         status: { notIn: ['CANCELLED', 'NO_SHOW'] },
       },
       select: {
