@@ -9,11 +9,17 @@ import { CreateReviewDto } from './dto/create-review.dto';
 import { ReplyReviewDto } from './dto/reply-review.dto';
 import { Review, BookingStatus, Role, User } from '@prisma/client';
 
+import { BaseQueryService } from '../common/services/base-query.service';
+import { ReviewQueryDto } from './dto/review-query.dto';
+
 @Injectable()
-export class ReviewsService {
-  constructor(private readonly prisma: PrismaService) { }
+export class ReviewsService extends BaseQueryService {
+  constructor(private readonly prisma: PrismaService) {
+    super();
+  }
 
   async create(dto: CreateReviewDto, customerId: string): Promise<Review> {
+    // ... existing logic ...
     // Check booking exists and belongs to customer
     const booking = await this.prisma.booking.findUnique({
       where: { id: dto.bookingId },
@@ -63,6 +69,83 @@ export class ReviewsService {
     return review;
   }
 
+  async findAll(query: ReviewQueryDto) {
+    const {
+      salonId,
+      minRating,
+      isVisible,
+      search,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = query;
+
+    const limit = query.limit || 10;
+    const page = query.page || 1;
+    const skip = (page - 1) * limit;
+    const take = limit;
+
+    const where: any = {};
+    if (salonId) {
+      where.salonId = salonId;
+    }
+    if (minRating) {
+      where.rating = { gte: minRating };
+    }
+    if (isVisible !== undefined) {
+      where.isVisible = isVisible;
+    }
+    if (search) {
+      where.OR = [
+        { comment: { contains: search, mode: 'insensitive' } },
+        { customer: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const orderBy: any = sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' };
+
+    const [reviews, total] = await Promise.all([
+      this.prisma.review.findMany({
+        where,
+        skip,
+        take,
+        orderBy,
+        include: {
+          customer: {
+            select: {
+              name: true,
+              avatar: true,
+            },
+          },
+          salon: {
+            select: {
+              name: true,
+            },
+          },
+          booking: {
+            select: {
+              date: true,
+              services: {
+                select: {
+                  service: {
+                    select: {
+                      name: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.review.count({ where }),
+    ]);
+
+    return {
+      data: reviews,
+      meta: this.getPaginationMeta(total, query),
+    };
+  }
+
   async findAllBySalon(
     salonId: string,
     params: {
@@ -71,6 +154,7 @@ export class ReviewsService {
       minRating?: number;
     } = {},
   ) {
+    // Keep this for public salon pages
     const { skip = 0, take = 20, minRating } = params;
 
     const where: any = { salonId, isVisible: true };
@@ -134,7 +218,7 @@ export class ReviewsService {
             acc[d.rating] = d._count;
             return acc;
           },
-          {} as Record<number, number>,
+          {} as Record<number, number> | any,
         ),
       },
     };

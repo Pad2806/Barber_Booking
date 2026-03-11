@@ -233,12 +233,30 @@ model Staff {
   salon        Salon          @relation(fields: [salonId], references: [id], onDelete: Cascade)
 
   schedules    StaffSchedule[]
+  leaves       StaffLeave[]
   bookings     Booking[]
+  reviews      Review[]
 
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
   @@map("staff")
+}
+
+model StaffLeave {
+  id          String   @id @default(uuid())
+  staffId     String
+  staff       Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+
+  startDate   DateTime @db.Date
+  endDate     DateTime @db.Date
+  reason      String?
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("staff_leaves")
 }
 
 model StaffSchedule {
@@ -362,6 +380,9 @@ model Review {
   salonId     String
   salon       Salon    @relation(fields: [salonId], references: [id])
 
+  staffId     String?
+  staff       Staff?   @relation(fields: [staffId], references: [id])
+
   rating      Int      // 1-5
   comment     String?
   images      String[]
@@ -375,6 +396,7 @@ model Review {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([staffId])
   @@map("reviews")
 }
 

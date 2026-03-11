@@ -10,11 +10,17 @@ import { UpdateStaffDto } from './dto/update-staff.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { Staff, Role, User } from '@prisma/client';
 
+import { BaseQueryService } from '../common/services/base-query.service';
+import { StaffQueryDto } from './dto/staff-query.dto';
+
 @Injectable()
-export class StaffService {
-  constructor(private readonly prisma: PrismaService) {}
+export class StaffService extends BaseQueryService {
+  constructor(private readonly prisma: PrismaService) {
+    super();
+  }
 
   async create(dto: CreateStaffDto, currentUser: User): Promise<Staff> {
+    // ... existing logic ... (just ensure class extends BaseQueryService)
     // Verify salon ownership
     await this.verifySalonOwnership(dto.salonId, currentUser);
 
@@ -68,6 +74,80 @@ export class StaffService {
     });
 
     return staff;
+  }
+
+  async findAll(query: StaffQueryDto) {
+    const {
+      salonId,
+      isActive = true,
+      search,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = query;
+
+    const limit = query.limit || 10;
+    const page = query.page || 1;
+    const skip = (page - 1) * limit;
+    const take = limit;
+
+    const where: any = { isActive };
+
+    if (salonId) where.salonId = salonId;
+
+    if (search) {
+      where.OR = [
+        { position: { contains: search, mode: 'insensitive' } },
+        { bio: { contains: search, mode: 'insensitive' } },
+        {
+          user: {
+            OR: [
+              { name: { contains: search, mode: 'insensitive' } },
+              { email: { contains: search, mode: 'insensitive' } },
+              { phone: { contains: search, mode: 'insensitive' } },
+            ],
+          },
+        },
+      ];
+    }
+
+    const orderBy: any = sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' };
+
+    const [staff, total] = await Promise.all([
+      this.prisma.staff.findMany({
+        where,
+        skip,
+        take,
+        orderBy,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              avatar: true,
+            },
+          },
+          salon: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          _count: {
+            select: {
+              bookings: true,
+            },
+          },
+        },
+      }),
+      this.prisma.staff.count({ where }),
+    ]);
+
+    return {
+      data: staff,
+      meta: this.getPaginationMeta(total, query),
+    };
   }
 
   async findAllBySalon(salonId: string, includeInactive = false) {
@@ -218,8 +298,92 @@ export class StaffService {
     await this.prisma.staff.delete({ where: { id } });
   }
 
+  async getStaffAnalytics(staffId: string) {
+    const staff = await this.findOne(staffId);
+
+    const [bookingsCount, completedBookings, totalRevenue, reviews] = await Promise.all([
+      this.prisma.booking.count({ where: { staffId } }),
+      this.prisma.booking.findMany({
+        where: { staffId, status: 'COMPLETED' },
+        select: { totalAmount: true },
+      }),
+      this.prisma.booking.aggregate({
+        where: { staffId, status: 'COMPLETED' },
+        _sum: { totalAmount: true },
+      }),
+      this.prisma.review.aggregate({
+        where: { staffId } as any,
+        _avg: { rating: true },
+        _count: { rating: true } as any,
+      }),
+    ]);
+
+    // Monthly revenue logic (last 6 months)
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+    const monthlyRevenue = await this.prisma.booking.groupBy({
+      by: ['date'],
+      where: {
+        staffId,
+        status: 'COMPLETED',
+        date: { gte: sixMonthsAgo },
+      },
+      _sum: { totalAmount: true },
+    });
+
+    return {
+      stats: {
+        totalBookings: bookingsCount,
+        completedBookings: completedBookings.length,
+        totalRevenue: Number(totalRevenue._sum?.totalAmount || 0),
+        avgRating: Number(reviews._avg?.rating || 0).toFixed(1),
+        totalReviews: (reviews._count as any)?.rating || 0,
+      },
+      monthlyRevenue: monthlyRevenue.map(item => ({
+        date: item.date,
+        revenue: Number(item._sum?.totalAmount || 0),
+      })),
+    };
+  }
+
+  async registerLeave(staffId: string, dto: { startDate: Date; endDate: Date; reason?: string }, user: User) {
+    const staff = await this.findOne(staffId);
+    await this.verifySalonOwnership(staff.salonId, user);
+
+    return (this.prisma as any).staffLeave.create({
+      data: {
+        staffId,
+        startDate: new Date(dto.startDate),
+        endDate: new Date(dto.endDate),
+        reason: dto.reason,
+        status: 'APPROVED', // Auto-approved if salon owner/admin creates it
+      },
+    });
+  }
+
+  async getLeaves(staffId: string) {
+    return (this.prisma as any).staffLeave.findMany({
+      where: { staffId },
+      orderBy: { startDate: 'desc' },
+    });
+  }
+
   async getAvailableSlots(staffId: string, date: Date): Promise<string[]> {
     const staff = await this.findOne(staffId);
+
+    // Check if staff has leave on this date
+    const onLeave = await (this.prisma as any).staffLeave.findFirst({
+      where: {
+        staffId,
+        startDate: { lte: date },
+        endDate: { gte: date },
+        status: 'APPROVED',
+      },
+    });
+
+    if (onLeave) return [];
+
     const salon = await this.prisma.salon.findUnique({
       where: { id: staff.salonId },
     });
@@ -239,19 +403,7 @@ export class StaffService {
     });
 
     // Staff is off this day
-    if (!schedule) {
-      return [];
-    }
-
-    // Force Sunday to be ON with default morning start time if it was set to OFF by seed
-    if (dayOfWeek === 0) {
-      schedule.isOff = false;
-      if (schedule.startTime === '00:00') {
-        schedule.startTime = '08:00';
-      }
-    }
-
-    if (schedule.isOff) {
+    if (!schedule || schedule.isOff) {
       return [];
     }
 
@@ -268,22 +420,9 @@ export class StaffService {
       },
     });
 
-    // Generate time slots
-    let actualEndTime = schedule.endTime;
-    if (dayOfWeek === 0) {
-      // Sunday works only morning (ends at 12:00)
-      // If it's seeded as 00:00, or runs past 12:00, force it to 12:00
-      if (
-        actualEndTime === '00:00' ||
-        this.timeToMinutes(actualEndTime) > this.timeToMinutes('12:00')
-      ) {
-        actualEndTime = '12:00';
-      }
-    }
-
     const slots = this.generateTimeSlots(
       schedule.startTime,
-      actualEndTime,
+      schedule.endTime,
       30 // 30-minute intervals
     );
 

@@ -45,10 +45,14 @@ apiClient.interceptors.response.use(
 // API Types
 export interface PaginatedResponse<T> {
   data: T[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  meta: {
+    total: number;
+    page: number;
+    limit: number;
+    lastPage: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
 
 export interface Salon {
@@ -70,6 +74,12 @@ export interface Salon {
   rating?: number;
   totalReviews?: number;
   isActive: boolean;
+  averageRating?: number;
+  _count?: {
+    reviews: number;
+    staff: number;
+    bookings: number;
+  };
 }
 
 export interface Service {
@@ -106,6 +116,19 @@ export interface Staff {
     name: string;
     slug?: string;
   };
+  schedules?: StaffSchedule[];
+  _count?: {
+    bookings: number;
+  };
+}
+
+export interface StaffSchedule {
+  id: string;
+  staffId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isOff: boolean;
 }
 
 export interface Booking {
@@ -353,28 +376,61 @@ export const paymentApi = {
 
 // Admin APIs
 export interface DashboardStats {
-  totalUsers: number;
+  todayBookings: number;
+  todayBookingsGrowth: number;
+  todayRevenue: number;
+  todayRevenueGrowth: number;
+  monthRevenue: number;
+  monthRevenueGrowth: number;
+  totalCustomers: number;
+  customerGrowth: number;
+  totalStaff: number;
   totalSalons: number;
   totalBookings: number;
-  todayBookings: number;
+  pendingBookings: number;
   monthBookings: number;
   bookingGrowth: number;
-  monthRevenue: number;
-  revenueGrowth: number;
-  pendingBookings: number;
   recentBookings: Booking[];
+  topServices: TopService[];
+  activityFeed: ActivityItem[];
+}
+
+export interface TopService {
+  name: string;
+  category: string;
+  count: number;
+}
+
+export interface ActivityItem {
+  type: 'BOOKING' | 'REVIEW' | 'USER';
+  title: string;
+  description: string;
+  time: string;
+  status?: string;
+  rating?: number;
 }
 
 export interface BookingStats {
   totalBookings: number;
   byStatus: Record<string, number>;
   dailyBookings: Array<{ date: string; count: number }>;
+  timeline: Array<{
+    date: string;
+    count: number;
+    completed: number;
+    cancelled: number;
+  }>;
 }
 
 export interface RevenueStats {
   totalRevenue: number;
   averageOrderValue: number;
   dailyRevenue: Array<{ date: string; amount: number }>;
+  timeline: Array<{
+    date: string;
+    amount: number;
+    count: number;
+  }>;
 }
 
 export const adminApi = {
@@ -408,15 +464,55 @@ export const adminApi = {
     return response.data;
   },
   getAllBookings: async (params?: {
-    skip?: number;
-    take?: number;
+    page?: number;
+    limit?: number;
     status?: string;
     salonId?: string;
+    staffId?: string;
     search?: string;
     dateFrom?: string;
     dateTo?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   }) => {
-    const response = await apiClient.get<PaginatedResponse<Booking>>('/admin/bookings', { params });
+    // Map page/limit to skip/take if needed
+    const apiParams = {
+      ...params,
+      skip: params?.page && params?.limit ? (params.page - 1) * params.limit : undefined,
+      take: params?.limit,
+    };
+    const response = await apiClient.get<PaginatedResponse<Booking>>('/admin/bookings', { params: apiParams });
+    return response.data;
+  },
+  bulkUpdateBookingStatus: async (ids: string[], status: string) => {
+    const response = await apiClient.patch('/admin/bookings/bulk-status', { ids, status });
+    return response.data;
+  },
+  exportBookings: async (params?: any) => {
+    const response = await apiClient.get('/admin/bookings/export', {
+      params,
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+  getBranchAnalytics: async () => {
+    const response = await apiClient.get('/admin/analytics/branches');
+    return response.data;
+  },
+  getServiceAnalytics: async (salonId?: string) => {
+    const response = await apiClient.get('/admin/analytics/services', { params: { salonId } });
+    return response.data;
+  },
+  getStaffAnalytics: async (staffId: string) => {
+    const response = await apiClient.get(`/admin/staff/${staffId}/analytics`);
+    return response.data;
+  },
+  registerStaffLeave: async (staffId: string, data: { startDate: Date; endDate: Date; reason?: string }) => {
+    const response = await apiClient.post(`/admin/staff/${staffId}/leaves`, data);
+    return response.data;
+  },
+  getStaffLeaves: async (staffId: string) => {
+    const response = await apiClient.get(`/admin/staff/${staffId}/leaves`);
     return response.data;
   },
   getBookingById: async (bookingId: string) => {
@@ -436,10 +532,12 @@ export const adminApi = {
     return response.data;
   },
   getAllStaff: async (params?: {
-    skip?: number;
-    take?: number;
+    page?: number;
+    limit?: number;
     salonId?: string;
     search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   }) => {
     const response = await apiClient.get<PaginatedResponse<Staff>>('/admin/staff', { params });
     return response.data;
@@ -461,28 +559,38 @@ export const adminApi = {
     return response.data;
   },
   getAllServices: async (params?: {
-    skip?: number;
-    take?: number;
+    page?: number;
+    limit?: number;
     salonId?: string;
     category?: string;
+    isActive?: boolean;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   }) => {
     const response = await apiClient.get<PaginatedResponse<Service>>('/admin/services', { params });
     return response.data;
   },
   getAllSalons: async (params?: {
-    skip?: number;
-    take?: number;
+    page?: number;
+    limit?: number;
     city?: string;
     isActive?: boolean;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   }) => {
     const response = await apiClient.get<PaginatedResponse<Salon>>('/admin/salons', { params });
     return response.data;
   },
   getAllReviews: async (params?: {
-    skip?: number;
-    take?: number;
+    page?: number;
+    limit?: number;
     salonId?: string;
     rating?: number;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
   }) => {
     const response = await apiClient.get<PaginatedResponse<Review>>('/admin/reviews', { params });
     return response.data;

@@ -14,6 +14,7 @@ import { Role, User, BookingStatus } from '@prisma/client';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
+import { BookingQueryDto } from './dto/booking-query.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -36,49 +37,19 @@ export class BookingsController {
   @UseGuards(RolesGuard)
   @Roles(Role.STAFF)
   @ApiOperation({ summary: 'Get all bookings (Staff+)' })
-  @ApiQuery({ name: 'skip', required: false })
-  @ApiQuery({ name: 'take', required: false })
-  @ApiQuery({ name: 'salonId', required: false })
-  @ApiQuery({ name: 'status', required: false, enum: BookingStatus })
-  @ApiQuery({ name: 'date', required: false })
-  @ApiQuery({ name: 'dateFrom', required: false })
-  @ApiQuery({ name: 'dateTo', required: false })
-  findAll(
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
-    @Query('salonId') salonId?: string,
-    @Query('status') status?: BookingStatus,
-    @Query('date') date?: string,
-    @Query('dateFrom') dateFrom?: string,
-    @Query('dateTo') dateTo?: string,
-  ) {
-    return this.bookingsService.findAll({
-      skip: skip ? parseInt(skip) : undefined,
-      take: take ? parseInt(take) : undefined,
-      salonId,
-      status,
-      date: date ? new Date(date) : undefined,
-      dateFrom: dateFrom ? new Date(dateFrom) : undefined,
-      dateTo: dateTo ? new Date(dateTo) : undefined,
-    });
+  findAll(@Query() query: BookingQueryDto) {
+    return this.bookingsService.findAll(query);
   }
 
   @Get('my-bookings')
   @ApiOperation({ summary: 'Get current user bookings' })
-  @ApiQuery({ name: 'skip', required: false })
-  @ApiQuery({ name: 'take', required: false })
-  @ApiQuery({ name: 'status', required: false, enum: BookingStatus })
   getMyBookings(
     @CurrentUser('id') customerId: string,
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
-    @Query('status') status?: BookingStatus,
+    @Query() query: BookingQueryDto,
   ) {
     return this.bookingsService.findAll({
+      ...query,
       customerId,
-      skip: skip ? parseInt(skip) : undefined,
-      take: take ? parseInt(take) : undefined,
-      status,
     });
   }
 

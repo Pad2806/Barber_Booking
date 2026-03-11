@@ -20,6 +20,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
+import { ServiceQueryDto } from './dto/service-query.dto';
 
 @ApiTags('Services')
 @Controller('services')
@@ -38,28 +39,8 @@ export class ServicesController {
   @Get()
   @Public()
   @ApiOperation({ summary: 'Get all services (public)' })
-  @ApiQuery({ name: 'skip', required: false })
-  @ApiQuery({ name: 'take', required: false })
-  @ApiQuery({ name: 'limit', required: false })
-  @ApiQuery({ name: 'category', required: false, enum: ServiceCategory })
-  @ApiQuery({ name: 'search', required: false })
-  @ApiQuery({ name: 'sortBy', required: false, enum: ['most_booked', 'newest', 'order'] })
-  findAll(
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
-    @Query('limit') limit?: string,
-    @Query('category') category?: ServiceCategory,
-    @Query('search') search?: string,
-    @Query('sortBy') sortBy?: any,
-  ) {
-    const takeValue = take || limit;
-    return this.servicesService.findAll({
-      skip: skip ? parseInt(skip) : undefined,
-      take: takeValue ? parseInt(takeValue) : undefined,
-      category,
-      search,
-      sortBy,
-    });
+  findAll(@Query() query: ServiceQueryDto) {
+    return this.servicesService.findAll(query);
   }
 
   @Get('salon/:salonId')

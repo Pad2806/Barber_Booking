@@ -21,6 +21,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 
+import { SalonQueryDto } from './dto/salon-query.dto';
+
 @ApiTags('Salons')
 @Controller('salons')
 export class SalonsController {
@@ -38,28 +40,8 @@ export class SalonsController {
   @Get()
   @Public()
   @ApiOperation({ summary: 'Get all salons (public)' })
-  @ApiQuery({ name: 'skip', required: false })
-  @ApiQuery({ name: 'take', required: false })
-  @ApiQuery({ name: 'limit', required: false })
-  @ApiQuery({ name: 'city', required: false })
-  @ApiQuery({ name: 'district', required: false })
-  @ApiQuery({ name: 'search', required: false })
-  findAll(
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
-    @Query('limit') limit?: string,
-    @Query('city') city?: string,
-    @Query('district') district?: string,
-    @Query('search') search?: string,
-  ) {
-    const takeValue = take || limit;
-    return this.salonsService.findAll({
-      skip: skip ? parseInt(skip) : undefined,
-      take: takeValue ? parseInt(takeValue) : undefined,
-      city,
-      district,
-      search,
-    });
+  findAll(@Query() query: SalonQueryDto) {
+    return this.salonsService.findAll(query);
   }
 
   @Get('my-salons')

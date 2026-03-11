@@ -21,6 +21,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 
+import { ReviewQueryDto } from './dto/review-query.dto';
+
 @ApiTags('Reviews')
 @Controller('reviews')
 export class ReviewsController {
@@ -32,6 +34,15 @@ export class ReviewsController {
   @ApiOperation({ summary: 'Create a review for a booking' })
   create(@Body() dto: CreateReviewDto, @CurrentUser('id') customerId: string) {
     return this.reviewsService.create(dto, customerId);
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.SALON_OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all reviews (Admin)' })
+  findAll(@Query() query: ReviewQueryDto) {
+    return this.reviewsService.findAll(query);
   }
 
   @Get('salon/:salonId')

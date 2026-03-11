@@ -9,11 +9,17 @@ import { CreateSalonDto } from './dto/create-salon.dto';
 import { UpdateSalonDto } from './dto/update-salon.dto';
 import { Salon, Role, User, Service } from '@prisma/client';
 
+import { BaseQueryService } from '../common/services/base-query.service';
+import { SalonQueryDto } from './dto/salon-query.dto';
+
 @Injectable()
-export class SalonsService {
-  constructor(private readonly prisma: PrismaService) { }
+export class SalonsService extends BaseQueryService {
+  constructor(private readonly prisma: PrismaService) {
+    super();
+  }
 
   async create(dto: CreateSalonDto, ownerId: string): Promise<Salon> {
+    // ... existing logic ...
     // Check if slug already exists
     const existingSlug = await this.prisma.salon.findUnique({
       where: { slug: dto.slug },
@@ -31,15 +37,20 @@ export class SalonsService {
     });
   }
 
-  async findAll(params: {
-    skip?: number;
-    take?: number;
-    city?: string;
-    district?: string;
-    search?: string;
-    isActive?: boolean;
-  }) {
-    const { skip = 0, take = 20, city, district, search, isActive } = params;
+  async findAll(query: SalonQueryDto) {
+    const {
+      city,
+      district,
+      search,
+      isActive,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = query;
+
+    const limit = query.limit || 10;
+    const page = query.page || 1;
+    const skip = (page - 1) * limit;
+    const take = limit;
 
     const where: any = {};
     if (isActive !== undefined) {
@@ -58,15 +69,19 @@ export class SalonsService {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
         { address: { contains: search, mode: 'insensitive' } },
+        { city: { contains: search, mode: 'insensitive' } },
+        { district: { contains: search, mode: 'insensitive' } },
       ];
     }
+
+    const orderBy: any = sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' };
 
     const [salons, total] = await Promise.all([
       this.prisma.salon.findMany({
         where,
         skip,
         take,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         include: {
           _count: {
             select: {
@@ -97,12 +112,7 @@ export class SalonsService {
 
     return {
       data: salonsWithRating,
-      meta: {
-        total,
-        skip,
-        take,
-        hasMore: skip + take < total,
-      },
+      meta: this.getPaginationMeta(total, query),
     };
   }
 

@@ -10,11 +10,19 @@ import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 import { Booking, BookingStatus, PaymentStatus, Role, User } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
 
+import { BaseQueryService } from '../common/services/base-query.service';
+import { BookingQueryDto } from './dto/booking-query.dto';
+import * as ExcelJS from 'exceljs';
+
 @Injectable()
-export class BookingsService {
-  constructor(private readonly prisma: PrismaService) { }
+export class BookingsService extends BaseQueryService {
+  constructor(private readonly prisma: PrismaService) {
+    super();
+  }
 
   async create(dto: CreateBookingDto, customerId: string): Promise<Booking> {
+    // ... existing create logic ...
+    // (I'll keep the create logic as is to avoid unnecessary diffs, just making sure the class extends BaseQueryService)
     // Validate salon exists
     const salon = await this.prisma.salon.findUnique({
       where: { id: dto.salonId },
@@ -116,28 +124,18 @@ export class BookingsService {
     return booking;
   }
 
-  async findAll(params: {
-    skip?: number;
-    take?: number;
-    salonId?: string;
-    customerId?: string;
-    staffId?: string;
-    status?: BookingStatus;
-    date?: Date;
-    dateFrom?: Date;
-    dateTo?: Date;
-  }) {
+  async findAll(query: BookingQueryDto) {
     const {
-      skip = 0,
-      take = 20,
       salonId,
       customerId,
       staffId,
       status,
-      date,
       dateFrom,
       dateTo,
-    } = params;
+      search,
+      sortBy,
+      sortOrder = 'desc',
+    } = query;
 
     const where: any = {};
 
@@ -145,20 +143,47 @@ export class BookingsService {
     if (customerId) where.customerId = customerId;
     if (staffId) where.staffId = staffId;
     if (status) where.status = status;
-    if (date) where.date = date;
+
     if (dateFrom || dateTo) {
       where.date = {};
-      if (dateFrom) where.date.gte = dateFrom;
-      if (dateTo) where.date.lte = dateTo;
+      if (dateFrom) where.date.gte = new Date(dateFrom);
+      if (dateTo) where.date.lte = new Date(dateTo);
     }
+
+    if (search) {
+      where.OR = [
+        { bookingCode: { contains: search, mode: 'insensitive' } },
+        { customer: { name: { contains: search, mode: 'insensitive' } } },
+        { customer: { phone: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+
+    const limit = query.limit || 10;
+    const page = query.page || 1;
+    const skip = (page - 1) * limit;
+    const take = limit;
+
+    const orderBy: any = sortBy ? { [sortBy]: sortOrder } : [{ date: 'desc' }, { timeSlot: 'desc' }];
 
     const [bookings, total] = await Promise.all([
       this.prisma.booking.findMany({
         where,
         skip,
         take,
-        orderBy: [{ date: 'desc' }, { timeSlot: 'desc' }],
-        include: {
+        orderBy,
+        select: {
+          id: true,
+          bookingCode: true,
+          date: true,
+          timeSlot: true,
+          endTime: true,
+          totalDuration: true,
+          totalAmount: true,
+          status: true,
+          paymentStatus: true,
+          paymentMethod: true,
+          note: true,
+          createdAt: true,
           customer: {
             select: {
               id: true,
@@ -175,7 +200,8 @@ export class BookingsService {
             },
           },
           staff: {
-            include: {
+            select: {
+              id: true,
               user: {
                 select: {
                   name: true,
@@ -185,11 +211,17 @@ export class BookingsService {
             },
           },
           services: {
-            include: {
-              service: true,
+            select: {
+              serviceId: true,
+              service: {
+                select: {
+                  id: true,
+                  name: true,
+                  price: true,
+                },
+              },
             },
           },
-          payments: true,
         },
       }),
       this.prisma.booking.count({ where }),
@@ -197,12 +229,7 @@ export class BookingsService {
 
     return {
       data: bookings,
-      meta: {
-        total,
-        skip,
-        take,
-        hasMore: skip + take < total,
-      },
+      meta: this.getPaginationMeta(total, query),
     };
   }
 
@@ -642,4 +669,88 @@ export class BookingsService {
 
     throw new ForbiddenException('You do not have access to this booking');
   }
+  async bulkUpdateStatus(
+    ids: string[],
+    status: BookingStatus,
+    user: User,
+  ): Promise<{ count: number }> {
+    // Basic permissions check - only staff/admin can bulk update
+    if (user.role === Role.CUSTOMER) {
+      throw new ForbiddenException('Customers cannot perform bulk updates');
+    }
+
+    // In a real production app, we should validate each booking's current status and salon ownership
+    // For now, we perform a bulk update based on accessible IDs
+    const bookings = await this.prisma.booking.findMany({
+      where: {
+        id: { in: ids },
+      },
+    });
+
+    for (const booking of bookings) {
+      await this.validateBookingAccess(booking, user, true);
+      this.validateStatusTransition(booking.status, status);
+    }
+
+    const result = await this.prisma.booking.updateMany({
+      where: {
+        id: { in: ids },
+      },
+      data: {
+        status,
+        ...(status === BookingStatus.COMPLETED ? { paymentStatus: PaymentStatus.PAID } : {}),
+      },
+    });
+
+    return { count: result.count };
+  }
+
+  async exportToExcel(query: BookingQueryDto) {
+    const { data: bookings } = await this.findAll({ ...query, limit: 10000, page: 1 });
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Bookings');
+
+    worksheet.columns = [
+      { header: 'Mã đặt lịch', key: 'bookingCode', width: 20 },
+      { header: 'Tên khách hàng', key: 'customerName', width: 25 },
+      { header: 'Số điện thoại', key: 'customerPhone', width: 15 },
+      { header: 'Chi nhánh', key: 'salonName', width: 25 },
+      { header: 'Nhân viên', key: 'staffName', width: 20 },
+      { header: 'Dịch vụ', key: 'services', width: 35 },
+      { header: 'Ngày', key: 'date', width: 15 },
+      { header: 'Giờ', key: 'timeSlot', width: 10 },
+      { header: 'Tổng tiền', key: 'totalAmount', width: 15 },
+      { header: 'Trạng thái', key: 'status', width: 15 },
+    ];
+
+    bookings.forEach((booking: any) => {
+      worksheet.addRow({
+        bookingCode: booking.bookingCode,
+        customerName: booking.customer?.name || 'N/A',
+        customerPhone: booking.customer?.phone || 'N/A',
+        salonName: booking.salon?.name || 'N/A',
+        staffName: booking.staff?.user?.name || 'Chưa chỉ định',
+        services: booking.services.map((s: any) => s.service.name).join(', '),
+        date: formatDate(booking.date),
+        timeSlot: booking.timeSlot,
+        totalAmount: Number(booking.totalAmount),
+        status: booking.status,
+      });
+    });
+
+    // Formatting
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFE0E0E0' },
+    };
+
+    return workbook;
+  }
+}
+
+function formatDate(date: Date) {
+  return new Date(date).toLocaleDateString('vi-VN');
 }

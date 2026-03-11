@@ -1,273 +1,424 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
-  Search,
   Calendar,
   Clock,
   MoreVertical,
   CheckCircle,
   XCircle,
   Eye,
-  Loader2,
-  AlertCircle,
+  User,
+  MapPin,
+  Download,
+  Filter,
+  Trash2,
+  ChevronDown,
 } from 'lucide-react';
-import { formatPrice, formatDate, BOOKING_STATUS, cn } from '@/lib/utils';
+import { formatPrice, formatDate, cn } from '@/lib/utils';
 import { adminApi } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { DataTable } from '@/components/admin/data-table';
+import { StatusBadge } from '@/components/admin/status-badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ErrorState } from '@/components/admin/error-state';
+import { ColumnDef } from '@tanstack/react-table';
+import { toast } from 'react-hot-toast';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-interface Booking {
-  id: string;
-  bookingCode: string;
-  customer: { name: string; phone: string };
-  salon: { name: string };
-  staff: { name: string } | null;
-  services: { name: string }[];
-  bookingDate: string;
-  timeSlot: string;
-  totalAmount: number;
-  status: string;
-  paymentStatus: string;
-}
+const STATUS_CONFIG: any = {
+  PENDING: { label: 'Chờ xác nhận', variant: 'warning' },
+  CONFIRMED: { label: 'Đã xác nhận', variant: 'info' },
+  IN_PROGRESS: { label: 'Đang làm', variant: 'secondary' },
+  COMPLETED: { label: 'Hoàn thành', variant: 'success' },
+  CANCELLED: { label: 'Đã hủy', variant: 'destructive' },
+  NO_SHOW: { label: 'Vắng mặt', variant: 'outline' },
+};
 
 export default function AdminBookingsPage() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [selectedBooking, setSelectedBooking] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  
+  // Filters
+  const [status, setStatus] = useState<string>('');
+  const [salonId, setSalonId] = useState<string>('');
+  const [staffId, setStaffId] = useState<string>('');
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
+  const [search, setSearch] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const fetchBookings = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params: any = { limit: 100 };
-      if (statusFilter !== 'ALL') {
-        params.status = statusFilter;
-      }
-      const data = await adminApi.getAllBookings(params);
-      setBookings((data as any).bookings || data.data || []);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Không thể tải danh sách đặt lịch');
-    } finally {
-      setLoading(false);
-    }
-  }, [statusFilter]);
+  // Selection
+  const [selectedBookings, setSelectedBookings] = useState<any[]>([]);
 
+  // Debounce search
   useEffect(() => {
-    void fetchBookings();
-  }, [fetchBookings]);
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timer);
+  }, [search]);
 
-  const filteredBookings = bookings.filter(booking => {
-    const matchesSearch =
-      booking.bookingCode?.toLowerCase().includes(search.toLowerCase()) ||
-      booking.customer?.name?.toLowerCase().includes(search.toLowerCase()) ||
-      booking.customer?.phone?.includes(search);
-    return matchesSearch;
+  // Fetch Data
+  const { data: salonsData } = useQuery({
+    queryKey: ['admin', 'salons', 'list'],
+    queryFn: () => adminApi.getAllSalons({ limit: 100 }),
   });
 
-  const handleConfirm = async (bookingId: string) => {
+  const { data: staffData } = useQuery({
+    queryKey: ['admin', 'staff', 'list', salonId],
+    queryFn: () => adminApi.getAllStaff({ limit: 100, salonId: salonId || undefined }),
+  });
+
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['admin', 'bookings', { page, limit, status, salonId, staffId, dateFrom, dateTo, search: debouncedSearch }],
+    queryFn: () => adminApi.getAllBookings({ 
+      page, 
+      limit, 
+      status: status || undefined, 
+      salonId: salonId || undefined, 
+      staffId: staffId || undefined,
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
+      search: debouncedSearch || undefined,
+    }),
+  });
+
+  // Mutations
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string, status: string }) => adminApi.updateBookingStatus(id, status),
+    onSuccess: () => {
+      toast.success('Cập nhật trạng thái thành công');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'bookings'] });
+    },
+  });
+
+  const bulkStatusMutation = useMutation({
+    mutationFn: ({ ids, status }: { ids: string[], status: string }) => adminApi.bulkUpdateBookingStatus(ids, status),
+    onSuccess: (res: any) => {
+      toast.success(`Đã cập nhật ${res.count} đặt lịch`);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'bookings'] });
+      setSelectedBookings([]);
+    },
+  });
+
+  const handleExport = async () => {
     try {
-      await adminApi.updateBookingStatus(bookingId, 'CONFIRMED');
-      setBookings(prev => prev.map(b => (b.id === bookingId ? { ...b, status: 'CONFIRMED' } : b)));
-      setSelectedBooking(null);
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Không thể xác nhận đặt lịch');
+      toast.loading('Đang khởi tạo file export...', { id: 'export' });
+      const blob = await adminApi.exportBookings({ 
+        status: status || undefined, 
+        salonId: salonId || undefined, 
+        staffId: staffId || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        search: debouncedSearch || undefined,
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `bookings-export-${new Date().getTime()}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      toast.success('Gửi yêu cầu xuất file thành công', { id: 'export' });
+    } catch (err) {
+      toast.error('Không thể xuất file', { id: 'export' });
     }
   };
 
-  const handleCancel = async (bookingId: string) => {
-    try {
-      await adminApi.updateBookingStatus(bookingId, 'CANCELLED');
-      setBookings(prev => prev.map(b => (b.id === bookingId ? { ...b, status: 'CANCELLED' } : b)));
-      setSelectedBooking(null);
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Không thể hủy đặt lịch');
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-        <p className="text-red-600 mb-4">{error}</p>
-        <button
-          onClick={fetchBookings}
-          className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90"
-        >
-          Thử lại
-        </button>
-      </div>
-    );
-  }
+  const columns: ColumnDef<any>[] = useMemo(() => [
+    {
+      id: 'select',
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: 'bookingCode',
+      header: 'Mã booking',
+      cell: ({ row }) => (
+        <span className="font-mono font-bold text-primary">{row.getValue('bookingCode')}</span>
+      ),
+    },
+    {
+      accessorKey: 'customer',
+      header: 'Khách hàng',
+      cell: ({ row }) => {
+        const customer = row.original.customer;
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={customer?.avatar} />
+              <AvatarFallback>{customer?.name?.charAt(0)}</AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col">
+              <span className="font-semibold text-slate-900 leading-none">{customer?.name}</span>
+              <span className="text-xs text-slate-500 mt-1">{customer?.phone}</span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'salon',
+      header: 'Chi nhánh / Stylist',
+      cell: ({ row }) => {
+        const salon = row.original.salon;
+        const staff = row.original.staff;
+        return (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1 text-xs text-slate-600">
+              <MapPin className="w-3 h-3" />
+              <span className="truncate max-w-[120px]">{salon?.name}</span>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-slate-500">
+              <User className="w-3 h-3" />
+              <span>{staff?.name || 'Chưa chỉ định'}</span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      id: 'service_info',
+      header: 'Dịch vụ',
+      cell: ({ row }) => {
+        const services = row.original.services || [];
+        return (
+          <div className="text-xs text-slate-600 max-w-[200px] truncate">
+            {services.map((s: any) => s.name).join(', ') || 'N/A'}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'date',
+      header: 'Thời gian',
+      cell: ({ row }) => {
+        const date = row.original.date;
+        const timeSlot = row.original.timeSlot;
+        return (
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-1 text-xs">
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <span>{formatDate(date)}</span>
+            </div>
+            <div className="flex items-center gap-1 text-xs">
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <span className="font-medium text-slate-700">{timeSlot}</span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'totalAmount',
+      header: 'Tổng tiền',
+      cell: ({ row }) => (
+        <span className="font-bold text-slate-900">{formatPrice(row.getValue('totalAmount'))}</span>
+      ),
+    },
+    {
+      accessorKey: 'status',
+      header: 'Trạng thái',
+      cell: ({ row }) => (
+        <StatusBadge status={row.getValue('status')} config={STATUS_CONFIG} />
+      ),
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
+        const booking = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem asChild>
+                <Link href={`/admin/bookings/${booking.id}`} className="flex items-center gap-2">
+                  <Eye className="w-4 h-4" /> Xem chi tiết
+                </Link>
+              </DropdownMenuItem>
+              {booking.status === 'PENDING' && (
+                <DropdownMenuItem 
+                  className="text-green-600"
+                  onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'CONFIRMED' })}
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" /> Xác nhận
+                </DropdownMenuItem>
+              )}
+              {['PENDING', 'CONFIRMED'].includes(booking.status) && (
+                <DropdownMenuItem 
+                  className="text-destructive"
+                  onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'CANCELLED' })}
+                >
+                  <XCircle className="w-4 h-4 mr-2" /> Hủy đặt lịch
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ], [updateStatusMutation]);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Quản lý đặt lịch</h1>
-          <p className="text-gray-500">Xem và quản lý tất cả đặt lịch</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-heading italic">Quản Lý Đặt Lịch</h1>
+          <p className="text-slate-500 text-sm">Theo dõi và xử lý các lịch hẹn cắt tóc trên toàn hệ thống.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={handleExport} className="h-9">
+            <Download className="w-4 h-4 mr-2" /> Xuất Excel
+          </Button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl p-4 shadow-sm flex flex-wrap gap-4">
-        <div className="flex-1 min-w-[200px] relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Tìm theo mã, tên, SĐT..."
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+      {isError && (
+        <Card className="p-6">
+          <ErrorState 
+            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách đặt lịch'} 
+            onRetry={() => refetch()} 
           />
-        </div>
-        <select
-          value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
-          className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-        >
-          <option value="ALL">Tất cả trạng thái</option>
-          {Object.entries(BOOKING_STATUS).map(([key, value]) => (
-            <option key={key} value={key}>
-              {value.label}
-            </option>
-          ))}
-        </select>
-      </div>
+        </Card>
+      )}
 
-      {/* Bookings Table */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500">
-                  Mã đặt lịch
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500">
-                  Khách hàng
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500">
-                  Chi nhánh / Stylist
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500">Thời gian</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500">Dịch vụ</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500">Tổng tiền</th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500">
-                  Trạng thái
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-gray-500">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {filteredBookings.map(booking => (
-                <tr key={booking.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <span className="font-mono font-medium text-accent">{booking.bookingCode}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="font-medium">{booking.customer.name}</p>
-                    <p className="text-sm text-gray-500">{booking.customer.phone}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm">{booking.salon.name}</p>
-                    <p className="text-sm text-gray-500">
-                      {booking.staff?.name || 'Chưa chỉ định'}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="flex items-center gap-1 text-sm">
-                      <Calendar className="w-4 h-4 text-gray-400" />
-                      {formatDate(booking.bookingDate)}
-                    </p>
-                    <p className="flex items-center gap-1 text-sm text-gray-500">
-                      <Clock className="w-4 h-4" />
-                      {booking.timeSlot}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm">
-                      {booking.services?.map(s => s.name || s).join(', ') || '-'}
-                    </p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <p className="font-semibold">{formatPrice(booking.totalAmount)}</p>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={cn(
-                        'px-3 py-1 rounded-full text-xs font-medium',
-                        BOOKING_STATUS[booking.status]?.color || 'bg-gray-100'
-                      )}
-                    >
-                      {BOOKING_STATUS[booking.status]?.label || booking.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="relative">
-                      <button
-                        onClick={() =>
-                          setSelectedBooking(selectedBooking === booking.id ? null : booking.id)
-                        }
-                        className="p-2 hover:bg-gray-100 rounded-lg"
-                      >
-                        <MoreVertical className="w-5 h-5 text-gray-500" />
-                      </button>
-
-                      {selectedBooking === booking.id && (
-                        <div className="absolute right-0 mt-1 bg-white rounded-lg shadow-lg border py-1 z-10 min-w-[150px]">
-                          <Link
-                            href={`/admin/bookings/${booking.id}`}
-                            className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm"
-                          >
-                            <Eye className="w-4 h-4" />
-                            Xem chi tiết
-                          </Link>
-                          {booking.status === 'PENDING' && (
-                            <>
-                              <button
-                                onClick={() => handleConfirm(booking.id)}
-                                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm w-full text-green-600"
-                              >
-                                <CheckCircle className="w-4 h-4" />
-                                Xác nhận
-                              </button>
-                              <button
-                                onClick={() => handleCancel(booking.id)}
-                                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm w-full text-red-600"
-                              >
-                                <XCircle className="w-4 h-4" />
-                                Hủy đặt lịch
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                </tr>
+      <Card className="border shadow-sm overflow-hidden bg-white">
+        <div className="p-4 border-b bg-slate-50/50">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <select
+                className="w-full h-9 pl-9 pr-4 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+              >
+                <option value="">Tất cả trạng thái</option>
+                {Object.entries(STATUS_CONFIG).map(([key, value]: any) => (
+                  <option key={key} value={key}>{value.label}</option>
+                ))}
+              </select>
+            </div>
+            
+            <select
+              className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+              value={salonId}
+              onChange={(e) => {
+                setSalonId(e.target.value);
+                setStaffId('');
+              }}
+            >
+              <option value="">Tất cả chi nhánh</option>
+              {salonsData?.data?.map((s: any) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
               ))}
-            </tbody>
-          </table>
+            </select>
+
+            <select
+              className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+              value={staffId}
+              onChange={(e) => setStaffId(e.target.value)}
+            >
+              <option value="">Tất cả nhân viên</option>
+              {staffData?.data?.map((s: any) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+
+            <div className="flex items-center gap-2 lg:col-span-2">
+              <Input
+                type="date"
+                className="h-9"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                placeholder="Từ ngày"
+              />
+              <span className="text-slate-400">→</span>
+              <Input
+                type="date"
+                className="h-9"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                placeholder="Đến ngày"
+              />
+            </div>
+          </div>
         </div>
 
-        {filteredBookings.length === 0 && (
-          <div className="text-center py-12">
-            <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">Không tìm thấy đặt lịch nào</p>
+        {selectedBookings.length > 0 && (
+          <div className="p-3 bg-primary/5 border-b flex items-center justify-between animate-in slide-in-from-top-2 duration-300">
+            <span className="text-sm font-medium text-primary ml-3">
+               Đã chọn <strong>{selectedBookings.length}</strong> booking
+            </span>
+            <div className="flex items-center gap-2">
+              <Button 
+                size="sm" 
+                variant="default"
+                className="bg-green-600 hover:bg-green-700 h-8"
+                onClick={() => bulkStatusMutation.mutate({ ids: selectedBookings.map(b => b.id), status: 'CONFIRMED' })}
+                disabled={bulkStatusMutation.isPending}
+              >
+                 <CheckCircle className="w-4 h-4 mr-1.5" /> Xác nhận hàng loạt
+              </Button>
+              <Button 
+                size="sm" 
+                variant="destructive"
+                className="h-8"
+                onClick={() => bulkStatusMutation.mutate({ ids: selectedBookings.map(b => b.id), status: 'CANCELLED' })}
+                disabled={bulkStatusMutation.isPending}
+              >
+                 <Trash2 className="w-4 h-4 mr-1.5" /> Hủy hàng loạt
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-8"
+                onClick={() => setSelectedBookings([])}
+              >
+                Hủy chọn
+              </Button>
+            </div>
           </div>
         )}
-      </div>
+
+        <CardContent className="p-0">
+          <DataTable
+            columns={columns}
+            data={data?.data || []}
+            searchKey="bookingCode"
+            loading={isLoading}
+            onRowSelectionChange={setSelectedBookings}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

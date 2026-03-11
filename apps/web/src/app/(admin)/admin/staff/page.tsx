@@ -1,936 +1,515 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import Image from 'next/image';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useMemo, useState, useEffect } from 'react';
 import {
-  Search,
   Plus,
-  Star,
   MoreVertical,
   Edit,
   Trash2,
   Eye,
-  Loader2,
-  AlertCircle,
-  X,
-  MapPin,
+  Star,
+  Users,
+  Award,
+  Activity,
   Calendar,
-  Phone,
-  Mail,
-  CheckCircle2,
-  AlertTriangle,
-  User2,
+  Loader2,
 } from 'lucide-react';
 import { STAFF_POSITIONS, cn } from '@/lib/utils';
-import { adminApi, salonApi, type Salon } from '@/lib/api';
-import toast from 'react-hot-toast';
+import { adminApi, type Salon } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { DataTable } from '@/components/admin/data-table';
+import { StatusBadge } from '@/components/admin/status-badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ErrorState } from '@/components/admin/error-state';
+import { ColumnDef } from '@tanstack/react-table';
+import { toast } from 'react-hot-toast';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useSearchParams, useRouter } from 'next/navigation';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import ImageUpload from '@/components/ImageUpload';
 
-interface Staff {
-  id: string;
-  name: string;
-  position: string;
-  phone: string;
-  email: string;
-  avatar: string | null;
-  rating: number;
-  totalReviews: number;
-  totalBookings: number;
-  salon: { id: string; name: string };
-  isActive: boolean;
-}
-
-type PanelStaffDetail = {
-  id: string;
-  position: string;
-  salonId: string;
-  isActive: boolean;
-  user: {
-    id: string;
-    name?: string;
-    email?: string;
-    phone?: string;
-    avatar?: string | null;
-  };
-  salon?: {
-    id: string;
-    name: string;
-    address?: string | null;
-  } | null;
-  rating?: number | null;
-  totalReviews?: number | null;
-  totalBookings?: number | null;
+const STATUS_CONFIG: any = {
+  true: { label: 'Đang hoạt động', variant: 'success' },
+  false: { label: 'Tạm nghỉ', variant: 'destructive' },
 };
 
-type PanelMode = 'create' | 'edit' | 'view';
-
 export default function AdminStaffPage() {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [salonId, setSalonId] = useState<string | undefined>(undefined);
 
-  const [staff, setStaff] = useState<Staff[]>([]);
-  const [search, setSearch] = useState('');
-  const [selectedStaff, setSelectedStaff] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [deleting, setDeleting] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
+  // Sheet states
   const [panelOpen, setPanelOpen] = useState(false);
-  const [panelMode, setPanelMode] = useState<PanelMode>('create');
-  const [panelStaffId, setPanelStaffId] = useState<string | null>(null);
-  const [panelLoading, setPanelLoading] = useState(false);
-  const [panelSubmitting, setPanelSubmitting] = useState(false);
-  const [panelStaff, setPanelStaff] = useState<PanelStaffDetail | null>(null);
-
-  const [salons, setSalons] = useState<Salon[]>([]);
-  const [salonsLoading, setSalonsLoading] = useState(false);
-
-  const [deleteConfirm, setDeleteConfirm] = useState<{ staffId: string; staffName: string } | null>(
-    null
-  );
+  const [panelMode, setPanelMode] = useState<'view' | 'edit' | 'create'>('view');
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     avatar: '',
-    position: 'SENIOR_STYLIST',
+    position: 'STYLIST',
     salonId: '',
     password: '',
     isActive: true,
   });
 
-  useEffect(() => {
-    fetchStaff();
-  }, []);
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['admin', 'staff', { page, limit, salonId }],
+    queryFn: () => adminApi.getAllStaff({ page, limit, salonId }),
+  });
+
+  const { data: salonsData } = useQuery({
+    queryKey: ['admin', 'salons', 'list'],
+    queryFn: () => adminApi.getAllSalons({ limit: 100 }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => adminApi.deleteStaff(id),
+    onSuccess: () => {
+      toast.success('Đã xóa nhân viên');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'staff'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Không thể xóa nhân viên');
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: (data: any) => adminApi.createStaff(data),
+    onSuccess: () => {
+      toast.success('Thêm nhân viên thành công');
+      setPanelOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'staff'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Không thể thêm nhân viên');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => adminApi.updateStaff(id, data),
+    onSuccess: () => {
+      toast.success('Cập nhật thành công');
+      setPanelOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'staff'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Không thể cập nhật nhân viên');
+    },
+  });
 
   useEffect(() => {
-    const action = searchParams.get('action');
-    const id = searchParams.get('id');
-
-    if (action === 'new') {
-      openCreatePanel(false);
-      return;
-    }
-
-    if (action === 'edit' && id) {
-      openEditPanel(id, false);
-      return;
-    }
-
-    if (action === 'view' && id) {
-      openViewPanel(id, false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  const fetchStaff = async () => {
-    try {
-      setLoading(true);
-      const data = await adminApi.getAllStaff({ take: 100 });
-      setStaff((data.data || []) as any);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Không thể tải danh sách nhân viên');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const ensureSalonsLoaded = async () => {
-    if (salonsLoading || salons.length > 0) return;
-
-    try {
-      setSalonsLoading(true);
-      const data = await salonApi.getAll({ limit: 100 });
-      setSalons(data.data || []);
-    } catch {
-      toast.error('Không thể tải danh sách salon');
-    } finally {
-      setSalonsLoading(false);
-    }
-  };
-
-  const closePanel = () => {
-    setPanelOpen(false);
-    setPanelLoading(false);
-    setPanelSubmitting(false);
-    setPanelStaffId(null);
-    setPanelStaff(null);
-    setSelectedStaff(null);
-    router.replace('/admin/staff');
-  };
-
-  const openCreatePanel = async (pushUrl: boolean = true) => {
-    setSelectedStaff(null);
-    setPanelMode('create');
-    setPanelOpen(true);
-    setPanelStaffId(null);
-    setPanelStaff(null);
-    setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      avatar: '',
-      position: 'SENIOR_STYLIST',
-      salonId: '',
-      password: '',
-      isActive: true,
-    });
-    await ensureSalonsLoaded();
-
-    if (pushUrl) router.push('/admin/staff?action=new');
-  };
-
-  const openEditPanel = async (staffId: string, pushUrl: boolean = true) => {
-    setSelectedStaff(null);
-    setPanelMode('edit');
-    setPanelOpen(true);
-    setPanelStaffId(staffId);
-    setPanelStaff(null);
-
-    await ensureSalonsLoaded();
-
-    try {
-      setPanelLoading(true);
-      const staffData = (await adminApi.getStaffById(staffId)) as any as PanelStaffDetail;
-      setPanelStaff(staffData);
-      setFormData({
-        name: staffData.user?.name || '',
-        email: staffData.user?.email || '',
-        phone: staffData.user?.phone || '',
-        avatar: staffData.user?.avatar || '',
-        position: staffData.position || 'SENIOR_STYLIST',
-        salonId: staffData.salonId || '',
-        password: '',
-        isActive: staffData.isActive ?? true,
-      });
-    } catch {
-      toast.error('Không thể tải thông tin nhân viên');
-      closePanel();
-      return;
-    } finally {
-      setPanelLoading(false);
-    }
-
-    if (pushUrl) router.push(`/admin/staff?action=edit&id=${staffId}`);
-  };
-
-  const openViewPanel = async (staffId: string, pushUrl: boolean = true) => {
-    setSelectedStaff(null);
-    setPanelMode('view');
-    setPanelOpen(true);
-    setPanelStaffId(staffId);
-    setPanelStaff(null);
-
-    try {
-      setPanelLoading(true);
-      const staffData = (await adminApi.getStaffById(staffId)) as any as PanelStaffDetail;
-      setPanelStaff(staffData);
-    } catch {
-      toast.error('Không thể tải thông tin nhân viên');
-      closePanel();
-      return;
-    } finally {
-      setPanelLoading(false);
-    }
-
-    if (pushUrl) router.push(`/admin/staff?action=view&id=${staffId}`);
-  };
-
-  const handleDelete = async (staffId: string, staffName: string) => {
-    setDeleteConfirm({ staffId, staffName });
-  };
-
-  const confirmDelete = async () => {
-    if (!deleteConfirm) return;
-    const { staffId } = deleteConfirm;
-
-    try {
-      setDeleting(staffId);
-      setSelectedStaff(null);
-
-      setDeleteConfirm(null);
-
-      // Get full staff data to retrieve user ID
-      const staffData = await adminApi.getStaffById(staffId);
-      const userId = (staffData as any).user?.id;
-
-      if (!userId) {
-        throw new Error('Không tìm thấy user ID');
-      }
-
-      await adminApi.deleteStaff(userId);
-      toast.success('Xóa nhân viên thành công!');
-
-      // Refresh staff list
-      await fetchStaff();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Xóa nhân viên thất bại');
-    } finally {
-      setDeleting(null);
-    }
-  };
-
-  const filteredStaff = useMemo(() => {
-    const lower = search.toLowerCase();
-    return staff.filter(
-      s =>
-        s.name?.toLowerCase().includes(lower) ||
-        s.phone?.includes(search) ||
-        s.email?.toLowerCase().includes(lower)
-    );
-  }, [staff, search]);
-
-  const handlePanelSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (panelMode === 'view') return;
-
     if (panelMode === 'create') {
-      if (
-        !formData.name ||
-        !formData.email ||
-        !formData.phone ||
-        !formData.salonId ||
-        !formData.password
-      ) {
-        toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
-        return;
-      }
-
-      try {
-        setPanelSubmitting(true);
-        await adminApi.createStaff({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone,
-          ...(formData.avatar ? { avatar: formData.avatar } : {}),
-          position: formData.position,
-          salonId: formData.salonId,
-          password: formData.password,
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+        avatar: '',
+        position: 'STYLIST',
+        salonId: '',
+        password: '',
+        isActive: true,
+      });
+    } else if (selectedStaffId && (panelMode === 'edit' || panelMode === 'view')) {
+      const staff = data?.data?.find((s: any) => s.id === selectedStaffId);
+      if (staff) {
+        setFormData({
+          name: staff.user?.name || '',
+          email: staff.user?.email || '',
+          phone: staff.user?.phone || '',
+          avatar: staff.user?.avatar || '',
+          position: staff.position || 'STYLIST',
+          salonId: staff.salonId || '',
+          password: '',
+          isActive: staff.isActive,
         });
-        toast.success('Tạo nhân viên thành công!');
-        closePanel();
-        await fetchStaff();
-      } catch (error: any) {
-        toast.error(error.response?.data?.message || 'Tạo nhân viên thất bại');
-      } finally {
-        setPanelSubmitting(false);
       }
-
-      return;
     }
+  }, [panelMode, selectedStaffId, data]);
 
-    // edit mode
-    if (!panelStaff) return;
-    if (!formData.name || !formData.email || !formData.salonId) {
-      toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
-      return;
-    }
-
-    try {
-      setPanelSubmitting(true);
-
-      const changedData: any = {};
-      if (formData.name !== panelStaff.user?.name) changedData.name = formData.name;
-      if (formData.email !== panelStaff.user?.email) changedData.email = formData.email;
-      if (formData.phone !== panelStaff.user?.phone) changedData.phone = formData.phone;
-      if ((formData.avatar || '') !== (panelStaff.user?.avatar || ''))
-        changedData.avatar = formData.avatar;
-      if (formData.position !== panelStaff.position) changedData.position = formData.position;
-      if (formData.salonId !== panelStaff.salonId) changedData.salonId = formData.salonId;
-      if (formData.isActive !== panelStaff.isActive) changedData.isActive = formData.isActive;
-
-      if (Object.keys(changedData).length === 0) {
-        toast.success('Không có thay đổi nào để lưu');
-        return;
-      }
-
-      await adminApi.updateStaff(panelStaff.user.id, changedData);
-      toast.success('Cập nhật nhân viên thành công!');
-      closePanel();
-      await fetchStaff();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Cập nhật nhân viên thất bại');
-    } finally {
-      setPanelSubmitting(false);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (panelMode === 'create') {
+      createMutation.mutate(formData);
+    } else if (panelMode === 'edit' && selectedStaffId) {
+      const staff = data?.data?.find((s: any) => s.id === selectedStaffId);
+      updateMutation.mutate({ id: staff.user.id, data: formData });
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
-      </div>
-    );
-  }
+  const columns: ColumnDef<any>[] = useMemo(() => [
+    {
+      accessorKey: 'user.name',
+      header: 'Nhân viên',
+      cell: ({ row }) => {
+        const staff = row.original;
+        const user = staff.user;
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10 border border-slate-200">
+              <AvatarImage src={user?.avatar || ''} alt={user?.name} />
+              <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold font-heading italic">
+                {user?.name?.charAt(0) || 'S'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col text-left">
+              <span className="font-semibold text-slate-900 line-clamp-1">{user?.name}</span>
+              <span className="text-xs text-slate-500 line-clamp-1">{user?.email || user?.phone}</span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'position',
+      header: 'Vị trí',
+      cell: ({ row }) => {
+        const pos = row.getValue('position') as string;
+        return (
+          <Badge variant="secondary" className="font-medium bg-slate-100 text-slate-700 border-none whitespace-nowrap">
+            {STAFF_POSITIONS[pos as keyof typeof STAFF_POSITIONS] || pos}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: 'salon.name',
+      header: 'Chi nhánh',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1.5 text-slate-600">
+          <Calendar className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-sm font-medium line-clamp-1">{row.original.salon?.name || '-'}</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'experience',
+      header: 'Thống kê',
+      cell: ({ row }) => {
+        const rating = row.original.rating || 0;
+        const bookings = row.original._count?.bookings || 0;
+        return (
+          <div className="flex flex-col gap-1 text-left">
+            <div className="flex items-center gap-1 text-xs text-amber-600 font-bold">
+              <Star className="w-3 h-3 fill-amber-500" />
+              <span>{rating.toFixed(1)}</span>
+              <span className="text-slate-400 font-normal">({row.original.totalReviews || 0})</span>
+            </div>
+            <div className="text-xs text-slate-500">
+              <span className="font-medium text-slate-700">{bookings}</span> lượt đặt
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'isActive',
+      header: 'Trạng thái',
+      cell: ({ row }) => (
+        <StatusBadge status={String(row.getValue('isActive'))} config={STATUS_CONFIG} />
+      ),
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
+        const staff = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-slate-100 rounded-full transition-colors">
+                <MoreVertical className="h-4 w-4 text-slate-500" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[180px] p-1 shadow-xl border-slate-200">
+              <DropdownMenuItem 
+                onClick={() => router.push(`/admin/staff/${staff.id}`)}
+                className="rounded-md focus:bg-slate-50 cursor-pointer"
+              >
+                <Eye className="w-4 h-4 mr-2 text-slate-400" /> Xem chi tiết
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => { setSelectedStaffId(staff.id); setPanelMode('edit'); setPanelOpen(true); }}
+                className="rounded-md focus:bg-slate-50 cursor-pointer"
+              >
+                <Edit className="w-4 h-4 mr-2 text-slate-400" /> Chỉnh sửa
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-destructive focus:bg-destructive/5 focus:text-destructive rounded-md cursor-pointer"
+                onClick={() => {
+                  if (confirm(`Bạn có chắc muốn xóa nhân viên ${staff.user?.name}?`)) {
+                    deleteMutation.mutate(staff.id);
+                  }
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Xóa nhân viên
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ], [deleteMutation, data]);
 
-  if (error) {
+  if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-        <p className="text-red-600 mb-4">{error}</p>
-        <button
-          onClick={fetchStaff}
-          className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90"
-        >
-          Thử lại
-        </button>
-      </div>
+      <Card className="m-8 border-none shadow-premium">
+        <CardContent className="pt-12 pb-12 flex flex-col items-center justify-center">
+          <ErrorState 
+            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách nhân viên'} 
+            onRetry={() => refetch()} 
+          />
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Quản lý nhân viên</h1>
-          <p className="text-gray-500">Quản lý thông tin nhân viên và stylist</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-heading italic">Nhân Viên</h1>
+          <p className="text-slate-500 mt-1">Quản lý đội ngũ stylist, thợ phụ và phân quyền tại các chi nhánh.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => openCreatePanel(true)}
-          className="bg-accent text-white px-4 py-2 rounded-xl font-medium flex items-center gap-2 hover:bg-accent/90 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Thêm nhân viên
-        </button>
+        <Button onClick={() => { setPanelMode('create'); setSelectedStaffId(null); setPanelOpen(true); }} className="gap-2 shadow-sm rounded-xl px-6">
+          <Plus className="w-4 h-4" /> Thêm nhân viên
+        </Button>
       </div>
 
-      {/* Search */}
-      <div className="bg-white rounded-xl p-4 shadow-sm">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Tìm theo tên, SĐT, email..."
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-        </div>
-      </div>
-
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredStaff.map(member => (
-          <div key={member.id} className="bg-white rounded-xl p-6 shadow-sm relative">
-            {/* Actions Menu */}
-            <div className="absolute top-4 right-4">
-              <button
-                onClick={() => setSelectedStaff(selectedStaff === member.id ? null : member.id)}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <MoreVertical className="w-5 h-5 text-gray-500" />
-              </button>
-
-              {selectedStaff === member.id && (
-                <div className="absolute right-0 mt-1 bg-white rounded-lg shadow-lg border py-1 z-10 min-w-[150px]">
-                  <button
-                    type="button"
-                    onClick={() => openViewPanel(member.id, true)}
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm w-full"
-                  >
-                    <Eye className="w-4 h-4" />
-                    Xem chi tiết
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openEditPanel(member.id, true)}
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm w-full"
-                  >
-                    <Edit className="w-4 h-4" />
-                    Chỉnh sửa
-                  </button>
-                  <button
-                    onClick={() => handleDelete(member.id, member.name)}
-                    disabled={deleting === member.id}
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm w-full text-red-600 disabled:opacity-50"
-                  >
-                    {deleting === member.id ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Đang xóa...
-                      </>
-                    ) : (
-                      <>
-                        <Trash2 className="w-4 h-4" />
-                        Xóa
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-primary/5 border-none shadow-none ring-1 ring-primary/10 transition-all hover:ring-primary/20">
+          <CardContent className="p-6 flex items-center gap-5">
+            <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-inner">
+              <Users className="w-6 h-6" />
             </div>
-
-            {/* Avatar & Info */}
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-16 h-16 rounded-full overflow-hidden bg-accent/10 flex items-center justify-center">
-                {member.avatar ? (
-                  <Image
-                    src={member.avatar}
-                    alt={member.name}
-                    width={64}
-                    height={64}
-                    className="object-cover"
-                  />
-                ) : (
-                  <span className="text-2xl font-bold text-accent">{member.name.charAt(0)}</span>
-                )}
-              </div>
-              <div>
-                <h3 className="font-semibold text-gray-800">{member.name}</h3>
-                <p className="text-sm text-accent">
-                  {STAFF_POSITIONS[member.position] || member.position}
-                </p>
-              </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Tổng nhân sự</p>
+              <p className="text-3xl font-bold text-slate-900 tracking-tight">{data?.meta?.total || 0}</p>
             </div>
-
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              <div className="bg-gray-50 rounded-lg p-2 text-center">
-                <div className="flex items-center justify-center gap-1 text-yellow-500">
-                  <Star className="w-4 h-4 fill-yellow-500" />
-                  <span className="font-bold">
-                    {Number.isFinite(Number(member.rating))
-                      ? Math.min(5, Math.max(0, Number(member.rating))).toFixed(1)
-                      : 'N/A'}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500">{member.totalReviews} đánh giá</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-2 text-center">
-                <p className="font-bold text-gray-800">{member.totalBookings}</p>
-                <p className="text-xs text-gray-500">Đặt lịch</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-2 text-center">
-                <p className="font-bold text-gray-800 truncate text-xs">
-                  {member.salon?.name || '-'}
-                </p>
-                <p className="text-xs text-gray-500">Chi nhánh</p>
-              </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-amber-50/50 border-none shadow-none ring-1 ring-amber-200/50 transition-all hover:ring-amber-300">
+          <CardContent className="p-6 flex items-center gap-5">
+            <div className="p-4 bg-amber-100 rounded-2xl text-amber-600 shadow-inner">
+              <Award className="w-6 h-6" />
             </div>
-
-            {/* Contact */}
-            <div className="text-sm text-gray-500 space-y-2">
-              <div className="flex items-center gap-2">
-                <Phone className="w-4 h-4" />
-                <span>{member.phone || '-'}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Mail className="w-4 h-4" />
-                <span className="truncate">{member.email || '-'}</span>
-              </div>
-            </div>
-
-            {/* Status */}
-            <div className="mt-4 pt-4 border-t flex items-center justify-between">
-              <span
-                className={cn(
-                  'text-sm font-medium flex items-center gap-2',
-                  member.isActive ? 'text-green-600' : 'text-red-600'
-                )}
-              >
-                {member.isActive ? (
-                  <CheckCircle2 className="w-4 h-4" />
-                ) : (
-                  <AlertTriangle className="w-4 h-4" />
-                )}
-                {member.isActive ? 'Đang hoạt động' : 'Tạm nghỉ'}
-              </span>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {filteredStaff.length === 0 && (
-        <div className="bg-white rounded-xl p-12 text-center shadow-sm">
-          <div className="flex justify-center mb-4">
-            <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center">
-              <User2 className="w-7 h-7 text-gray-400" />
-            </div>
-          </div>
-          <p className="text-gray-500">Không tìm thấy nhân viên nào</p>
-        </div>
-      )}
-
-      {/* Delete confirm dialog */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setDeleteConfirm(null)} />
-          <div className="absolute inset-0 flex items-center justify-center p-4">
-            <div className="w-full max-w-md bg-white rounded-xl shadow-lg border p-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Xác nhận xoá</h3>
-              <p className="text-sm text-gray-600 mb-6">
-                Bạn có chắc chắn muốn xóa nhân viên{' '}
-                <span className="font-medium">&quot;{deleteConfirm.staffName}&quot;</span>? Hành
-                động này không thể hoàn tác.
+            <div>
+              <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Stylist nổi bật</p>
+              <p className="text-3xl font-bold text-slate-900 tracking-tight">
+                {data?.data?.filter((s: any) => s.rating >= 4.5).length || 0}
               </p>
-              <div className="flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setDeleteConfirm(null)}
-                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50"
-                >
-                  Hủy
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmDelete}
-                  disabled={deleting === deleteConfirm.staffId}
-                  className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 inline-flex items-center gap-2"
-                >
-                  {deleting === deleteConfirm.staffId ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Đang xóa...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="w-4 h-4" />
-                      Xóa
-                    </>
-                  )}
-                </button>
-              </div>
             </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-emerald-50/50 border-none shadow-none ring-1 ring-emerald-200/50 transition-all hover:ring-emerald-300">
+          <CardContent className="p-6 flex items-center gap-5">
+            <div className="p-4 bg-emerald-100 rounded-2xl text-emerald-600 shadow-inner">
+              <Activity className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Đang hoạt động</p>
+              <p className="text-3xl font-bold text-slate-900 tracking-tight">
+                {data?.data?.filter((s: any) => s.isActive).length || 0}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border-none shadow-premium bg-white/50 backdrop-blur-sm">
+        <CardHeader className="px-6 flex flex-row items-center justify-between space-y-0 pb-6 border-b border-slate-100">
+          <CardTitle className="text-xl font-bold text-slate-800">Danh sách nhân sự</CardTitle>
+          <div className="flex items-center gap-3">
+            <Badge variant="outline" className="h-9 px-3 border-slate-200 bg-white font-medium text-slate-600 hidden sm:flex">
+              {data?.meta?.total || 0} nhân viên
+            </Badge>
+            <select
+              title="Salon Filter"
+              value={salonId || 'ALL'}
+              onChange={e => setSalonId(e.target.value === 'ALL' ? undefined : e.target.value)}
+              className="h-9 px-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer font-medium"
+            >
+              <option value="ALL">Tất cả chi nhánh</option>
+              {salonsData?.data?.map((salon: any) => (
+                <option key={salon.id} value={salon.id}>
+                  {salon.name}
+                </option>
+              ))}
+            </select>
           </div>
-        </div>
-      )}
+        </CardHeader>
+        <CardContent className="px-0 sm:px-6 py-6">
+          <DataTable
+            columns={columns}
+            data={data?.data || []}
+            searchKey="user.name"
+            loading={isLoading}
+          />
+        </CardContent>
+      </Card>
 
-      {/* Create/Edit/View panel */}
-      {panelOpen && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/40" onClick={closePanel} />
-          <div className="absolute right-0 top-0 h-full w-full max-w-lg bg-white shadow-lg border-l overflow-y-auto">
-            <div className="p-6 border-b flex items-start justify-between gap-4">
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">
-                  {panelMode === 'create'
-                    ? 'Thêm nhân viên'
-                    : panelMode === 'edit'
-                      ? 'Chỉnh sửa nhân viên'
-                      : 'Thông tin nhân viên'}
-                </h2>
-                <p className="text-sm text-gray-500">
-                  {panelMode === 'create'
-                    ? 'Tạo tài khoản nhân viên mới'
-                    : panelMode === 'edit'
-                      ? 'Cập nhật thông tin nhân viên'
-                      : 'Chi tiết thông tin nhân viên'}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={closePanel}
-                className="p-2 hover:bg-gray-100 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+      <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
+        <SheetContent className="sm:max-w-2xl overflow-y-auto px-0 border-none shadow-premium">
+          <div className="px-8 flex flex-col h-full">
+            <SheetHeader className="border-b border-slate-100 pb-8 mb-8 sticky top-0 bg-white z-10 pt-2">
+              <SheetTitle className="text-2xl font-bold font-heading italic text-primary flex items-center gap-2">
+                {panelMode === 'create' ? <Plus className="w-6 h-6" /> : panelMode === 'edit' ? <Edit className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
+                {panelMode === 'create' ? 'Thêm nhân viên' : panelMode === 'edit' ? 'Chỉnh sửa nhân viên' : 'Thông tin nhân viên'}
+              </SheetTitle>
+              <SheetDescription className="text-slate-500 mt-2">
+                {panelMode === 'create' ? 'Tạo hồ sơ nhân sự mới và thiết lập quyền truy cập cho hệ thống.' : 'Xem hoặc cập nhật thông tin chi tiết và quyền hạn của nhân viên.'}
+              </SheetDescription>
+            </SheetHeader>
+            
+            <form onSubmit={handleSubmit} className="space-y-8 flex-1 pb-12">
+              <div className="grid grid-cols-1 gap-8">
+                {/* Avatar upload */}
+                <div className="flex flex-col items-center justify-center p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 group transition-all hover:bg-slate-100/50">
+                  <ImageUpload
+                    value={formData.avatar}
+                    onChange={url => setFormData({ ...formData, avatar: url })}
+                    folder="staff"
+                    disabled={panelMode === 'view'}
+                  />
+                  <p className="text-xs text-slate-400 mt-4 text-center">Tải lên ảnh chân dung chuyên nghiệp.<br/>Định dạng JPG, PNG tối đa 5MB.</p>
+                </div>
 
-            {panelLoading ? (
-              <div className="p-6 flex items-center justify-center min-h-[240px]">
-                <Loader2 className="w-7 h-7 animate-spin text-accent" />
-              </div>
-            ) : panelMode === 'view' ? (
-              <div className="p-6 space-y-6">
-                {!panelStaff ? (
-                  <div className="flex items-center justify-center min-h-[240px]">
-                    <AlertCircle className="w-8 h-8 text-red-500" />
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-full overflow-hidden bg-accent/10 flex items-center justify-center">
-                        {panelStaff.user?.avatar ? (
-                          <Image
-                            src={panelStaff.user.avatar}
-                            alt={panelStaff.user?.name || 'staff'}
-                            width={64}
-                            height={64}
-                            className="object-cover"
-                          />
-                        ) : (
-                          <span className="text-2xl font-bold text-accent">
-                            {(panelStaff.user?.name || 'N').charAt(0)}
-                          </span>
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="font-semibold text-gray-800 truncate">
-                          {panelStaff.user?.name || 'N/A'}
-                        </h3>
-                        <p className="text-sm text-accent">
-                          {STAFF_POSITIONS[panelStaff.position as keyof typeof STAFF_POSITIONS] ||
-                            panelStaff.position}
-                        </p>
-                        <span
-                          className={cn(
-                            'inline-flex mt-2 px-3 py-1 rounded-full text-sm',
-                            panelStaff.isActive
-                              ? 'bg-green-50 text-green-600'
-                              : 'bg-red-50 text-red-600'
-                          )}
-                        >
-                          {panelStaff.isActive ? 'Đang hoạt động' : 'Tạm nghỉ'}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-center gap-2 text-yellow-600">
-                          <Star className="w-4 h-4" />
-                          <span className="font-semibold">
-                            {Number.isFinite(Number(panelStaff.rating))
-                              ? Math.min(5, Math.max(0, Number(panelStaff.rating))).toFixed(1)
-                              : 'N/A'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          {panelStaff.totalReviews || 0} đánh giá
-                        </p>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-center gap-2 text-blue-600">
-                          <Calendar className="w-4 h-4" />
-                          <span className="font-semibold">{panelStaff.totalBookings || 0}</span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">Lượt đặt</p>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex items-center gap-2 text-gray-700">
-                          <MapPin className="w-4 h-4" />
-                          <span className="font-semibold truncate">
-                            {panelStaff.salon?.name || '-'}
-                          </span>
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1 truncate">
-                          {panelStaff.salon?.address || '-'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl border p-4">
-                      <h4 className="font-semibold text-gray-800 mb-3">Thông tin</h4>
-                      <div className="space-y-3 text-sm">
-                        <div className="flex justify-between gap-4 border-b pb-2">
-                          <span className="text-gray-500">ID Nhân viên</span>
-                          <span className="font-medium break-all text-right">{panelStaff.id}</span>
-                        </div>
-                        <div className="flex items-center justify-between gap-4 border-b pb-2">
-                          <span className="text-gray-500 inline-flex items-center gap-2">
-                            <Mail className="w-4 h-4" /> Email
-                          </span>
-                          <span className="font-medium text-right break-all">
-                            {panelStaff.user?.email || '-'}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between gap-4">
-                          <span className="text-gray-500 inline-flex items-center gap-2">
-                            <Phone className="w-4 h-4" /> Số điện thoại
-                          </span>
-                          <span className="font-medium text-right break-all">
-                            {panelStaff.user?.phone || '-'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-end gap-3 pt-2">
-                      <button
-                        type="button"
-                        onClick={closePanel}
-                        className="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                      >
-                        Đóng
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => panelStaffId && openEditPanel(panelStaffId, true)}
-                        className="px-5 py-2 bg-accent text-white rounded-lg hover:bg-accent/90"
-                      >
-                        Chỉnh sửa
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            ) : (
-              <form onSubmit={handlePanelSubmit} className="p-6 space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Name */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Họ tên <span className="text-red-500">*</span>
-                    </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Họ và tên</label>
                     <input
-                      type="text"
+                      title="Name"
+                      required
+                      disabled={panelMode === 'view'}
                       value={formData.name}
                       onChange={e => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                      placeholder="Nguyễn Văn A"
-                      required
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 transition-all bg-white disabled:bg-slate-50"
+                      placeholder="vd: Nguyễn Văn A"
                     />
                   </div>
-
-                  {/* Avatar */}
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Ảnh đại diện
-                    </label>
-                    <ImageUpload
-                      value={formData.avatar}
-                      onChange={url => setFormData({ ...formData, avatar: url })}
-                      folder="avatars"
-                      variant="avatar"
-                    />
-                  </div>
-
-                  {/* Email */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email <span className="text-red-500">*</span>
-                    </label>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Số điện thoại</label>
                     <input
-                      type="email"
-                      value={formData.email}
-                      onChange={e => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                      placeholder="staff@example.com"
+                      title="Phone"
                       required
-                    />
-                  </div>
-
-                  {/* Phone */}
-                  <div>
-                    <label
-                      className={cn(
-                        'block text-sm font-medium text-gray-700 mb-2',
-                        panelMode === 'create' ? '' : ''
-                      )}
-                    >
-                      Số điện thoại{' '}
-                      {panelMode === 'create' && <span className="text-red-500">*</span>}
-                    </label>
-                    <input
-                      type="tel"
+                      disabled={panelMode === 'view'}
                       value={formData.phone}
                       onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                      placeholder="0912345678"
-                      required={panelMode === 'create'}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 transition-all bg-white disabled:bg-slate-50"
+                      placeholder="vd: 0912..."
                     />
                   </div>
-
-                  {/* Password (create only) */}
-                  {panelMode === 'create' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Mật khẩu <span className="text-red-500">*</span>
-                      </label>
-                      <input
-                        type="password"
-                        value={formData.password}
-                        onChange={e => setFormData({ ...formData, password: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                        placeholder="Tối thiểu 6 ký tự"
-                        minLength={6}
-                        required
-                      />
-                    </div>
-                  )}
-
-                  {/* Position */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Vị trí <span className="text-red-500">*</span>
-                    </label>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Email</label>
+                    <input
+                      title="Email"
+                      required
+                      type="email"
+                      disabled={panelMode === 'view'}
+                      value={formData.email}
+                      onChange={e => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 transition-all bg-white disabled:bg-slate-50"
+                      placeholder="vd: nhanvien@barber.vn"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Vị trí</label>
                     <select
+                      title="Position"
+                      required
+                      disabled={panelMode === 'view'}
                       value={formData.position}
                       onChange={e => setFormData({ ...formData, position: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                      required
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 transition-all bg-white disabled:bg-slate-50 cursor-pointer"
                     >
-                      <option value="RECEPTIONIST">Thu ngân</option>
-                      <option value="STYLIST">Stylist</option>
-                      <option value="SENIOR_STYLIST">Senior Stylist</option>
-                      <option value="MASTER_STYLIST">Master Stylist</option>
-                      <option value="SKINNER">Skinner</option>
-                      <option value="MANAGER">Quản lý</option>
-                    </select>
-                  </div>
-
-                  {/* Salon */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Chi nhánh <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={formData.salonId}
-                      onChange={e => setFormData({ ...formData, salonId: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                      required
-                      disabled={salonsLoading}
-                    >
-                      <option value="">-- Chọn chi nhánh --</option>
-                      {salons.map(salon => (
-                        <option key={salon.id} value={salon.id}>
-                          {salon.name}
-                        </option>
+                      {Object.entries(STAFF_POSITIONS).map(([key, value]) => (
+                        <option key={key} value={key}>{value as string}</option>
                       ))}
                     </select>
                   </div>
-
-                  {/* Status (edit only) */}
-                  {panelMode === 'edit' && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Trạng thái
-                      </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.isActive}
-                          onChange={e => setFormData({ ...formData, isActive: e.target.checked })}
-                          className="w-4 h-4 text-accent rounded focus:ring-2 focus:ring-accent"
-                        />
-                        <span className="text-sm text-gray-700">Đang hoạt động</span>
-                      </label>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 ml-1">Chi nhánh trực thuộc</label>
+                    <select
+                      title="Salon"
+                      required
+                      disabled={panelMode === 'view'}
+                      value={formData.salonId}
+                      onChange={e => setFormData({ ...formData, salonId: e.target.value })}
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 transition-all bg-white disabled:bg-slate-50 cursor-pointer"
+                    >
+                      <option value="">Chọn chi nhánh</option>
+                      {salonsData?.data?.map((salon: any) => (
+                        <option key={salon.id} value={salon.id}>{salon.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  {panelMode === 'create' && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">Mật khẩu khởi tạo</label>
+                      <input
+                        title="Password"
+                        required
+                        type="password"
+                        value={formData.password}
+                        onChange={e => setFormData({ ...formData, password: e.target.value })}
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-primary/20 transition-all bg-white"
+                        placeholder="Tối thiểu 6 ký tự"
+                      />
                     </div>
                   )}
+                  <div className="md:col-span-2 flex items-center gap-2 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                    <input
+                      title="Is Active"
+                      type="checkbox"
+                      id="isActive"
+                      disabled={panelMode === 'view'}
+                      checked={formData.isActive}
+                      onChange={e => setFormData({ ...formData, isActive: e.target.checked })}
+                      className="w-5 h-5 rounded-md border-slate-300 text-primary focus:ring-primary/20 cursor-pointer"
+                    />
+                    <label htmlFor="isActive" className="text-sm font-semibold text-slate-700 cursor-pointer">
+                      Nhân viên này đang trong trạng thái sẵn sàng phục vụ khách hàng.
+                    </label>
+                  </div>
                 </div>
+              </div>
 
-                <div className="flex items-center justify-end gap-3 pt-4 border-t">
-                  <button
-                    type="button"
-                    onClick={closePanel}
-                    className="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={panelSubmitting}
-                    className="px-5 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors inline-flex items-center gap-2 disabled:opacity-50"
-                  >
-                    {panelSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        {panelMode === 'create' ? 'Đang tạo...' : 'Đang lưu...'}
-                      </>
-                    ) : (
-                      <>{panelMode === 'create' ? 'Tạo nhân viên' : 'Lưu thay đổi'}</>
-                    )}
-                  </button>
-                </div>
-              </form>
-            )}
+              <div className="flex justify-end gap-3 sticky bottom-4 bg-white/90 backdrop-blur-md pt-6 border-t border-slate-100 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
+                 <Button type="button" variant="outline" onClick={() => setPanelOpen(false)} className="rounded-xl px-8 h-12">Hủy</Button>
+                 {panelMode !== 'view' && (
+                   <Button 
+                    type="submit" 
+                    className="rounded-xl px-12 h-12 font-bold shadow-lg shadow-primary/20"
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                   >
+                     {createMutation.isPending || updateMutation.isPending ? (
+                       <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                     ) : null}
+                     {panelMode === 'create' ? 'Tạo nhân viên' : 'Lưu thay đổi'}
+                   </Button>
+                 )}
+              </div>
+            </form>
           </div>
-        </div>
-      )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

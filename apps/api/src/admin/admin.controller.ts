@@ -1,19 +1,67 @@
-import { Controller, Get, Query, Patch, Param, UseGuards, Body } from '@nestjs/common';
+import { Controller, Get, Query, Patch, Param, UseGuards, Body, Res, Post } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
-import { BookingStatus } from '@prisma/client';
+import { BookingStatus, User } from '@prisma/client';
 import { Permission } from '@reetro/shared';
+import { Response } from 'express';
 
 import { AdminService } from './admin.service';
+import { AnalyticsService } from './analytics.service';
+import { StaffService } from '../staff/staff.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
+import { BookingQueryDto } from '../bookings/dto/booking-query.dto';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) { }
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly analyticsService: AnalyticsService,
+    private readonly staffService: StaffService,
+  ) { }
+
+  @Get('analytics/branches')
+  @RequirePermissions(Permission.VIEW_REVENUE)
+  @ApiOperation({ summary: 'Get branch performance analytics' })
+  getBranchPerformance() {
+    return this.analyticsService.getBranchPerformance();
+  }
+
+  @Get('analytics/services')
+  @RequirePermissions(Permission.VIEW_REVENUE)
+  @ApiOperation({ summary: 'Get service performance analytics' })
+  getServicePerformance(@Query('salonId') salonId?: string) {
+    return this.analyticsService.getServicePerformance(salonId);
+  }
+
+  @Get('staff/:id/analytics')
+  @RequirePermissions(Permission.VIEW_STAFF)
+  @ApiOperation({ summary: 'Get specific staff performance analytics' })
+  getStaffAnalytics(@Param('id') id: string) {
+    return this.staffService.getStaffAnalytics(id);
+  }
+
+  @Post('staff/:id/leaves')
+  @RequirePermissions(Permission.MANAGE_STAFF)
+  @ApiOperation({ summary: 'Register leave for staff' })
+  registerLeave(
+    @Param('id') id: string,
+    @Body() dto: { startDate: Date; endDate: Date; reason?: string },
+    @CurrentUser() user: User,
+  ) {
+    return this.staffService.registerLeave(id, dto, user);
+  }
+
+  @Get('staff/:id/leaves')
+  @RequirePermissions(Permission.VIEW_STAFF)
+  @ApiOperation({ summary: 'Get staff leaves' })
+  getLeaves(@Param('id') id: string) {
+    return this.staffService.getLeaves(id);
+  }
 
   @Get('dashboard')
   @RequirePermissions(Permission.VIEW_DASHBOARD)
@@ -81,23 +129,40 @@ export class AdminController {
 
   @Get('bookings')
   @RequirePermissions(Permission.VIEW_ALL_BOOKINGS)
-  @ApiOperation({ summary: 'Get all bookings (paginated)' })
-  @ApiQuery({ name: 'skip', required: false })
-  @ApiQuery({ name: 'take', required: false })
-  @ApiQuery({ name: 'status', required: false, enum: BookingStatus })
-  @ApiQuery({ name: 'salonId', required: false })
-  getAllBookings(
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
-    @Query('status') status?: BookingStatus,
-    @Query('salonId') salonId?: string,
-  ) {
-    return this.adminService.getAllBookings({
-      skip: skip ? parseInt(skip) : undefined,
-      take: take ? parseInt(take) : undefined,
-      status,
-      salonId,
+  @ApiOperation({ summary: 'Get all bookings (paginated with filters)' })
+  getAllBookings(@Query() query: BookingQueryDto) {
+    return this.adminService.getAllBookings(query);
+  }
+
+  @Get('bookings/export')
+  @RequirePermissions(Permission.VIEW_ALL_BOOKINGS)
+  @ApiOperation({ summary: 'Export bookings to Excel' })
+  async exportBookings(@Query() query: BookingQueryDto, @Res() res: Response) {
+    const workbook = await this.adminService.exportBookings(query);
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename=' + `bookings-${Date.now()}.xlsx`,
+    );
+
+    return workbook.xlsx.write(res).then(() => {
+      res.status(200).end();
     });
+  }
+
+  @Patch('bookings/bulk-status')
+  @RequirePermissions(Permission.MANAGE_BOOKINGS)
+  @ApiOperation({ summary: 'Bulk update booking status' })
+  bulkUpdateStatus(
+    @Body('ids') ids: string[],
+    @Body('status') status: BookingStatus,
+    @CurrentUser() user: User,
+  ) {
+    return this.adminService.bulkUpdateBookingStatus(ids, status, user);
   }
 
   @Patch('bookings/:id/status')
@@ -108,8 +173,9 @@ export class AdminController {
   updateBookingStatus(
     @Param('id') id: string,
     @Body('status') status: BookingStatus,
+    @CurrentUser() user: User,
   ) {
-    return this.adminService.updateBookingStatus(id, status);
+    return this.adminService.updateBookingStatus(id, status, user);
   }
 
   @Get('revenue/stats')

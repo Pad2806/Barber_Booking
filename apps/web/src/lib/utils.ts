@@ -12,6 +12,8 @@ export function formatPrice(price: number): string {
   }).format(price);
 }
 
+export const formatCurrency = formatPrice;
+
 export function formatDate(date: string | Date | null | undefined): string {
   if (!date) return '-';
   try {

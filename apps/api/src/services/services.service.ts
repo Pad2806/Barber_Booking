@@ -8,11 +8,17 @@ import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { Service, Role, User, ServiceCategory } from '@prisma/client';
 
+import { BaseQueryService } from '../common/services/base-query.service';
+import { ServiceQueryDto } from './dto/service-query.dto';
+
 @Injectable()
-export class ServicesService {
-  constructor(private readonly prisma: PrismaService) { }
+export class ServicesService extends BaseQueryService {
+  constructor(private readonly prisma: PrismaService) {
+    super();
+  }
 
   async create(dto: CreateServiceDto, user: User) {
+    // ... existing create logic ... (just make sure class extends BaseQueryService)
     // Verify salon ownership
     await this.verifySalonOwnership(dto.salonId, user);
 
@@ -32,21 +38,25 @@ export class ServicesService {
     return this.formatService(service);
   }
 
-  async findAll(params: {
-    skip?: number;
-    take?: number;
-    category?: ServiceCategory;
-    isActive?: boolean;
-    search?: string;
-    sortBy?: 'most_booked' | 'newest' | 'order';
-  } = {}) {
-    const { skip = 0, take = 20, category, isActive = true, search, sortBy = 'order' } = params;
+  async findAll(query: ServiceQueryDto) {
+    const {
+      salonId,
+      category,
+      isActive = true,
+      search,
+      sortBy = 'order',
+      sortOrder = 'asc',
+    } = query;
+
+    const limit = query.limit || 10;
+    const page = query.page || 1;
+    const skip = (page - 1) * limit;
+    const take = limit;
 
     const where: any = { isActive };
 
-    if (category) {
-      where.category = category;
-    }
+    if (salonId) where.salonId = salonId;
+    if (category) where.category = category;
 
     if (search) {
       where.OR = [
@@ -56,6 +66,7 @@ export class ServicesService {
     }
 
     let orderBy: any = [{ order: 'asc' }, { createdAt: 'desc' }];
+
     if (sortBy === 'most_booked') {
       orderBy = {
         bookingServices: {
@@ -64,6 +75,8 @@ export class ServicesService {
       };
     } else if (sortBy === 'newest') {
       orderBy = { createdAt: 'desc' };
+    } else if (sortBy) {
+      orderBy = { [sortBy]: sortOrder };
     }
 
     const [services, total] = await Promise.all([
@@ -92,12 +105,7 @@ export class ServicesService {
 
     return {
       data: services.map(s => this.formatService(s)),
-      meta: {
-        total,
-        skip,
-        take,
-        hasMore: skip + take < total,
-      },
+      meta: this.getPaginationMeta(total, query),
     };
   }
 

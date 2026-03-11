@@ -22,10 +22,12 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 
+import { StaffQueryDto } from './dto/staff-query.dto';
+
 @ApiTags('Staff')
 @Controller('staff')
 export class StaffController {
-  constructor(private readonly staffService: StaffService) {}
+  constructor(private readonly staffService: StaffService) { }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -34,6 +36,15 @@ export class StaffController {
   @ApiOperation({ summary: 'Add staff to salon' })
   create(@Body() dto: CreateStaffDto, @CurrentUser() user: User) {
     return this.staffService.create(dto, user);
+  }
+
+  @Get()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.SALON_OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all staff (admin)' })
+  findAll(@Query() query: StaffQueryDto) {
+    return this.staffService.findAll(query);
   }
 
   @Get('salon/:salonId')

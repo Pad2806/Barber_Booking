@@ -18,9 +18,13 @@ import {
   User,
   UserCheck,
   ShieldAlert,
+  ChevronLeft,
+  ChevronRight,
+  Bell,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { usersApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import {
@@ -29,12 +33,22 @@ import {
   ADMIN_MENU_ITEMS,
   ROLE_DISPLAY,
 } from '@reetro/shared';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface AdminLayoutProps {
   children: ReactNode;
 }
 
-// Map menu keys to icons
 const MENU_ICONS: Record<string, React.ElementType> = {
   dashboard: LayoutDashboard,
   bookings: Calendar,
@@ -50,6 +64,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const { data: me, isLoading: isLoadingMe } = useQuery({
     queryKey: ['users', 'me'],
@@ -63,37 +79,39 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
   }, [status, router]);
 
-  // Compute visible menu items from SHARED permission definitions
   const visibleMenuItems = useMemo(() => {
     if (!me) return [];
-
     const role = me.role as Role;
     const staffPosition = me.staff?.position || null;
 
-    // Build menu from shared ADMIN_MENU_ITEMS + profile link
-    const adminItems: Array<{ key: string; href: string; label: string; icon: React.ElementType }> =
-      ADMIN_MENU_ITEMS
-        .filter(item => hasPermission(role, item.permission, staffPosition))
-        .map(item => ({
-          key: item.key,
-          href: item.href,
-          label: item.label,
-          icon: MENU_ICONS[item.key] || LayoutDashboard,
-        }));
+    interface MenuItem {
+      key: string;
+      href: string;
+      label: string;
+      icon: React.ElementType;
+    }
 
-    // Always add profile link
-    adminItems.push({ key: 'profile', href: '/admin/profile', label: 'Tài khoản', icon: User });
+    const adminItems: MenuItem[] = ADMIN_MENU_ITEMS
+      .filter(item => hasPermission(role, item.permission, staffPosition))
+      .map(item => ({
+        key: item.key,
+        href: item.href,
+        label: item.label,
+        icon: MENU_ICONS[item.key] || LayoutDashboard,
+      }));
 
+    adminItems.push({ 
+      key: 'profile', 
+      href: '/admin/profile', 
+      label: 'Tài khoản', 
+      icon: User 
+    });
     return adminItems;
   }, [me]);
 
-  // Check if current route is accessible
   useEffect(() => {
     if (!me || isLoadingMe) return;
-
     const role = me.role as Role;
-
-    // Block customer
     if (role === Role.CUSTOMER) return;
 
     const isRouteAllowed = visibleMenuItems.some(
@@ -109,20 +127,19 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   if (status === 'loading' || (status === 'authenticated' && isLoadingMe)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  // Block customers
   if (me && me.role === Role.CUSTOMER) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center space-y-4 p-8">
-          <ShieldAlert className="w-16 h-16 text-red-500 mx-auto" />
+          <ShieldAlert className="w-16 h-16 text-destructive mx-auto" />
           <h2 className="text-xl font-bold text-gray-800">Truy cập bị từ chối</h2>
           <p className="text-gray-500">Bạn không có quyền truy cập trang quản trị.</p>
-          <Link href="/" className="inline-block px-6 py-2 bg-accent text-white rounded-lg hover:bg-accent/90">
+          <Link href="/" className="inline-block px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
             Về trang chủ
           </Link>
         </div>
@@ -130,87 +147,145 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     );
   }
 
-  const roleInfo = ROLE_DISPLAY[me?.role || ''];
-  const staffPosition = me?.staff?.position;
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full py-4">
+      <div className={cn("px-6 mb-8 flex items-center", isCollapsed && !isMobileOpen ? "justify-center px-2" : "justify-between")}>
+        <Link href="/admin" className={cn("font-heading font-black italic tracking-tighter transition-all hover:scale-105", isCollapsed && !isMobileOpen ? "text-xl" : "text-2xl")}>
+          {isCollapsed && !isMobileOpen ? (
+            <span className="text-primary text-2xl">R</span>
+          ) : (
+            <span className="text-white">REETRO<span className="text-primary ml-1">BARBER</span></span>
+          )}
+        </Link>
+      </div>
+
+      <nav className="flex-1 px-3 space-y-1">
+        {visibleMenuItems.map(item => {
+          const Icon = item.icon;
+          const isActive = item.href === '/admin' ? pathname === '/admin' : pathname.startsWith(item.href);
+          
+          return (
+            <Link
+              key={item.key}
+              href={item.href}
+              className={cn(
+                'flex items-center gap-3 px-3 py-2.5 rounded-md transition-all font-medium text-sm group',
+                isActive
+                  ? 'bg-primary text-white'
+                  : 'text-slate-400 hover:bg-slate-800/50 hover:text-white',
+                isCollapsed && !isMobileOpen && "justify-center"
+              )}
+              title={isCollapsed ? item.label : undefined}
+            >
+              <Icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-white" : "text-slate-400 group-hover:text-white")} />
+              {(!isCollapsed || isMobileOpen) && <span>{item.label}</span>}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="px-3 pt-4 border-t border-slate-800">
+        <button
+          onClick={() => signOut({ callbackUrl: '/' })}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2.5 rounded-md text-slate-400 hover:bg-destructive/10 hover:text-destructive w-full transition-colors font-medium text-sm",
+            isCollapsed && !isMobileOpen && "justify-center"
+          )}
+        >
+          <LogOut className="w-5 h-5 flex-shrink-0" />
+          {(!isCollapsed || isMobileOpen) && <span>Đăng xuất</span>}
+        </button>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside className="w-64 bg-[#0f172a] text-slate-300 fixed inset-y-0 left-0 z-50 hidden lg:block border-r border-[#1e293b]">
-        <div className="p-6">
-          <Link href="/admin" className="text-2xl font-heading font-black italic tracking-tighter text-white transition-all hover:scale-105 inline-block">
-            REETRO<span className="text-blue-500 ml-1">BARBER</span>
-          </Link>
-        </div>
-
-        <nav className="px-4 space-y-1.5">
-          {visibleMenuItems.map(item => {
-            const Icon = item.icon;
-            const isActive =
-              item.href === '/admin'
-                ? pathname === '/admin'
-                : pathname === item.href || pathname.startsWith(item.href + '/');
-            return (
-              <Link
-                key={item.key}
-                href={item.href}
-                className={cn(
-                  'flex items-center gap-3 px-4 py-3 rounded-lg transition-all font-medium',
-                  isActive
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-slate-400 hover:bg-[#1e293b] hover:text-white'
-                )}
-              >
-                <Icon className={cn("w-5 h-5", isActive ? "text-blue-200" : "text-slate-400 group-hover:text-white")} />
-                {item.label}
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="absolute bottom-0 left-0 right-0 p-4 space-y-3 bg-[#0f172a] border-t border-[#1e293b]">
-          {roleInfo && (
-            <div className="px-4 py-3 rounded-lg bg-[#1e293b]/50 border border-[#334155]/50">
-              <div className="flex items-center gap-2">
-                <span className={cn('w-2 h-2 rounded-full', roleInfo.color)} />
-                <span className="text-xs font-semibold text-slate-200">{roleInfo.label}</span>
-              </div>
-              {staffPosition && (
-                <p className="text-xs text-slate-500 mt-1.5 ml-4 font-medium">
-                  {staffPosition.replace(/_/g, ' ')}
-                </p>
-              )}
-            </div>
-          )}
-          <button
-            onClick={() => signOut({ callbackUrl: '/' })}
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:bg-red-500/10 hover:text-red-400 w-full transition-colors font-medium"
-          >
-            <LogOut className="w-5 h-5" />
-            Đăng xuất
-          </button>
-        </div>
+    <div className="min-h-screen bg-slate-50 flex">
+      {/* Desktop Sidebar */}
+      <aside 
+        className={cn(
+          "bg-[#0f172a] text-slate-300 fixed inset-y-0 left-0 z-50 hidden lg:block border-r border-slate-800 transition-all duration-300 ease-in-out",
+          isCollapsed ? "w-20" : "w-64"
+        )}
+      >
+        <SidebarContent />
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="absolute -right-3 top-20 bg-primary text-white rounded-full p-1 shadow-lg border border-primary/20 hover:scale-110 transition-transform"
+        >
+          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-64">
-        <header className="bg-white border-b sticky top-0 z-40">
-          <div className="px-6 py-4 flex items-center justify-between">
-            <button className="lg:hidden">
-              <Menu className="w-6 h-6" />
-            </button>
-            <Link href="/admin/profile" className="flex items-center gap-4 hover:opacity-80 transition-opacity">
-              <span className="text-sm text-slate-500">
-                Xin chào, <strong className="text-slate-900 font-semibold">{session?.user?.name}</strong>
-              </span>
-              <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center font-bold border border-blue-100 shadow-sm cursor-pointer">
-                {session?.user?.name?.charAt(0) || 'A'}
-              </div>
-            </Link>
+      <div className={cn("flex-1 flex flex-col min-w-0 transition-all duration-300", isCollapsed ? "lg:ml-20" : "lg:ml-64")}>
+        <header className="bg-white/80 backdrop-blur-md border-b sticky top-0 z-40 transition-all">
+          <div className="px-4 lg:px-8 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="lg:hidden">
+                    <Menu className="w-6 h-6" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="p-0 bg-[#0f172a] border-slate-800 w-64">
+                  <SidebarContent />
+                </SheetContent>
+              </Sheet>
+              <h2 className="text-sm font-semibold text-slate-500 hidden sm:block uppercase tracking-wider">
+                {visibleMenuItems.find(i => pathname.startsWith(i.href))?.label || 'Dashboard'}
+              </h2>
+            </div>
+
+            <div className="flex items-center gap-2 lg:gap-4">
+              <Button variant="ghost" size="icon" className="text-slate-500 rounded-full">
+                <Bell className="w-5 h-5" />
+              </Button>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-3 pl-2 pr-1 rounded-full hover:bg-slate-100">
+                    <div className="text-right hidden sm:block">
+                      <p className="text-xs font-bold text-slate-900 leading-none">{session?.user?.name}</p>
+                      <p className="text-[10px] text-slate-500 mt-1 capitalize">{me?.role.toLowerCase()}</p>
+                    </div>
+                    <Avatar className="h-8 w-8 border-2 border-primary/20 ring-offset-2 transition-all group-hover:ring-2">
+                      <AvatarImage src={session?.user?.image || undefined} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                        {session?.user?.name?.charAt(0) || 'A'}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>Tài khoản của tôi</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/profile" className="flex items-center gap-2">
+                       <User className="w-4 h-4" /> Hồ sơ
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin/settings" className="flex items-center gap-2">
+                       <Settings className="w-4 h-4" /> Cài đặt
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    className="text-destructive focus:text-destructive cursor-pointer"
+                    onClick={() => signOut({ callbackUrl: '/' })}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" /> Đăng xuất
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
         </header>
 
-        <main className="p-6">{children}</main>
+        <main className="flex-1 p-4 lg:p-8 animate-in fade-in duration-500">
+          {children}
+        </main>
       </div>
     </div>
   );

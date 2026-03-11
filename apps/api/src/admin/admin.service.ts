@@ -1,37 +1,83 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
-import { Role, BookingStatus, PaymentStatus } from '@prisma/client';
+import { Role, BookingStatus, PaymentStatus, User } from '@prisma/client';
+import { BookingsService } from '../bookings/bookings.service';
+import { BookingQueryDto } from '../bookings/dto/booking-query.dto';
 
 @Injectable()
 export class AdminService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly bookingsService: BookingsService,
+  ) { }
+
+  // ... (dashboard stats logic remains same)
+
+  async getAllBookings(query: BookingQueryDto) {
+    return this.bookingsService.findAll(query);
+  }
+
+  async updateBookingStatus(bookingId: string, status: BookingStatus, user: User) {
+    return this.bookingsService.updateStatus(bookingId, { status }, user);
+  }
+
+  async bulkUpdateBookingStatus(ids: string[], status: BookingStatus, user: User) {
+    return this.bookingsService.bulkUpdateStatus(ids, status, user);
+  }
+
+  async exportBookings(query: BookingQueryDto) {
+    return this.bookingsService.exportToExcel(query);
+  }
 
   async getDashboardStats() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
 
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
     const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
 
     const [
-      totalUsers,
+      totalCustomers,
+      lastMonthCustomers,
+      totalStaff,
       totalSalons,
       totalBookings,
       todayBookings,
+      yesterdayBookings,
       monthBookings,
       lastMonthBookings,
       monthRevenue,
       lastMonthRevenue,
+      todayRevenue,
+      yesterdayRevenue,
       pendingBookings,
       recentBookings,
+      topServices,
+      activityFeed,
     ] = await Promise.all([
-      this.prisma.user.count(),
+      this.prisma.user.count({ where: { role: Role.CUSTOMER } }),
+      this.prisma.user.count({
+        where: {
+          role: Role.CUSTOMER,
+          createdAt: { lt: startOfMonth }
+        }
+      }),
+      this.prisma.staff.count({ where: { isActive: true } }),
       this.prisma.salon.count({ where: { isActive: true } }),
       this.prisma.booking.count(),
       this.prisma.booking.count({
         where: {
           date: today,
+          status: { notIn: [BookingStatus.CANCELLED, BookingStatus.NO_SHOW] },
+        },
+      }),
+      this.prisma.booking.count({
+        where: {
+          date: yesterday,
           status: { notIn: [BookingStatus.CANCELLED, BookingStatus.NO_SHOW] },
         },
       }),
@@ -67,6 +113,23 @@ export class AdminService {
         },
         _sum: { amount: true },
       }),
+      this.prisma.payment.aggregate({
+        where: {
+          status: PaymentStatus.PAID,
+          paidAt: { gte: today },
+        },
+        _sum: { amount: true },
+      }),
+      this.prisma.payment.aggregate({
+        where: {
+          status: PaymentStatus.PAID,
+          paidAt: {
+            gte: yesterday,
+            lt: today,
+          },
+        },
+        _sum: { amount: true },
+      }),
       this.prisma.booking.count({
         where: { status: BookingStatus.PENDING },
       }),
@@ -74,43 +137,126 @@ export class AdminService {
         take: 10,
         orderBy: { createdAt: 'desc' },
         include: {
-          customer: {
-            select: { name: true },
-          },
-          salon: {
-            select: { name: true },
-          },
+          customer: { select: { name: true, avatar: true } },
+          salon: { select: { name: true } },
         },
       }),
+      this.getTopServicesInternal(5),
+      this.getActivityFeedInternal(15),
     ]);
 
-    const bookingGrowth =
-      lastMonthBookings > 0
-        ? ((monthBookings - lastMonthBookings) / lastMonthBookings) * 100
-        : 100;
+    const calculateGrowth = (current: number, previous: number) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - previous) / previous) * 100);
+    };
 
-    const lastMonthRevenueNum = Number(lastMonthRevenue._sum.amount || 0);
     const monthRevenueNum = Number(monthRevenue._sum.amount || 0);
-    const revenueGrowth =
-      lastMonthRevenueNum > 0
-        ? ((monthRevenueNum - lastMonthRevenueNum) / lastMonthRevenueNum) * 100
-        : 100;
+    const lastMonthRevenueNum = Number(lastMonthRevenue._sum.amount || 0);
+    const todayRevenueNum = Number(todayRevenue._sum.amount || 0);
+    const yesterdayRevenueNum = Number(yesterdayRevenue._sum.amount || 0);
 
     return {
-      totalUsers,
-      totalSalons,
-      totalBookings,
+      // Main Stats
       todayBookings,
-      monthBookings,
-      pendingBookings,
+      todayBookingsGrowth: calculateGrowth(todayBookings, yesterdayBookings),
+      todayRevenue: todayRevenueNum,
+      todayRevenueGrowth: calculateGrowth(todayRevenueNum, yesterdayRevenueNum),
       monthRevenue: monthRevenueNum,
-      bookingGrowth: Math.round(bookingGrowth),
-      revenueGrowth: Math.round(revenueGrowth),
+      monthRevenueGrowth: calculateGrowth(monthRevenueNum, lastMonthRevenueNum),
+      totalCustomers,
+      customerGrowth: calculateGrowth(totalCustomers, lastMonthCustomers),
+      totalStaff,
+      totalSalons,
+
+      // Additional Info
+      totalBookings,
+      pendingBookings,
+      monthBookings,
+      bookingGrowth: calculateGrowth(monthBookings, lastMonthBookings),
+
+      // Charts & Feeds
       recentBookings: recentBookings.map(b => ({
         ...b,
         totalAmount: Number(b.totalAmount),
       })),
+      topServices,
+      activityFeed,
     };
+  }
+
+  private async getTopServicesInternal(limit: number = 5) {
+    const services = await this.prisma.bookingService.groupBy({
+      by: ['serviceId'],
+      _count: { serviceId: true },
+      orderBy: { _count: { serviceId: 'desc' } },
+      take: limit,
+    });
+
+    const serviceDetails = await Promise.all(
+      services.map(async (s) => {
+        const detail = await this.prisma.service.findUnique({
+          where: { id: s.serviceId },
+          select: { name: true, category: true },
+        });
+        return {
+          name: detail?.name || 'Unknown',
+          category: detail?.category || 'General',
+          count: s._count.serviceId,
+        };
+      }),
+    );
+
+    return serviceDetails;
+  }
+
+  private async getActivityFeedInternal(limit: number = 15) {
+    const [bookings, reviews, users] = await Promise.all([
+      this.prisma.booking.findMany({
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          customer: { select: { name: true } },
+          salon: { select: { name: true } },
+        },
+      }),
+      this.prisma.review.findMany({
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          customer: { select: { name: true } },
+        },
+      }),
+      this.prisma.user.findMany({
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        where: { role: Role.CUSTOMER },
+      }),
+    ]);
+
+    const feed = [
+      ...bookings.map(b => ({
+        type: 'BOOKING',
+        title: 'Đặt lịch mới',
+        description: `${b.customer?.name} đã đặt lịch tại ${b.salon?.name}`,
+        time: b.createdAt,
+        status: b.status,
+      })),
+      ...reviews.map(r => ({
+        type: 'REVIEW',
+        title: 'Đánh giá mới',
+        description: `${r.customer?.name} đã để lại đánh giá ${r.rating} sao`,
+        time: r.createdAt,
+        rating: r.rating,
+      })),
+      ...users.map(u => ({
+        type: 'USER',
+        title: 'Khách hàng mới',
+        description: `${u.name} vừa tham gia hệ thống`,
+        time: u.createdAt,
+      })),
+    ];
+
+    return feed.sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, limit);
   }
 
   async getUserStats() {
@@ -521,84 +667,6 @@ export class AdminService {
     };
   }
 
-  async getAllBookings(params: {
-    skip?: number;
-    take?: number;
-    status?: BookingStatus;
-    salonId?: string;
-  }) {
-    const { skip = 0, take = 20, status, salonId } = params;
-
-    const where: any = {};
-    if (status) where.status = status;
-    if (salonId) where.salonId = salonId;
-
-    const [bookings, total] = await Promise.all([
-      this.prisma.booking.findMany({
-        where,
-        skip,
-        take,
-        orderBy: { createdAt: 'desc' },
-        include: {
-          customer: {
-            select: { name: true, phone: true, email: true },
-          },
-          salon: {
-            select: { id: true, name: true },
-          },
-          staff: {
-            select: { id: true, user: { select: { name: true } } },
-          },
-          services: {
-            include: {
-              service: {
-                select: { name: true, price: true },
-              },
-            },
-          },
-          payments: {
-            select: { status: true, method: true, amount: true, type: true },
-          },
-        },
-      }),
-      this.prisma.booking.count({ where }),
-    ]);
-
-    return {
-      bookings: bookings.map(b => ({
-        ...b,
-        totalAmount: Number(b.totalAmount),
-        staff: b.staff ? { id: b.staff.id, name: b.staff.user?.name || 'N/A' } : null,
-        services: b.services.map(s => ({
-          name: s.service.name,
-          price: Number(s.service.price),
-        })),
-      })),
-      meta: {
-        total,
-        skip,
-        take,
-        hasMore: skip + take < total,
-      },
-    };
-  }
-
-  async updateBookingStatus(bookingId: string, status: BookingStatus) {
-    const booking = await this.prisma.booking.update({
-      where: { id: bookingId },
-      data: { status },
-      include: {
-        customer: {
-          select: { name: true, email: true, phone: true },
-        },
-        salon: {
-          select: { name: true },
-        },
-      },
-    });
-
-    return booking;
-  }
 
   async getAllStaff(params: {
     skip?: number;

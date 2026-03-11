@@ -1,258 +1,265 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import {
-  Search,
   Plus,
-  MapPin,
-  Phone,
-  Clock,
-  Star,
   MoreVertical,
   Edit,
   Trash2,
   Eye,
-  Loader2,
-  AlertCircle,
+  Star,
+  MapPin,
+  Phone,
+  Clock,
+  Store,
+  Users,
+  Calendar,
+  ExternalLink,
+  Activity,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { adminApi, salonApi } from '@/lib/api';
-import toast from 'react-hot-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { DataTable } from '@/components/admin/data-table';
+import { StatusBadge } from '@/components/admin/status-badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ErrorState } from '@/components/admin/error-state';
+import { ColumnDef } from '@tanstack/react-table';
+import { toast } from 'react-hot-toast';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
-interface SalonData {
-  id: string;
-  name: string;
-  slug: string;
-  address: string;
-  district: string;
-  city: string;
-  phone: string;
-  openTime: string;
-  closeTime: string;
-  rating: number;
-  isActive: boolean;
-  coverImage: string | null;
-  _count: {
-    staff: number;
-    services: number;
-    bookings: number;
-  };
-}
+const STATUS_CONFIG: any = {
+  true: { label: 'Đang hoạt động', variant: 'success' },
+  false: { label: 'Tạm đóng', variant: 'destructive' },
+};
 
 export default function AdminSalonsPage() {
-  const [salons, setSalons] = useState<SalonData[]>([]);
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
-  const [selectedSalon, setSelectedSalon] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchSalons();
-  }, []);
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['admin', 'salons', { page, limit, search }],
+    queryFn: () => adminApi.getAllSalons({ page, limit, search }),
+  });
 
-  const fetchSalons = async () => {
-    try {
-      setLoading(true);
-      const data = await adminApi.getAllSalons({ take: 100 });
-      setSalons((data.data || []) as any);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Không thể tải danh sách chi nhánh');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredSalons = salons.filter(
-    salon =>
-      salon.name?.toLowerCase().includes(search.toLowerCase()) ||
-      salon.address?.toLowerCase().includes(search.toLowerCase()) ||
-      salon.district?.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc muốn xóa chi nhánh này? Mọi dữ liệu liên quan sẽ bị ảnh hưởng!')) return;
-    try {
-      await salonApi.delete(id);
-      setSalons(prev => prev.filter(s => s.id !== id));
-      setSelectedSalon(null);
-      toast.success('Xóa chi nhánh thành công!');
-    } catch (err: any) {
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => salonApi.delete(id),
+    onSuccess: () => {
+      toast.success('Đã xóa chi nhánh');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'salons'] });
+    },
+    onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Không thể xóa chi nhánh');
-    }
-  };
+    },
+  });
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
-      </div>
-    );
-  }
+  const columns: ColumnDef<any>[] = useMemo(() => [
+    {
+      accessorKey: 'name',
+      header: 'Chi nhánh',
+      cell: ({ row }) => {
+        const salon = row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+              {salon.coverImage ? (
+                <img src={salon.coverImage} alt={salon.name} className="h-full w-full object-cover" />
+              ) : (
+                <Store className="w-6 h-6 text-slate-400" />
+              )}
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="font-bold text-slate-900 line-clamp-1">{salon.name}</span>
+              <span className="text-xs text-slate-500 line-clamp-1 flex items-center gap-1">
+                <MapPin className="w-3 h-3" /> {salon.district}, {salon.city}
+              </span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'contact',
+      header: 'Liên hệ',
+      cell: ({ row }) => (
+        <div className="flex flex-col gap-1 text-left">
+          <div className="flex items-center gap-1.5 text-sm text-slate-600">
+            <Phone className="w-3.5 h-3.5 text-slate-400" />
+            <span>{row.original.phone}</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-500">
+            <Clock className="w-3.5 h-3.5 text-slate-400" />
+            <span>{row.original.openTime} - {row.original.closeTime}</span>
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'stats',
+      header: 'Thống kê',
+      cell: ({ row }) => {
+        const salon = row.original;
+        const rating = salon.averageRating || 0;
+        return (
+          <div className="flex flex-col gap-1 text-left">
+            <div className="flex items-center gap-1 text-xs text-amber-600 font-bold">
+              <Star className="w-3 h-3 fill-amber-500" />
+              <span>{rating.toFixed(1)}</span>
+              <span className="text-slate-400 font-normal">({salon._count?.reviews || 0})</span>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-slate-500">
+              <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {salon._count?.staff || 0}</span>
+              <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {salon._count?.bookings || 0}</span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'isActive',
+      header: 'Trạng thái',
+      cell: ({ row }) => (
+        <StatusBadge status={String(row.getValue('isActive'))} config={STATUS_CONFIG} />
+      ),
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
+        const salon = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0 hover:bg-slate-100 rounded-full transition-colors">
+                <MoreVertical className="h-4 w-4 text-slate-500" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[180px] p-1 shadow-xl border-slate-200">
+              <DropdownMenuItem asChild>
+                <Link href={`/salons/${salon.slug}`} target="_blank" className="rounded-md focus:bg-slate-50 cursor-pointer">
+                  <ExternalLink className="w-4 h-4 mr-2 text-slate-400" /> Xem trang chủ
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/admin/salons/${salon.id}`} className="rounded-md focus:bg-slate-50 cursor-pointer">
+                  <Eye className="w-4 h-4 mr-2 text-slate-400" /> Xem chi tiết
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href={`/admin/salons/${salon.id}/edit`} className="rounded-md focus:bg-slate-50 cursor-pointer">
+                  <Edit className="w-4 h-4 mr-2 text-slate-400" /> Chỉnh sửa
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-destructive focus:bg-destructive/5 focus:text-destructive rounded-md cursor-pointer"
+                onClick={() => {
+                  if (confirm(`Bạn có chắc muốn xóa chi nhánh ${salon.name}? Mọi dữ liệu liên quan sẽ bị xóa sạch!`)) {
+                    deleteMutation.mutate(salon.id);
+                  }
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Xóa chi nhánh
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ], [deleteMutation]);
 
-  if (error) {
+  if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-        <p className="text-red-600 mb-4">{error}</p>
-        <button
-          onClick={fetchSalons}
-          className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90"
-        >
-          Thử lại
-        </button>
-      </div>
+      <Card className="m-8 border-none shadow-premium">
+        <CardContent className="pt-12 pb-12 flex flex-col items-center justify-center">
+          <ErrorState 
+            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách chi nhánh'} 
+            onRetry={() => refetch()} 
+          />
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Quản lý chi nhánh</h1>
-          <p className="text-gray-500">Quản lý thông tin các salon</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-heading italic">Chi Nhánh</h1>
+          <p className="text-slate-500 mt-1">Quản lý mạng lưới các salon, thông tin liên hệ và thời gian hoạt động.</p>
         </div>
-        <Link
-          href="/admin/salons/new"
-          className="bg-accent text-white px-4 py-2 rounded-xl font-medium flex items-center gap-2 hover:bg-accent/90 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Thêm chi nhánh
-        </Link>
+        <Button asChild className="gap-2 shadow-sm rounded-xl px-6">
+          <Link href="/admin/salons/new">
+            <Plus className="w-4 h-4" /> Thêm chi nhánh
+          </Link>
+        </Button>
       </div>
 
-      {/* Search */}
-      <div className="bg-white rounded-xl p-4 shadow-sm">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Tìm chi nhánh..."
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-primary/5 border-none shadow-none ring-1 ring-primary/10 transition-all hover:ring-primary/20">
+          <CardContent className="p-6 flex items-center gap-5">
+            <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-inner">
+              <Store className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Tổng chi nhánh</p>
+              <p className="text-3xl font-bold text-slate-900 tracking-tight">{data?.meta?.total || 0}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-emerald-50/50 border-none shadow-none ring-1 ring-emerald-200/50 transition-all hover:ring-emerald-300">
+          <CardContent className="p-6 flex items-center gap-5">
+            <div className="p-4 bg-emerald-100 rounded-2xl text-emerald-600 shadow-inner">
+              <Activity className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Đang hoạt động</p>
+              <p className="text-3xl font-bold text-slate-900 tracking-tight">
+                {data?.data?.filter((s: any) => s.isActive).length || 0}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-amber-50/50 border-none shadow-none ring-1 ring-amber-200/50 transition-all hover:ring-amber-300">
+          <CardContent className="p-6 flex items-center gap-5">
+            <div className="p-4 bg-amber-100 rounded-2xl text-amber-600 shadow-inner">
+              <Users className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Tổng nhân sự</p>
+              <p className="text-3xl font-bold text-slate-900 tracking-tight">
+                {data?.data?.reduce((acc: number, s: any) => acc + (s._count?.staff || 0), 0) || 0}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border-none shadow-premium bg-white/50 backdrop-blur-sm">
+        <CardHeader className="px-6 flex flex-row items-center justify-between space-y-0 pb-6 border-b border-slate-100">
+          <CardTitle className="text-xl font-bold text-slate-800">Danh sách các chi nhánh</CardTitle>
+          <Badge variant="outline" className="h-9 px-4 border-slate-200 bg-white font-medium text-slate-600">
+            {data?.meta?.total || 0} Chi nhánh
+          </Badge>
+        </CardHeader>
+        <CardContent className="px-0 sm:px-6 py-6">
+          <DataTable
+            columns={columns}
+            data={data?.data || []}
+            searchKey="name"
+            loading={isLoading}
           />
-        </div>
-      </div>
-
-      {/* Salons Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredSalons.map(salon => (
-          <div key={salon.id} className="bg-white rounded-xl overflow-hidden shadow-sm">
-            {/* Cover Image */}
-            <div className="relative h-40 bg-gradient-to-br from-accent/20 to-primary/20">
-              {salon.coverImage && (
-                <Image src={salon.coverImage} alt={salon.name} fill className="object-cover" />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-4">
-                <h3 className="text-xl font-semibold text-white">{salon.name}</h3>
-              </div>
-
-              {/* Actions Menu */}
-              <div className="absolute top-2 right-2">
-                <button
-                  onClick={() => setSelectedSalon(selectedSalon === salon.id ? null : salon.id)}
-                  className="p-2 bg-white/90 hover:bg-white rounded-lg"
-                >
-                  <MoreVertical className="w-5 h-5 text-gray-600" />
-                </button>
-
-                {selectedSalon === salon.id && (
-                  <div className="absolute right-0 mt-1 bg-white rounded-lg shadow-lg border py-1 z-10 min-w-[150px]">
-                    <Link
-                      href={`/admin/salons/${salon.id}`}
-                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm"
-                    >
-                      <Eye className="w-4 h-4" />
-                      Xem chi tiết
-                    </Link>
-                    <Link
-                      href={`/admin/salons/${salon.id}/edit`}
-                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Chỉnh sửa
-                    </Link>
-                    <button 
-                      onClick={() => handleDelete(salon.id)}
-                      className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm w-full text-red-600"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      Xóa
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="p-5 space-y-4">
-              <div className="space-y-2 text-sm">
-                <p className="flex items-center gap-2 text-gray-600">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  {salon.address}, {salon.district}
-                </p>
-                <p className="flex items-center gap-2 text-gray-600">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  {salon.phone}
-                </p>
-                <p className="flex items-center gap-2 text-gray-600">
-                  <Clock className="w-4 h-4 text-gray-400" />
-                  {salon.openTime} - {salon.closeTime}
-                </p>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-2 pt-4 border-t">
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-1 text-yellow-500 font-semibold">
-                    <Star className="w-4 h-4 fill-yellow-500" />
-                    {(salon as any).averageRating?.toFixed(1) || salon.rating?.toFixed(1) || '0.0'}
-                  </div>
-                  <p className="text-xs text-gray-500">Đánh giá</p>
-                </div>
-                <div className="text-center">
-                  <p className="font-semibold text-gray-800">{salon._count?.staff || 0}</p>
-                  <p className="text-xs text-gray-500">Nhân viên</p>
-                </div>
-                <div className="text-center">
-                  <p className="font-semibold text-gray-800">{salon._count?.bookings || 0}</p>
-                  <p className="text-xs text-gray-500">Đặt lịch</p>
-                </div>
-              </div>
-
-              {/* Status */}
-              <div className="flex items-center justify-between pt-4 border-t">
-                <span
-                  className={cn(
-                    'text-sm font-medium',
-                    salon.isActive ? 'text-green-600' : 'text-red-600'
-                  )}
-                >
-                  {salon.isActive ? '✅ Đang hoạt động' : '⚠️ Tạm đóng'}
-                </span>
-                <Link
-                  href={`/salons/${salon.slug}`}
-                  target="_blank"
-                  className="text-sm text-accent hover:underline"
-                >
-                  Xem trang →
-                </Link>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {filteredSalons.length === 0 && (
-        <div className="bg-white rounded-xl p-12 text-center shadow-sm">
-          <div className="text-6xl mb-4">🏪</div>
-          <p className="text-gray-500">Không tìm thấy chi nhánh nào</p>
-        </div>
-      )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

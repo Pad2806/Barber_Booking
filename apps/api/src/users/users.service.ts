@@ -7,9 +7,15 @@ import { CreateStaffDto } from './dto/create-staff.dto';
 import { User, Role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
+import { BaseQueryService } from '../common/services/base-query.service';
+import { UserQueryDto } from './dto/user-query.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+
 @Injectable()
-export class UsersService {
-  constructor(private readonly prisma: PrismaService) {}
+export class UsersService extends BaseQueryService {
+  constructor(private readonly prisma: PrismaService) {
+    super();
+  }
 
   async create(dto: CreateUserDto): Promise<User> {
     const existing = await this.prisma.user.findFirst({
@@ -112,14 +118,19 @@ export class UsersService {
     });
   }
 
-  async findAll(params: {
-    skip?: number;
-    take?: number;
-    role?: Role;
-    search?: string;
-    isActive?: boolean;
-  }) {
-    const { skip = 0, take = 20, role, search, isActive } = params;
+  async findAll(query: UserQueryDto) {
+    const {
+      role,
+      search,
+      isActive,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = query;
+
+    const limit = query.limit || 10;
+    const page = query.page || 1;
+    const skip = (page - 1) * limit;
+    const take = limit;
 
     const where: any = {};
 
@@ -139,12 +150,14 @@ export class UsersService {
       ];
     }
 
+    const orderBy: any = sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' };
+
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
         skip,
         take,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         select: {
           id: true,
           email: true,
@@ -156,6 +169,11 @@ export class UsersService {
           isVerified: true,
           createdAt: true,
           lastLoginAt: true,
+          _count: {
+            select: {
+              bookings: true,
+            },
+          },
         },
       }),
       this.prisma.user.count({ where }),
@@ -163,12 +181,7 @@ export class UsersService {
 
     return {
       data: users,
-      meta: {
-        total,
-        skip,
-        take,
-        hasMore: skip + take < total,
-      },
+      meta: this.getPaginationMeta(total, query),
     };
   }
 

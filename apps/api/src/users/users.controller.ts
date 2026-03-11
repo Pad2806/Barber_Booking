@@ -22,6 +22,9 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
+import { UserQueryDto } from './dto/user-query.dto';
+import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+
 @ApiTags('Users')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -44,27 +47,10 @@ export class UsersController {
   }
 
   @Get()
-  @Roles(Role.SALON_OWNER)
+  @Roles(Role.SALON_OWNER, Role.SUPER_ADMIN)
   @ApiOperation({ summary: 'Get all users' })
-  @ApiQuery({ name: 'skip', required: false })
-  @ApiQuery({ name: 'take', required: false })
-  @ApiQuery({ name: 'role', required: false, enum: Role })
-  @ApiQuery({ name: 'search', required: false })
-  @ApiQuery({ name: 'isActive', required: false })
-  findAll(
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
-    @Query('role') role?: Role,
-    @Query('search') search?: string,
-    @Query('isActive') isActive?: string,
-  ) {
-    return this.usersService.findAll({
-      skip: skip ? parseInt(skip) : undefined,
-      take: take ? parseInt(take) : undefined,
-      role,
-      search,
-      isActive: isActive ? isActive === 'true' : undefined,
-    });
+  findAll(@Query() query: UserQueryDto) {
+    return this.usersService.findAll(query);
   }
 
   @Get('me')

@@ -1,231 +1,263 @@
-'use client';
-
-import { useCallback, useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Search, Plus, MoreVertical, Edit, Trash2, Loader2, AlertCircle } from 'lucide-react';
+import {
+  Plus,
+  MoreVertical,
+  Edit,
+  Trash2,
+  Eye,
+  Scissors,
+  Layers,
+  Sparkles,
+  Zap,
+  TrendingUp,
+} from 'lucide-react';
 import { formatPrice, SERVICE_CATEGORIES, cn } from '@/lib/utils';
 import { adminApi } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { DataTable } from '@/components/admin/data-table';
+import { StatusBadge } from '@/components/admin/status-badge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ErrorState } from '@/components/admin/error-state';
+import { ColumnDef } from '@tanstack/react-table';
+import { toast } from 'react-hot-toast';
+import { Badge } from '@/components/ui/badge';
 
-interface ServiceItem {
-  id: string;
-  name: string;
-  description: string | null;
-  price: number;
-  duration: number;
-  category: string;
-  isActive: boolean;
-  totalBookings: number;
-  salon: { id: string; name: string };
-}
+const STATUS_CONFIG: any = {
+  true: { label: 'Đang hoạt động', variant: 'success' },
+  false: { label: 'Đã ẩn', variant: 'destructive' },
+};
 
 export default function AdminServicesPage() {
-  const [services, setServices] = useState<ServiceItem[]>([]);
-  const [search, setSearch] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
-  const [selectedService, setSelectedService] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [category, setCategory] = useState<string | undefined>(undefined);
 
-  const fetchServices = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params: any = { take: 100 };
-      if (categoryFilter !== 'ALL') {
-        params.category = categoryFilter;
-      }
-      const data = await adminApi.getAllServices(params);
-      setServices((data.data || []) as any);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Không thể tải danh sách dịch vụ');
-    } finally {
-      setLoading(false);
-    }
-  }, [categoryFilter]);
-
-  useEffect(() => {
-    void fetchServices();
-  }, [fetchServices]);
-
-  const handleDelete = async (id: string) => {
-    if (!confirm('Bạn có chắc muốn xóa dịch vụ này?')) return;
-    try {
-      await adminApi.deleteService(id);
-      setServices(prev => prev.filter(s => s.id !== id));
-      setSelectedService(null);
-    } catch (err: any) {
-      alert(err.response?.data?.message || 'Không thể xóa dịch vụ');
-    }
-  };
-
-  const filteredServices = services.filter(service => {
-    const matchesSearch = service.name?.toLowerCase().includes(search.toLowerCase());
-    return matchesSearch;
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['admin', 'services', { page, limit, category }],
+    queryFn: () => adminApi.getAllServices({ page, limit, category: category === 'ALL' ? undefined : category }),
   });
 
-  // Group by category
-  const groupedServices = filteredServices.reduce(
-    (acc, service) => {
-      if (!acc[service.category]) {
-        acc[service.category] = [];
-      }
-      acc[service.category].push(service);
-      return acc;
+  const { data: analytics } = useQuery({
+    queryKey: ['admin', 'services', 'performance'],
+    queryFn: () => adminApi.getServiceAnalytics(),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => adminApi.deleteService(id),
+    onSuccess: () => {
+      toast.success('Đã xóa dịch vụ');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'services'] });
     },
-    {} as Record<string, ServiceItem[]>
-  );
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Không thể xóa dịch vụ');
+    },
+  });
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
-      </div>
-    );
-  }
+  const columns: ColumnDef<any>[] = useMemo(() => [
+    {
+      accessorKey: 'name',
+      header: 'Dịch vụ',
+      cell: ({ row }) => {
+        const service = row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+              {service.image ? (
+                <img src={service.image} alt={service.name} className="w-full h-full object-cover" />
+              ) : (
+                <Scissors className="w-5 h-5 text-slate-400" />
+              )}
+            </div>
+            <div className="flex flex-col">
+              <span className="font-semibold text-slate-900">{service.name}</span>
+              <span className="text-xs text-slate-500 line-clamp-1 max-w-[200px]">{service.description || 'Không có mô tả'}</span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'category',
+      header: 'Danh mục',
+      cell: ({ row }) => {
+        const cat = row.getValue('category') as string;
+        const config = (SERVICE_CATEGORIES as any)[cat];
+        return (
+          <Badge variant="outline" className="gap-1.5 font-medium py-1 px-2.5">
+            <span className="text-sm">{config?.icon || '📦'}</span>
+            {config?.label || cat}
+          </Badge>
+        );
+      },
+    },
+    {
+      accessorKey: 'price',
+      header: 'Giá dịch vụ',
+      cell: ({ row }) => (
+        <span className="font-bold text-slate-900">{formatPrice(row.getValue('price'))}</span>
+      ),
+    },
+    {
+      accessorKey: 'duration',
+      header: 'Thời lượng',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1.5 text-slate-600 font-medium">
+          <Zap className="w-3.5 h-3.5 text-amber-500" />
+          <span>{row.getValue('duration')} phút</span>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'isActive',
+      header: 'Trạng thái',
+      cell: ({ row }) => {
+        const isActive = row.getValue('isActive');
+        return (
+          <StatusBadge status={String(isActive)} config={STATUS_CONFIG} />
+        );
+      },
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => {
+        const service = row.original;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[160px]">
+              <DropdownMenuItem asChild>
+                <Link href={`/admin/services/${service.id}/edit`} className="flex items-center gap-2">
+                  <Edit className="w-4 h-4" /> Chỉnh sửa
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                className="text-destructive focus:text-destructive"
+                onClick={() => {
+                  if (confirm('Bạn có chắc muốn xóa dịch vụ này?')) {
+                    deleteMutation.mutate(service.id);
+                  }
+                }}
+              >
+                <Trash2 className="w-4 h-4 mr-2" /> Xóa dịch vụ
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ], [deleteMutation]);
 
-  if (error) {
+  if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-        <p className="text-red-600 mb-4">{error}</p>
-        <button
-          onClick={fetchServices}
-          className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90"
-        >
-          Thử lại
-        </button>
-      </div>
+      <Card className="m-8">
+        <CardContent className="pt-6">
+          <ErrorState 
+            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách dịch vụ'} 
+            onRetry={() => refetch()} 
+          />
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Quản lý dịch vụ</h1>
-          <p className="text-gray-500">Quản lý bảng giá và dịch vụ</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-heading italic">Dịch Vụ</h1>
+          <p className="text-slate-500 mt-1">Quản lý bảng giá, danh mục và thời lượng các dịch vụ tại salon.</p>
         </div>
-        <Link
-          href="/admin/services/new"
-          className="bg-accent text-white px-4 py-2 rounded-xl font-medium flex items-center gap-2 hover:bg-accent/90 transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Thêm dịch vụ
-        </Link>
+        <Button asChild className="gap-2">
+          <Link href="/admin/services/new">
+            <Plus className="w-4 h-4" /> Thêm dịch vụ
+          </Link>
+        </Button>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl p-4 shadow-sm flex flex-wrap gap-4">
-        <div className="flex-1 min-w-[200px] relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Tìm dịch vụ..."
-            className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-          />
-        </div>
-        <select
-          value={categoryFilter}
-          onChange={e => setCategoryFilter(e.target.value)}
-          className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-        >
-          <option value="ALL">Tất cả danh mục</option>
-          {Object.entries(SERVICE_CATEGORIES).map(([key, value]) => (
-            <option key={key} value={key}>
-              {value.icon} {value.label}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Services by Category */}
-      {Object.keys(groupedServices).length === 0 ? (
-        <div className="bg-white rounded-xl p-12 text-center shadow-sm">
-          <div className="text-6xl mb-4">✂️</div>
-          <p className="text-gray-500">Không tìm thấy dịch vụ nào</p>
-        </div>
-      ) : (
-        Object.entries(groupedServices).map(([category, categoryServices]) => (
-          <div key={category} className="bg-white rounded-xl shadow-sm overflow-hidden">
-            <div className="px-6 py-4 bg-gray-50 border-b">
-              <h2 className="font-semibold flex items-center gap-2">
-                {SERVICE_CATEGORIES[category]?.icon}
-                {SERVICE_CATEGORIES[category]?.label || category}
-                <span className="text-sm font-normal text-gray-500">
-                  ({categoryServices.length} dịch vụ)
-                </span>
-              </h2>
-            </div>
-            <div className="divide-y">
-              {categoryServices.map(service => (
-                <div
-                  key={service.id}
-                  className="px-6 py-4 flex items-center justify-between hover:bg-gray-50"
-                >
-                  <div className="flex-1">
-                    <h3 className="font-medium text-gray-800">{service.name}</h3>
-                    {service.description && (
-                      <p className="text-sm text-gray-500 mt-1">{service.description}</p>
-                    )}
-                    <div className="flex items-center gap-4 mt-2">
-                      <span className="text-accent font-semibold">
-                        {formatPrice(service.price)}
-                      </span>
-                      <span className="text-sm text-gray-400">⏱ {service.duration} phút</span>
-                      <span className="text-sm text-gray-400">
-                        📅 {service.totalBookings} đặt lịch
-                      </span>
-                    </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="border-none shadow-premium bg-white">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <Zap className="w-5 h-5 text-amber-500" /> Dịch vụ được đặt nhiều nhất
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {analytics?.topBooked?.slice(0, 3).map((item: any, idx: number) => (
+                <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold">{idx + 1}</span>
+                    <span className="font-bold text-sm text-slate-800">{item.name}</span>
                   </div>
-
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={cn(
-                        'px-3 py-1 rounded-full text-xs font-medium',
-                        service.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      )}
-                    >
-                      {service.isActive ? 'Đang hiển thị' : 'Đã ẩn'}
-                    </span>
-
-                    <div className="relative">
-                      <button
-                        onClick={() =>
-                          setSelectedService(selectedService === service.id ? null : service.id)
-                        }
-                        className="p-2 hover:bg-gray-100 rounded-lg"
-                      >
-                        <MoreVertical className="w-5 h-5 text-gray-500" />
-                      </button>
-
-                      {selectedService === service.id && (
-                        <div className="absolute right-0 mt-1 bg-white rounded-lg shadow-lg border py-1 z-10 min-w-[150px]">
-                          <Link
-                            href={`/admin/services/${service.id}/edit`}
-                            className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm"
-                          >
-                            <Edit className="w-4 h-4" />
-                            Chỉnh sửa
-                          </Link>
-                          <button
-                            onClick={() => handleDelete(service.id)}
-                            className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 text-sm w-full text-red-600"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            Xóa
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold">{item._count.bookings} lượt đặt</Badge>
                 </div>
               ))}
             </div>
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-premium bg-white">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-bold flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-emerald-500" /> Doanh thu cao nhất
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {analytics?.topRevenue?.slice(0, 3).map((item: any, idx: number) => (
+                <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="flex items-center gap-3">
+                    <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">{idx + 1}</span>
+                    <span className="font-bold text-sm text-slate-800">{item.name}</span>
+                  </div>
+                  <span className="font-black text-sm text-slate-900">{formatPrice(item.revenue || 0)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card className="border-none shadow-sm bg-slate-50/50">
+        <CardHeader className="px-0 flex flex-row items-center justify-between space-y-0 pb-4 pr-6">
+          <CardTitle className="text-lg font-semibold px-6">Bảng giá dịch vụ</CardTitle>
+          <div className="flex gap-2">
+            <select
+              title="Category Filter"
+              value={category || 'ALL'}
+              onChange={e => setCategory(e.target.value === 'ALL' ? undefined : e.target.value)}
+              className="px-3 py-1.5 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="ALL">Tất cả danh mục</option>
+              {Object.entries(SERVICE_CATEGORIES).map(([key, value]) => (
+                <option key={key} value={key}>
+                  {value.label}
+                </option>
+              ))}
+            </select>
           </div>
-        ))
-      )}
+        </CardHeader>
+        <CardContent className="px-0 sm:px-6">
+          <DataTable
+            columns={columns}
+            data={data?.data || []}
+            searchKey="name"
+            loading={isLoading}
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 }

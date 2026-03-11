@@ -1,405 +1,352 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  Search,
-  Loader2,
-  AlertCircle,
   Users,
-  Mail,
-  Phone,
+  Search,
   Calendar,
   ShoppingBag,
-  ChevronDown,
-  ChevronUp,
   Eye,
-  X,
+  Mail,
+  Phone,
+  ArrowRight,
+  TrendingUp,
+  UserPlus,
+  Activity,
+  User,
+  MoreVertical,
 } from 'lucide-react';
 import { adminApi, apiClient } from '@/lib/api';
-import { formatPrice, cn } from '@/lib/utils';
-import toast from 'react-hot-toast';
+import { formatPrice, formatDateTime, cn } from '@/lib/utils';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { DataTable } from '@/components/admin/data-table';
+import { StatusBadge } from '@/components/admin/status-badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ErrorState } from '@/components/admin/error-state';
+import { ColumnDef } from '@tanstack/react-table';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Loader2 } from 'lucide-react';
 
-interface Customer {
-  id: string;
-  name: string;
-  email: string | null;
-  phone: string | null;
-  avatar: string | null;
-  role: string;
-  createdAt: string;
-  _count?: {
-    bookings: number;
-  };
-}
-
-interface CustomerDetail extends Customer {
-  bookings: Array<{
-    id: string;
-    bookingCode: string;
-    date: string;
-    timeSlot: string;
-    totalAmount: number;
-    status: string;
-    salon: { name: string };
-    services: Array<{ service: { name: string } }>;
-  }>;
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  PENDING: 'bg-yellow-100 text-yellow-700',
-  CONFIRMED: 'bg-blue-100 text-blue-700',
-  IN_PROGRESS: 'bg-indigo-100 text-indigo-700',
-  COMPLETED: 'bg-green-100 text-green-700',
-  CANCELLED: 'bg-red-100 text-red-700',
-  NO_SHOW: 'bg-gray-100 text-gray-700',
+const STATUS_CONFIG: any = {
+  true: { label: 'Hoạt động', variant: 'success' },
+  false: { label: 'Đã khóa', variant: 'destructive' },
 };
 
-const STATUS_LABELS: Record<string, string> = {
-  PENDING: 'Chờ xác nhận',
-  CONFIRMED: 'Đã xác nhận',
-  IN_PROGRESS: 'Đang thực hiện',
-  COMPLETED: 'Hoàn thành',
-  CANCELLED: 'Đã hủy',
-  NO_SHOW: 'Vắng mặt',
+const BOOKING_STATUS_COLORS: Record<string, string> = {
+  PENDING: 'bg-amber-100 text-amber-700 border-amber-200',
+  CONFIRMED: 'bg-blue-100 text-blue-700 border-blue-200',
+  IN_PROGRESS: 'bg-indigo-100 text-indigo-700 border-indigo-200',
+  COMPLETED: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  CANCELLED: 'bg-rose-100 text-rose-700 border-rose-200',
+  NO_SHOW: 'bg-slate-100 text-slate-700 border-slate-200',
 };
 
 export default function AdminCustomersPage() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'bookings'>('createdAt');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+  
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  // Detail panel
-  const [selectedCustomer, setSelectedCustomer] = useState<CustomerDetail | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
-  const [showDetail, setShowDetail] = useState(false);
-
-  const fetchCustomers = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await adminApi.getAllUsers({ take: 200, role: 'CUSTOMER', search: search || undefined });
-      const users = (data as any).users || (data as any).data || [];
-      setCustomers(users);
-    } catch (err: any) {
-      setError(err.response?.data?.message || 'Không thể tải danh sách khách hàng');
-    } finally {
-      setLoading(false);
-    }
-  }, [search]);
-
-  useEffect(() => {
-    const timeout = setTimeout(() => fetchCustomers(), 300);
-    return () => clearTimeout(timeout);
-  }, [fetchCustomers]);
-
-  const viewCustomerDetail = async (customerId: string) => {
-    try {
-      setDetailLoading(true);
-      setShowDetail(true);
-      const response = await apiClient.get(`/admin/users/${customerId}`);
-      setSelectedCustomer(response.data);
-    } catch (err: any) {
-      toast.error('Không thể tải chi tiết khách hàng');
-    } finally {
-      setDetailLoading(false);
-    }
-  };
-
-  const toggleSort = (field: typeof sortBy) => {
-    if (sortBy === field) {
-      setSortDir(prev => (prev === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortBy(field);
-      setSortDir('desc');
-    }
-  };
-
-  const sortedCustomers = [...customers].sort((a, b) => {
-    const dir = sortDir === 'asc' ? 1 : -1;
-    if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '') * dir;
-    if (sortBy === 'bookings') return ((a._count?.bookings || 0) - (b._count?.bookings || 0)) * dir;
-    return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * dir;
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['admin', 'customers', { page, limit, search }],
+    queryFn: () => adminApi.getAllUsers({ page, limit, search, role: 'CUSTOMER' as any }),
   });
 
-  // Stats
-  const totalCustomers = customers.length;
-  const newThisMonth = customers.filter(c => {
-    const d = new Date(c.createdAt);
+  const { data: customerDetail, isLoading: isDetailLoading } = useQuery({
+    queryKey: ['admin', 'customer', selectedCustomerId],
+    queryFn: () => adminApi.getUserById(selectedCustomerId!),
+    enabled: !!selectedCustomerId && isDetailOpen,
+  });
+
+  const columns: ColumnDef<any>[] = useMemo(() => [
+    {
+      accessorKey: 'name',
+      header: 'Khách hàng',
+      cell: ({ row }) => {
+        const user = row.original;
+        return (
+          <div className="flex items-center gap-3">
+            <Avatar className="h-10 w-10 border border-slate-200">
+              <AvatarImage src={user.avatar || ''} alt={user.name} />
+              <AvatarFallback className="bg-primary/5 text-primary font-bold">
+                {user.name?.charAt(0) || 'C'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex flex-col text-left">
+              <span className="font-semibold text-slate-900 line-clamp-1">{user.name || 'Chưa cập nhật'}</span>
+              <span className="text-[10px] text-slate-400 font-medium uppercase tracking-tighter">
+                ID: {user.id.slice(0, 8)}...
+              </span>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: 'contact',
+      header: 'Liên hệ',
+      cell: ({ row }) => {
+        const user = row.original;
+        return (
+          <div className="flex flex-col gap-1 text-left">
+            {user.email && (
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <Mail className="w-3 h-3 text-slate-400" />
+                {user.email}
+              </div>
+            )}
+            {user.phone && (
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <Phone className="w-3 h-3 text-slate-400" />
+                {user.phone}
+              </div>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      accessorKey: '_count.bookings',
+      header: 'Đơn đặt',
+      cell: ({ row }) => (
+        <div className="flex items-center justify-center">
+          <Badge variant="outline" className="h-6 px-2.5 bg-slate-50 text-slate-700 font-bold border-slate-200">
+            {row.original._count?.bookings || 0}
+          </Badge>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'createdAt',
+      header: 'Ngày tham gia',
+      cell: ({ row }) => (
+        <span className="text-sm text-slate-500">{formatDateTime(row.original.createdAt)}</span>
+      ),
+    },
+    {
+      accessorKey: 'isActive',
+      header: 'Trạng thái',
+      cell: ({ row }) => (
+        <StatusBadge status={String(row.getValue('isActive'))} config={STATUS_CONFIG} />
+      ),
+    },
+    {
+      id: 'actions',
+      cell: ({ row }) => (
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-full"
+          onClick={() => {
+            setSelectedCustomerId(row.original.id);
+            setIsDetailOpen(true);
+          }}
+        >
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+      ),
+    },
+  ], []);
+
+  if (isError) {
+    return (
+      <Card className="m-8 border-none shadow-premium">
+        <CardContent className="pt-12 pb-12 flex flex-col items-center justify-center">
+          <ErrorState 
+            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách khách hàng'} 
+            onRetry={() => refetch()} 
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Calculate metrics
+  const metrics = useMemo(() => {
+    if (!data?.data) return { totalUsers: 0, activeUsers: 0, newUsers: 0 };
     const now = new Date();
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  }).length;
-  const totalBookings = customers.reduce((sum, c) => sum + (c._count?.bookings || 0), 0);
-
-  const SortIcon = ({ field }: { field: typeof sortBy }) => {
-    if (sortBy !== field) return null;
-    return sortDir === 'asc' ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />;
-  };
-
-  if (loading && customers.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-8 h-8 animate-spin text-accent" />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-red-500 gap-3">
-        <AlertCircle className="w-10 h-10" />
-        <p>{error}</p>
-        <button onClick={fetchCustomers} className="px-4 py-2 bg-accent text-white rounded-lg">
-          Thử lại
-        </button>
-      </div>
-    );
-  }
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    return {
+      totalUsers: data?.meta?.total || 0,
+      activeUsers: data?.data?.filter((u: any) => u.isActive).length || 0,
+      newUsers: data?.data?.filter((u: any) => new Date(u.createdAt) >= startOfMonth).length || 0,
+    };
+  }, [data]);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-800">Quản lý khách hàng</h1>
-        <p className="text-gray-500">Xem thông tin và lịch sử đặt lịch của khách hàng</p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4">
-          <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-            <Users className="w-6 h-6 text-blue-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-800">{totalCustomers}</p>
-            <p className="text-sm text-gray-500">Tổng khách hàng</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4">
-          <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-            <Calendar className="w-6 h-6 text-green-600" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-800">{newThisMonth}</p>
-            <p className="text-sm text-gray-500">Khách mới tháng này</p>
-          </div>
-        </div>
-        <div className="bg-white rounded-2xl shadow-sm p-5 flex items-center gap-4">
-          <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center">
-            <ShoppingBag className="w-6 h-6 text-accent" />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-800">{totalBookings}</p>
-            <p className="text-sm text-gray-500">Tổng lượt đặt lịch</p>
-          </div>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-heading italic uppercase">Khách hàng</h1>
+          <p className="text-slate-500 mt-1">Quản lý cơ sở dữ liệu khách hàng và lịch sử tương tác.</p>
         </div>
       </div>
 
-      {/* Search */}
-      <div className="bg-white rounded-2xl shadow-sm p-4">
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Tìm theo tên, email, SĐT..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent"
-          />
-        </div>
-      </div>
-
-      {/* Customers Table */}
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">
-                  <button onClick={() => toggleSort('name')} className="flex items-center gap-1 hover:text-gray-700">
-                    Khách hàng <SortIcon field="name" />
-                  </button>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">Liên hệ</th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase">
-                  <button onClick={() => toggleSort('bookings')} className="flex items-center gap-1 hover:text-gray-700 mx-auto">
-                    Lượt đặt <SortIcon field="bookings" />
-                  </button>
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase">
-                  <button onClick={() => toggleSort('createdAt')} className="flex items-center gap-1 hover:text-gray-700">
-                    Ngày tham gia <SortIcon field="createdAt" />
-                  </button>
-                </th>
-                <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {sortedCustomers.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-400">
-                    Không tìm thấy khách hàng nào
-                  </td>
-                </tr>
-              ) : (
-                sortedCustomers.map(customer => (
-                  <tr key={customer.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold shrink-0">
-                          {customer.avatar ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={customer.avatar} alt="" className="w-full h-full rounded-full object-cover" />
-                          ) : (
-                            customer.name?.charAt(0) || '?'
-                          )}
-                        </div>
-                        <span className="font-medium text-gray-800">{customer.name || 'Chưa cập nhật'}</span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        {customer.email && (
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <Mail className="w-3.5 h-3.5" />
-                            {customer.email}
-                          </div>
-                        )}
-                        {customer.phone && (
-                          <div className="flex items-center gap-2 text-sm text-gray-500">
-                            <Phone className="w-3.5 h-3.5" />
-                            {customer.phone}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-accent/10 text-accent font-bold text-sm">
-                        {customer._count?.bookings || 0}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
-                      {new Date(customer.createdAt).toLocaleDateString('vi-VN')}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <button
-                        onClick={() => viewCustomerDetail(customer.id)}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-accent"
-                        title="Xem chi tiết"
-                      >
-                        <Eye className="w-5 h-5" />
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Customer Detail Slide Panel */}
-      {showDetail && (
-        <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/30" onClick={() => setShowDetail(false)} />
-          <div className="relative w-full max-w-lg bg-white shadow-2xl overflow-y-auto animate-in slide-in-from-right">
-            <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between z-10">
-              <h2 className="text-lg font-bold">Chi tiết khách hàng</h2>
-              <button onClick={() => setShowDetail(false)} className="p-2 hover:bg-gray-100 rounded-lg">
-                <X className="w-5 h-5" />
-              </button>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="bg-white border-none shadow-premium transition-all hover:translate-y-[-2px]">
+          <CardContent className="p-6 flex items-center gap-5">
+            <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-sm">
+              <Users className="w-6 h-6" />
             </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Tổng khách hàng</p>
+              <p className="text-3xl font-bold text-slate-900 tracking-tight">{metrics.totalUsers}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-white border-none shadow-premium transition-all hover:translate-y-[-2px]">
+          <CardContent className="p-6 flex items-center gap-5">
+            <div className="p-4 bg-emerald-100 rounded-2xl text-emerald-600 shadow-sm">
+              <Activity className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Đang hoạt động</p>
+              <p className="text-3xl font-bold text-slate-900 tracking-tight">{metrics.activeUsers}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-white border-none shadow-premium transition-all hover:translate-y-[-2px]">
+          <CardContent className="p-6 flex items-center gap-5">
+            <div className="p-4 bg-amber-100 rounded-2xl text-amber-600 shadow-sm">
+              <UserPlus className="w-6 h-6" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Mới tháng này</p>
+              <p className="text-3xl font-bold text-slate-900 tracking-tight">{metrics.newUsers}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-            {detailLoading ? (
-              <div className="flex items-center justify-center p-12">
-                <Loader2 className="w-8 h-8 animate-spin text-accent" />
+      <Card className="border-none shadow-premium bg-white/50 backdrop-blur-sm">
+        <DataTable
+          columns={columns}
+          data={data?.data || []}
+          searchKey="name"
+          loading={isLoading}
+        />
+      </Card>
+
+      <Sheet open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+        <SheetContent className="sm:max-w-xl p-0 border-none overflow-y-auto bg-slate-50">
+          {isDetailLoading ? (
+            <div className="h-full flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : customerDetail ? (
+            <div className="flex flex-col h-full">
+              <div className="bg-white p-8 border-b border-slate-100 shadow-sm relative">
+                <SheetHeader className="space-y-6">
+                  <div className="flex items-center gap-6">
+                    <Avatar className="h-24 w-24 border-4 border-slate-50 shadow-md">
+                      <AvatarImage src={customerDetail.avatar || ''} alt={customerDetail.name} />
+                      <AvatarFallback className="text-2xl font-bold bg-primary/5 text-primary">
+                        {customerDetail.name?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="space-y-2">
+                       <SheetTitle className="text-2xl font-bold text-slate-900">{customerDetail.name}</SheetTitle>
+                       <div className="flex flex-wrap gap-2">
+                         <Badge className={cn('', customerDetail.isActive ? 'bg-emerald-500' : 'bg-slate-400')}>
+                           {customerDetail.isActive ? 'Bình thường' : 'Đã khóa'}
+                         </Badge>
+                         <Badge variant="outline" className="border-slate-200 text-slate-500">
+                           {customerDetail.role}
+                         </Badge>
+                       </div>
+                    </div>
+                  </div>
+                </SheetHeader>
               </div>
-            ) : selectedCustomer ? (
-              <div className="p-6 space-y-6">
-                {/* Customer Info */}
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold text-2xl shrink-0">
-                    {selectedCustomer.avatar ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={selectedCustomer.avatar} alt="" className="w-full h-full rounded-full object-cover" />
+
+              <div className="p-8 space-y-8 flex-1">
+                {/* Contact Section */}
+                <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 space-y-4">
+                  <h4 className="flex items-center gap-2 font-bold text-slate-800 uppercase text-xs tracking-widest leading-none">
+                    <User className="w-4 h-4 text-primary" /> Thông tin liên hệ
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase">Email</span>
+                      <p className="text-sm font-medium text-slate-700 truncate">{customerDetail.email || 'N/A'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase">Số điện thoại</span>
+                      <p className="text-sm font-medium text-slate-700">{customerDetail.phone || 'N/A'}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase">Ngày tham gia</span>
+                      <p className="text-sm font-medium text-slate-700">{new Date(customerDetail.createdAt).toLocaleDateString('vi-VN')}</p>
+                    </div>
+                  </div>
+                </section>
+
+                {/* History Section */}
+                <section className="space-y-4">
+                  <h4 className="flex items-center gap-2 font-bold text-slate-800 uppercase text-xs tracking-widest leading-none">
+                    <Calendar className="w-4 h-4 text-primary" /> Lịch sử đặt lịch
+                  </h4>
+                  <div className="space-y-3">
+                    {customerDetail.staff?.salonId ? (
+                      // This part should be updated if customer history endpoint is standardized
+                      // For now, looking at the previous code, it shows bookings in the detail
+                      customerDetail.bookings?.length > 0 ? (
+                        customerDetail.bookings.map((booking: any) => (
+                           <div key={booking.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between hover:border-primary/20 transition-all group">
+                             <div className="flex items-center gap-4">
+                               <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:bg-primary/5 group-hover:text-primary transition-colors">
+                                 <ShoppingBag className="w-5 h-5" />
+                               </div>
+                               <div>
+                                 <p className="text-sm font-bold text-slate-800 line-clamp-1">{booking.salon?.name}</p>
+                                 <p className="text-[xs] text-slate-400">{formatDateTime(booking.date)}</p>
+                               </div>
+                             </div>
+                             <div className="text-right">
+                               <p className="text-sm font-bold text-slate-900">{formatPrice(booking.totalAmount)}</p>
+                               <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full uppercase', BOOKING_STATUS_COLORS[booking.status])}>
+                                 {booking.status}
+                               </span>
+                             </div>
+                           </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200">
+                          <p className="text-slate-400 text-sm">Chưa có lịch sử đặt lịch nào.</p>
+                        </div>
+                      )
                     ) : (
-                      selectedCustomer.name?.charAt(0) || '?'
+                      // Handle fallback if bookings are not included or filtered differently
+                      <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200">
+                        <p className="text-slate-400 text-sm italic underline cursor-pointer hover:text-primary" onClick={() => toast.success('Đang phát triển tính năng lọc lịch sử')}>
+                          Xem chi tiết tất cả lượt đặt của khách hàng này →
+                        </p>
+                      </div>
                     )}
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold">{selectedCustomer.name}</h3>
-                    <div className="space-y-1 mt-1">
-                      {selectedCustomer.email && (
-                        <p className="text-sm text-gray-500 flex items-center gap-2">
-                          <Mail className="w-4 h-4" /> {selectedCustomer.email}
-                        </p>
-                      )}
-                      {selectedCustomer.phone && (
-                        <p className="text-sm text-gray-500 flex items-center gap-2">
-                          <Phone className="w-4 h-4" /> {selectedCustomer.phone}
-                        </p>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Tham gia: {new Date(selectedCustomer.createdAt).toLocaleDateString('vi-VN')}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Booking History */}
-                <div>
-                  <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-accent" />
-                    Lịch sử đặt lịch ({selectedCustomer.bookings?.length || 0})
-                  </h4>
-                  {selectedCustomer.bookings?.length === 0 ? (
-                    <p className="text-sm text-gray-400 text-center py-8">Chưa có lịch đặt nào</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {selectedCustomer.bookings?.map(booking => (
-                        <div key={booking.id} className="border rounded-xl p-4 hover:bg-gray-50 transition-colors">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <span className="font-mono text-sm font-semibold text-gray-700">
-                                #{booking.bookingCode}
-                              </span>
-                              <p className="text-sm text-gray-500">{booking.salon?.name}</p>
-                            </div>
-                            <span className={cn('px-2.5 py-1 rounded-full text-xs font-medium', STATUS_COLORS[booking.status] || 'bg-gray-100 text-gray-600')}>
-                              {STATUS_LABELS[booking.status] || booking.status}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3.5 h-3.5" />
-                              {new Date(booking.date).toLocaleDateString('vi-VN')}
-                            </span>
-                            <span>{booking.timeSlot}</span>
-                            <span className="ml-auto font-semibold text-gray-700">
-                              {formatPrice(booking.totalAmount)}
-                            </span>
-                          </div>
-                          {booking.services?.length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1">
-                              {booking.services.map((s, i) => (
-                                <span key={i} className="px-2 py-0.5 bg-gray-100 rounded-full text-xs text-gray-600">
-                                  {s.service?.name}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                </section>
               </div>
-            ) : null}
-          </div>
-        </div>
-      )}
+            </div>
+          ) : (
+             <div className="h-full flex flex-col items-center justify-center p-8 text-center gap-4">
+               <AlertCircle className="h-12 w-12 text-slate-300" />
+               <p className="text-slate-500">Không tìm thấy thông tin khách hàng này.</p>
+             </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
