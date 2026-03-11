@@ -81,5 +81,6 @@ module.exports = {
         'bounce-slow': 'bounce-slow 3s infinite',
       },
     },
-    plugins: [require('tailwindcss-animate')],
-  };
+  },
+  plugins: [require('tailwindcss-animate')],
+};
