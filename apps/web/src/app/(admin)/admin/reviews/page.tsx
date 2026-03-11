@@ -12,8 +12,8 @@ import {
   XCircle,
   Store,
 } from 'lucide-react';
-import { formatDateTime } from '@/lib/utils';
-import { adminApi } from '@/lib/api';
+import { formatDateTime, cn } from '@/lib/utils';
+import { adminApi, salonApi, Salon } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge } from '@/components/admin/status-badge';
@@ -52,14 +52,30 @@ export default function AdminReviewsPage() {
   const [limit] = useState(10);
   const [search] = useState('');
   const [rating, setRating] = useState<number | undefined>(undefined);
+  const [salonId, setSalonId] = useState<string | undefined>(undefined);
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
 
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
   const [selectedReview, setSelectedReview] = useState<any>(null);
   const [replyText, setReplyText] = useState('');
 
+  const { data: salonsData } = useQuery({
+    queryKey: ['admin', 'salons', 'list'],
+    queryFn: () => salonApi.getAll({ limit: 100 }),
+  });
+
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin', 'reviews', { page, limit, search, rating }],
-    queryFn: () => adminApi.getAllReviews({ page, limit, search, rating }),
+    queryKey: ['admin', 'reviews', { page, limit, search, rating, salonId, dateFrom, dateTo }],
+    queryFn: () => adminApi.getAllReviews({ 
+      page, 
+      limit, 
+      search, 
+      rating, 
+      salonId,
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
+    }),
   });
 
   const deleteMutation = useMutation({
@@ -86,14 +102,21 @@ export default function AdminReviewsPage() {
   });
 
   // Calculate stats at top level
+  // Use meta stats from API
   const stats = useMemo(() => {
-    if (!data?.data) return { avg: 0, positive: 0, negative: 0, total: 0 };
-    const ratings = data.data.map((r: any) => r.rating);
-    const total = ratings.length;
-    const avg = total > 0 ? ratings.reduce((a: number, b: number) => a + b, 0) / total : 0;
-    const positive = data.data.filter((r: any) => r.rating >= 4).length;
-    const negative = data.data.filter((r: any) => r.rating <= 2).length;
-    return { avg, positive, negative, total };
+    if (!data?.meta) return { avg: 0, positive: 0, negative: 0, total: 0 };
+    
+    // Distribution can be used to calculate positive (4-5) and negative (1-2) accurately
+    const dist = data.meta.distribution || {};
+    const positive = (dist[4] || 0) + (dist[5] || 0);
+    const negative = (dist[1] || 0) + (dist[2] || 0);
+    
+    return { 
+      avg: data.meta.averageRating || 0, 
+      positive, 
+      negative, 
+      total: data.meta.total 
+    };
   }, [data]);
 
   const columns: ColumnDef<any>[] = useMemo(() => [
@@ -275,7 +298,21 @@ export default function AdminReviewsPage() {
       <Card className="border-none shadow-premium bg-white/50 backdrop-blur-sm">
         <CardHeader className="px-6 flex flex-row items-center justify-between space-y-0 pb-6 border-b border-slate-100">
           <CardTitle className="text-xl font-bold text-slate-800">Phản hồi khách hàng</CardTitle>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Salon Filter */}
+            <select
+              title="Salon Filter"
+              value={salonId || 'ALL'}
+              onChange={(e) => setSalonId(e.target.value === 'ALL' ? undefined : e.target.value)}
+              className="h-9 px-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer font-medium min-w-[160px]"
+            >
+              <option value="ALL">Tất cả chi nhánh</option>
+              {salonsData?.data.map((s: Salon) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+
+            {/* Rating Filter */}
             <select
               title="Rating Filter"
               value={rating || 'ALL'}
@@ -284,10 +321,46 @@ export default function AdminReviewsPage() {
             >
               <option value="ALL">Tất cả xếp hạng</option>
               <option value="5">5 Sao</option>
-              <option value="4">4 Sao & lên</option>
-              <option value="3">3 Sao & lên</option>
-              <option value="2">Dưới 3 sao</option>
+              <option value="4">4 Sao</option>
+              <option value="3">3 Sao</option>
+              <option value="2">2 Sao</option>
+              <option value="1">1 Sao</option>
             </select>
+
+            {/* Date Range Filter */}
+            <div className="flex items-center gap-2">
+              <input
+                type="date"
+                title="Từ ngày"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="h-9 px-3 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              />
+              <span className="text-slate-400 font-bold text-xs">→</span>
+              <input
+                type="date"
+                title="Đến ngày"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="h-9 px-3 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              />
+            </div>
+
+            {(salonId || rating || dateFrom || dateTo) && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  setSalonId(undefined);
+                  setRating(undefined);
+                  setDateFrom('');
+                  setDateTo('');
+                }}
+                className="text-xs text-slate-500 hover:text-primary"
+              >
+                Xóa lọc
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent className="px-0 sm:px-6 py-6">

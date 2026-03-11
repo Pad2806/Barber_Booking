@@ -56,11 +56,17 @@ export class ReviewsController {
     @Query('skip') skip?: string,
     @Query('take') take?: string,
     @Query('minRating') minRating?: string,
+    @Query('rating') rating?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
   ) {
     return this.reviewsService.findAllBySalon(salonId, {
       skip: skip ? parseInt(skip) : undefined,
       take: take ? parseInt(take) : undefined,
       minRating: minRating ? parseInt(minRating) : undefined,
+      rating: rating ? parseInt(rating) : undefined,
+      dateFrom,
+      dateTo,
     });
   }
 

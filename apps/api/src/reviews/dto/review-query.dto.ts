@@ -15,6 +15,21 @@ export class ReviewQueryDto extends PaginationQueryDto {
     minRating?: number;
 
     @IsOptional()
+    @Type(() => Number)
+    @IsNumber()
+    @Min(1)
+    @Max(5)
+    rating?: number;
+
+    @IsOptional()
+    @IsString()
+    dateFrom?: string;
+
+    @IsOptional()
+    @IsString()
+    dateTo?: string;
+
+    @IsOptional()
     @Type(() => Boolean)
     @IsBoolean()
     isVisible?: boolean;

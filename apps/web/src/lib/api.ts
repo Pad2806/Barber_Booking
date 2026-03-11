@@ -52,6 +52,8 @@ export interface PaginatedResponse<T> {
     lastPage: number;
     hasNextPage: boolean;
     hasPreviousPage: boolean;
+    averageRating?: number;
+    distribution?: Record<number, number>;
   };
 }
 
@@ -597,6 +599,8 @@ export const adminApi = {
     limit?: number;
     salonId?: string;
     rating?: number;
+    dateFrom?: string;
+    dateTo?: string;
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
@@ -662,7 +666,17 @@ export const reviewApi = {
     const response = await apiClient.post<Review>('/reviews', data);
     return response.data;
   },
-  getBySalon: async (salonId: string, params?: { skip?: number; take?: number; minRating?: number }) => {
+  getBySalon: async (
+    salonId: string,
+    params?: {
+      skip?: number;
+      take?: number;
+      minRating?: number;
+      rating?: number;
+      dateFrom?: string;
+      dateTo?: string;
+    }
+  ) => {
     const response = await apiClient.get<PaginatedResponse<Review>>(`/reviews/salon/${salonId}`, { params });
     return response.data;
   },

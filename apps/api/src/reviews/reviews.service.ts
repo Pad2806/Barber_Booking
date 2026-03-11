@@ -80,6 +80,9 @@ export class ReviewsService extends BaseQueryService {
     const {
       salonId,
       minRating,
+      rating,
+      dateFrom,
+      dateTo,
       isVisible,
       search,
       sortBy = 'createdAt',
@@ -98,6 +101,18 @@ export class ReviewsService extends BaseQueryService {
     if (minRating) {
       where.rating = { gte: minRating };
     }
+    if (rating) {
+      where.rating = rating;
+    }
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) {
+        where.createdAt.gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        where.createdAt.lte = new Date(dateTo);
+      }
+    }
     if (isVisible !== undefined) {
       where.isVisible = isVisible;
     }
@@ -110,7 +125,7 @@ export class ReviewsService extends BaseQueryService {
 
     const orderBy: any = sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' };
 
-    const [reviews, total] = await Promise.all([
+    const [reviews, total, avgRating, distribution] = await Promise.all([
       this.prisma.review.findMany({
         where,
         skip,
@@ -145,11 +160,31 @@ export class ReviewsService extends BaseQueryService {
         },
       }),
       this.prisma.review.count({ where }),
+      this.prisma.review.aggregate({
+        where,
+        _avg: { rating: true },
+      }),
+      this.prisma.review.groupBy({
+        by: ['rating'],
+        where,
+        _count: true,
+      }),
     ]);
 
+    const meta = this.getPaginationMeta(total, query);
     return {
       data: reviews,
-      meta: this.getPaginationMeta(total, query),
+      meta: {
+        ...meta,
+        averageRating: avgRating._avg.rating || 0,
+        distribution: distribution.reduce(
+          (acc, d) => {
+            acc[d.rating] = d._count;
+            return acc;
+          },
+          {} as Record<number, number> | any,
+        ),
+      },
     };
   }
 
@@ -159,15 +194,31 @@ export class ReviewsService extends BaseQueryService {
       skip?: number;
       take?: number;
       minRating?: number;
+      rating?: number;
+      dateFrom?: string;
+      dateTo?: string;
     } = {},
   ) {
-    // Keep this for public salon pages
-    const { skip = 0, take = 20, minRating } = params;
+    const { skip = 0, take = 20, minRating, rating, dateFrom, dateTo } = params;
 
     const where: any = { salonId, isVisible: true };
 
     if (minRating) {
       where.rating = { gte: minRating };
+    }
+
+    if (rating) {
+      where.rating = rating;
+    }
+
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) {
+        where.createdAt.gte = new Date(dateFrom);
+      }
+      if (dateTo) {
+        where.createdAt.lte = new Date(dateTo);
+      }
     }
 
     const [reviews, total, avgRating] = await Promise.all([
