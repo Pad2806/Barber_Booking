@@ -80,12 +80,12 @@ describe('AdminService', () => {
 
       const result = await service.getDashboardStats();
 
-      expect(result).toHaveProperty('totalUsers');
+      expect(result).toHaveProperty('totalCustomers');
       expect(result).toHaveProperty('totalSalons');
       expect(result).toHaveProperty('totalBookings');
       expect(result).toHaveProperty('monthRevenue');
       expect(result).toHaveProperty('recentBookings');
-      expect(result.totalUsers).toBe(100);
+      expect(result.totalCustomers).toBe(100);
       expect(result.totalSalons).toBe(5);
     });
   });
@@ -136,7 +136,8 @@ describe('AdminService', () => {
       };
       mockPrismaService.booking.update.mockResolvedValue(updatedBooking);
 
-      const result = await service.updateBookingStatus('booking-1', 'CONFIRMED' as any);
+      const mockAdminUser = { id: 'admin-1', role: 'ADMIN' } as any;
+      const result = await service.updateBookingStatus('booking-1', 'CONFIRMED' as any, mockAdminUser);
 
       expect(result.status).toBe('CONFIRMED');
       expect(mockPrismaService.booking.update).toHaveBeenCalledWith(

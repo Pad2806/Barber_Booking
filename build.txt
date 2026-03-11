@@ -1,0 +1,40 @@
+• Packages in scope: @reetro/api
+• Running build in 1 packages
+• Remote caching disabled
+@reetro/shared:build: cache hit, replaying logs 913b343b14b77fc2
+@reetro/shared:build: 
+@reetro/shared:build: > @reetro/shared@1.0.0 build D:\Intern_Senlyzer\Booking_Barber\packages\shared
+@reetro/shared:build: > tsc
+@reetro/shared:build: 
+@reetro/api:build: cache miss, executing 178d60daf3e193c7
+@reetro/api:build: 
+@reetro/api:build: > @reetro/api@1.0.0 build D:\Intern_Senlyzer\Booking_Barber\apps\api
+@reetro/api:build: > nest build
+@reetro/api:build: 
+@reetro/api:build: D:\Intern_Senlyzer\Booking_Barber\node_modules\.pnpm\node_modules\path-scurry\dist\commonjs\index.js:124
+@reetro/api:build: class ResolveCache extends lru_cache_1.LRUCache {
+@reetro/api:build:                                        ^
+@reetro/api:build: 
+@reetro/api:build: TypeError: Class extends value undefined is not a constructor or null
+@reetro/api:build:     at Object.<anonymous> (D:\Intern_Senlyzer\Booking_Barber\node_modules\.pnpm\node_modules\path-scurry\dist\commonjs\index.js:124:40)
+@reetro/api:build:     at Module._compile (node:internal/modules/cjs/loader:1521:14)
+@reetro/api:build:     at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+@reetro/api:build:     at Module.load (node:internal/modules/cjs/loader:1266:32)
+@reetro/api:build:     at Module._load (node:internal/modules/cjs/loader:1091:12)
+@reetro/api:build:     at Module.require (node:internal/modules/cjs/loader:1289:19)
+@reetro/api:build:     at require (node:internal/modules/helpers:182:18)
+@reetro/api:build:     at Object.<anonymous> (D:\Intern_Senlyzer\Booking_Barber\node_modules\.pnpm\@nestjs+cli@10.4.9\node_modules\glob\dist\commonjs\glob.js:6:23)
+@reetro/api:build:     at Module._compile (node:internal/modules/cjs/loader:1521:14)
+@reetro/api:build:     at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+@reetro/api:build: 
+@reetro/api:build: Node.js v20.19.6
+@reetro/api:build:  ELIFECYCLE  Command failed with exit code 1.
+@reetro/api:build: ERROR: command finished with error: command (D:\Intern_Senlyzer\Booking_Barber\apps\api) C:\Users\PAD\AppData\Local\pnpm\.tools\pnpm\8.11.0\bin\pnpm.CMD run build exited (1)
+@reetro/api#build: command (D:\Intern_Senlyzer\Booking_Barber\apps\api) C:\Users\PAD\AppData\Local\pnpm\.tools\pnpm\8.11.0\bin\pnpm.CMD run build exited (1)
+
+ Tasks:    1 successful, 2 total
+Cached:    1 cached, 2 total
+  Time:    647ms 
+Failed:    @reetro/api#build
+
+ ERROR  run failed: command  exited (1)
