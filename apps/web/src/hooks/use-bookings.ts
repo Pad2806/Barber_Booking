@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminApi, BookingQueryDto } from '@/lib/api';
 import { toast } from 'react-hot-toast';
-import { BookingStatus } from '@prisma/client';
+
+export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
 export function useBookings(initialQuery: BookingQueryDto = {}) {
     const queryClient = useQueryClient();
@@ -33,8 +34,8 @@ export function useBookings(initialQuery: BookingQueryDto = {}) {
 
     const exportMutation = useMutation({
         mutationFn: () => adminApi.exportBookings(query),
-        onSuccess: (data: any) => {
-            const url = window.URL.createObjectURL(new Blob([data]));
+        onSuccess: (exportData: any) => {
+            const url = window.URL.createObjectURL(new Blob([exportData]));
             const link = document.createElement('a');
             link.href = url;
             link.setAttribute('download', `bookings-${new Date().toISOString()}.xlsx`);

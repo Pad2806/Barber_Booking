@@ -1,18 +1,18 @@
+'use client';
+
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Plus,
   MoreVertical,
   Edit,
   Trash2,
-  Eye,
   Scissors,
-  Layers,
-  Sparkles,
   Zap,
   TrendingUp,
 } from 'lucide-react';
-import { formatPrice, SERVICE_CATEGORIES, cn } from '@/lib/utils';
+import { formatPrice, SERVICE_CATEGORIES } from '@/lib/utils';
 import { adminApi } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';
@@ -37,8 +37,8 @@ const STATUS_CONFIG: any = {
 
 export default function AdminServicesPage() {
   const queryClient = useQueryClient();
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [page] = useState(1);
+  const [limit] = useState(10);
   const [category, setCategory] = useState<string | undefined>(undefined);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -70,14 +70,19 @@ export default function AdminServicesPage() {
         const service = row.original;
         return (
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 relative">
               {service.image ? (
-                <img src={service.image} alt={service.name} className="w-full h-full object-cover" />
+                <Image 
+                  src={service.image} 
+                  alt={service.name} 
+                  fill 
+                  className="object-cover" 
+                />
               ) : (
                 <Scissors className="w-5 h-5 text-slate-400" />
               )}
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col text-left">
               <span className="font-semibold text-slate-900">{service.name}</span>
               <span className="text-xs text-slate-500 line-clamp-1 max-w-[200px]">{service.description || 'Không có mô tả'}</span>
             </div>
@@ -144,7 +149,7 @@ export default function AdminServicesPage() {
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem 
-                className="text-destructive focus:text-destructive"
+                className="text-destructive focus:text-destructive flex items-center"
                 onClick={() => {
                   if (confirm('Bạn có chắc muốn xóa dịch vụ này?')) {
                     deleteMutation.mutate(service.id);
@@ -189,7 +194,7 @@ export default function AdminServicesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card className="border-none shadow-premium bg-white">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 text-left">
             <CardTitle className="text-lg font-bold flex items-center gap-2">
               <Zap className="w-5 h-5 text-amber-500" /> Dịch vụ được đặt nhiều nhất
             </CardTitle>
@@ -209,7 +214,7 @@ export default function AdminServicesPage() {
           </CardContent>
         </Card>
         <Card className="border-none shadow-premium bg-white">
-          <CardHeader className="pb-2">
+          <CardHeader className="pb-2 text-left">
             <CardTitle className="text-lg font-bold flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-emerald-500" /> Doanh thu cao nhất
             </CardTitle>
@@ -231,14 +236,14 @@ export default function AdminServicesPage() {
       </div>
 
       <Card className="border-none shadow-sm bg-slate-50/50">
-        <CardHeader className="px-0 flex flex-row items-center justify-between space-y-0 pb-4 pr-6">
+        <CardHeader className="px-0 flex flex-row items-center justify-between space-y-0 pb-4 pr-6 text-left">
           <CardTitle className="text-lg font-semibold px-6">Bảng giá dịch vụ</CardTitle>
           <div className="flex gap-2">
             <select
               title="Category Filter"
               value={category || 'ALL'}
               onChange={e => setCategory(e.target.value === 'ALL' ? undefined : e.target.value)}
-              className="px-3 py-1.5 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="px-3 py-1.5 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer font-medium"
             >
               <option value="ALL">Tất cả danh mục</option>
               {Object.entries(SERVICE_CATEGORIES).map(([key, value]) => (

@@ -5,18 +5,14 @@ import {
   Star,
   MessageSquare,
   MoreVertical,
-  Eye,
   Trash2,
   MessageCircle,
   TrendingUp,
-  AlertCircle,
   CheckCircle2,
   XCircle,
-  User,
-  Calendar,
   Store,
 } from 'lucide-react';
-import { formatDateTime, cn } from '@/lib/utils';
+import { formatDateTime } from '@/lib/utils';
 import { adminApi } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';
@@ -52,9 +48,9 @@ const VISIBILITY_CONFIG: any = {
 
 export default function AdminReviewsPage() {
   const queryClient = useQueryClient();
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [search, setSearch] = useState('');
+  const [page] = useState(1);
+  const [limit] = useState(10);
+  const [search] = useState('');
   const [rating, setRating] = useState<number | undefined>(undefined);
 
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
@@ -89,6 +85,17 @@ export default function AdminReviewsPage() {
     },
   });
 
+  // Calculate stats at top level
+  const stats = useMemo(() => {
+    if (!data?.data) return { avg: 0, positive: 0, negative: 0, total: 0 };
+    const ratings = data.data.map((r: any) => r.rating);
+    const total = ratings.length;
+    const avg = total > 0 ? ratings.reduce((a: number, b: number) => a + b, 0) / total : 0;
+    const positive = data.data.filter((r: any) => r.rating >= 4).length;
+    const negative = data.data.filter((r: any) => r.rating <= 2).length;
+    return { avg, positive, negative, total };
+  }, [data]);
+
   const columns: ColumnDef<any>[] = useMemo(() => [
     {
       accessorKey: 'customer.name',
@@ -117,11 +124,11 @@ export default function AdminReviewsPage() {
       accessorKey: 'rating',
       header: 'Đánh giá',
       cell: ({ row }) => {
-        const rating = row.original.rating;
+        const ratingVal = row.original.rating;
         return (
           <div className="flex items-center gap-1">
             <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-            <span className="font-bold text-slate-700">{rating}</span>
+            <span className="font-bold text-slate-700">{ratingVal}</span>
           </div>
         );
       },
@@ -208,16 +215,6 @@ export default function AdminReviewsPage() {
       </Card>
     );
   }
-
-  const stats = useMemo(() => {
-    if (!data?.data) return { avg: 0, positive: 0, negative: 0, total: 0 };
-    const ratings = data.data.map((r: any) => r.rating);
-    const total = ratings.length;
-    const avg = total > 0 ? ratings.reduce((a: number, b: number) => a + b, 0) / total : 0;
-    const positive = data.data.filter((r: any) => r.rating >= 4).length;
-    const negative = data.data.filter((r: any) => r.rating <= 2).length;
-    return { avg, positive, negative, total };
-  }, [data]);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">

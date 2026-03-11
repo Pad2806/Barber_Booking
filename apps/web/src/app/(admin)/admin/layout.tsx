@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, ReactNode, useMemo } from 'react';
+import { useEffect, ReactNode, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -24,14 +24,12 @@ import {
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
 import { usersApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import {
   Role,
   hasPermission,
   ADMIN_MENU_ITEMS,
-  ROLE_DISPLAY,
 } from '@reetro/shared';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -250,10 +248,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       <p className="text-[10px] text-slate-500 mt-1 capitalize">{me?.role.toLowerCase()}</p>
                     </div>
                     <Avatar className="h-8 w-8 border-2 border-primary/20 ring-offset-2 transition-all group-hover:ring-2">
-                      <AvatarImage src={session?.user?.image || undefined} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                        {session?.user?.name?.charAt(0) || 'A'}
-                      </AvatarFallback>
+                       <AvatarImage src={session?.user?.image || undefined} />
+                       <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                         {session?.user?.name?.charAt(0) || 'A'}
+                       </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>

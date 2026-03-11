@@ -14,8 +14,8 @@ import {
   Calendar,
   Loader2,
 } from 'lucide-react';
-import { STAFF_POSITIONS, cn } from '@/lib/utils';
-import { adminApi, type Salon } from '@/lib/api';
+import { STAFF_POSITIONS } from '@/lib/utils';
+import { adminApi } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge } from '@/components/admin/status-badge';
@@ -32,7 +32,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import {
   Sheet,
   SheetContent,
@@ -50,9 +50,8 @@ const STATUS_CONFIG: any = {
 export default function AdminStaffPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [page] = useState(1);
+  const [limit] = useState(10);
   const [salonId, setSalonId] = useState<string | undefined>(undefined);
 
   // Sheet states
@@ -93,7 +92,7 @@ export default function AdminStaffPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: any) => adminApi.createStaff(data),
+    mutationFn: (creationData: any) => adminApi.createStaff(creationData),
     onSuccess: () => {
       toast.success('Thêm nhân viên thành công');
       setPanelOpen(false);
@@ -105,7 +104,7 @@ export default function AdminStaffPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => adminApi.updateStaff(id, data),
+    mutationFn: ({ id, updateData }: { id: string; updateData: any }) => adminApi.updateStaff(id, updateData),
     onSuccess: () => {
       toast.success('Cập nhật thành công');
       setPanelOpen(false);
@@ -151,7 +150,9 @@ export default function AdminStaffPage() {
       createMutation.mutate(formData);
     } else if (panelMode === 'edit' && selectedStaffId) {
       const staff = data?.data?.find((s: any) => s.id === selectedStaffId);
-      updateMutation.mutate({ id: staff.user.id, data: formData });
+      if (staff?.user?.id) {
+        updateMutation.mutate({ id: staff.user.id, updateData: formData });
+      }
     }
   };
 
@@ -201,7 +202,7 @@ export default function AdminStaffPage() {
       ),
     },
     {
-      accessorKey: 'experience',
+      id: 'stats',
       header: 'Thống kê',
       cell: ({ row }) => {
         const rating = row.original.rating || 0;
@@ -209,7 +210,7 @@ export default function AdminStaffPage() {
         return (
           <div className="flex flex-col gap-1 text-left">
             <div className="flex items-center gap-1 text-xs text-amber-600 font-bold">
-              <Star className="w-3 h-3 fill-amber-500" />
+              < Star className="w-3 h-3 fill-amber-500" />
               <span>{rating.toFixed(1)}</span>
               <span className="text-slate-400 font-normal">({row.original.totalReviews || 0})</span>
             </div>
@@ -241,18 +242,18 @@ export default function AdminStaffPage() {
             <DropdownMenuContent align="end" className="w-[180px] p-1 shadow-xl border-slate-200">
               <DropdownMenuItem 
                 onClick={() => router.push(`/admin/staff/${staff.id}`)}
-                className="rounded-md focus:bg-slate-50 cursor-pointer"
+                className="rounded-md focus:bg-slate-50 cursor-pointer flex items-center"
               >
                 <Eye className="w-4 h-4 mr-2 text-slate-400" /> Xem chi tiết
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => { setSelectedStaffId(staff.id); setPanelMode('edit'); setPanelOpen(true); }}
-                className="rounded-md focus:bg-slate-50 cursor-pointer"
+                className="rounded-md focus:bg-slate-50 cursor-pointer flex items-center"
               >
                 <Edit className="w-4 h-4 mr-2 text-slate-400" /> Chỉnh sửa
               </DropdownMenuItem>
               <DropdownMenuItem 
-                className="text-destructive focus:bg-destructive/5 focus:text-destructive rounded-md cursor-pointer"
+                className="text-destructive focus:bg-destructive/5 focus:text-destructive rounded-md cursor-pointer flex items-center"
                 onClick={() => {
                   if (confirm(`Bạn có chắc muốn xóa nhân viên ${staff.user?.name}?`)) {
                     deleteMutation.mutate(staff.id);
@@ -266,7 +267,7 @@ export default function AdminStaffPage() {
         );
       },
     },
-  ], [deleteMutation, data]);
+  ], [deleteMutation, router, data]);
 
   if (isError) {
     return (
@@ -297,7 +298,7 @@ export default function AdminStaffPage() {
         <Card className="bg-primary/5 border-none shadow-none ring-1 ring-primary/10 transition-all hover:ring-primary/20">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-inner">
-              <Users className="w-6 h-6" />
+               <Users className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Tổng nhân sự</p>
@@ -308,7 +309,7 @@ export default function AdminStaffPage() {
         <Card className="bg-amber-50/50 border-none shadow-none ring-1 ring-amber-200/50 transition-all hover:ring-amber-300">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="p-4 bg-amber-100 rounded-2xl text-amber-600 shadow-inner">
-              <Award className="w-6 h-6" />
+               <Award className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Stylist nổi bật</p>
@@ -321,7 +322,7 @@ export default function AdminStaffPage() {
         <Card className="bg-emerald-50/50 border-none shadow-none ring-1 ring-emerald-200/50 transition-all hover:ring-emerald-300">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="p-4 bg-emerald-100 rounded-2xl text-emerald-600 shadow-inner">
-              <Activity className="w-6 h-6" />
+               <Activity className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Đang hoạt động</p>
@@ -334,7 +335,7 @@ export default function AdminStaffPage() {
       </div>
 
       <Card className="border-none shadow-premium bg-white/50 backdrop-blur-sm">
-        <CardHeader className="px-6 flex flex-row items-center justify-between space-y-0 pb-6 border-b border-slate-100">
+        <CardHeader className="px-6 flex flex-row items-center justify-between space-y-0 pb-6 border-b border-slate-100 text-left">
           <CardTitle className="text-xl font-bold text-slate-800">Danh sách nhân sự</CardTitle>
           <div className="flex items-center gap-3">
             <Badge variant="outline" className="h-9 px-3 border-slate-200 bg-white font-medium text-slate-600 hidden sm:flex">
@@ -366,9 +367,9 @@ export default function AdminStaffPage() {
       </Card>
 
       <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
-        <SheetContent className="sm:max-w-2xl overflow-y-auto px-0 border-none shadow-premium">
+        <SheetContent className="sm:max-w-2xl overflow-y-auto px-0 border-none shadow-premium bg-white">
           <div className="px-8 flex flex-col h-full">
-            <SheetHeader className="border-b border-slate-100 pb-8 mb-8 sticky top-0 bg-white z-10 pt-2">
+            <SheetHeader className="border-b border-slate-100 pb-8 mb-8 sticky top-0 bg-white z-10 pt-2 text-left">
               <SheetTitle className="text-2xl font-bold font-heading italic text-primary flex items-center gap-2">
                 {panelMode === 'create' ? <Plus className="w-6 h-6" /> : panelMode === 'edit' ? <Edit className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
                 {panelMode === 'create' ? 'Thêm nhân viên' : panelMode === 'edit' ? 'Chỉnh sửa nhân viên' : 'Thông tin nhân viên'}
@@ -385,13 +386,13 @@ export default function AdminStaffPage() {
                   <ImageUpload
                     value={formData.avatar}
                     onChange={url => setFormData({ ...formData, avatar: url })}
-                    folder="staff"
+                    folder="avatars"
                     disabled={panelMode === 'view'}
                   />
                   <p className="text-xs text-slate-400 mt-4 text-center">Tải lên ảnh chân dung chuyên nghiệp.<br/>Định dạng JPG, PNG tối đa 5MB.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700 ml-1">Họ và tên</label>
                     <input

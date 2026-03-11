@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Plus,
   MoreVertical,
@@ -34,8 +35,6 @@ import { ErrorState } from '@/components/admin/error-state';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'react-hot-toast';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { cn } from '@/lib/utils';
 
 const STATUS_CONFIG: any = {
   true: { label: 'Đang hoạt động', variant: 'success' },
@@ -44,9 +43,9 @@ const STATUS_CONFIG: any = {
 
 export default function AdminSalonsPage() {
   const queryClient = useQueryClient();
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [search, setSearch] = useState('');
+  const [page] = useState(1);
+  const [limit] = useState(10);
+  const [search] = useState('');
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'salons', { page, limit, search }],
@@ -72,9 +71,14 @@ export default function AdminSalonsPage() {
         const salon = row.original;
         return (
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200">
+            <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 relative">
               {salon.coverImage ? (
-                <img src={salon.coverImage} alt={salon.name} className="h-full w-full object-cover" />
+                <Image 
+                  src={salon.coverImage} 
+                  alt={salon.name} 
+                  fill 
+                  className="object-cover"
+                />
               ) : (
                 <Store className="w-6 h-6 text-slate-400" />
               )}
@@ -146,22 +150,22 @@ export default function AdminSalonsPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[180px] p-1 shadow-xl border-slate-200">
               <DropdownMenuItem asChild>
-                <Link href={`/salons/${salon.slug}`} target="_blank" className="rounded-md focus:bg-slate-50 cursor-pointer">
+                <Link href={`/salons/${salon.slug}`} target="_blank" className="rounded-md focus:bg-slate-50 cursor-pointer flex items-center">
                   <ExternalLink className="w-4 h-4 mr-2 text-slate-400" /> Xem trang chủ
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href={`/admin/salons/${salon.id}`} className="rounded-md focus:bg-slate-50 cursor-pointer">
+                <Link href={`/admin/salons/${salon.id}`} className="rounded-md focus:bg-slate-50 cursor-pointer flex items-center">
                   <Eye className="w-4 h-4 mr-2 text-slate-400" /> Xem chi tiết
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link href={`/admin/salons/${salon.id}/edit`} className="rounded-md focus:bg-slate-50 cursor-pointer">
+                <Link href={`/admin/salons/${salon.id}/edit`} className="rounded-md focus:bg-slate-50 cursor-pointer flex items-center">
                   <Edit className="w-4 h-4 mr-2 text-slate-400" /> Chỉnh sửa
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem 
-                className="text-destructive focus:bg-destructive/5 focus:text-destructive rounded-md cursor-pointer"
+                className="text-destructive focus:bg-destructive/5 focus:text-destructive rounded-md cursor-pointer flex items-center"
                 onClick={() => {
                   if (confirm(`Bạn có chắc muốn xóa chi nhánh ${salon.name}? Mọi dữ liệu liên quan sẽ bị xóa sạch!`)) {
                     deleteMutation.mutate(salon.id);
@@ -208,7 +212,7 @@ export default function AdminSalonsPage() {
         <Card className="bg-primary/5 border-none shadow-none ring-1 ring-primary/10 transition-all hover:ring-primary/20">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-inner">
-              <Store className="w-6 h-6" />
+               <Store className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Tổng chi nhánh</p>
@@ -219,7 +223,7 @@ export default function AdminSalonsPage() {
         <Card className="bg-emerald-50/50 border-none shadow-none ring-1 ring-emerald-200/50 transition-all hover:ring-emerald-300">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="p-4 bg-emerald-100 rounded-2xl text-emerald-600 shadow-inner">
-              <Activity className="w-6 h-6" />
+               <Activity className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Đang hoạt động</p>
@@ -232,7 +236,7 @@ export default function AdminSalonsPage() {
         <Card className="bg-amber-50/50 border-none shadow-none ring-1 ring-amber-200/50 transition-all hover:ring-amber-300">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="p-4 bg-amber-100 rounded-2xl text-amber-600 shadow-inner">
-              <Users className="w-6 h-6" />
+               <Users className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Tổng nhân sự</p>

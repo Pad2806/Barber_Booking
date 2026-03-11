@@ -162,6 +162,19 @@ export interface Booking {
   createdAt: string;
 }
 
+export interface BookingQueryDto {
+  page?: number;
+  limit?: number;
+  status?: string;
+  salonId?: string;
+  staffId?: string;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+
 export interface AdminBookingDetail extends Booking {
   customer: {
     id: string;

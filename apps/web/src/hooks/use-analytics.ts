@@ -14,25 +14,27 @@ export function useAnalytics() {
         queryFn: () => adminApi.getBranchAnalytics(),
     });
 
-    const serviceAnalytics = (salonId?: string) => useQuery({
-        queryKey: ['admin', 'analytics', 'services', salonId],
-        queryFn: () => adminApi.getServiceAnalytics(salonId),
-    });
-
-    const staffAnalytics = (staffId: string) => useQuery({
-        queryKey: ['admin', 'analytics', 'staff', staffId],
-        queryFn: () => adminApi.getStaffAnalytics(staffId),
-        enabled: !!staffId,
-    });
-
     return {
         dashboardStats: dashboardStats.data,
         isDashboardLoading: dashboardStats.isLoading,
         branchAnalytics: branchAnalytics.data,
         isBranchLoading: branchAnalytics.isLoading,
-        serviceAnalytics,
-        staffAnalytics,
         refreshDashboard: dashboardStats.refetch,
         refreshBranches: branchAnalytics.refetch,
     };
+}
+
+export function useServiceAnalytics(salonId?: string) {
+    return useQuery({
+        queryKey: ['admin', 'analytics', 'services', salonId],
+        queryFn: () => adminApi.getServiceAnalytics(salonId),
+    });
+}
+
+export function useStaffAnalytics(staffId: string) {
+    return useQuery({
+        queryKey: ['admin', 'analytics', 'staff', staffId],
+        queryFn: () => adminApi.getStaffAnalytics(staffId),
+        enabled: !!staffId,
+    });
 }

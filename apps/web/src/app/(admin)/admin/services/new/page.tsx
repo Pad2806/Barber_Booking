@@ -35,7 +35,7 @@ export default function NewServicePage() {
 
   const fetchSalons = async () => {
     try {
-      const data = await adminApi.getAllSalons({ take: 100 });
+      const data = await adminApi.getAllSalons({ limit: 100 });
       setSalons(data.data || []);
       if (data.data?.length > 0) {
         setFormData(prev => ({ ...prev, salonId: data.data[0].id }));

@@ -18,7 +18,6 @@ export class ServicesService extends BaseQueryService {
   }
 
   async create(dto: CreateServiceDto, user: User) {
-    // ... existing create logic ... (just make sure class extends BaseQueryService)
     // Verify salon ownership
     await this.verifySalonOwnership(dto.salonId, user);
 

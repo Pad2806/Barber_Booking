@@ -1,0 +1,3 @@
+src/app/(admin)/admin/settings/page.tsx(21,25): error TS2742: The inferred type of 'AdminSettingsPage' cannot be named without a reference to '.pnpm/node_modules/@types/react'. This is likely not portable. A type annotation is necessary.
+src/app/(staff)/layout.tsx(1,25): error TS2742: The inferred type of 'StaffLayout' cannot be named without a reference to '.pnpm/node_modules/@types/react'. This is likely not portable. A type annotation is necessary.
+src/app/layout.tsx(48,25): error TS2742: The inferred type of 'RootLayout' cannot be named without a reference to '.pnpm/node_modules/@types/react'. This is likely not portable. A type annotation is necessary.

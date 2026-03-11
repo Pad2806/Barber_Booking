@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Check, Scissors, Star, CalendarDays, Sparkles, X, MessageSquare } from 'lucide-react';
-import { staffApi, serviceApi, Staff, Service } from '@/lib/api';
+import { staffApi, serviceApi, Staff } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
 import { formatPrice, STAFF_POSITIONS, cn } from '@/lib/utils';
 import Avatar from '@/components/Avatar';
@@ -32,7 +32,6 @@ export default function BookingPage() {
     setStep,
   } = useBookingStore();
 
-  const [services, setServices] = useState<Service[]>([]);
   const [staff, setStaffList] = useState<Staff[]>([]);
   const [timeSlots, setTimeSlots] = useState<{ time: string; available: boolean }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -73,11 +72,10 @@ export default function BookingPage() {
     if (!salon) return;
     try {
       setLoading(true);
-      const [servicesData, staffData] = await Promise.all([
+      const [_, staffData] = await Promise.all([
         serviceApi.getBySalon(salon.id),
         staffApi.getBySalon(salon.id),
       ]);
-      setServices(servicesData);
 
       const barbers = staffData.filter(barber => {
         const role = barber.position.toUpperCase();
@@ -221,7 +219,7 @@ export default function BookingPage() {
 
       {/* ─── Selected Services Summary (Always visible) ─── */}
       <div className="max-w-2xl mx-auto px-4 pt-4 pb-2">
-        <div className="bg-white rounded-2xl border border-[#E8E0D4] p-4">
+        <div className="bg-white rounded-2xl border border-[#E8E0D4] p-4 text-left">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-bold text-[#8B7355] uppercase tracking-wider flex items-center gap-2">
               <Scissors className="w-3.5 h-3.5" />
@@ -246,7 +244,7 @@ export default function BookingPage() {
                       className="object-cover"
                     />
                   </div>
-                  <div>
+                  <div className="text-left">
                     <p className="text-sm font-medium text-[#2C1E12]">{service.name}</p>
                     <p className="text-[11px] text-[#8B7355]">{service.duration} phút</p>
                   </div>
@@ -267,7 +265,7 @@ export default function BookingPage() {
 
         {/* ═══ Step 1: Choose Barber ═══ */}
         {internalStep === 1 && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 text-left">
             <h2 className="text-base font-bold text-[#2C1E12] mb-1">Chọn thợ cắt</h2>
             <p className="text-sm text-[#8B7355] mb-4">Bạn có thể để hệ thống tự chọn hoặc chọn thợ yêu thích</p>
 
@@ -342,7 +340,7 @@ export default function BookingPage() {
 
         {/* ═══ Step 2: Date + Time (Combined) ═══ */}
         {internalStep === 2 && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6 text-left">
 
             {/* ── Date Selection ── */}
             <div>
@@ -480,8 +478,8 @@ export default function BookingPage() {
       {/* ─── Bottom Bar ─── */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl border-t border-[#E8E0D4] shadow-[0_-2px_16px_rgba(0,0,0,0.04)]">
         <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <p className="text-[11px] text-[#8B7355]">
+          <div className="min-w-0 text-left">
+            <p className="text-[11px] text-[#8B7355] line-clamp-1">
               {selectedServices.length} dịch vụ · {totalDuration} phút
               {selectedDate && ` · ${DAYS[new Date(selectedDate).getDay()]} ${new Date(selectedDate).getDate()}`}
               {selectedTimeSlot && ` · ${selectedTimeSlot}`}

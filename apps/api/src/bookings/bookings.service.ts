@@ -21,8 +21,6 @@ export class BookingsService extends BaseQueryService {
   }
 
   async create(dto: CreateBookingDto, customerId: string): Promise<Booking> {
-    // ... existing create logic ...
-    // (I'll keep the create logic as is to avoid unnecessary diffs, just making sure the class extends BaseQueryService)
     // Validate salon exists
     const salon = await this.prisma.salon.findUnique({
       where: { id: dto.salonId },

@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({ children }: { children: React.ReactNode }): JSX.Element {
   return (
     <html lang="vi" suppressHydrationWarning>
       <body className={`${inter.variable} ${playfair.variable} font-body antialiased`}>

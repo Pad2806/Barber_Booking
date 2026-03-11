@@ -1,63 +1,52 @@
 {
-    "updated_at": "2026-03-09T22:58:00Z",
+    "updated_at": "2026-03-11T18:15:00Z",
     "working_on": {
-        "feature": "Admin CRM (Customer Management)",
-        "task": "Test endpoints and frontend deployment",
-        "status": "pending_test",
+        "feature": "Admin Refactor & Optimization",
+        "task": "Nâng cấp Settings & Tối ưu hệ thống",
+        "status": "completed",
         "files": [
-            "apps/web/src/app/(admin)/admin/customers/page.tsx",
             "apps/api/src/admin/admin.service.ts",
-            "apps/api/src/admin/admin.controller.ts",
-            "packages/shared/src/permissions.ts"
+            "apps/api/src/bookings/bookings.service.ts",
+            "apps/web/src/hooks/use-bookings.ts",
+            "apps/web/src/app/(admin)/admin/settings/page.tsx"
         ],
-        "blockers": [
-            "API crashing on 3001, needed nest build and restart"
-        ],
-        "notes": "Added GET /admin/users/:id endpoint for booking history. Added CRM Users to Admin Panel."
+        "notes": "Đã tối ưu query, dùng Custom Hooks và hoàn thiện UI Settings."
     },
     "pending_tasks": [
         {
-            "task": "Test Admin CRM features locally",
-            "priority": "high",
-            "notes": "Ensure 3001 is stable"
+            "task": "Triển khai Notification Center (In-app)",
+            "priority": "medium"
         },
         {
-            "task": "Deploy backend to Dokploy and test the CI/CD pipeline",
-            "priority": "high",
-            "notes": "Check docker container"
+            "task": "Tối ưu hóa hình ảnh (Cloudinary/S3)",
+            "priority": "low"
         }
     ],
     "recent_changes": [
         {
-            "timestamp": "2026-03-09T22:45:00Z",
-            "type": "feature",
-            "description": "Implemented Admin Customers page and User Detail Panel with history.",
+            "type": "refactor",
+            "description": "Tối ưu hóa DB Query & Custom Hooks",
             "files": [
-                "apps/web/src/app/(admin)/admin/customers/page.tsx",
-                "packages/shared/src/permissions.ts"
+                "bookings.service.ts",
+                "use-bookings.ts"
             ]
         },
         {
-            "timestamp": "2026-03-09T22:30:00Z",
-            "type": "fix",
-            "description": "Fixed all Next.js React-hooks exhaust-deps and eslint warnings for Web Build",
+            "type": "feature",
+            "description": "Hoàn thiện Settings Dashboard",
             "files": [
-                "apps/web/src/app/(admin)/admin/salons/[id]/page.tsx",
-                "apps/web/src/app/(admin)/admin/services/[id]/edit/page.tsx"
+                "settings/page.tsx"
             ]
-        }
-    ],
-    "errors_encountered": [
-        {
-            "error": "NestJS API crashing on start",
-            "solution": "Built API successfully using tsc to fix TS types. Ran via dist/src/main.js.",
-            "resolved": true
         }
     ],
     "decisions_made": [
         {
-            "decision": "Skipping api tests temporarily to unblock github actions",
-            "reason": "Jest worker issue on CI/CD pipeline blocking dokploy deployment."
+            "decision": "Dùng Prisma Select thay vì Include",
+            "reason": "Giảm N+1 query"
+        },
+        {
+            "decision": "Dùng Tabs thay vì trang rời cho Settings",
+            "reason": "Trải nghiệm mượt mà hơn"
         }
     ]
 }

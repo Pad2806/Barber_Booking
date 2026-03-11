@@ -3,26 +3,24 @@
 import { useMemo, useState } from 'react';
 import {
   Users,
-  Search,
   Calendar,
   ShoppingBag,
-  Eye,
   Mail,
   Phone,
   ArrowRight,
-  TrendingUp,
   UserPlus,
   Activity,
   User,
-  MoreVertical,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react';
-import { adminApi, apiClient } from '@/lib/api';
+import { adminApi } from '@/lib/api';
 import { formatPrice, formatDateTime, cn } from '@/lib/utils';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge } from '@/components/admin/status-badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ErrorState } from '@/components/admin/error-state';
 import { ColumnDef } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
@@ -30,11 +28,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Sheet,
   SheetContent,
-  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
-import { Loader2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const STATUS_CONFIG: any = {
   true: { label: 'Hoạt động', variant: 'success' },
@@ -51,16 +48,16 @@ const BOOKING_STATUS_COLORS: Record<string, string> = {
 };
 
 export default function AdminCustomersPage() {
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [search, setSearch] = useState('');
+  const [page] = useState(1);
+  const [limit] = useState(10);
+  const [search] = useState('');
   
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'customers', { page, limit, search }],
-    queryFn: () => adminApi.getAllUsers({ page, limit, search, role: 'CUSTOMER' as any }),
+    queryFn: () => adminApi.getAllUsers({ skip: (page - 1) * limit, take: limit, search, role: 'CUSTOMER' }),
   });
 
   const { data: customerDetail, isLoading: isDetailLoading } = useQuery({
@@ -68,6 +65,19 @@ export default function AdminCustomersPage() {
     queryFn: () => adminApi.getUserById(selectedCustomerId!),
     enabled: !!selectedCustomerId && isDetailOpen,
   });
+
+  // Calculate metrics at top level to avoid hook violation
+  const metrics = useMemo(() => {
+    if (!data?.data) return { totalUsers: 0, activeUsers: 0, newUsers: 0 };
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    return {
+      totalUsers: data?.meta?.total || 0,
+      activeUsers: data?.data?.filter((u: any) => u.isActive).length || 0,
+      newUsers: data?.data?.filter((u: any) => new Date(u.createdAt) >= startOfMonth).length || 0,
+    };
+  }, [data]);
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     {
@@ -172,19 +182,6 @@ export default function AdminCustomersPage() {
     );
   }
 
-  // Calculate metrics
-  const metrics = useMemo(() => {
-    if (!data?.data) return { totalUsers: 0, activeUsers: 0, newUsers: 0 };
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
-    return {
-      totalUsers: data?.meta?.total || 0,
-      activeUsers: data?.data?.filter((u: any) => u.isActive).length || 0,
-      newUsers: data?.data?.filter((u: any) => new Date(u.createdAt) >= startOfMonth).length || 0,
-    };
-  }, [data]);
-
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -231,6 +228,10 @@ export default function AdminCustomersPage() {
       </div>
 
       <Card className="border-none shadow-premium bg-white/50 backdrop-blur-sm">
+        <CardHeader>
+           <CardTitle className="text-xl font-bold font-heading italic">Danh sách khách hàng</CardTitle>
+           <CardDescription>Tìm kiếm và quản lý chi tiết khách hàng.</CardDescription>
+        </CardHeader>
         <DataTable
           columns={columns}
           data={data?.data || []}
@@ -259,12 +260,12 @@ export default function AdminCustomersPage() {
                     <div className="space-y-2">
                        <SheetTitle className="text-2xl font-bold text-slate-900">{customerDetail.name}</SheetTitle>
                        <div className="flex flex-wrap gap-2">
-                         <Badge className={cn('', customerDetail.isActive ? 'bg-emerald-500' : 'bg-slate-400')}>
-                           {customerDetail.isActive ? 'Bình thường' : 'Đã khóa'}
-                         </Badge>
-                         <Badge variant="outline" className="border-slate-200 text-slate-500">
-                           {customerDetail.role}
-                         </Badge>
+                          <Badge className={cn('', customerDetail.isActive ? 'bg-emerald-500' : 'bg-slate-400')}>
+                            {customerDetail.isActive ? 'Bình thường' : 'Đã khóa'}
+                          </Badge>
+                          <Badge variant="outline" className="border-slate-200 text-slate-500">
+                            {customerDetail.role}
+                          </Badge>
                        </div>
                     </div>
                   </div>
@@ -299,40 +300,29 @@ export default function AdminCustomersPage() {
                     <Calendar className="w-4 h-4 text-primary" /> Lịch sử đặt lịch
                   </h4>
                   <div className="space-y-3">
-                    {customerDetail.staff?.salonId ? (
-                      // This part should be updated if customer history endpoint is standardized
-                      // For now, looking at the previous code, it shows bookings in the detail
-                      customerDetail.bookings?.length > 0 ? (
-                        customerDetail.bookings.map((booking: any) => (
-                           <div key={booking.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between hover:border-primary/20 transition-all group">
-                             <div className="flex items-center gap-4">
-                               <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:bg-primary/5 group-hover:text-primary transition-colors">
-                                 <ShoppingBag className="w-5 h-5" />
-                               </div>
-                               <div>
-                                 <p className="text-sm font-bold text-slate-800 line-clamp-1">{booking.salon?.name}</p>
-                                 <p className="text-[xs] text-slate-400">{formatDateTime(booking.date)}</p>
-                               </div>
-                             </div>
-                             <div className="text-right">
-                               <p className="text-sm font-bold text-slate-900">{formatPrice(booking.totalAmount)}</p>
-                               <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full uppercase', BOOKING_STATUS_COLORS[booking.status])}>
-                                 {booking.status}
-                               </span>
-                             </div>
-                           </div>
-                        ))
-                      ) : (
-                        <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200">
-                          <p className="text-slate-400 text-sm">Chưa có lịch sử đặt lịch nào.</p>
-                        </div>
-                      )
+                    {customerDetail.bookings?.length > 0 ? (
+                      customerDetail.bookings.map((booking: any) => (
+                          <div key={booking.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between hover:border-primary/20 transition-all group">
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:bg-primary/5 group-hover:text-primary transition-colors">
+                                <ShoppingBag className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-slate-800 line-clamp-1">{booking.salon?.name}</p>
+                                <p className="text-[xs] text-slate-400">{formatDateTime(booking.date)}</p>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-bold text-slate-900">{formatPrice(booking.totalAmount)}</p>
+                              <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full uppercase', BOOKING_STATUS_COLORS[booking.status])}>
+                                {booking.status}
+                              </span>
+                            </div>
+                          </div>
+                      ))
                     ) : (
-                      // Handle fallback if bookings are not included or filtered differently
                       <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200">
-                        <p className="text-slate-400 text-sm italic underline cursor-pointer hover:text-primary" onClick={() => toast.success('Đang phát triển tính năng lọc lịch sử')}>
-                          Xem chi tiết tất cả lượt đặt của khách hàng này →
-                        </p>
+                        <p className="text-slate-400 text-sm">Chưa có lịch sử đặt lịch nào.</p>
                       </div>
                     )}
                   </div>

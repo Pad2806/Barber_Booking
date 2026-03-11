@@ -1,0 +1,17 @@
+﻿npx : Class extends value 
+undefined is not a 
+constructor or null
+At line:1 char:1
++ npx next lint 2>&1 | 
+Out-String | Set-Content 
+lint.txt -Encoding UTF8
++ ~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : 
+    NotSpecified: (Class ext  
+  ends v...tructor or null:   
+ String) [], RemoteExcepti    
+on
+    + FullyQualifiedErrorId : 
+    NativeCommandError
+ 
+

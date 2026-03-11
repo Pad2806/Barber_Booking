@@ -20,7 +20,6 @@ export class StaffService extends BaseQueryService {
   }
 
   async create(dto: CreateStaffDto, currentUser: User): Promise<Staff> {
-    // ... existing logic ... (just ensure class extends BaseQueryService)
     // Verify salon ownership
     await this.verifySalonOwnership(dto.salonId, currentUser);
 

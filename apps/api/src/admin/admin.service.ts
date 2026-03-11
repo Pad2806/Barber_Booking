@@ -11,7 +11,6 @@ export class AdminService {
     private readonly bookingsService: BookingsService,
   ) { }
 
-  // ... (dashboard stats logic remains same)
 
   async getAllBookings(query: BookingQueryDto) {
     return this.bookingsService.findAll(query);

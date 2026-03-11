@@ -8,14 +8,10 @@ import {
   DollarSign,
   TrendingUp,
   Clock,
-  CheckCircle,
-  XCircle,
-  TrendingDown,
   ArrowUpRight,
   ArrowDownRight,
   Store,
   Scissors,
-  Activity,
   Star,
   UserPlus,
 } from 'lucide-react';
@@ -34,7 +30,7 @@ import {
   Cell,
   Legend,
 } from 'recharts';
-import { adminApi, ActivityItem } from '@/lib/api';
+import { adminApi } from '@/lib/api';
 import { formatPrice, cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -111,8 +107,8 @@ export default function AdminDashboardPage(): JSX.Element {
   return (
     <div className="space-y-8 pb-8">
       <div>
-        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Trung tâm phân tích</h1>
-        <p className="text-gray-500 mt-1">Theo dõi và quản lý hiệu suất kinh doanh của bạn</p>
+        <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight text-left">Trung tâm phân tích</h1>
+        <p className="text-gray-500 mt-1 text-left">Theo dõi và quản lý hiệu suất kinh doanh của bạn</p>
       </div>
 
       {/* Stats Cards */}
@@ -142,7 +138,7 @@ export default function AdminDashboardPage(): JSX.Element {
                   </div>
                 )}
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 text-left">
                 <p className="text-sm font-medium text-gray-500">{stat.label}</p>
                 <p className="text-2xl font-black text-gray-900 leading-tight">
                   {stat.isCurrency ? formatPrice(stat.value as number) : stat.value.toLocaleString()}
@@ -157,7 +153,7 @@ export default function AdminDashboardPage(): JSX.Element {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Revenue Line Chart */}
         <Card className="lg:col-span-2 border-none shadow-sm overflow-hidden">
-          <CardHeader className="border-b bg-gray-50/50">
+          <CardHeader className="border-b bg-gray-50/50 text-left">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-lg font-bold">Xu hướng doanh thu</CardTitle>
@@ -214,7 +210,7 @@ export default function AdminDashboardPage(): JSX.Element {
 
         {/* Top Services Pie Chart */}
         <Card className="border-none shadow-sm h-full">
-          <CardHeader className="border-b bg-gray-50/50">
+          <CardHeader className="border-b bg-gray-50/50 text-left">
             <CardTitle className="text-lg font-bold">Dịch vụ thịnh hành</CardTitle>
             <CardDescription>Tỉ lệ các dịch vụ được đặt nhiều nhất</CardDescription>
           </CardHeader>
@@ -231,7 +227,7 @@ export default function AdminDashboardPage(): JSX.Element {
                     paddingAngle={5}
                     dataKey="count"
                   >
-                    {stats?.topServices.map((_, index) => (
+                    {stats?.topServices.map((_: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -243,7 +239,7 @@ export default function AdminDashboardPage(): JSX.Element {
               </ResponsiveContainer>
             </div>
             <div className="mt-6 space-y-3">
-              {stats?.topServices.map((service, index) => (
+              {stats?.topServices.map((service: any, index: number) => (
                 <div key={service.name} className="flex items-center justify-between group">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
@@ -258,7 +254,7 @@ export default function AdminDashboardPage(): JSX.Element {
 
         {/* Booking Bar Chart */}
         <Card className="lg:col-span-2 border-none shadow-sm overflow-hidden">
-          <CardHeader className="border-b bg-gray-50/50">
+          <CardHeader className="border-b bg-gray-50/50 text-left">
             <CardTitle className="text-lg font-bold">Lưu lượng đặt lịch</CardTitle>
             <CardDescription>Đang phân tích số lượng booking mỗi ngày</CardDescription>
           </CardHeader>
@@ -297,14 +293,14 @@ export default function AdminDashboardPage(): JSX.Element {
 
         {/* Activity Feed */}
         <Card className="border-none shadow-sm h-full flex flex-col">
-          <CardHeader className="border-b bg-gray-50/50 shrink-0">
+          <CardHeader className="border-b bg-gray-50/50 shrink-0 text-left">
             <CardTitle className="text-lg font-bold">Hoạt động mới nhất</CardTitle>
             <CardDescription>Các sự kiện vừa diễn ra trong hệ thống</CardDescription>
           </CardHeader>
           <CardContent className="p-0 overflow-y-auto flex-1 max-h-[500px] custom-scrollbar">
             <div className="divide-y divide-gray-100">
-              {stats?.activityFeed.map((activity, index) => (
-                <div key={index} className="p-4 hover:bg-gray-50/50 transition-colors flex gap-4">
+              {stats?.activityFeed.map((activity: any, index: number) => (
+                <div key={index} className="p-4 hover:bg-gray-50/50 transition-colors flex gap-4 text-left">
                   <div className={cn(
                     "w-10 h-10 rounded-full shrink-0 flex items-center justify-center",
                     activity.type === 'BOOKING' && "bg-blue-100 text-blue-600",
@@ -318,7 +314,7 @@ export default function AdminDashboardPage(): JSX.Element {
                   <div className="flex-1 space-y-1">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-bold text-gray-900">{activity.title}</p>
-                      <span className="text-[10px] text-gray-400 font-medium">
+                      <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap ml-2">
                         {formatDistanceToNow(new Date(activity.time))}
                       </span>
                     </div>
@@ -344,7 +340,7 @@ function formatDistanceToNow(date: Date) {
 
 function DashboardSkeleton() {
   return (
-    <div className="space-y-8 animate-pulse">
+    <div className="space-y-8 animate-pulse text-left">
       <div className="space-y-2">
         <Skeleton className="h-9 w-64 bg-gray-200" />
         <Skeleton className="h-5 w-96 bg-gray-100" />

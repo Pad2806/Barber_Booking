@@ -101,26 +101,26 @@ export default function SalonsPage(): React.ReactNode {
                 <div className="relative h-72">
                   <div className="absolute inset-0 bg-gray-50">
                     {salon.coverImage && (
-                      <Image
-                        src={salon.coverImage}
-                        alt={salon.name}
-                        fill
-                        className="object-cover transition-all duration-700 group-hover:scale-110"
-                      />
+                        <Image
+                          src={salon.coverImage}
+                          alt={`${salon.name} - Ảnh đại diện chi nhánh`}
+                          fill
+                          className="object-cover transition-all duration-700 group-hover:scale-110"
+                        />
                     )}
                   </div>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
                   {salon.logo && (
                     <div className="absolute bottom-6 left-8 w-16 h-16 rounded-[20px] overflow-hidden border-2 border-white shadow-2xl scale-90 group-hover:scale-100 transition-transform duration-700">
-                      <Image src={salon.logo} alt={salon.name} fill className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
+                      <Image src={salon.logo} alt={`${salon.name} - Logo`} fill className="object-cover grayscale group-hover:grayscale-0 transition-all duration-700" />
                     </div>
                   )}
                 </div>
                   <div className="p-6 pb-8">
-                    <h3 className="text-xl font-bold text-[#2C1E12] group-hover:text-[#C8A97E] transition-colors uppercase tracking-tight mb-3">
+                    <h3 className="text-xl font-bold text-[#2C1E12] group-hover:text-[#C8A97E] transition-colors uppercase tracking-tight mb-3 text-left">
                       {salon.name}
                     </h3>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight flex items-start gap-2 mb-6 leading-relaxed">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight flex items-start gap-2 mb-6 leading-relaxed text-left">
                       <MapPin className="w-3.5 h-3.5 mt-[1px] flex-shrink-0 text-primary" />
                       {salon.address}, {salon.district}, {salon.city}
                     </p>

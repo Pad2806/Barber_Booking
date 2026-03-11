@@ -14,9 +14,8 @@ import {
   Download,
   Filter,
   Trash2,
-  ChevronDown,
 } from 'lucide-react';
-import { formatPrice, formatDate, cn } from '@/lib/utils';
+import { formatPrice, formatDate } from '@/lib/utils';
 import { adminApi } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';
@@ -28,7 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { ErrorState } from '@/components/admin/error-state';
 import { ColumnDef } from '@tanstack/react-table';
 import { toast } from 'react-hot-toast';
@@ -47,8 +46,8 @@ const STATUS_CONFIG: any = {
 
 export default function AdminBookingsPage() {
   const queryClient = useQueryClient();
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
+  const [page] = useState(1);
+  const [limit] = useState(10);
   
   // Filters
   const [status, setStatus] = useState<string>('');
@@ -174,7 +173,7 @@ export default function AdminBookingsPage() {
               <AvatarImage src={customer?.avatar} />
               <AvatarFallback>{customer?.name?.charAt(0)}</AvatarFallback>
             </Avatar>
-            <div className="flex flex-col">
+            <div className="flex flex-col text-left">
               <span className="font-semibold text-slate-900 leading-none">{customer?.name}</span>
               <span className="text-xs text-slate-500 mt-1">{customer?.phone}</span>
             </div>
@@ -189,13 +188,13 @@ export default function AdminBookingsPage() {
         const salon = row.original.salon;
         const staff = row.original.staff;
         return (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 text-left">
             <div className="flex items-center gap-1 text-xs text-slate-600">
-              <MapPin className="w-3 h-3" />
+              <MapPin className="w-3 h-3 text-slate-400" />
               <span className="truncate max-w-[120px]">{salon?.name}</span>
             </div>
             <div className="flex items-center gap-1 text-xs text-slate-500">
-              <User className="w-3 h-3" />
+              <User className="w-3 h-3 text-slate-400" />
               <span>{staff?.name || 'Chưa chỉ định'}</span>
             </div>
           </div>
@@ -208,7 +207,7 @@ export default function AdminBookingsPage() {
       cell: ({ row }) => {
         const services = row.original.services || [];
         return (
-          <div className="text-xs text-slate-600 max-w-[200px] truncate">
+          <div className="text-xs text-slate-600 max-w-[200px] truncate text-left">
             {services.map((s: any) => s.name).join(', ') || 'N/A'}
           </div>
         );
@@ -221,9 +220,9 @@ export default function AdminBookingsPage() {
         const date = row.original.date;
         const timeSlot = row.original.timeSlot;
         return (
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-1 text-xs">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+          <div className="flex flex-col gap-1 text-left">
+            <div className="flex items-center gap-1 text-xs text-slate-500">
+              <Calendar className="w-3.5 h-3.5" />
               <span>{formatDate(date)}</span>
             </div>
             <div className="flex items-center gap-1 text-xs">
@@ -317,6 +316,7 @@ export default function AdminBookingsPage() {
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <select
+                title="Status Filter"
                 className="w-full h-9 pl-9 pr-4 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
                 value={status}
                 onChange={(e) => setStatus(e.target.value)}
@@ -329,6 +329,7 @@ export default function AdminBookingsPage() {
             </div>
             
             <select
+              title="Salon Filter"
               className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
               value={salonId}
               onChange={(e) => {
@@ -343,6 +344,7 @@ export default function AdminBookingsPage() {
             </select>
 
             <select
+              title="Staff Filter"
               className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
               value={staffId}
               onChange={(e) => setStaffId(e.target.value)}
@@ -356,18 +358,18 @@ export default function AdminBookingsPage() {
             <div className="flex items-center gap-2 lg:col-span-2">
               <Input
                 type="date"
+                title="From date"
                 className="h-9"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                placeholder="Từ ngày"
               />
               <span className="text-slate-400">→</span>
               <Input
                 type="date"
+                title="To date"
                 className="h-9"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                placeholder="Đến ngày"
               />
             </div>
           </div>
@@ -419,6 +421,15 @@ export default function AdminBookingsPage() {
           />
         </CardContent>
       </Card>
+
+      <div className="flex items-center justify-start gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+         <Input 
+           placeholder="Tìm theo mã booking..." 
+           value={search}
+           onChange={(e) => setSearch(e.target.value)}
+           className="max-w-xs h-10 rounded-lg"
+         />
+      </div>
     </div>
   );
 }

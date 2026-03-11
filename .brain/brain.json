@@ -40,7 +40,9 @@
             "BookingService",
             "Payment",
             "Review",
-            "ServiceCategory"
+            "StaffLeave",
+            "StaffSchedule",
+            "Setting"
         ],
         "relationships_explained": "1 User can have 1 Staff profile and multiple Bookings. 1 Booking belongs to 1 Salon and contains multiple Services via BookingService. 1 Booking can have multiple Payments."
     },
@@ -58,8 +60,20 @@
             "explained": "Generate a VietQR code for the specified booking."
         },
         {
-            "path": "/webhooks/sepay",
-            "explained": "Webhook listener for automatic payment confirmations from SePay API."
+            "path": "/admin/analytics/branches",
+            "explained": "Analyze performance stats (revenue, ratings) for each salon branch."
+        },
+        {
+            "path": "/admin/analytics/services",
+            "explained": "Retrieve service performance rankings (Top Booked, Top Revenue)."
+        },
+        {
+            "path": "/admin/staff/:id/analytics",
+            "explained": "Retrieve detailed performance metrics for a specific staff member."
+        },
+        {
+            "path": "/admin/settings",
+            "explained": "Manage global configuration including business info, branding, and booking rules."
         }
     ],
     "business_rules": [

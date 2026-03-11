@@ -1,3 +1,3 @@
-export default function StaffLayout({ children }: { children: React.ReactNode }) {
+export default function StaffLayout({ children }: { children: React.ReactNode }): JSX.Element {
   return <>{children}</>;
 }

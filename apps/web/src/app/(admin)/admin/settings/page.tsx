@@ -1,33 +1,25 @@
 'use client';
 
-import { useState } from 'react';
 import { 
   Save, 
   Building, 
   CreditCard, 
   Bell, 
-  Shield, 
   Palette, 
   Loader2, 
   Clock, 
-  Check, 
-  Smartphone,
   ShieldCheck,
-  Globe,
   Settings2
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useSettings } from '@/hooks/use-settings';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-export default function AdminSettingsPage() {
+export default function AdminSettingsPage(): JSX.Element {
   const { settings, isLoading, isSaving, updateField, saveSettings } = useSettings();
-  const [activeTab, setActiveTab] = useState('general');
 
   if (isLoading) {
     return (
@@ -156,24 +148,27 @@ export default function AdminSettingsPage() {
                      <div className="space-y-4">
                         <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Giờ mở cửa mặc định</label>
                         <div className="flex items-center gap-4">
-                           <Input 
+                           <input 
                              type="time" 
+                             title="Opening time"
                              value={settings.defaultOpenTime || '08:00'} 
                              onChange={e => updateField('defaultOpenTime', e.target.value)}
-                             className="rounded-xl h-12 border-slate-200"
+                             className="rounded-xl h-12 border-slate-200 px-4 flex-1 border focus:ring-2 focus:ring-primary/20 outline-none"
                            />
                            <span className="text-slate-400 font-bold">đến</span>
-                           <Input 
+                           <input 
                              type="time" 
+                             title="Closing time"
                              value={settings.defaultCloseTime || '20:00'} 
                              onChange={e => updateField('defaultCloseTime', e.target.value)}
-                             className="rounded-xl h-12 border-slate-200"
+                             className="rounded-xl h-12 border-slate-200 px-4 flex-1 border focus:ring-2 focus:ring-primary/20 outline-none"
                            />
                         </div>
                      </div>
                      <div className="space-y-4">
                         <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Thời gian mỗi Slot (phút)</label>
                         <select 
+                           title="Slot duration"
                            value={settings.slotDuration || 30}
                            onChange={e => updateField('slotDuration', parseInt(e.target.value))}
                            className="w-full h-12 px-4 rounded-xl border border-slate-200 bg-white font-bold text-sm focus:ring-2 focus:ring-primary/20 transition-all"
@@ -340,6 +335,7 @@ export default function AdminSettingsPage() {
                             <div className="h-16 w-16 rounded-2xl shadow-xl border-2 border-white ring-1 ring-slate-200" style={{ backgroundColor: settings.primaryColor || '#D4A574' }}>
                                <input 
                                  type="color" 
+                                 title="Primary color"
                                  value={settings.primaryColor || '#D4A574'}
                                  onChange={e => updateField('primaryColor', e.target.value)}
                                  className="w-full h-full opacity-0 cursor-pointer" 

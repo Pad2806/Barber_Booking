@@ -19,7 +19,6 @@ export class SalonsService extends BaseQueryService {
   }
 
   async create(dto: CreateSalonDto, ownerId: string): Promise<Salon> {
-    // ... existing logic ...
     // Check if slug already exists
     const existingSlug = await this.prisma.salon.findUnique({
       where: { slug: dto.slug },
@@ -95,23 +94,8 @@ export class SalonsService extends BaseQueryService {
       this.prisma.salon.count({ where }),
     ]);
 
-    // Calculate average rating for each salon
-    const salonsWithRating = await Promise.all(
-      salons.map(async salon => {
-        const avgRating = await this.prisma.review.aggregate({
-          where: { salonId: salon.id, isVisible: true },
-          _avg: { rating: true },
-        });
-
-        return {
-          ...salon,
-          averageRating: avgRating._avg.rating || 0,
-        };
-      }),
-    );
-
     return {
-      data: salonsWithRating,
+      data: salons,
       meta: this.getPaginationMeta(total, query),
     };
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi, salonApi } from '@/lib/api';
@@ -40,12 +40,12 @@ export default function BranchDetailPage() {
     queryFn: () => adminApi.getAllStaff({ salonId: id, limit: 100 }),
   });
 
-  const { data: bookingsData, isLoading: isLoadingBookings } = useQuery({
+  const { data: bookingsData } = useQuery({
     queryKey: ['admin', 'bookings', 'list', id],
     queryFn: () => adminApi.getAllBookings({ salonId: id, limit: 10 }),
   });
 
-  const staffColumns: ColumnDef<any>[] = [
+  const staffColumns: ColumnDef<any>[] = useMemo(() => [
     {
       accessorKey: 'user.name',
       header: 'Nhân viên',
@@ -88,7 +88,7 @@ export default function BranchDetailPage() {
         </div>
       )
     }
-  ];
+  ], []);
 
   if (isLoading) {
     return (
@@ -110,7 +110,7 @@ export default function BranchDetailPage() {
             <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
               <Activity className="w-6 h-6" />
             </div>
-            <div>
+            <div className="text-left">
               <h1 className="text-xl font-bold text-slate-900 flex items-center gap-2 italic">{salon?.name}</h1>
               <p className="text-sm text-slate-500 font-medium">Báo cáo hoạt động chi tiết chi nhánh</p>
             </div>
@@ -123,10 +123,10 @@ export default function BranchDetailPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1 border-none shadow-premium bg-white">
-           <CardHeader>
+           <CardHeader className="text-left">
               <CardTitle className="text-lg font-bold">Thông tin liên hệ</CardTitle>
            </CardHeader>
-           <CardContent className="space-y-6">
+           <CardContent className="space-y-6 text-left">
               <div className="flex items-start gap-4">
                 <div className="p-2 bg-slate-50 rounded-lg shrink-0"><MapPin className="w-4 h-4 text-primary" /></div>
                 <div className="text-sm">
@@ -180,14 +180,14 @@ export default function BranchDetailPage() {
 
             <TabsContent value="bookings">
                 <Card className="border-none shadow-premium bg-white">
-                  <CardHeader>
+                  <CardHeader className="text-left">
                     <CardTitle className="text-lg font-bold">Booking gần đây</CardTitle>
                     <CardDescription>Danh sách 10 khách hàng đặt lịch mới nhất tại chi nhánh.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
                        {bookingsData?.data?.map((booking: any) => (
-                         <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100 gap-4">
+                         <div key={booking.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-slate-50 border border-slate-100 gap-4 text-left">
                            <div className="flex items-center gap-3">
                               <Avatar className="h-10 w-10">
                                 <AvatarImage src={booking.customer?.avatar} />
@@ -195,7 +195,7 @@ export default function BranchDetailPage() {
                               </Avatar>
                               <div>
                                 <p className="font-bold text-slate-800">{booking.customer?.name}</p>
-                                <p className="text-xs text-slate-500 font-medium">{booking.services?.map((s: any) => s.service?.name).join(', ')}</p>
+                                <p className="text-xs text-slate-500 font-medium line-clamp-1">{booking.services?.map((s: any) => s.service?.name).join(', ')}</p>
                               </div>
                            </div>
                            <div className="flex items-center gap-6">
@@ -215,14 +215,14 @@ export default function BranchDetailPage() {
             </TabsContent>
             
             <TabsContent value="analytics">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-left">
                    <Card className="border-none shadow-premium bg-white">
                      <CardContent className="p-6">
                         <TrendingUp className="w-5 h-5 text-primary mb-4" />
                         <p className="text-sm font-bold text-slate-500 uppercase tracking-tight">Doanh thu tổng</p>
                         <p className="text-2xl font-black text-slate-900 mt-1">{formatCurrency((salon?._count?.bookings || 0) * 250000)}</p>
                         <p className="text-[10px] text-emerald-600 font-bold mt-2 flex items-center gap-1">
-                          +12.5% <span className="text-slate-400">vs tháng trước</span>
+                          +12.5% <span className="text-slate-400 font-normal">vs tháng trước</span>
                         </p>
                      </CardContent>
                    </Card>
@@ -232,12 +232,12 @@ export default function BranchDetailPage() {
                         <p className="text-sm font-bold text-slate-500 uppercase tracking-tight">Hiệu suất phục vụ</p>
                         <p className="text-2xl font-black text-slate-900 mt-1">{salon?._count?.bookings || 0} lượt</p>
                         <p className="text-[10px] text-emerald-600 font-bold mt-2 flex items-center gap-1">
-                          92% <span className="text-slate-400">hoàn thành đúng giờ</span>
+                          92% <span className="text-slate-400 font-normal">hoàn thành đúng giờ</span>
                         </p>
                      </CardContent>
                    </Card>
                 </div>
-                <Card className="border-none shadow-premium bg-white mt-4">
+                <Card className="border-none shadow-premium bg-white mt-4 text-left">
                   <CardHeader>
                     <CardTitle className="text-lg font-bold">Lưu ý quản lý</CardTitle>
                   </CardHeader>
