@@ -12,7 +12,7 @@ import {
   XCircle,
   Store,
 } from 'lucide-react';
-import { formatDateTime, cn } from '@/lib/utils';
+import { formatDateTime } from '@/lib/utils';
 import { adminApi, salonApi, Salon } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';

@@ -267,7 +267,7 @@ export default function AdminStaffPage() {
         );
       },
     },
-  ], [deleteMutation, router, data]);
+  ], [deleteMutation, router]);
 
   if (isError) {
     return (

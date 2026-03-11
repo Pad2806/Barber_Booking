@@ -55,7 +55,7 @@ export default function AdminBookingsPage() {
   const [staffId, setStaffId] = useState<string>('');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
-  const [search, setSearch] = useState<string>('');
+  const [search] = useState<string>('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Selection

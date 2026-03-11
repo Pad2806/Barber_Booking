@@ -468,7 +468,7 @@ export default function SalonDetailPage() {
                       </div>
 
                       {review.comment && (
-                        <p className="text-sm text-[#5C4A32] leading-relaxed italic pr-4">"{review.comment}"</p>
+                        <p className="text-sm text-[#5C4A32] leading-relaxed italic pr-4">&quot;{review.comment}&quot;</p>
                       )}
 
                       {review.images && review.images.length > 0 && (

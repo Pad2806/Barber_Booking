@@ -13,7 +13,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { ChevronLeft, ChevronRight, Search, SlidersHorizontal } from "lucide-react"
+import { ChevronLeft, ChevronRight, Search } from "lucide-react"
 
 import {
   Table,
@@ -47,7 +47,6 @@ export function DataTable<TData, TValue>({
   searchKey,
   loading = false,
   onRowSelectionChange,
-  pagination,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])

@@ -11,8 +11,6 @@ import {
   Star, 
   CheckCircle, 
   Clock, 
-  Plus, 
-  Info,
   CalendarDays,
   MapPin,
   Mail,
