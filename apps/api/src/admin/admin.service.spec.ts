@@ -38,6 +38,10 @@ describe('AdminService', () => {
     service: {
       count: jest.fn(),
       findMany: jest.fn(),
+      findUnique: jest.fn(),
+    },
+    bookingService: {
+      groupBy: jest.fn(),
     },
     review: {
       count: jest.fn(),
@@ -74,20 +78,42 @@ describe('AdminService', () => {
 
   describe('getDashboardStats', () => {
     it('should return dashboard statistics', async () => {
-      mockPrismaService.user.count.mockResolvedValue(100);
+      // user.count: totalCustomers, lastMonthCustomers
+      mockPrismaService.user.count
+        .mockResolvedValueOnce(100)   // totalCustomers
+        .mockResolvedValueOnce(90);   // lastMonthCustomers
+      // staff.count: totalStaff
+      mockPrismaService.staff.count.mockResolvedValue(10);
+      // salon.count: totalSalons
       mockPrismaService.salon.count.mockResolvedValue(5);
+      // booking.count: totalBookings, todayBookings, yesterdayBookings, monthBookings, lastMonthBookings, pendingBookings
       mockPrismaService.booking.count
-        .mockResolvedValueOnce(500)  // totalBookings
-        .mockResolvedValueOnce(20)   // todayBookings
-        .mockResolvedValueOnce(150)  // monthBookings
-        .mockResolvedValueOnce(120)  // lastMonthBookings
-        .mockResolvedValueOnce(10);  // pendingBookings
+        .mockResolvedValueOnce(500)   // totalBookings
+        .mockResolvedValueOnce(20)    // todayBookings
+        .mockResolvedValueOnce(15)    // yesterdayBookings
+        .mockResolvedValueOnce(150)   // monthBookings
+        .mockResolvedValueOnce(120)   // lastMonthBookings
+        .mockResolvedValueOnce(10);   // pendingBookings
+      // payment.aggregate: monthRevenue, lastMonthRevenue, todayRevenue, yesterdayRevenue
       mockPrismaService.payment.aggregate
         .mockResolvedValueOnce({ _sum: { amount: 50000000 } })  // monthRevenue
-        .mockResolvedValueOnce({ _sum: { amount: 45000000 } }); // lastMonthRevenue
+        .mockResolvedValueOnce({ _sum: { amount: 45000000 } })  // lastMonthRevenue
+        .mockResolvedValueOnce({ _sum: { amount: 5000000 } })   // todayRevenue
+        .mockResolvedValueOnce({ _sum: { amount: 4000000 } });  // yesterdayRevenue
+      // booking.findMany: recentBookings + activityFeed bookings
       mockPrismaService.booking.findMany.mockResolvedValue([
-        { id: 'booking-1', bookingCode: 'BK001', status: 'PENDING' },
+        { id: 'booking-1', bookingCode: 'BK001', status: 'PENDING', totalAmount: 100000, createdAt: new Date(), customer: { name: 'Test' }, salon: { name: 'Salon' } },
       ]);
+      // bookingService.groupBy: getTopServicesInternal
+      mockPrismaService.bookingService.groupBy.mockResolvedValue([
+        { serviceId: 'service-1', _count: { serviceId: 10 } },
+      ]);
+      // service.findUnique: getTopServicesInternal detail
+      mockPrismaService.service.findUnique.mockResolvedValue({ name: 'Haircut', category: 'HAIRCUT' });
+      // review.findMany: getActivityFeedInternal
+      mockPrismaService.review.findMany.mockResolvedValue([]);
+      // user.findMany: getActivityFeedInternal
+      mockPrismaService.user.findMany.mockResolvedValue([]);
 
       const result = await service.getDashboardStats();
 
@@ -96,6 +122,8 @@ describe('AdminService', () => {
       expect(result).toHaveProperty('totalBookings');
       expect(result).toHaveProperty('monthRevenue');
       expect(result).toHaveProperty('recentBookings');
+      expect(result).toHaveProperty('topServices');
+      expect(result).toHaveProperty('activityFeed');
       expect(result.totalCustomers).toBe(100);
       expect(result.totalSalons).toBe(5);
     });
