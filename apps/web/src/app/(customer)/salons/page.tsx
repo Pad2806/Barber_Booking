@@ -129,10 +129,10 @@ export default function SalonsPage(): React.ReactNode {
                         <div className="flex items-center gap-1.5 bg-primary text-background px-2.5 py-0.5 rounded-sm">
                           <Star className="w-3 h-3 fill-current" />
                           <span className="text-[10px] font-bold">
-                            {salon.rating?.toFixed(1) || '5.0'}
+                            {salon.averageRating?.toFixed(1) || '0.0'}
                           </span>
                         </div>
-                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">({salon.totalReviews || 0} REVIEWS)</span>
+                        <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">({salon._count?.reviews || 0} REVIEWS)</span>
                       </div>
                       <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-tight bg-accent/5 px-2.5 py-1.5 rounded-full border border-border">
                         <Clock className="w-3 h-3" />

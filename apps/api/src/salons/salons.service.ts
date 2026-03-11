@@ -95,15 +95,19 @@ export class SalonsService extends BaseQueryService {
       this.prisma.salon.count({ where }),
       this.prisma.review.groupBy({
         by: ['salonId'],
+        where: { isVisible: true },
         _avg: { rating: true },
       }),
     ]);
 
     const data = salons.map((salon) => {
       const avg = averages.find((a) => a.salonId === salon.id);
+      const rating = Number(avg?._avg?.rating || 0);
       return {
         ...salon,
-        averageRating: avg?._avg?.rating || 0,
+        averageRating: rating,
+        rating: rating,
+        totalReviews: salon._count?.reviews || 0,
       };
     });
 

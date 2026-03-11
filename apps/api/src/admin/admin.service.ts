@@ -619,7 +619,7 @@ export class AdminService {
     if (city) where.city = city;
     if (isActive !== undefined) where.isActive = isActive;
 
-    const [salons, total] = await Promise.all([
+    const [salons, total, averages] = await Promise.all([
       this.prisma.salon.findMany({
         where,
         skip,
@@ -634,28 +634,32 @@ export class AdminService {
               staff: true,
               services: true,
               bookings: true,
+              reviews: true,
             },
           },
         },
       }),
       this.prisma.salon.count({ where }),
+      this.prisma.review.groupBy({
+        by: ['salonId'],
+        where: { isVisible: true },
+        _avg: { rating: true },
+      }),
     ]);
 
-    const salonsWithRating = await Promise.all(
-      salons.map(async (salon) => {
-        const avgRating = await this.prisma.review.aggregate({
-          where: { salonId: salon.id, isVisible: true },
-          _avg: { rating: true },
-        });
-        return {
-          ...salon,
-          rating: avgRating._avg.rating || 0,
-        };
-      }),
-    );
+    const data = salons.map((salon) => {
+      const avg = averages.find((a) => a.salonId === salon.id);
+      const rating = Number(avg?._avg?.rating || 0);
+      return {
+        ...salon,
+        averageRating: rating,
+        rating: rating,
+        totalReviews: salon._count?.reviews || 0,
+      };
+    });
 
     return {
-      data: salonsWithRating,
+      data: data,
 
       meta: {
         total,

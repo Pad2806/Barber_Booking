@@ -90,6 +90,10 @@ function LoginForm() {
           </div>
 
           <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label htmlFor="password" className="text-sm font-bold text-[#2C1E12]">Mật khẩu</label>
+              <Link href="/forgot-password" title="Quên mật khẩu" className="text-xs font-bold text-[#8B7355] hover:text-[#C8A97E] transition-colors">Quên mật khẩu?</Link>
+            </div>
             <div className="relative group">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#8B7355] transition-colors group-focus-within:text-[#C8A97E]" />
               <input
@@ -110,10 +114,6 @@ function LoginForm() {
               </button>
             </div>
           </div>
-          <div className="flex items-center justify-between">
-              <label htmlFor="password" className="text-sm font-bold text-[#2C1E12]">Mật khẩu</label>
-              <Link href="/forgot-password" title="Quên mật khẩu" className="text-xs font-bold text-[#8B7355] hover:text-[#C8A97E] transition-colors">Quên mật khẩu?</Link>
-            </div>
         </div>
 
         <button
