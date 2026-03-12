@@ -24,11 +24,11 @@
       "@reetro/shared": [
         "../../packages/shared/src"
       ]
-    },
-    "rootDir": "src"
+    }
   },
   "include": [
-    "src/**/*"
+    "src/**/*",
+    "../../packages/shared/src/**/*"
   ],
   "exclude": [
     "node_modules",

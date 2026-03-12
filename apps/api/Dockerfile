@@ -3,6 +3,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Install openssl for Prisma in builder stage
+RUN apk add --no-cache openssl
+
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@latest --activate
 
@@ -62,4 +65,4 @@ USER nestjs
 EXPOSE 3001
 
 # Run Prisma migrations and start the app
-CMD ["sh", "-c", "prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"]
+CMD ["sh", "-c", "prisma migrate deploy --schema=./prisma/schema.prisma && node dist/apps/api/src/main.js"]
