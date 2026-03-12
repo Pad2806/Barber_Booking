@@ -666,25 +666,64 @@ export class AdminService extends BaseQueryService {
   }
 
 
+  async getStaffById(staffId: string) {
+    const staff = await this.prisma.staff.findUnique({
+      where: { id: staffId },
+      include: {
+        user: {
+          select: { id: true, name: true, phone: true, email: true, avatar: true },
+        },
+        salon: {
+          select: { id: true, name: true, address: true },
+        },
+        _count: {
+          select: {
+            bookings: true,
+            reviews: true,
+          },
+        },
+      },
+    });
+
+    if (!staff) {
+      throw new Error('Staff not found');
+    }
+
+    return staff;
+  }
+
   async getAllStaff(params: {
     page?: number;
     limit?: number;
     salonId?: string;
+    minRating?: number;
+    sortBy?: string;
+    sortOrder?: 'asc' | 'desc';
     search?: string;
   }) {
-    const { salonId, search } = params;
+    const { salonId, search, minRating, sortBy, sortOrder = 'desc' } = params;
 
     const where: any = {};
     if (salonId) where.salonId = salonId;
+    if (minRating) where.rating = { gte: minRating };
     if (search) {
       Object.assign(where, this.buildSearchWhere(search, ['user.name', 'user.phone', 'user.email']));
+    }
+
+    let orderBy: any = { createdAt: 'desc' };
+    if (sortBy === 'rating') {
+      orderBy = { rating: sortOrder };
+    } else if (sortBy === 'name') {
+      orderBy = { user: { name: sortOrder } };
+    } else if (sortBy === 'createdAt') {
+      orderBy = { createdAt: sortOrder };
     }
 
     const [staff, total] = await Promise.all([
       this.prisma.staff.findMany({
         where,
         ...this.getPaginationOptions(params),
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         include: {
           user: {
             select: { id: true, name: true, phone: true, email: true, avatar: true },

@@ -46,7 +46,7 @@ const STATUS_CONFIG: Record<string, { label: string, variant: 'warning' | 'info'
 
 export default function AdminBookingsPage(): React.ReactElement {
   const queryClient = useQueryClient();
-  const [page] = useState(1);
+  const [page, setPage] = useState(1);
   const [limit] = useState(10);
   
   // Filters
@@ -351,7 +351,7 @@ export default function AdminBookingsPage(): React.ReactElement {
             >
               <option value="">Tất cả nhân viên</option>
               {staffData?.data?.map((s: any) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
+                <option key={s.id} value={s.id}>{s.user?.name}</option>
               ))}
             </select>
 
@@ -418,6 +418,12 @@ export default function AdminBookingsPage(): React.ReactElement {
             searchKey="bookingCode"
             loading={isLoading}
             onRowSelectionChange={setSelectedBookings}
+            pagination={{
+              pageCount: data?.meta?.lastPage || 1,
+              onPageChange: (p) => setPage(p),
+              pageIndex: page,
+              pageSize: limit,
+            }}
           />
         </CardContent>
       </Card>

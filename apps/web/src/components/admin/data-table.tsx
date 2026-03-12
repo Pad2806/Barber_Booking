@@ -47,6 +47,7 @@ export function DataTable<TData, TValue>({
   searchKey,
   loading = false,
   onRowSelectionChange,
+  pagination,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
@@ -79,6 +80,28 @@ export function DataTable<TData, TValue>({
       onRowSelectionChange(selectedRows)
     }
   }, [rowSelection, table, onRowSelectionChange])
+
+  // Pagination helper
+  const currentPage = pagination ? pagination.pageIndex : table.getState().pagination.pageIndex + 1;
+  const pageCount = pagination ? pagination.pageCount : table.getPageCount();
+  const canPreviousPage = pagination ? pagination.pageIndex > 1 : table.getCanPreviousPage();
+  const canNextPage = pagination ? pagination.pageIndex < pageCount : table.getCanNextPage();
+
+  const handlePreviousPage = () => {
+    if (pagination) {
+      pagination.onPageChange(pagination.pageIndex - 1);
+    } else {
+      table.previousPage();
+    }
+  };
+
+  const handleNextPage = () => {
+    if (pagination) {
+      pagination.onPageChange(pagination.pageIndex + 1);
+    } else {
+      table.nextPage();
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -154,7 +177,7 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between px-2">
+      <div className="flex items-center justify-between px-6 pb-4">
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} trong{" "}
           {table.getFilteredRowModel().rows.length} dòng được chọn.
@@ -163,23 +186,23 @@ export function DataTable<TData, TValue>({
           <div className="flex items-center space-x-2">
             <p className="text-sm font-medium">Trang</p>
             <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-              {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
+              {currentPage} / {pageCount}
             </div>
           </div>
           <div className="flex items-center space-x-2">
             <Button
               variant="outline"
               className="h-8 w-8 p-0"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
+              onClick={handlePreviousPage}
+              disabled={!canPreviousPage}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
               className="h-8 w-8 p-0"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
+              onClick={handleNextPage}
+              disabled={!canNextPage}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>

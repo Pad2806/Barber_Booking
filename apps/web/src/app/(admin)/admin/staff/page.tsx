@@ -50,7 +50,7 @@ const STATUS_CONFIG: any = {
 export default function AdminStaffPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
-  const [page] = useState(1);
+  const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [salonId, setSalonId] = useState<string | undefined>(undefined);
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
@@ -393,6 +393,12 @@ export default function AdminStaffPage() {
             data={data?.data || []}
             searchKey="user.name"
             loading={isLoading}
+            pagination={{
+              pageCount: data?.meta?.lastPage || 1,
+              onPageChange: (p) => setPage(p),
+              pageIndex: page,
+              pageSize: limit,
+            }}
           />
         </CardContent>
       </Card>

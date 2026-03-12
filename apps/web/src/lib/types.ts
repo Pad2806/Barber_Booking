@@ -100,6 +100,13 @@ export interface StaffShift {
     date: string;
     shiftStart: string;
     shiftEnd: string;
+    staff?: {
+        id: string;
+        user: {
+            name: string;
+            avatar?: string;
+        };
+    };
 }
 
 export interface Booking {

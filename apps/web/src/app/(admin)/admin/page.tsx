@@ -194,7 +194,7 @@ export default function AdminDashboardPage(): JSX.Element {
             </div>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="h-[350px] w-full mt-4">
+            <div className="h-[350px] min-h-[350px] w-full mt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={revenueStats?.dailyRevenue}>
                   <defs>
@@ -244,7 +244,7 @@ export default function AdminDashboardPage(): JSX.Element {
             <CardDescription>Tỉ lệ các dịch vụ được đặt nhiều nhất</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="h-[300px] w-full">
+            <div className="h-[300px] min-h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -288,7 +288,7 @@ export default function AdminDashboardPage(): JSX.Element {
             <CardDescription>Đang phân tích số lượng booking mỗi ngày</CardDescription>
           </CardHeader>
           <CardContent className="p-6">
-            <div className="h-[300px] w-full mt-4">
+            <div className="h-[300px] min-h-[300px] w-full mt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={bookingStats?.timeline}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />

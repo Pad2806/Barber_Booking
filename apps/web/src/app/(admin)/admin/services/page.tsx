@@ -37,7 +37,7 @@ const STATUS_CONFIG: any = {
 
 export default function AdminServicesPage() {
   const queryClient = useQueryClient();
-  const [page] = useState(1);
+  const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [category, setCategory] = useState<string | undefined>(undefined);
 
@@ -260,6 +260,12 @@ export default function AdminServicesPage() {
             data={data?.data || []}
             searchKey="name"
             loading={isLoading}
+            pagination={{
+              pageCount: data?.meta?.lastPage || 1,
+              onPageChange: (p) => setPage(p),
+              pageIndex: page,
+              pageSize: limit,
+            }}
           />
         </CardContent>
       </Card>

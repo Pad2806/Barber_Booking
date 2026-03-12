@@ -407,7 +407,7 @@ export const adminApi = {
     return response.data;
   },
   getStaffById: async (staffId: string) => {
-    const response = await apiClient.get<Staff>(`/staff/${staffId}`);
+    const response = await apiClient.get<Staff>(`/admin/staff/${staffId}`);
     return response.data;
   },
   createStaff: async (data: any) => {

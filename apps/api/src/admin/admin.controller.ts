@@ -224,23 +224,40 @@ export class AdminController {
     return this.adminService.getRevenueStats(period);
   }
 
+  @Get('staff/:id')
+  @RequirePermissions(Permission.VIEW_STAFF)
+  @ApiOperation({ summary: 'Get staff detail' })
+  @ApiParam({ name: 'id', description: 'Staff ID' })
+  getStaffById(@Param('id') id: string) {
+    return this.adminService.getStaffById(id);
+  }
+
   @Get('staff')
   @RequirePermissions(Permission.VIEW_STAFF)
   @ApiOperation({ summary: 'Get all staff (paginated)' })
   @ApiQuery({ name: 'page', required: false })
   @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'salonId', required: false })
+  @ApiQuery({ name: 'minRating', required: false })
+  @ApiQuery({ name: 'sortBy', required: false })
+  @ApiQuery({ name: 'sortOrder', required: false })
   @ApiQuery({ name: 'search', required: false })
   getAllStaff(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('salonId') salonId?: string,
+    @Query('minRating') minRating?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
     @Query('search') search?: string,
   ) {
     return this.adminService.getAllStaff({
       page: page ? parseInt(page) : undefined,
       limit: limit ? parseInt(limit) : undefined,
       salonId,
+      minRating: minRating ? parseFloat(minRating) : undefined,
+      sortBy,
+      sortOrder,
       search,
     });
   }

@@ -44,7 +44,7 @@ const STATUS_CONFIG: any = {
 
 export default function AdminSalonsPage() {
   const queryClient = useQueryClient();
-  const [page] = useState(1);
+  const [page, setPage] = useState(1);
   const [limit] = useState(10);
   const [search] = useState('');
 
@@ -262,6 +262,12 @@ export default function AdminSalonsPage() {
             data={data?.data || []}
             searchKey="name"
             loading={isLoading}
+            pagination={{
+              pageCount: data?.meta?.lastPage || 1,
+              onPageChange: (p) => setPage(p),
+              pageIndex: page,
+              pageSize: limit,
+            }}
           />
         </CardContent>
       </Card>

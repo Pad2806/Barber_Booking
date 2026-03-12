@@ -166,7 +166,16 @@ export class ServicesService extends BaseQueryService {
     // Verify salon ownership
     await this.verifySalonOwnership(service.salonId, user);
 
-    await this.prisma.service.delete({ where: { id } });
+    try {
+      await this.prisma.service.delete({ where: { id } });
+    } catch (error) {
+      if (error.code === 'P2003') {
+        throw new ForbiddenException(
+          'Không thể xóa dịch vụ này vì đã có dữ liệu lịch đặt liên quan. Vui lòng tạm tắt (Deactivate) dịch vụ này thay vì xóa.',
+        );
+      }
+      throw error;
+    }
   }
 
   async reorder(salonId: string, serviceIds: string[], user: User): Promise<void> {
