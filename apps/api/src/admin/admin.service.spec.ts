@@ -208,8 +208,8 @@ describe('AdminService', () => {
 
       expect(result).toHaveProperty('data');
       expect(result).toHaveProperty('meta');
-      expect(result.data[0]).toHaveProperty('name');
-      expect(result.data[0]).toHaveProperty('totalBookings');
+      expect(result.data[0].user).toHaveProperty('name');
+      expect(result.data[0]._count).toHaveProperty('bookings');
     });
   });
 

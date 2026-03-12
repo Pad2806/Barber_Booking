@@ -98,7 +98,7 @@
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "moduleNameMapper": {
-      "^@reetro/shared$": "<rootDir>/../../packages/shared/src",
+      "^@reetro/shared$": "<rootDir>/../../../packages/shared/src",
       "^src/(.*)$": "<rootDir>/$1"
     }
   }
