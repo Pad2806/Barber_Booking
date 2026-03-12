@@ -31,8 +31,8 @@ RUN pnpm turbo run build --filter=api
 RUN pnpm --filter api deploy --prod /app/deployed
 
 # Copy dist and prisma into deployed folder
-RUN cp -r /app/apps/api/dist /app/deployed/dist \
-    && cp -r /app/apps/api/prisma /app/deployed/prisma
+RUN cp -r /app/apps/api/dist/* /app/deployed/dist/ \
+    && (cp -r /app/apps/api/prisma /app/deployed/prisma || true)
 
 # Production stage
 FROM node:20-alpine AS runner
@@ -62,4 +62,4 @@ USER nestjs
 EXPOSE 3001
 
 # Run Prisma migrations and start the app
-CMD ["sh", "-c", "prisma migrate deploy --schema=./prisma/schema.prisma && node dist/src/main.js"]
+CMD ["sh", "-c", "prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"]
