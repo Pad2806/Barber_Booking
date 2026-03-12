@@ -13,6 +13,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { AdminModule } from './admin/admin.module';
+import { ManagerModule } from './manager/manager.module';
 import configuration from './config/configuration';
 import { HealthModule } from './health/health.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
@@ -43,6 +44,7 @@ import { CloudinaryModule } from './cloudinary/cloudinary.module';
     NotificationsModule,
     FavoritesModule,
     AdminModule,
+    ManagerModule,
     HealthModule,
     CloudinaryModule,
   ],

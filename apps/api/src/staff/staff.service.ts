@@ -68,7 +68,7 @@ export class StaffService extends BaseQueryService {
       isOff: dayOfWeek === 0, // Sunday off by default
     }));
 
-    await this.prisma.staffSchedule.createMany({
+    await (this.prisma as any).staffWeeklySchedule.createMany({
       data: defaultSchedule,
     });
 
@@ -425,7 +425,7 @@ export class StaffService extends BaseQueryService {
     // Update each schedule
     await Promise.all(
       schedules.map(schedule =>
-        this.prisma.staffSchedule.upsert({
+        this.prisma.staffWeeklySchedule.upsert({
           where: {
             staffId_dayOfWeek: {
               staffId,
@@ -551,7 +551,6 @@ export class StaffService extends BaseQueryService {
     const staff = await this.findOne(staffId);
 
     // Check if staff has leave on this date
-    // Zero out time for date comparison with @db.Date
     const searchDate = new Date(date);
     searchDate.setHours(0, 0, 0, 0);
 
@@ -566,30 +565,19 @@ export class StaffService extends BaseQueryService {
 
     if (onLeave) return [];
 
-    const salon = await this.prisma.salon.findUnique({
-      where: { id: staff.salonId },
-    });
-
-    if (!salon) {
-      throw new NotFoundException('Salon not found');
-    }
-
-    const dayOfWeek = searchDate.getDay();
-    const schedule = await this.prisma.staffSchedule.findUnique({
+    // 1. Check if staff has any shifts assigned for this date
+    const shifts = await (this.prisma as any).staffShift.findMany({
       where: {
-        staffId_dayOfWeek: {
-          staffId,
-          dayOfWeek,
-        },
+        staffId,
+        date: searchDate,
       },
     });
 
-    // Staff is off this day
-    if (!schedule || schedule.isOff) {
+    if (shifts.length === 0) {
       return [];
     }
 
-    // Get existing bookings for this staff on this date
+    // Get existing bookings
     const bookings = await this.prisma.booking.findMany({
       where: {
         staffId,
@@ -602,47 +590,134 @@ export class StaffService extends BaseQueryService {
       },
     });
 
-    const slots = this.generateTimeSlots(
-      schedule.startTime,
-      schedule.endTime,
-      30 // 30-minute intervals
-    );
-
-    // Filter out booked slots
-    const availableSlots = slots.filter(slot => {
-      return !bookings.some(booking => {
-        const slotTime = this.timeToMinutes(slot);
-        const bookingStart = this.timeToMinutes(booking.timeSlot);
-        const bookingEnd = this.timeToMinutes(booking.endTime);
-        return slotTime >= bookingStart && slotTime < bookingEnd;
-      });
-    });
-
-    return availableSlots;
-  }
-
-  private generateTimeSlots(startTime: string, endTime: string, intervalMinutes: number): string[] {
+    // Generate slots based on shifts
     const slots: string[] = [];
-    let current = this.timeToMinutes(startTime);
-    const end = this.timeToMinutes(endTime);
 
-    while (current < end) {
-      slots.push(this.minutesToTime(current));
-      current += intervalMinutes;
+    for (const shift of shifts) {
+      const start = new Date(shift.shiftStart);
+      const end = new Date(shift.shiftEnd);
+
+      let current = new Date(start);
+      while (current < end) {
+        const timeStr = `${current.getUTCHours().toString().padStart(2, '0')}:${current.getUTCMinutes().toString().padStart(2, '0')}`;
+
+        // Check if slot overlaps with any booking
+        const isOverlap = bookings.some(b => {
+          const bStart = b.timeSlot;
+          const bEnd = b.endTime;
+          return timeStr >= bStart && timeStr < bEnd;
+        });
+
+        if (!isOverlap) {
+          slots.push(timeStr);
+        }
+
+        current.setMinutes(current.getMinutes() + 30); // 30 min slots
+      }
     }
 
-    return slots;
+    return [...new Set(slots)].sort();
   }
 
-  private timeToMinutes(time: string): number {
-    const [hours, minutes] = time.split(':').map(Number);
-    return hours * 60 + minutes;
+  async getMySchedules(userId: string, date?: string) {
+    const staff = await this.prisma.staff.findFirst({
+      where: { userId },
+    });
+
+    if (!staff) {
+      throw new NotFoundException('Staff profile not found');
+    }
+
+    const where: any = { staffId: staff.id };
+    if (date) {
+      const searchDate = new Date(date);
+      searchDate.setHours(0, 0, 0, 0);
+      where.date = searchDate;
+    }
+
+    return (this.prisma as any).staffShift.findMany({
+      where,
+      orderBy: { shiftStart: 'asc' },
+    });
   }
 
-  private minutesToTime(minutes: number): string {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  async getSalonSchedules(salonId: string, date: string | undefined, user: User) {
+    await this.verifySalonOwnership(salonId, user);
+
+    const where: any = { salonId };
+    if (date) {
+      const searchDate = new Date(date);
+      searchDate.setHours(0, 0, 0, 0);
+      where.date = searchDate;
+    }
+
+    return (this.prisma as any).staffShift.findMany({
+      where,
+      include: {
+        staff: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                avatar: true,
+              },
+            },
+          },
+        },
+      },
+      orderBy: { shiftStart: 'asc' },
+    });
+  }
+
+  async assignShift(dto: any, user: User) {
+    await this.verifySalonOwnership(dto.salonId, user);
+
+    // Check for existing shifts that might overlap
+    const existingShifts = await (this.prisma as any).staffShift.findMany({
+      where: {
+        staffId: dto.staffId,
+        date: new Date(dto.date),
+      },
+    });
+
+    const newStart = new Date(dto.shiftStart);
+    const newEnd = new Date(dto.shiftEnd);
+
+    const hasConflict = existingShifts.some((shift: any) => {
+      const sStart = new Date(shift.shiftStart);
+      const sEnd = new Date(shift.shiftEnd);
+      return (newStart >= sStart && newStart < sEnd) || (newEnd > sStart && newEnd <= sEnd);
+    });
+
+    if (hasConflict) {
+      throw new ConflictException('Staff already has a shift that overlaps with this time');
+    }
+
+    return (this.prisma as any).staffShift.create({
+      data: {
+        staffId: dto.staffId,
+        salonId: dto.salonId,
+        date: new Date(dto.date),
+        shiftStart: newStart,
+        shiftEnd: newEnd,
+      },
+    });
+  }
+
+  async removeShift(shiftId: string, user: User) {
+    const shift = await (this.prisma as any).staffShift.findUnique({
+      where: { id: shiftId },
+    });
+
+    if (!shift) {
+      throw new NotFoundException('Shift not found');
+    }
+
+    await this.verifySalonOwnership(shift.salonId, user);
+
+    return (this.prisma as any).staffShift.delete({
+      where: { id: shiftId },
+    });
   }
 
   private async verifySalonOwnership(salonId: string, user: User): Promise<void> {
@@ -658,8 +733,22 @@ export class StaffService extends BaseQueryService {
       throw new NotFoundException(`Salon with ID ${salonId} not found`);
     }
 
-    if (salon.ownerId !== user.id) {
-      throw new ForbiddenException('You can only manage staff for your own salon');
+    // MANAGER can manage their own salon too
+    const isManager = user.role === (Role as any).MANAGER;
+    const isOwner = salon.ownerId === user.id;
+
+    if (!isOwner && !isManager) {
+      throw new ForbiddenException('You do not have permission to manage this salon');
+    }
+
+    if (isManager) {
+      // Check if manager belongs to this salon
+      const staff = await this.prisma.staff.findFirst({
+        where: { userId: user.id, salonId }
+      });
+      if (!staff) {
+        throw new ForbiddenException('You can only manage your assigned salon');
+      }
     }
   }
 }

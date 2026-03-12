@@ -16,6 +16,7 @@ import { StaffService } from './staff.service';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
+import { AssignShiftDto } from './dto/assign-shift.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -124,5 +125,41 @@ export class StaffController {
   @ApiOperation({ summary: 'Remove staff from salon' })
   remove(@Param('id') id: string, @CurrentUser() user: User) {
     return this.staffService.delete(id, user);
+  }
+
+  @Get('my-schedules')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current staff work schedule' })
+  getMySchedules(@CurrentUser() user: User, @Query('date') date?: string) {
+    return this.staffService.getMySchedules(user.id, date);
+  }
+
+  @Get('salon-schedules')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles((Role as any).MANAGER, Role.SALON_OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all staff schedules for a salon' })
+  getSalonSchedules(@CurrentUser() user: User, @Query('salonId') salonId: string, @Query('date') date?: string) {
+    return this.staffService.getSalonSchedules(salonId, date, user);
+  }
+
+  @Post('assign-shift')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles((Role as any).MANAGER, Role.SALON_OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Assign a shift to a staff member' })
+  assignShift(@Body() dto: AssignShiftDto, @CurrentUser() user: User) {
+    return this.staffService.assignShift(dto, user);
+  }
+
+  @Delete('remove-shift/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles((Role as any).MANAGER, Role.SALON_OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove a shift' })
+  removeShift(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.staffService.removeShift(id, user);
   }
 }

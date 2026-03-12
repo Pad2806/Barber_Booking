@@ -301,11 +301,42 @@ export const staffApi = {
       .sort()
       .map(time => ({ time, available: true }));
   },
+  getSchedules: async (date?: string) => {
+    const response = await apiClient.get<StaffShift[]>('/staff/my-schedules', { params: { date } });
+    return response.data;
+  },
+  getSalonSchedules: async (salonId: string, date?: string) => {
+    const response = await apiClient.get<StaffShift[]>('/staff/salon-schedules', { params: { salonId, date } });
+    return response.data;
+  },
+  assignShift: async (data: {
+    staffId: string;
+    salonId: string;
+    date: string;
+    shiftStart: string;
+    shiftEnd: string;
+  }) => {
+    const response = await apiClient.post<StaffShift>('/staff/assign-shift', data);
+    return response.data;
+  },
+  removeShift: async (id: string) => {
+    const response = await apiClient.delete(`/staff/remove-shift/${id}`);
+    return response.data;
+  },
 };
+
+export interface StaffShift {
+  id: string;
+  staffId: string;
+  salonId: string;
+  date: string;
+  shiftStart: string;
+  shiftEnd: string;
+}
 
 // Booking APIs
 export const bookingApi = {
-  getAll: async (params?: { status?: string; page?: number; limit?: number }) => {
+  getAll: async (params?: BookingQueryDto) => {
     const response = await apiClient.get<PaginatedResponse<Booking>>('/bookings', { params });
     return response.data;
   },
@@ -454,6 +485,33 @@ export interface RevenueStats {
     count: number;
   }>;
 }
+
+export const managerApi = {
+  getDashboardStats: async () => {
+    const response = await apiClient.get('/manager/dashboard');
+    return response.data;
+  },
+  getStaff: async () => {
+    const response = await apiClient.get<Staff[]>('/manager/staff');
+    return response.data;
+  },
+  getSchedules: async (date?: string) => {
+    const response = await apiClient.get('/manager/schedules', { params: { date } });
+    return response.data;
+  },
+  createSchedule: async (data: { staffId: string; date: string; shiftStart: string; shiftEnd: string }) => {
+    const response = await apiClient.post('/manager/schedules', data);
+    return response.data;
+  },
+  updateSchedule: async (id: string, data: any) => {
+    const response = await apiClient.patch(`/manager/schedules/${id}`, data);
+    return response.data;
+  },
+  deleteSchedule: async (id: string) => {
+    const response = await apiClient.delete(`/manager/schedules/${id}`);
+    return response.data;
+  },
+};
 
 export const adminApi = {
   getDashboardStats: async () => {

@@ -22,6 +22,10 @@ enum AuthProvider {
 enum Role {
   CUSTOMER
   STAFF
+  BARBER
+  CASHIER
+  SKINNER
+  MANAGER
   SALON_OWNER
   SUPER_ADMIN
 }
@@ -38,10 +42,12 @@ enum ServiceCategory {
 }
 
 enum StaffPosition {
+  BARBER
   STYLIST
   SENIOR_STYLIST
   MASTER_STYLIST
   SKINNER
+  CASHIER
   RECEPTIONIST
   MANAGER
 }
@@ -182,6 +188,7 @@ model Salon {
   bookings    Booking[]
   reviews     Review[]
   favoritedBy UserFavoriteSalon[]
+  shifts      StaffShift[]
 
   // Payment settings
   bankCode    String?
@@ -232,13 +239,14 @@ model Staff {
   salonId      String
   salon        Salon          @relation(fields: [salonId], references: [id], onDelete: Cascade)
 
-  schedules    StaffSchedule[]
-  leaves       StaffLeave[]
-  bookings     Booking[]
-  reviews      Review[]
-
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
+
+  weeklySchedules StaffWeeklySchedule[]
+  shifts          StaffShift[]
+  leaves          StaffLeave[]
+  bookings        Booking[]
+  reviews         Review[]
 
   @@map("staff")
 }
@@ -259,7 +267,7 @@ model StaffLeave {
   @@map("staff_leaves")
 }
 
-model StaffSchedule {
+model StaffWeeklySchedule {
   id          String   @id @default(uuid())
   staffId     String
   staff       Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
@@ -270,7 +278,25 @@ model StaffSchedule {
   isOff       Boolean  @default(false)
 
   @@unique([staffId, dayOfWeek])
-  @@map("staff_schedules")
+  @@map("staff_weekly_schedules")
+}
+
+model StaffShift {
+  id          String   @id @default(uuid())
+  staffId     String
+  staff       Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  
+  salonId     String
+  salon       Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  
+  date        DateTime @db.Date
+  shiftStart  DateTime
+  shiftEnd    DateTime
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("staff_shifts")
 }
 
 model Booking {

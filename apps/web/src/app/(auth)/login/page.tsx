@@ -23,6 +23,14 @@ function LoginForm() {
       case 'SUPER_ADMIN':
       case 'SALON_OWNER':
         return '/admin';
+      case 'MANAGER':
+        return '/manager/dashboard';
+      case 'BARBER':
+        return '/barber/dashboard';
+      case 'CASHIER':
+        return '/cashier/dashboard';
+      case 'SKINNER':
+        return '/skinner/dashboard';
       case 'STAFF':
         return '/staff';
       case 'CUSTOMER':

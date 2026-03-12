@@ -552,8 +552,34 @@ export class BookingsService extends BaseQueryService {
     duration: number,
   ): Promise<boolean> {
     const bookingDate = new Date(date);
+    bookingDate.setHours(0, 0, 0, 0);
     const endTime = this.calculateEndTime(timeSlot, duration);
 
+    // 1. Check if staff has a shift covering this time
+    // Convert timeSlot '08:30' and endTime '09:30' to Date objects for comparison
+    const [startH, startM] = timeSlot.split(':').map(Number);
+    const [endH, endM] = endTime.split(':').map(Number);
+
+    const requestStart = new Date(bookingDate);
+    requestStart.setHours(startH, startM, 0, 0);
+
+    const requestEnd = new Date(bookingDate);
+    requestEnd.setHours(endH, endM, 0, 0);
+
+    const shift = await (this.prisma as any).staffShift.findFirst({
+      where: {
+        staffId,
+        date: bookingDate,
+        shiftStart: { lte: requestStart },
+        shiftEnd: { gte: requestEnd },
+      },
+    });
+
+    if (!shift) {
+      return false; // No shift assigned for this time
+    }
+
+    // 2. Check for conflicting bookings
     const conflictingBooking = await this.prisma.booking.findFirst({
       where: {
         staffId,
@@ -640,13 +666,20 @@ export class BookingsService extends BaseQueryService {
       return;
     }
 
-    // Salon owner or staff can access
+    // Salon owner or MANAGER or staff can access
     const salon = await this.prisma.salon.findUnique({
       where: { id: booking.salonId },
     });
 
     if (salon && salon.ownerId === user.id) {
       return;
+    }
+
+    if (user.role === (Role as any).MANAGER) {
+      const staff = await this.prisma.staff.findFirst({
+        where: { userId: user.id, salonId: booking.salonId }
+      });
+      if (staff) return;
     }
 
     // Staff of this salon can access

@@ -8,6 +8,10 @@ export enum AuthProvider {
 
 export enum Role {
   CUSTOMER = 'CUSTOMER',
+  BARBER = 'BARBER',
+  CASHIER = 'CASHIER',
+  SKINNER = 'SKINNER',
+  MANAGER = 'MANAGER',
   STAFF = 'STAFF',
   SALON_OWNER = 'SALON_OWNER',
   SUPER_ADMIN = 'SUPER_ADMIN',
@@ -89,10 +93,12 @@ export interface Service {
 
 // ============== Staff Types ==============
 export enum StaffPosition {
+  BARBER = 'BARBER',
   STYLIST = 'STYLIST',
   SENIOR_STYLIST = 'SENIOR_STYLIST',
   MASTER_STYLIST = 'MASTER_STYLIST',
   SKINNER = 'SKINNER',
+  CASHIER = 'CASHIER',
   RECEPTIONIST = 'RECEPTIONIST',
   MANAGER = 'MANAGER',
 }
@@ -111,13 +117,22 @@ export interface Staff {
   updatedAt: Date;
 }
 
-export interface StaffSchedule {
+export interface StaffWeeklySchedule {
   id: string;
   staffId: string;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
   isOff: boolean;
+}
+
+export interface StaffShift {
+  id: string;
+  staffId: string;
+  salonId: string;
+  date: Date;
+  shiftStart: Date;
+  shiftEnd: Date;
 }
 
 // ============== Booking Types ==============

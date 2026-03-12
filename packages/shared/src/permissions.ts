@@ -40,14 +40,11 @@ export enum Permission {
 
     // System settings
     MANAGE_SETTINGS = 'MANAGE_SETTINGS',
+
+    // Scheduling
+    MANAGE_SCHEDULE = 'MANAGE_SCHEDULE',
 }
 
-// ============== ROLE → PERMISSIONS MAPPING ==============
-
-/**
- * Base permissions by Role.
- * Role hierarchy is NOT implicit. Each role explicitly lists what it can do.
- */
 const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     [Role.SUPER_ADMIN]: Object.values(Permission), // all permissions
 
@@ -65,9 +62,35 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
         Permission.VIEW_REVENUE,
     ],
 
-    [Role.STAFF]: [], // Staff permissions depend on position, see below
+    [Role.MANAGER]: [
+        Permission.VIEW_DASHBOARD,
+        Permission.VIEW_ALL_BOOKINGS,
+        Permission.MANAGE_BOOKINGS,
+        Permission.VIEW_STAFF,
+        Permission.VIEW_SERVICES,
+        Permission.VIEW_REVIEWS,
+        Permission.REPLY_REVIEWS,
+        Permission.VIEW_REVENUE,
+        Permission.MANAGE_SCHEDULE,
+    ],
 
-    [Role.CUSTOMER]: [], // No admin permissions
+    [Role.BARBER]: [
+        Permission.VIEW_OWN_BOOKINGS,
+    ],
+
+    [Role.CASHIER]: [
+        Permission.VIEW_DASHBOARD,
+        Permission.VIEW_ALL_BOOKINGS,
+        Permission.MANAGE_BOOKINGS,
+    ],
+
+    [Role.SKINNER]: [
+        Permission.VIEW_OWN_BOOKINGS,
+    ],
+
+    [Role.STAFF]: [],
+
+    [Role.CUSTOMER]: [],
 };
 
 // ============== STAFF POSITION → PERMISSIONS MAPPING ==============
@@ -101,6 +124,10 @@ const STAFF_POSITION_PERMISSIONS: Record<StaffPosition, Permission[]> = {
         Permission.VIEW_OWN_BOOKINGS,
     ],
 
+    [StaffPosition.BARBER]: [
+        Permission.VIEW_OWN_BOOKINGS,
+    ],
+
     [StaffPosition.SENIOR_STYLIST]: [
         Permission.VIEW_OWN_BOOKINGS,
     ],
@@ -111,6 +138,12 @@ const STAFF_POSITION_PERMISSIONS: Record<StaffPosition, Permission[]> = {
 
     [StaffPosition.SKINNER]: [
         Permission.VIEW_OWN_BOOKINGS,
+    ],
+
+    [StaffPosition.CASHIER]: [
+        Permission.VIEW_DASHBOARD,
+        Permission.VIEW_ALL_BOOKINGS,
+        Permission.MANAGE_BOOKINGS,
     ],
 };
 
@@ -164,6 +197,7 @@ export const ADMIN_MENU_ITEMS = [
     { key: 'dashboard', href: '/admin', label: 'Dashboard', permission: Permission.VIEW_DASHBOARD },
     { key: 'bookings', href: '/admin/bookings', label: 'Đặt lịch', permission: Permission.VIEW_ALL_BOOKINGS },
     { key: 'staff', href: '/admin/staff', label: 'Nhân viên', permission: Permission.VIEW_STAFF },
+    { key: 'schedule', href: '/admin/schedule', label: 'Lịch làm', permission: Permission.MANAGE_SCHEDULE },
     { key: 'services', href: '/admin/services', label: 'Dịch vụ', permission: Permission.VIEW_SERVICES },
     { key: 'salons', href: '/admin/salons', label: 'Chi nhánh', permission: Permission.VIEW_SALONS },
     { key: 'customers', href: '/admin/customers', label: 'Khách hàng', permission: Permission.VIEW_USERS },
@@ -191,6 +225,10 @@ export const ROUTE_PERMISSION_MAP: Record<string, Permission> = {
 export const ROLE_DISPLAY: Record<string, { label: string; color: string }> = {
     [Role.SUPER_ADMIN]: { label: 'Super Admin', color: 'bg-red-500' },
     [Role.SALON_OWNER]: { label: 'Chủ Salon', color: 'bg-blue-500' },
+    [Role.MANAGER]: { label: 'Quản lý', color: 'bg-indigo-500' },
+    [Role.BARBER]: { label: 'Barber', color: 'bg-amber-500' },
+    [Role.CASHIER]: { label: 'Thu ngân', color: 'bg-emerald-500' },
+    [Role.SKINNER]: { label: 'Skinner', color: 'bg-cyan-500' },
     [Role.STAFF]: { label: 'Nhân viên', color: 'bg-green-500' },
     [Role.CUSTOMER]: { label: 'Khách hàng', color: 'bg-gray-500' },
 };
