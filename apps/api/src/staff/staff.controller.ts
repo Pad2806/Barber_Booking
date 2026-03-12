@@ -32,7 +32,7 @@ export class StaffController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.MANAGER, Role.SALON_OWNER)
+  @Roles(Role.SUPER_ADMIN, Role.MANAGER, Role.SALON_OWNER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add staff to salon' })
   create(@Body() dto: CreateStaffDto, @CurrentUser() user: User) {
@@ -41,7 +41,7 @@ export class StaffController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_ADMIN, Role.SALON_OWNER, (Role as any).MANAGER)
+  @Roles(Role.SUPER_ADMIN, Role.SALON_OWNER, Role.MANAGER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all staff (admin)' })
   findAll(@Query() query: StaffQueryDto) {
@@ -56,6 +56,42 @@ export class StaffController {
     return this.staffService.getTopBarbers(limit ? parseInt(limit) : 10);
   }
 
+  @Get('my-schedules')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current staff work schedule' })
+  getMySchedules(@CurrentUser() user: User, @Query('date') date?: string) {
+    return this.staffService.getMySchedules(user.id, date);
+  }
+
+  @Get('salon-schedules')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MANAGER, Role.SALON_OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all staff schedules for a salon' })
+  getSalonSchedules(@CurrentUser() user: User, @Query('salonId') salonId: string, @Query('date') date?: string) {
+    return this.staffService.getSalonSchedules(salonId, date, user);
+  }
+
+  @Post('assign-shift')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MANAGER, Role.SALON_OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Assign a shift to a staff member' })
+  assignShift(@Body() dto: AssignShiftDto, @CurrentUser() user: User) {
+    return this.staffService.assignShift(dto, user);
+  }
+
+  @Delete('remove-shift/:id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MANAGER, Role.SALON_OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove a shift' })
+  removeShift(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.staffService.removeShift(id, user);
+  }
+
   @Get('salon/:salonId')
   @Public()
   @ApiOperation({ summary: 'Get all staff for a salon' })
@@ -67,38 +103,9 @@ export class StaffController {
     return this.staffService.findAllBySalon(salonId, includeInactive === 'true');
   }
 
-  @Get(':id')
-  @Public()
-  @ApiOperation({ summary: 'Get staff by ID' })
-  findOne(@Param('id') id: string) {
-    return this.staffService.findOne(id);
-  }
-
-  @Get(':id/available-slots')
-  @Public()
-  @ApiOperation({ summary: 'Get available time slots for staff' })
-  @ApiQuery({ name: 'date', required: true, description: 'Date in YYYY-MM-DD format' })
-  getAvailableSlots(@Param('id') id: string, @Query('date') dateStr: string) {
-    const date = new Date(dateStr);
-    return this.staffService.getAvailableSlots(id, date);
-  }
-
-  @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.MANAGER, Role.SALON_OWNER)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update staff' })
-  update(
-    @Param('id') id: string,
-    @Body() dto: UpdateStaffDto,
-    @CurrentUser() user: User,
-  ) {
-    return this.staffService.update(id, dto, user);
-  }
-
   @Patch(':id/schedule')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.MANAGER, Role.SALON_OWNER)
+  @Roles(Role.SUPER_ADMIN, Role.MANAGER, Role.SALON_OWNER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update staff schedule' })
   updateSchedule(
@@ -111,55 +118,49 @@ export class StaffController {
 
   @Patch(':id/toggle-active')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.MANAGER, Role.SALON_OWNER)
+  @Roles(Role.SUPER_ADMIN, Role.MANAGER, Role.SALON_OWNER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Toggle staff active status' })
   toggleActive(@Param('id') id: string, @CurrentUser() user: User) {
     return this.staffService.toggleActive(id, user);
   }
 
+  @Get(':id/available-slots')
+  @Public()
+  @ApiOperation({ summary: 'Get available time slots for staff' })
+  @ApiQuery({ name: 'date', required: true, description: 'Date in YYYY-MM-DD format' })
+  getAvailableSlots(@Param('id') id: string, @Query('date') dateStr: string) {
+    const date = new Date(dateStr);
+    return this.staffService.getAvailableSlots(id, date);
+  }
+
+  @Get(':id')
+  @Public()
+  @ApiOperation({ summary: 'Get staff by ID' })
+  findOne(@Param('id') id: string) {
+    return this.staffService.findOne(id);
+  }
+
+  @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MANAGER, Role.SALON_OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update staff' })
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateStaffDto,
+    @CurrentUser() user: User,
+  ) {
+    return this.staffService.update(id, dto, user);
+  }
+
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.MANAGER, Role.SALON_OWNER)
+  @Roles(Role.SUPER_ADMIN, Role.MANAGER, Role.SALON_OWNER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove staff from salon' })
   remove(@Param('id') id: string, @CurrentUser() user: User) {
     return this.staffService.delete(id, user);
   }
 
-  @Get('my-schedules')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.STAFF)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get current staff work schedule' })
-  getMySchedules(@CurrentUser() user: User, @Query('date') date?: string) {
-    return this.staffService.getMySchedules(user.id, date);
-  }
-
-  @Get('salon-schedules')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.MANAGER, Role.SALON_OWNER)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all staff schedules for a salon' })
-  getSalonSchedules(@CurrentUser() user: User, @Query('salonId') salonId: string, @Query('date') date?: string) {
-    return this.staffService.getSalonSchedules(salonId, date, user);
-  }
-
-  @Post('assign-shift')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.MANAGER, Role.SALON_OWNER)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Assign a shift to a staff member' })
-  assignShift(@Body() dto: AssignShiftDto, @CurrentUser() user: User) {
-    return this.staffService.assignShift(dto, user);
-  }
-
-  @Delete('remove-shift/:id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.MANAGER, Role.SALON_OWNER)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Remove a shift' })
-  removeShift(@Param('id') id: string, @CurrentUser() user: User) {
-    return this.staffService.removeShift(id, user);
-  }
 }

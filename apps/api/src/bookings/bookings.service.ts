@@ -699,27 +699,36 @@ export class BookingsService extends BaseQueryService {
     status: BookingStatus,
     user: User,
   ): Promise<{ count: number }> {
-    // Basic permissions check - only staff/admin can bulk update
     if (user.role === Role.CUSTOMER) {
       throw new ForbiddenException('Customers cannot perform bulk updates');
     }
 
-    // In a real production app, we should validate each booking's current status and salon ownership
-    // For now, we perform a bulk update based on accessible IDs
     const bookings = await this.prisma.booking.findMany({
       where: {
         id: { in: ids },
       },
     });
 
+    const validIds: string[] = [];
+
     for (const booking of bookings) {
-      await this.validateBookingAccess(booking, user, true);
-      this.validateStatusTransition(booking.status, status);
+      try {
+        await this.validateBookingAccess(booking, user, true);
+        this.validateStatusTransition(booking.status, status);
+        validIds.push(booking.id);
+      } catch (err) {
+        // Skip bookings that we can't update or have invalid transitions
+        console.warn(`Skipping bulk update for booking ${booking.id}: ${err.message}`);
+      }
+    }
+
+    if (validIds.length === 0) {
+      return { count: 0 };
     }
 
     const result = await this.prisma.booking.updateMany({
       where: {
-        id: { in: ids },
+        id: { in: validIds },
       },
       data: {
         status,

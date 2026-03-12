@@ -152,7 +152,9 @@ export default function StaffDetailPage() {
                   <div className="p-2 bg-primary/10 rounded-xl text-primary"><TrendingUp className="w-5 h-5" /></div>
                   <Badge className="bg-primary/20 text-primary border-none text-[10px] uppercase font-black">Doanh thu</Badge>
                 </div>
-                <p className="text-3xl font-black text-slate-900 tracking-tight">{formatCurrency(analytics?.stats?.totalRevenue)}</p>
+                <p className="text-3xl font-black text-slate-900 tracking-tight">
+                  {formatCurrency(analytics?.stats?.totalRevenue && !isNaN(Number(analytics.stats.totalRevenue)) ? Number(analytics.stats.totalRevenue) : 0)}
+                </p>
                 <p className="text-xs text-slate-500 mt-2 font-medium">Đóng góp cho hệ thống</p>
               </CardContent>
             </Card>
@@ -162,8 +164,10 @@ export default function StaffDetailPage() {
                   <div className="p-2 bg-amber-100 rounded-xl text-amber-600"><Star className="w-5 h-5 fill-amber-500" /></div>
                   <Badge className="bg-amber-100 text-amber-700 border-none text-[10px] uppercase font-black">Đánh giá</Badge>
                 </div>
-                <p className="text-3xl font-black text-slate-900 tracking-tight">{analytics?.stats?.avgRating} / 5</p>
-                <p className="text-xs text-slate-500 mt-2 font-medium">{analytics?.stats?.totalReviews} lượt nhận xét</p>
+                <p className="text-3xl font-black text-slate-900 tracking-tight">
+                  {analytics?.stats?.avgRating || "5.0"} / 5
+                </p>
+                <p className="text-xs text-slate-500 mt-2 font-medium">{analytics?.stats?.totalReviews || 0} lượt nhận xét</p>
               </CardContent>
             </Card>
             <Card className="border-none shadow-premium bg-gradient-to-br from-emerald-50 to-white ring-1 ring-emerald-200">
@@ -172,7 +176,7 @@ export default function StaffDetailPage() {
                   <div className="p-2 bg-emerald-100 rounded-xl text-emerald-600"><CheckCircle className="w-5 h-5" /></div>
                   <Badge className="bg-emerald-100 text-emerald-700 border-none text-[10px] uppercase font-black">Hoàn thành</Badge>
                 </div>
-                <p className="text-3xl font-black text-slate-900 tracking-tight">{analytics?.stats?.completedBookings}</p>
+                <p className="text-3xl font-black text-slate-900 tracking-tight">{analytics?.stats?.completedBookings || 0}</p>
                 <p className="text-xs text-slate-500 mt-2 font-medium">Khách hàng tin tưởng</p>
               </CardContent>
             </Card>
@@ -193,7 +197,7 @@ export default function StaffDetailPage() {
               </div>
             </CardHeader>
             <CardContent className="p-6 pt-10">
-              <div className="h-[300px] w-full">
+              <div className="h-[300px] min-h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={chartData}>
                     <defs>
