@@ -17,8 +17,9 @@ import { Button } from '@/components/ui/button';
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Link from 'next/link';
+import React from 'react';
 
-export default function BarberDashboard() {
+export default function BarberDashboard(): JSX.Element {
   const { data: me } = useQuery({
     queryKey: ['users', 'me'],
     queryFn: () => usersApi.getMe(),
@@ -177,7 +178,7 @@ export default function BarberDashboard() {
 
             <Card className="border-none shadow-sm bg-white rounded-3xl overflow-hidden shadow-lg shadow-blue-500/5">
                 <CardHeader className="p-6 pb-2">
-                    <CardTitle className="text-lg font-black text-[#2C1E12] italic uppercase tracking-tight">Today's Focus</CardTitle>
+                    <CardTitle className="text-lg font-black text-[#2C1E12] italic uppercase tracking-tight">Today&apos;s Focus</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 pt-0 space-y-4">
                     <div className="p-4 bg-[#FAF8F5] rounded-2xl border border-[#F0EBE3]">

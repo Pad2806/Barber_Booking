@@ -10,18 +10,15 @@ import {
   Calendar,
   LogOut,
   Menu,
-  User,
   Clock,
   ChevronLeft,
   ChevronRight,
-  Bell,
   Star
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
 import { usersApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
-import { Role } from '@reetro/shared';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {

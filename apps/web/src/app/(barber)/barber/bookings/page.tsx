@@ -3,10 +3,8 @@
 import { useQuery } from '@tanstack/react-query';
 import { bookingApi, usersApi } from '@/lib/api';
 import { 
-  Calendar, 
   MapPin, 
   Clock, 
-  User, 
   ChevronRight,
   Filter,
   Search,

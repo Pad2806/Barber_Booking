@@ -9,28 +9,24 @@ import {
   UserPlus, 
   TrendingUp, 
   Star,
-  Clock,
   ChevronRight
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { 
-  BarChart, 
-  Bar, 
   XAxis, 
   YAxis, 
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  LineChart,
-  Line,
   AreaChart,
   Area
 } from 'recharts';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import React from 'react';
 
-export default function ManagerDashboard() {
+export default function ManagerDashboard(): JSX.Element {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['manager', 'dashboard'],
     queryFn: () => managerApi.getDashboardStats(),

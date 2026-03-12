@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { staffApi, StaffShift } from '@/lib/api';
+import { staffApi } from '@/lib/api';
 import { 
   Calendar as CalendarIcon, 
   Clock, 
@@ -10,7 +10,7 @@ import {
   Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { 
   format, 
   startOfWeek, 

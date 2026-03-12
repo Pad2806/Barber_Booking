@@ -3,22 +3,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { managerApi } from '@/lib/api';
 import { 
-  Users, 
   Search, 
   Filter, 
   Star, 
   Calendar, 
-  UserPlus,
   MoreVertical,
   Mail,
-  Phone,
-  Briefcase
+  Phone
 } from 'lucide-react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
+import React from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,7 +25,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export default function ManagerStaffPage() {
+export default function ManagerStaffPage(): JSX.Element {
   const { data: staff, isLoading } = useQuery({
     queryKey: ['manager', 'staff'],
     queryFn: () => managerApi.getStaff(),

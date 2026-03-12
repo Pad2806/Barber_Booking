@@ -38,6 +38,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Image from 'next/image';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
@@ -468,9 +469,11 @@ export default function AdminDashboardPage(): JSX.Element {
               {ranking?.map((barber: any, index: number) => (
                 <div key={barber.id} className="p-4 flex items-center gap-4 hover:bg-gray-50/50 transition-colors group">
                   <div className="relative">
-                    <img 
+                    <Image 
                       src={barber.avatar || '/images/default-avatar.png'} 
                       alt={barber.name} 
+                      width={48}
+                      height={48}
                       className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm"
                     />
                     <div className={cn(

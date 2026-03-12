@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { useEffect, ReactNode, useMemo, useState } from 'react';
+import { useEffect, ReactNode, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -10,16 +10,12 @@ import {
   Calendar,
   Users,
   Scissors,
-  Store,
   Star,
   Settings,
   LogOut,
   Menu,
-  User,
-  ShieldAlert,
   ChevronLeft,
   ChevronRight,
-  Bell,
   Clock,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
@@ -43,15 +39,6 @@ interface ManagerLayoutProps {
   children: ReactNode;
 }
 
-const MENU_ICONS: Record<string, React.ElementType> = {
-  dashboard: LayoutDashboard,
-  bookings: Calendar,
-  staff: Users,
-  schedule: Clock,
-  services: Scissors,
-  reviews: Star,
-  settings: Settings,
-};
 
 const MANAGER_MENU_ITEMS = [
   { key: 'dashboard', href: '/manager/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
