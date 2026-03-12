@@ -398,29 +398,35 @@ export default function AdminStaffPage() {
       </Card>
 
       <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
-        <SheetContent className="sm:max-w-2xl overflow-y-auto px-0 border-none shadow-premium bg-white">
-          <div className="px-8 flex flex-col h-full">
-            <SheetHeader className="border-b border-slate-100 pb-8 mb-8 sticky top-0 bg-white z-10 pt-2 text-left">
-              <SheetTitle className="text-2xl font-bold font-heading italic text-primary flex items-center gap-2">
-                {panelMode === 'create' ? <Plus className="w-6 h-6" /> : panelMode === 'edit' ? <Edit className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
-                {panelMode === 'create' ? 'Thêm nhân viên' : panelMode === 'edit' ? 'Chỉnh sửa nhân viên' : 'Thông tin nhân viên'}
-              </SheetTitle>
-              <SheetDescription className="text-slate-500 mt-2">
-                {panelMode === 'create' ? 'Tạo hồ sơ nhân sự mới và thiết lập quyền truy cập cho hệ thống.' : 'Xem hoặc cập nhật thông tin chi tiết và quyền hạn của nhân viên.'}
-              </SheetDescription>
-            </SheetHeader>
-            
-            <form onSubmit={handleSubmit} className="space-y-8 flex-1 pb-12">
+        <SheetContent className="sm:max-w-2xl flex flex-col h-full p-0 border-none shadow-premium bg-white">
+          <SheetHeader className="px-8 py-6 border-b border-slate-100 text-left shrink-0">
+            <SheetTitle className="text-2xl font-bold font-heading italic text-primary flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                {panelMode === 'create' ? <Plus className="w-5 h-5" /> : panelMode === 'edit' ? <Edit className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </div>
+              {panelMode === 'create' ? 'Thêm nhân viên' : panelMode === 'edit' ? 'Chỉnh sửa nhân viên' : 'Thông tin nhân viên'}
+            </SheetTitle>
+            <SheetDescription className="text-slate-500 mt-1">
+              {panelMode === 'create' ? 'Tạo hồ sơ nhân sự mới và thiết lập quyền truy cập cho hệ thống.' : 'Xem hoặc cập nhật thông tin chi tiết và quyền hạn của nhân viên.'}
+            </SheetDescription>
+          </SheetHeader>
+          
+          <div className="flex-1 overflow-y-auto px-8 py-8">
+            <form id="staff-form" onSubmit={handleSubmit} className="space-y-8 pb-4">
               <div className="grid grid-cols-1 gap-8">
                 {/* Avatar upload */}
                 <div className="flex flex-col items-center justify-center p-8 bg-slate-50 rounded-2xl border border-dashed border-slate-200 group transition-all hover:bg-slate-100/50">
                   <ImageUpload
+                    variant="avatar"
                     value={formData.avatar}
                     onChange={url => setFormData({ ...formData, avatar: url })}
                     folder="avatars"
                     disabled={panelMode === 'view'}
                   />
-                  <p className="text-xs text-slate-400 mt-4 text-center">Tải lên ảnh chân dung chuyên nghiệp.<br/>Định dạng JPG, PNG tối đa 5MB.</p>
+                  <p className="text-xs text-slate-400 mt-4 text-center font-medium">
+                    Tải lên ảnh chân dung chuyên nghiệp.<br/>
+                    Định dạng JPG, PNG tối đa 5MB.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
@@ -506,7 +512,7 @@ export default function AdminStaffPage() {
                       />
                     </div>
                   )}
-                  <div className="md:col-span-2 flex items-center gap-2 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                  <div className="md:col-span-2 flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100">
                     <input
                       title="Is Active"
                       type="checkbox"
@@ -522,23 +528,24 @@ export default function AdminStaffPage() {
                   </div>
                 </div>
               </div>
-
-              <div className="flex justify-end gap-3 sticky bottom-4 bg-white/90 backdrop-blur-md pt-6 border-t border-slate-100 shadow-[0_-10px_20px_-10px_rgba(0,0,0,0.05)]">
-                 <Button type="button" variant="outline" onClick={() => setPanelOpen(false)} className="rounded-xl px-8 h-12">Hủy</Button>
-                 {panelMode !== 'view' && (
-                   <Button 
-                    type="submit" 
-                    className="rounded-xl px-12 h-12 font-bold shadow-lg shadow-primary/20"
-                    disabled={createMutation.isPending || updateMutation.isPending}
-                   >
-                     {createMutation.isPending || updateMutation.isPending ? (
-                       <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                     ) : null}
-                     {panelMode === 'create' ? 'Tạo nhân viên' : 'Lưu thay đổi'}
-                   </Button>
-                 )}
-              </div>
             </form>
+          </div>
+
+          <div className="px-8 py-6 border-t border-slate-100 bg-white flex justify-end gap-3 shrink-0">
+             <Button type="button" variant="outline" onClick={() => setPanelOpen(false)} className="rounded-xl px-8 h-12 min-w-[100px]">Hủy</Button>
+             {panelMode !== 'view' && (
+               <Button 
+                form="staff-form"
+                type="submit" 
+                className="rounded-xl px-12 h-12 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all"
+                disabled={createMutation.isPending || updateMutation.isPending}
+               >
+                 {createMutation.isPending || updateMutation.isPending ? (
+                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                 ) : null}
+                 {panelMode === 'create' ? 'Tạo nhân viên' : 'Lưu thay đổi'}
+               </Button>
+             )}
           </div>
         </SheetContent>
       </Sheet>

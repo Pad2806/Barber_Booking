@@ -93,6 +93,7 @@ export class UsersService extends BaseQueryService {
           position: dto.position,
           salonId: dto.salonId,
           bio: dto.bio,
+          isActive: dto.isActive !== undefined ? dto.isActive : true,
         },
         include: {
           user: {

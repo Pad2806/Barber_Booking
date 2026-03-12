@@ -17,8 +17,8 @@ interface ImageUploadProps {
   disabled?: boolean;
 }
 
-const MAX_SIZE_MB = 10;
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const MAX_SIZE_MB = 5;
+const ALLOWED_TYPES = ['image/jpeg', 'image/png'];
 
 export default function ImageUpload({
   value,

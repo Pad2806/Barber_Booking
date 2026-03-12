@@ -44,7 +44,11 @@ export class CreateStaffDto {
   @IsNotEmpty()
   salonId: string;
 
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ default: true })
+  @IsOptional()
+  isActive?: boolean;
+
+  @ApiPropertyOptional({ example: 'Professional stylist with 5 years experience' })
   @IsOptional()
   @IsString()
   bio?: string;
