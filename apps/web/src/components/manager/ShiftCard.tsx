@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Clock, X } from 'lucide-react';
 import { SHIFTS } from './ShiftSelector';
 
@@ -8,7 +9,7 @@ interface ShiftCardProps {
   onDelete?: () => void;
 }
 
-export function ShiftCard({ type, onDelete }: ShiftCardProps) {
+export function ShiftCard({ type, onDelete }: ShiftCardProps): React.ReactElement {
   const shift = SHIFTS[type as keyof typeof SHIFTS];
 
   return (

@@ -108,19 +108,19 @@ export class AdminController {
   @Get('users')
   @RequirePermissions(Permission.MANAGE_USERS)
   @ApiOperation({ summary: 'Get all users (paginated)' })
-  @ApiQuery({ name: 'skip', required: false })
-  @ApiQuery({ name: 'take', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'role', required: false })
   @ApiQuery({ name: 'search', required: false })
   getAllUsers(
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('role') role?: any,
     @Query('search') search?: string,
   ) {
     return this.adminService.getAllUsers({
-      skip: skip ? parseInt(skip) : undefined,
-      take: take ? parseInt(take) : undefined,
+      page: page ? parseInt(page) : undefined,
+      limit: limit ? parseInt(limit) : undefined,
       role,
       search,
     });
@@ -136,21 +136,24 @@ export class AdminController {
   @Get('salons')
   @RequirePermissions(Permission.VIEW_SALONS)
   @ApiOperation({ summary: 'Get all salons (paginated)' })
-  @ApiQuery({ name: 'skip', required: false })
-  @ApiQuery({ name: 'take', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'city', required: false })
   @ApiQuery({ name: 'isActive', required: false })
+  @ApiQuery({ name: 'search', required: false })
   getAllSalons(
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('city') city?: string,
     @Query('isActive') isActive?: string,
+    @Query('search') search?: string,
   ) {
     return this.adminService.getAllSalons({
-      skip: skip ? parseInt(skip) : undefined,
-      take: take ? parseInt(take) : undefined,
+      page: page ? parseInt(page) : undefined,
+      limit: limit ? parseInt(limit) : undefined,
       city,
       isActive: isActive ? isActive === 'true' : undefined,
+      search,
     });
   }
 
@@ -224,19 +227,19 @@ export class AdminController {
   @Get('staff')
   @RequirePermissions(Permission.VIEW_STAFF)
   @ApiOperation({ summary: 'Get all staff (paginated)' })
-  @ApiQuery({ name: 'skip', required: false })
-  @ApiQuery({ name: 'take', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'salonId', required: false })
   @ApiQuery({ name: 'search', required: false })
   getAllStaff(
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('salonId') salonId?: string,
     @Query('search') search?: string,
   ) {
     return this.adminService.getAllStaff({
-      skip: skip ? parseInt(skip) : undefined,
-      take: take ? parseInt(take) : undefined,
+      page: page ? parseInt(page) : undefined,
+      limit: limit ? parseInt(limit) : undefined,
       salonId,
       search,
     });
@@ -245,42 +248,48 @@ export class AdminController {
   @Get('services')
   @RequirePermissions(Permission.VIEW_SERVICES)
   @ApiOperation({ summary: 'Get all services (paginated)' })
-  @ApiQuery({ name: 'skip', required: false })
-  @ApiQuery({ name: 'take', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'salonId', required: false })
   @ApiQuery({ name: 'category', required: false })
+  @ApiQuery({ name: 'search', required: false })
   getAllServices(
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('salonId') salonId?: string,
     @Query('category') category?: string,
+    @Query('search') search?: string,
   ) {
     return this.adminService.getAllServices({
-      skip: skip ? parseInt(skip) : undefined,
-      take: take ? parseInt(take) : undefined,
+      page: page ? parseInt(page) : undefined,
+      limit: limit ? parseInt(limit) : undefined,
       salonId,
       category,
+      search,
     });
   }
 
   @Get('reviews')
   @RequirePermissions(Permission.VIEW_REVIEWS)
   @ApiOperation({ summary: 'Get all reviews (paginated)' })
-  @ApiQuery({ name: 'skip', required: false })
-  @ApiQuery({ name: 'take', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
   @ApiQuery({ name: 'salonId', required: false })
   @ApiQuery({ name: 'rating', required: false })
+  @ApiQuery({ name: 'search', required: false })
   getAllReviews(
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('salonId') salonId?: string,
     @Query('rating') rating?: string,
+    @Query('search') search?: string,
   ) {
     return this.adminService.getAllReviews({
-      skip: skip ? parseInt(skip) : undefined,
-      take: take ? parseInt(take) : undefined,
+      page: page ? parseInt(page) : undefined,
+      limit: limit ? parseInt(limit) : undefined,
       salonId,
       rating: rating ? parseInt(rating) : undefined,
+      search,
     });
   }
 

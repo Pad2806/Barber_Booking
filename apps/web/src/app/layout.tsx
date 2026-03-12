@@ -1,6 +1,8 @@
+import React from 'react';
 import type { Metadata } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import { Toaster } from 'react-hot-toast';
+import { AntdRegistry } from '@ant-design/nextjs-registry';
 import './globals.css';
 import { Providers } from '@/components/providers';
 
@@ -15,6 +17,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: 'ReetroBarberShop - Đặt lịch cắt tóc online',
   description: 'Hệ thống đặt lịch cắt tóc chuyên nghiệp. Phong cách - Đẳng cấp - Chất lượng.',
   keywords: ['cắt tóc', 'barber', 'salon', 'đặt lịch', 'reetro'],
@@ -45,14 +48,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }): JSX.Element {
+
+export default function RootLayout({ children }: { children: React.ReactNode }): React.ReactElement {
   return (
     <html lang="vi" suppressHydrationWarning>
       <body className={`${inter.variable} ${playfair.variable} font-body antialiased`}>
-        <Providers>
-          {children}
-          <Toaster position="top-center" />
-        </Providers>
+        <AntdRegistry>
+          <Providers>
+            {children}
+            <Toaster position="top-center" />
+          </Providers>
+        </AntdRegistry>
       </body>
     </html>
   );

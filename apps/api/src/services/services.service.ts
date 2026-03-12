@@ -47,10 +47,7 @@ export class ServicesService extends BaseQueryService {
       sortOrder = 'asc',
     } = query;
 
-    const limit = query.limit || 10;
-    const page = query.page || 1;
-    const skip = (page - 1) * limit;
-    const take = limit;
+    const { skip, take } = this.getPaginationOptions(query);
 
     const where: any = { isActive };
 
@@ -58,10 +55,7 @@ export class ServicesService extends BaseQueryService {
     if (category) where.category = category;
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { description: { contains: search, mode: 'insensitive' } },
-      ];
+      Object.assign(where, this.buildSearchWhere(search, ['name', 'description']));
     }
 
     let orderBy: any = [{ order: 'asc' }, { createdAt: 'desc' }];

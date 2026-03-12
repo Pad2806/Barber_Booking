@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export type ShiftType = 'MORNING' | 'AFTERNOON' | 'EVENING';
@@ -15,7 +16,7 @@ interface ShiftSelectorProps {
   onChange: (value: string) => void;
 }
 
-export function ShiftSelector({ value, onChange }: ShiftSelectorProps) {
+export function ShiftSelector({ value, onChange }: ShiftSelectorProps): React.ReactElement {
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-full border-[#E8E0D4] rounded-xl focus:ring-[#C8A97E]/20">

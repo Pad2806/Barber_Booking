@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { NotificationType, Notification } from '@prisma/client';
+import { BaseQueryService } from '../common/services/base-query.service';
 
 export interface CreateNotificationParams {
   userId: string;
@@ -11,8 +12,10 @@ export interface CreateNotificationParams {
 }
 
 @Injectable()
-export class NotificationsService {
-  constructor(private readonly prisma: PrismaService) {}
+export class NotificationsService extends BaseQueryService {
+  constructor(private readonly prisma: PrismaService) {
+    super();
+  }
 
   async create(params: CreateNotificationParams): Promise<Notification> {
     return this.prisma.notification.create({
@@ -30,12 +33,12 @@ export class NotificationsService {
   async findAllByUser(
     userId: string,
     params: {
-      skip?: number;
-      take?: number;
+      page?: number;
+      limit?: number;
       unreadOnly?: boolean;
     } = {},
   ) {
-    const { skip = 0, take = 20, unreadOnly = false } = params;
+    const { unreadOnly = false } = params;
 
     const where: any = { userId };
     if (unreadOnly) {
@@ -45,8 +48,7 @@ export class NotificationsService {
     const [notifications, total, unreadCount] = await Promise.all([
       this.prisma.notification.findMany({
         where,
-        skip,
-        take,
+        ...this.getPaginationOptions(params),
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.notification.count({ where }),
@@ -58,10 +60,7 @@ export class NotificationsService {
     return {
       data: notifications,
       meta: {
-        total,
-        skip,
-        take,
-        hasMore: skip + take < total,
+        ...this.getPaginationMeta(total, params),
         unreadCount,
       },
     };

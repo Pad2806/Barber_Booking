@@ -150,17 +150,10 @@ export class BookingsService extends BaseQueryService {
     }
 
     if (search) {
-      where.OR = [
-        { bookingCode: { contains: search, mode: 'insensitive' } },
-        { customer: { name: { contains: search, mode: 'insensitive' } } },
-        { customer: { phone: { contains: search, mode: 'insensitive' } } },
-      ];
+      Object.assign(where, this.buildSearchWhere(search, ['bookingCode', 'customer.name', 'customer.phone']));
     }
 
-    const limit = query.limit || 10;
-    const page = query.page || 1;
-    const skip = (page - 1) * limit;
-    const take = limit;
+    const { skip, take } = this.getPaginationOptions(query);
 
     const orderBy: any = sortBy ? { [sortBy]: sortOrder } : [{ date: 'desc' }, { timeSlot: 'desc' }];
 

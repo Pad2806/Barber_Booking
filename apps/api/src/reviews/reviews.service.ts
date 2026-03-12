@@ -91,11 +91,6 @@ export class ReviewsService extends BaseQueryService {
       sortOrder = 'desc',
     } = query;
 
-    const limit = query.limit || 10;
-    const page = query.page || 1;
-    const skip = (page - 1) * limit;
-    const take = limit;
-
     const where: any = {};
     if (salonId) {
       where.salonId = salonId;
@@ -119,10 +114,7 @@ export class ReviewsService extends BaseQueryService {
       where.isVisible = isVisible;
     }
     if (search) {
-      where.OR = [
-        { comment: { contains: search, mode: 'insensitive' } },
-        { customer: { name: { contains: search, mode: 'insensitive' } } },
-      ];
+      Object.assign(where, this.buildSearchWhere(search, ['comment', 'customer.name']));
     }
 
     const orderBy: any = sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' };
@@ -130,8 +122,7 @@ export class ReviewsService extends BaseQueryService {
     const [reviews, total, avgRating, distribution] = await Promise.all([
       this.prisma.review.findMany({
         where,
-        skip,
-        take,
+        ...this.getPaginationOptions(query),
         orderBy,
         include: {
           customer: {
@@ -201,7 +192,7 @@ export class ReviewsService extends BaseQueryService {
       dateTo?: string;
     } = {},
   ) {
-    const { skip = 0, take = 20, minRating, rating, dateFrom, dateTo } = params;
+    const { minRating, rating, dateFrom, dateTo } = params;
 
     const where: any = { salonId, isVisible: true };
 
@@ -226,8 +217,7 @@ export class ReviewsService extends BaseQueryService {
     const [reviews, total, avgRating, distribution] = await Promise.all([
       this.prisma.review.findMany({
         where,
-        skip,
-        take,
+        ...this.getPaginationOptions(params),
         orderBy: { createdAt: 'desc' },
         include: {
           customer: {
@@ -266,10 +256,7 @@ export class ReviewsService extends BaseQueryService {
     return {
       data: reviews,
       meta: {
-        total,
-        skip,
-        take,
-        hasMore: skip + take < total,
+        ...this.getPaginationMeta(total, params),
         averageRating: Number(avgRating._avg.rating || 0),
         distribution: (distribution as any[]).reduce(
           (acc, d) => {

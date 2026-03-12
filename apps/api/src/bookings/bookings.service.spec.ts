@@ -26,7 +26,7 @@ describe('BookingsService', () => {
     salonId: 'salon-1',
     userId: 'user-staff-1',
     isActive: true,
-    schedules: [
+    weeklySchedules: [
       { dayOfWeek: 1, startTime: '08:00', endTime: '20:00', isOff: false },
       { dayOfWeek: 2, startTime: '08:00', endTime: '20:00', isOff: false },
     ],
@@ -63,6 +63,12 @@ describe('BookingsService', () => {
     },
     staff: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
+    },
+    staffShift: {
+      findFirst: jest.fn(),
+    },
+    staffWeeklySchedule: {
       findFirst: jest.fn(),
     },
     service: {
@@ -114,6 +120,7 @@ describe('BookingsService', () => {
       mockPrismaService.salon.findUnique.mockResolvedValue(mockSalon);
       mockPrismaService.service.findMany.mockResolvedValue([mockService]);
       mockPrismaService.staff.findFirst.mockResolvedValue(mockStaff);
+      mockPrismaService.staffShift.findFirst.mockResolvedValue({ id: 'shift-1' });
       mockPrismaService.booking.findFirst.mockResolvedValue(null);
       mockPrismaService.booking.count.mockResolvedValue(0);
       mockPrismaService.booking.create.mockResolvedValue(mockBooking);

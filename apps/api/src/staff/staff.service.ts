@@ -85,10 +85,7 @@ export class StaffService extends BaseQueryService {
       sortOrder = 'desc',
     } = query;
 
-    const limit = query.limit || 10;
-    const page = query.page || 1;
-    const skip = (page - 1) * limit;
-    const take = limit;
+    const { skip, take } = this.getPaginationOptions(query);
 
     const where: any = { isActive };
 
@@ -96,19 +93,13 @@ export class StaffService extends BaseQueryService {
     if (minRating) where.rating = { gte: minRating };
 
     if (search) {
-      where.OR = [
-        { position: { contains: search, mode: 'insensitive' } },
-        { bio: { contains: search, mode: 'insensitive' } },
-        {
-          user: {
-            OR: [
-              { name: { contains: search, mode: 'insensitive' } },
-              { email: { contains: search, mode: 'insensitive' } },
-              { phone: { contains: search, mode: 'insensitive' } },
-            ],
-          },
-        },
-      ];
+      Object.assign(where, this.buildSearchWhere(search, [
+        'position',
+        'bio',
+        'user.name',
+        'user.email',
+        'user.phone'
+      ]));
     }
 
     const orderBy: any = sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' };
@@ -346,7 +337,7 @@ export class StaffService extends BaseQueryService {
             avatar: true,
           },
         },
-        schedules: {
+        weeklySchedules: {
           orderBy: { dayOfWeek: 'asc' },
         },
         _count: {
@@ -354,7 +345,7 @@ export class StaffService extends BaseQueryService {
             bookings: true,
           },
         },
-      },
+      } as any,
     });
   }
 
@@ -378,10 +369,10 @@ export class StaffService extends BaseQueryService {
             slug: true,
           },
         },
-        schedules: {
+        weeklySchedules: {
           orderBy: { dayOfWeek: 'asc' },
         },
-      },
+      } as any,
     });
 
     if (!staff) {
@@ -425,7 +416,7 @@ export class StaffService extends BaseQueryService {
     // Update each schedule
     await Promise.all(
       schedules.map(schedule =>
-        this.prisma.staffWeeklySchedule.upsert({
+        (this.prisma as any).staffWeeklySchedule.upsert({
           where: {
             staffId_dayOfWeek: {
               staffId,

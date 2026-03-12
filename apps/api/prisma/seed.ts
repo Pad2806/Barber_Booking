@@ -22,7 +22,7 @@ async function main() {
   await prisma.bookingService.deleteMany();
   await prisma.booking.deleteMany();
   await prisma.service.deleteMany();
-  await prisma.staffSchedule.deleteMany();
+  await prisma.staffWeeklySchedule.deleteMany();
   await prisma.staff.deleteMany();
   await prisma.salon.deleteMany();
   await prisma.refreshToken.deleteMany();
@@ -239,7 +239,7 @@ async function main() {
   // Create Staff Schedules (Mon-Sat, 0=Sun, 1=Mon, ..., 6=Sat)
   for (const staff of staffRecords) {
     for (let day = 1; day <= 6; day++) {
-      await prisma.staffSchedule.create({
+      await prisma.staffWeeklySchedule.create({
         data: {
           staffId: staff.id,
           dayOfWeek: day,
@@ -250,7 +250,7 @@ async function main() {
       });
     }
     // Sunday morning only
-    await prisma.staffSchedule.create({
+    await prisma.staffWeeklySchedule.create({
       data: {
         staffId: staff.id,
         dayOfWeek: 0,

@@ -1,7 +1,0 @@
-﻿
-> @reetro/web@1.0.0 lint D:\Intern_Senlyzer\Booking_Barber\apps\web
-> next lint
-
-D:\Intern_Senlyzer\Booking_Barber\apps\web:
-ΓÇëERR_PNPM_RECURSIVE_RUN_FIRST_FAILΓÇë @reetro/web@1.0.0 lint: `next lint`
-Exit status 1

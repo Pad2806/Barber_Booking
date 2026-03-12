@@ -46,10 +46,7 @@ export class SalonsService extends BaseQueryService {
       sortOrder = 'desc',
     } = query;
 
-    const limit = query.limit || 10;
-    const page = query.page || 1;
-    const skip = (page - 1) * limit;
-    const take = limit;
+    const { skip, take } = this.getPaginationOptions(query);
 
     const where: any = {};
     if (isActive !== undefined) {
@@ -65,12 +62,7 @@ export class SalonsService extends BaseQueryService {
     }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { address: { contains: search, mode: 'insensitive' } },
-        { city: { contains: search, mode: 'insensitive' } },
-        { district: { contains: search, mode: 'insensitive' } },
-      ];
+      Object.assign(where, this.buildSearchWhere(search, ['name', 'address', 'city', 'district']));
     }
 
     const orderBy: any = sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' };
@@ -138,7 +130,7 @@ export class SalonsService extends BaseQueryService {
                 avatar: true,
               },
             },
-            schedules: true,
+            weeklySchedules: true,
           },
         },
         services: {
@@ -151,7 +143,7 @@ export class SalonsService extends BaseQueryService {
             bookings: true,
           },
         },
-      },
+      } as any,
     });
 
     if (!salon) {
@@ -165,7 +157,7 @@ export class SalonsService extends BaseQueryService {
 
     return {
       ...salon,
-      services: salon.services.map(s => ({
+      services: (salon as any).services.map((s: any) => ({
         ...s,
         price: Number(s.price),
       })),
@@ -187,7 +179,7 @@ export class SalonsService extends BaseQueryService {
                 avatar: true,
               },
             },
-            schedules: true,
+            weeklySchedules: true,
           },
         },
         services: {
@@ -200,7 +192,7 @@ export class SalonsService extends BaseQueryService {
             bookings: true,
           },
         },
-      },
+      } as any,
     });
 
     if (!salon) {
@@ -214,7 +206,7 @@ export class SalonsService extends BaseQueryService {
 
     return {
       ...salon,
-      services: salon.services.map(s => ({
+      services: (salon as any).services.map((s: any) => ({
         ...s,
         price: Number(s.price),
       })),

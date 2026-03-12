@@ -1,0 +1,309 @@
+﻿
+      return 
+Promise.reject(error);
+    }
+  );
+  
+  // API Types
+> export interface 
+PaginatedResponse<T> {
+    data: T[];
+    meta: {
+      total: number;
+      page: number;
+      limit: number;
+      lastPage: number;
+      hasNextPage: boolean;
+      hasPreviousPage: 
+boolean;
+      averageRating?: number;
+      distribution?: 
+Record<number, number>;
+    };
+  }
+  
+> export interface Salon {
+    id: string;
+    name: string;
+    slug: string;
+    description?: string;
+    address: string;
+    city: string;
+    district: string;
+    ward?: string;
+    phone: string;
+    openTime: string;
+    closeTime: string;
+    workingDays: string[];
+    logo?: string;
+    coverImage?: string;
+    images: string[];
+    rating?: number;
+    totalReviews?: number;
+    isActive: boolean;
+    averageRating?: number;
+    _count?: {
+      staff: number;
+      bookings: number;
+    };
+  }
+  
+> export interface Service {
+    id: string;
+    name: string;
+    description?: string;
+    price: number;
+    duration: number;
+    category: string;
+    image?: string;
+    videoUrl?: string;
+    gallery?: string[];
+    salonId: string;
+    isActive: boolean;
+  }
+  
+> export interface Staff {
+    id: string;
+    position: string;
+    bio?: string;
+    rating: number;
+    totalReviews: number;
+    salonId: string;
+    isActive: boolean;
+    user: {
+      id: string;
+      name: string;
+      email?: string;
+      phone?: string;
+      avatar?: string;
+    };
+    salon?: {
+      id: string;
+      name: string;
+      slug?: string;
+    };
+    schedules?: 
+StaffSchedule[];
+    _count?: {
+      bookings: number;
+    };
+  }
+  
+> export interface 
+StaffSchedule {
+    id: string;
+    staffId: string;
+    dayOfWeek: number;
+    startTime: string;
+    endTime: string;
+    isOff: boolean;
+  }
+  
+> export interface Booking {
+    id: string;
+    bookingCode: string;
+    date: string;
+    timeSlot: string;
+    endTime: string;
+    totalDuration: number;
+    totalAmount: number;
+    status: string;
+    paymentStatus: string;
+    paymentMethod?: string | 
+null;
+    payments?: Array<{
+      id: string;
+      amount: number;
+      method: string;
+      type: string;
+      status: string;
+      paidAt?: string;
+    }>;
+    note?: string;
+    salon: Salon;
+    createdAt: string;
+    updatedAt: string;
+    review?: Review;
+  }
+  
+> export interface 
+BookingQueryDto {
+    page?: number;
+    limit?: number;
+    status?: string;
+    salonId?: string;
+    staffId?: string;
+    search?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    sortBy?: string;
+    sortOrder?: 'asc' | 
+'desc';
+  }
+  
+> export interface 
+AdminBookingDetail extends 
+Booking {
+    customer: {
+      id: string;
+      name: string;
+      phone: string;
+      email?: string | null;
+    };
+  }
+  
+> export interface Review {
+    id: string;
+    rating: number; // 
+Overall/Salon
+    staffRating?: number; // 
+Barber
+    comment?: string;
+    images?: string[];
+    reply?: string;
+    repliedAt?: string;
+    isVisible: boolean;
+    createdAt: string;
+    customer: {
+      id: string;
+      name: string;
+      avatar?: string;
+    };
+    salon: {
+      id: string;
+      name: string;
+    };
+    staff?: {
+      id: string;
+      const response = await a
+piClient.delete(`/staff/remove
+-shift/${id}`);
+      return response.data;
+    },
+  };
+  
+> export interface StaffShift 
+{
+    id: string;
+    staffId: string;
+    salonId: string;
+    date: string;
+    shiftStart: string;
+    shiftEnd: string;
+  }
+  
+  // Booking APIs
+  export const bookingApi = {
+    getAll: async (params?: 
+BookingQueryDto) => {
+      const response = await a
+piClient.get<PaginatedResponse
+<Booking>>('/bookings', { 
+params });
+      return response.data;
+    },
+    getById: async (id: 
+string) => {
+      const response = await a
+piClient.get<Booking>(`/bookin
+gs/${id}`);
+      return response.data;
+    },
+    create: async (data: {
+      salonId: string;
+      return response.data;
+    },
+  };
+  
+  // Admin APIs
+> export interface 
+DashboardStats {
+    todayBookings: number;
+    todayBookingsGrowth: 
+number;
+    todayRevenue: number;
+    todayRevenueGrowth: 
+number;
+    monthRevenue: number;
+    monthRevenueGrowth: 
+number;
+    totalCustomers: number;
+    customerGrowth: number;
+    totalStaff: number;
+    totalSalons: number;
+    totalBookings: number;
+    pendingBookings: number;
+    monthBookings: number;
+    bookingGrowth: number;
+    recentBookings: Booking[];
+    topServices: TopService[];
+    activityFeed: 
+ActivityItem[];
+  }
+  
+> export interface TopService 
+{
+    name: string;
+    category: string;
+    count: number;
+  }
+  
+> export interface 
+ActivityItem {
+    type: 'BOOKING' | 
+'REVIEW' | 'USER';
+    title: string;
+    description: string;
+    time: string;
+    status?: string;
+    rating?: number;
+  }
+  
+> export interface 
+BookingStats {
+    totalBookings: number;
+    byStatus: Record<string, 
+number>;
+    dailyBookings: Array<{ 
+date: string; count: number 
+}>;
+    timeline: Array<{
+      date: string;
+      count: number;
+      completed: number;
+      cancelled: number;
+    }>;
+  }
+  
+> export interface 
+RevenueStats {
+    totalRevenue: number;
+    averageOrderValue: number;
+    dailyRevenue: Array<{ 
+date: string; amount: number 
+}>;
+    timeline: Array<{
+      date: string;
+      amount: number;
+      count: number;
+    }>;
+  }
+  
+  export const managerApi = {
+    getDashboardStats: async 
+() => {
+      const response = await a
+piClient.get('/manager/dashboa
+rd');
+      return response.data;
+    },
+    getStaff: async () => {
+      const response = await a
+piClient.get<Staff[]>('/manage
+r/staff');
+      return response.data;
+    },
+    getSchedules: async 
+(date?: string) => {
+
+

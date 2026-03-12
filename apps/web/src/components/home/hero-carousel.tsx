@@ -28,7 +28,7 @@ const slides = [
   },
 ];
 
-export function HeroCarousel() {
+export function HeroCarousel(): React.ReactElement {
   const [currentSlide, setCurrentSlide] = useState(0);
 
   useEffect(() => {
@@ -52,10 +52,11 @@ export function HeroCarousel() {
           }`}
         >
           <div
-            className="absolute inset-0 bg-cover bg-center transition-transform duration-[10000ms] ease-linear"
+            className="absolute inset-0 bg-cover bg-center transition-transform ease-linear"
             style={{
               backgroundImage: `url('${slide.image}')`,
               transform: index === currentSlide ? 'scale(1.05)' : 'scale(1)',
+              transitionDuration: '10000ms',
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-[#2C1E12]/90 via-[#2C1E12]/60 to-transparent sm:via-[#2C1E12]/70" />

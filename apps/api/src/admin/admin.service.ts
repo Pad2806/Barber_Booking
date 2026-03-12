@@ -4,12 +4,16 @@ import { Role, BookingStatus, PaymentStatus, User } from '@prisma/client';
 import { BookingsService } from '../bookings/bookings.service';
 import { BookingQueryDto } from '../bookings/dto/booking-query.dto';
 
+import { BaseQueryService } from '../common/services/base-query.service';
+
 @Injectable()
-export class AdminService {
+export class AdminService extends BaseQueryService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly bookingsService: BookingsService,
-  ) { }
+  ) {
+    super();
+  }
 
 
   async getAllBookings(query: BookingQueryDto) {
@@ -494,28 +498,23 @@ export class AdminService {
   }
 
   async getAllUsers(params: {
-    skip?: number;
-    take?: number;
+    page?: number;
+    limit?: number;
     role?: Role;
     search?: string;
   }) {
-    const { skip = 0, take = 20, role, search } = params;
+    const { role, search } = params;
 
     const where: any = {};
     if (role) where.role = role;
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search } },
-      ];
+      Object.assign(where, this.buildSearchWhere(search, ['name', 'email', 'phone']));
     }
 
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
-        skip,
-        take,
+        ...this.getPaginationOptions(params),
         orderBy: { createdAt: 'desc' },
         select: {
           id: true,
@@ -542,12 +541,7 @@ export class AdminService {
 
     return {
       data: users,
-      meta: {
-        total,
-        skip,
-        take,
-        hasMore: skip + take < total,
-      },
+      meta: this.getPaginationMeta(total, params),
     };
   }
 
@@ -612,22 +606,25 @@ export class AdminService {
   }
 
   async getAllSalons(params: {
-    skip?: number;
-    take?: number;
+    page?: number;
+    limit?: number;
     city?: string;
     isActive?: boolean;
+    search?: string;
   }) {
-    const { skip = 0, take = 20, city, isActive } = params;
+    const { city, isActive, search } = params;
 
     const where: any = {};
     if (city) where.city = city;
     if (isActive !== undefined) where.isActive = isActive;
+    if (search) {
+      Object.assign(where, this.buildSearchWhere(search, ['name', 'address']));
+    }
 
     const [salons, total, averages] = await Promise.all([
       this.prisma.salon.findMany({
         where,
-        skip,
-        take,
+        ...this.getPaginationOptions(params),
         orderBy: { createdAt: 'desc' },
         include: {
           owner: {
@@ -663,43 +660,30 @@ export class AdminService {
     });
 
     return {
-      data: data,
-
-      meta: {
-        total,
-        skip,
-        take,
-        hasMore: skip + take < total,
-      },
+      data,
+      meta: this.getPaginationMeta(total, params),
     };
   }
 
 
   async getAllStaff(params: {
-    skip?: number;
-    take?: number;
+    page?: number;
+    limit?: number;
     salonId?: string;
     search?: string;
   }) {
-    const { skip = 0, take = 20, salonId, search } = params;
+    const { salonId, search } = params;
 
     const where: any = {};
     if (salonId) where.salonId = salonId;
     if (search) {
-      where.user = {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' } },
-          { phone: { contains: search } },
-          { email: { contains: search, mode: 'insensitive' } },
-        ],
-      };
+      Object.assign(where, this.buildSearchWhere(search, ['user.name', 'user.phone', 'user.email']));
     }
 
     const [staff, total] = await Promise.all([
       this.prisma.staff.findMany({
         where,
-        skip,
-        take,
+        ...this.getPaginationOptions(params),
         orderBy: { createdAt: 'desc' },
         include: {
           user: {
@@ -720,32 +704,30 @@ export class AdminService {
 
     return {
       data: staff,
-      meta: {
-        total,
-        skip,
-        take,
-        hasMore: skip + take < total,
-      },
+      meta: this.getPaginationMeta(total, params),
     };
   }
 
   async getAllServices(params: {
-    skip?: number;
-    take?: number;
+    page?: number;
+    limit?: number;
     salonId?: string;
     category?: string;
+    search?: string;
   }) {
-    const { skip = 0, take = 20, salonId, category } = params;
+    const { salonId, category, search } = params;
 
     const where: any = {};
     if (salonId) where.salonId = salonId;
     if (category) where.category = category;
+    if (search) {
+      Object.assign(where, this.buildSearchWhere(search, ['name', 'category']));
+    }
 
     const [services, total] = await Promise.all([
       this.prisma.service.findMany({
         where,
-        skip,
-        take,
+        ...this.getPaginationOptions(params),
         orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
         include: {
           salon: {
@@ -778,32 +760,30 @@ export class AdminService {
         salon: s.salon,
         createdAt: s.createdAt,
       })),
-      meta: {
-        total,
-        skip,
-        take,
-        hasMore: skip + take < total,
-      },
+      meta: this.getPaginationMeta(total, params),
     };
   }
 
   async getAllReviews(params: {
-    skip?: number;
-    take?: number;
+    page?: number;
+    limit?: number;
     salonId?: string;
     rating?: number;
+    search?: string;
   }) {
-    const { skip = 0, take = 20, salonId, rating } = params;
+    const { salonId, rating, search } = params;
 
     const where: any = {};
     if (salonId) where.salonId = salonId;
     if (rating) where.rating = rating;
+    if (search) {
+      Object.assign(where, this.buildSearchWhere(search, ['comment', 'customer.name']));
+    }
 
     const [reviews, total] = await Promise.all([
       this.prisma.review.findMany({
         where,
-        skip,
-        take,
+        ...this.getPaginationOptions(params),
         orderBy: { createdAt: 'desc' },
         include: {
           customer: {
@@ -844,12 +824,7 @@ export class AdminService {
           ? { id: r.booking.staff.id, name: r.booking.staff.user.name }
           : null,
       })),
-      meta: {
-        total,
-        skip,
-        take,
-        hasMore: skip + take < total,
-      },
+      meta: this.getPaginationMeta(total, params),
     };
   }
 

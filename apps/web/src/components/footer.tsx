@@ -1,8 +1,7 @@
-'use client';
-
+import React from 'react';
 import Link from 'next/link';
 
-export default function Footer(): React.ReactNode {
+export default function Footer(): React.ReactElement {
   return (
     <footer className="bg-[#2C1E12] text-white py-16 md:py-24 border-t border-[#E8E0D4]">
       <div className="container mx-auto px-4">

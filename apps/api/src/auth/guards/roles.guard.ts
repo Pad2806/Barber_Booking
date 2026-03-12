@@ -5,7 +5,7 @@ import { ROLES_KEY } from '../decorators/roles.decorator';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-  constructor(private reflector: Reflector) {}
+  constructor(private reflector: Reflector) { }
 
   canActivate(context: ExecutionContext): boolean {
     const requiredRoles = this.reflector.getAllAndOverride<Role[]>(ROLES_KEY, [
@@ -23,11 +23,15 @@ export class RolesGuard implements CanActivate {
       return false;
     }
 
-    // Role hierarchy: SUPER_ADMIN > SALON_OWNER > STAFF > CUSTOMER
+    // Role hierarchy: SUPER_ADMIN > SALON_OWNER > MANAGER > STAFF/BARBER/CASHIER/SKINNER > CUSTOMER
     const roleHierarchy: Record<Role, number> = {
       [Role.SUPER_ADMIN]: 100,
       [Role.SALON_OWNER]: 50,
+      [Role.MANAGER]: 40,
       [Role.STAFF]: 25,
+      [Role.BARBER]: 25,
+      [Role.CASHIER]: 25,
+      [Role.SKINNER]: 25,
       [Role.CUSTOMER]: 10,
     };
 

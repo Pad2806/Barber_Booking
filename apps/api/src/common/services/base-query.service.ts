@@ -10,12 +10,23 @@ export abstract class BaseQueryService {
 
         return {
             total,
-            page,
-            limit,
+            page: Number(page),
+            limit: Number(limit),
             lastPage,
             hasNextPage: page < lastPage,
             hasPreviousPage: page > 1,
         };
+    }
+
+    /**
+     * Gets pagination options for Prisma
+     */
+    protected getPaginationOptions(query: PaginationQueryDto) {
+        const { page = 1, limit = 10 } = query;
+        const take = Number(limit);
+        const skip = (Number(page) - 1) * take;
+
+        return { skip, take };
     }
 
     /**
@@ -25,9 +36,19 @@ export abstract class BaseQueryService {
         if (!search || fields.length === 0) return {};
 
         return {
-            OR: fields.map((field) => ({
-                [field]: { contains: search, mode: 'insensitive' },
-            })),
+            OR: fields.map((field) => {
+                if (field.includes('.')) {
+                    const [relation, subField] = field.split('.');
+                    return {
+                        [relation]: {
+                            [subField]: { contains: search, mode: 'insensitive' },
+                        },
+                    };
+                }
+                return {
+                    [field]: { contains: search, mode: 'insensitive' },
+                };
+            }),
         };
     }
 }

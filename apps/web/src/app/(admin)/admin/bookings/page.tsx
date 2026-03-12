@@ -15,8 +15,8 @@ import {
   Filter,
   Trash2,
 } from 'lucide-react';
-import { formatPrice, formatDate } from '@/lib/utils';
-import { adminApi } from '@/lib/api';
+import { formatPrice, formatDate, cn } from '@/lib/utils';
+import { adminApi, Booking } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge } from '@/components/admin/status-badge';
@@ -35,7 +35,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-const STATUS_CONFIG: any = {
+const STATUS_CONFIG: Record<string, { label: string, variant: 'warning' | 'info' | 'secondary' | 'success' | 'destructive' | 'outline' }> = {
   PENDING: { label: 'Chờ xác nhận', variant: 'warning' },
   CONFIRMED: { label: 'Đã xác nhận', variant: 'info' },
   IN_PROGRESS: { label: 'Đang làm', variant: 'secondary' },
@@ -44,7 +44,7 @@ const STATUS_CONFIG: any = {
   NO_SHOW: { label: 'Vắng mặt', variant: 'outline' },
 };
 
-export default function AdminBookingsPage() {
+export default function AdminBookingsPage(): React.ReactElement {
   const queryClient = useQueryClient();
   const [page] = useState(1);
   const [limit] = useState(10);
@@ -59,7 +59,7 @@ export default function AdminBookingsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Selection
-  const [selectedBookings, setSelectedBookings] = useState<any[]>([]);
+  const [selectedBookings, setSelectedBookings] = useState<Booking[]>([]);
 
   // Debounce search
   useEffect(() => {
@@ -135,7 +135,7 @@ export default function AdminBookingsPage() {
     }
   };
 
-  const columns: ColumnDef<any>[] = useMemo(() => [
+  const columns: ColumnDef<Booking>[] = useMemo(() => [
     {
       id: 'select',
       header: ({ table }) => (
@@ -166,7 +166,7 @@ export default function AdminBookingsPage() {
       accessorKey: 'customer',
       header: 'Khách hàng',
       cell: ({ row }) => {
-        const customer = row.original.customer;
+        const customer = (row.original as any).customer;
         return (
           <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8">
@@ -195,7 +195,7 @@ export default function AdminBookingsPage() {
             </div>
             <div className="flex items-center gap-1 text-xs text-slate-500">
               <User className="w-3 h-3 text-slate-400" />
-              <span>{staff?.name || 'Chưa chỉ định'}</span>
+              <span>{staff?.user.name || 'Chưa chỉ định'}</span>
             </div>
           </div>
         );
@@ -208,7 +208,7 @@ export default function AdminBookingsPage() {
         const services = row.original.services || [];
         return (
           <div className="text-xs text-slate-600 max-w-[200px] truncate text-left">
-            {services.map((s: any) => s.name).join(', ') || 'N/A'}
+            {services.map((s: any) => s.service.name).join(', ') || 'N/A'}
           </div>
         );
       },

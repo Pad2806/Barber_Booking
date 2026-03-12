@@ -32,7 +32,7 @@ export class StaffController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SALON_OWNER)
+  @Roles(Role.MANAGER, Role.SALON_OWNER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add staff to salon' })
   create(@Body() dto: CreateStaffDto, @CurrentUser() user: User) {
@@ -41,7 +41,7 @@ export class StaffController {
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SUPER_ADMIN, Role.SALON_OWNER)
+  @Roles(Role.SUPER_ADMIN, Role.SALON_OWNER, (Role as any).MANAGER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all staff (admin)' })
   findAll(@Query() query: StaffQueryDto) {
@@ -85,7 +85,7 @@ export class StaffController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SALON_OWNER)
+  @Roles(Role.MANAGER, Role.SALON_OWNER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update staff' })
   update(
@@ -98,7 +98,7 @@ export class StaffController {
 
   @Patch(':id/schedule')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SALON_OWNER)
+  @Roles(Role.MANAGER, Role.SALON_OWNER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update staff schedule' })
   updateSchedule(
@@ -111,7 +111,7 @@ export class StaffController {
 
   @Patch(':id/toggle-active')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SALON_OWNER)
+  @Roles(Role.MANAGER, Role.SALON_OWNER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Toggle staff active status' })
   toggleActive(@Param('id') id: string, @CurrentUser() user: User) {
@@ -120,7 +120,7 @@ export class StaffController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.SALON_OWNER)
+  @Roles(Role.MANAGER, Role.SALON_OWNER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove staff from salon' })
   remove(@Param('id') id: string, @CurrentUser() user: User) {
@@ -138,7 +138,7 @@ export class StaffController {
 
   @Get('salon-schedules')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles((Role as any).MANAGER, Role.SALON_OWNER)
+  @Roles(Role.MANAGER, Role.SALON_OWNER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all staff schedules for a salon' })
   getSalonSchedules(@CurrentUser() user: User, @Query('salonId') salonId: string, @Query('date') date?: string) {
@@ -147,7 +147,7 @@ export class StaffController {
 
   @Post('assign-shift')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles((Role as any).MANAGER, Role.SALON_OWNER)
+  @Roles(Role.MANAGER, Role.SALON_OWNER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Assign a shift to a staff member' })
   assignShift(@Body() dto: AssignShiftDto, @CurrentUser() user: User) {
@@ -156,7 +156,7 @@ export class StaffController {
 
   @Delete('remove-shift/:id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles((Role as any).MANAGER, Role.SALON_OWNER)
+  @Roles(Role.MANAGER, Role.SALON_OWNER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove a shift' })
   removeShift(@Param('id') id: string, @CurrentUser() user: User) {

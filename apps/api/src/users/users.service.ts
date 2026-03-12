@@ -128,11 +128,6 @@ export class UsersService extends BaseQueryService {
       sortOrder = 'desc',
     } = query;
 
-    const limit = query.limit || 10;
-    const page = query.page || 1;
-    const skip = (page - 1) * limit;
-    const take = limit;
-
     const where: any = {};
 
     if (role) {
@@ -144,11 +139,7 @@ export class UsersService extends BaseQueryService {
     }
 
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search } },
-      ];
+      Object.assign(where, this.buildSearchWhere(search, ['name', 'email', 'phone']));
     }
 
     const orderBy: any = sortBy ? { [sortBy]: sortOrder } : { createdAt: 'desc' };
@@ -156,8 +147,7 @@ export class UsersService extends BaseQueryService {
     const [users, total] = await Promise.all([
       this.prisma.user.findMany({
         where,
-        skip,
-        take,
+        ...this.getPaginationOptions(query),
         orderBy,
         select: {
           id: true,
@@ -283,14 +273,13 @@ export class UsersService extends BaseQueryService {
     await this.prisma.user.delete({ where: { id } });
   }
 
-  async getBookingHistory(userId: string, params: { skip?: number; take?: number }) {
-    const { skip = 0, take = 20 } = params;
+  async getBookingHistory(userId: string, params: PaginationQueryDto) {
+    const where = { customerId: userId };
 
     const [bookings, total] = await Promise.all([
       this.prisma.booking.findMany({
-        where: { customerId: userId },
-        skip,
-        take,
+        where,
+        ...this.getPaginationOptions(params),
         orderBy: { date: 'desc' },
         include: {
           salon: {
@@ -319,17 +308,12 @@ export class UsersService extends BaseQueryService {
           review: true,
         },
       }),
-      this.prisma.booking.count({ where: { customerId: userId } }),
+      this.prisma.booking.count({ where }),
     ]);
 
     return {
       data: bookings,
-      meta: {
-        total,
-        skip,
-        take,
-        hasMore: skip + take < total,
-      },
+      meta: this.getPaginationMeta(total, params),
     };
   }
 

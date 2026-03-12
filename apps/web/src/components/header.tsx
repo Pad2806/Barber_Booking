@@ -8,7 +8,7 @@ import { usePathname } from 'next/navigation';
 import { User, Menu, X, Calendar, MapPin, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export default function Header(): React.ReactNode {
+export default function Header(): React.ReactElement {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const isLoggedIn = status === 'authenticated';

@@ -5,7 +5,7 @@ import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { HeroCarousel } from '@/components/home/hero-carousel';
 
-import { salonApi, serviceApi } from '@/lib/api';
+import { salonApi, serviceApi, Salon, Service } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
 
 const features = [
@@ -31,10 +31,10 @@ const features = [
   },
 ];
 
-export default async function HomePage(): Promise<React.ReactNode> {
+export default async function HomePage(): Promise<React.ReactElement> {
   // Fetch data on the server with fallback to empty arrays
-  let salons: any[] = [];
-  let services: any[] = [];
+  let salons: Salon[] = [];
+  let services: Service[] = [];
   
   try {
     const [salonsRes, servicesRes] = await Promise.all([

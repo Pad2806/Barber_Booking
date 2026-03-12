@@ -1,8 +1,24 @@
 import axios from 'axios';
-import { getSession } from 'next-auth/react';
-import type { User } from '@reetro/shared';
+import {
+  PaginatedResponse,
+  Salon,
+  Service,
+  Staff,
+  Booking,
+  BookingQueryDto,
+  AdminBookingDetail,
+  Review,
+  DashboardStats,
+  BookingStats,
+  RevenueStats,
+  StaffShift,
+  UploadFolder,
+  User
+} from './types';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+export * from './types';
 
 export const apiClient = axios.create({
   baseURL: `${API_URL}/api`,
@@ -16,6 +32,7 @@ export const apiClient = axios.create({
 apiClient.interceptors.request.use(
   async config => {
     if (typeof window !== 'undefined') {
+      const { getSession } = await import('next-auth/react');
       const session = await getSession();
       if (session?.accessToken) {
         config.headers.Authorization = `Bearer ${session.accessToken}`;
@@ -41,177 +58,6 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
-
-// API Types
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    lastPage: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-    averageRating?: number;
-    distribution?: Record<number, number>;
-  };
-}
-
-export interface Salon {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string;
-  address: string;
-  city: string;
-  district: string;
-  ward?: string;
-  phone: string;
-  openTime: string;
-  closeTime: string;
-  workingDays: string[];
-  logo?: string;
-  coverImage?: string;
-  images: string[];
-  rating?: number;
-  totalReviews?: number;
-  isActive: boolean;
-  averageRating?: number;
-  _count?: {
-    reviews: number;
-    staff: number;
-    bookings: number;
-  };
-}
-
-export interface Service {
-  id: string;
-  name: string;
-  description?: string;
-  price: number;
-  duration: number;
-  category: string;
-  image?: string;
-  videoUrl?: string;
-  gallery?: string[];
-  salonId: string;
-  isActive: boolean;
-}
-
-export interface Staff {
-  id: string;
-  position: string;
-  bio?: string;
-  rating: number;
-  totalReviews: number;
-  salonId: string;
-  isActive: boolean;
-  user: {
-    id: string;
-    name: string;
-    email?: string;
-    phone?: string;
-    avatar?: string;
-  };
-  salon?: {
-    id: string;
-    name: string;
-    slug?: string;
-  };
-  schedules?: StaffSchedule[];
-  _count?: {
-    bookings: number;
-  };
-}
-
-export interface StaffSchedule {
-  id: string;
-  staffId: string;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  isOff: boolean;
-}
-
-export interface Booking {
-  id: string;
-  bookingCode: string;
-  date: string;
-  timeSlot: string;
-  endTime: string;
-  totalDuration: number;
-  totalAmount: number;
-  status: string;
-  paymentStatus: string;
-  paymentMethod?: string | null;
-  payments?: Array<{
-    id: string;
-    amount: number;
-    method: string;
-    type: string;
-    status: string;
-    paidAt?: string;
-  }>;
-  note?: string;
-  salon: Salon;
-  staff?: Staff;
-  services: Array<{
-    id: string;
-    service: Service;
-    price: number;
-    duration: number;
-  }>;
-  createdAt: string;
-  updatedAt: string;
-  review?: Review;
-}
-
-export interface BookingQueryDto {
-  page?: number;
-  limit?: number;
-  status?: string;
-  salonId?: string;
-  staffId?: string;
-  search?: string;
-  dateFrom?: string;
-  dateTo?: string;
-  sortBy?: string;
-  sortOrder?: 'asc' | 'desc';
-}
-
-export interface AdminBookingDetail extends Booking {
-  customer: {
-    id: string;
-    name: string;
-    phone: string;
-    email?: string | null;
-  };
-}
-
-export interface Review {
-  id: string;
-  rating: number; // Overall/Salon
-  staffRating?: number; // Barber
-  comment?: string;
-  images?: string[];
-  reply?: string;
-  repliedAt?: string;
-  isVisible: boolean;
-  createdAt: string;
-  customer: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
-  salon: {
-    id: string;
-    name: string;
-  };
-  staff?: {
-    id: string;
-    name: string;
-  };
-}
 
 // Salon APIs
 export const salonApi = {
@@ -325,15 +171,6 @@ export const staffApi = {
   },
 };
 
-export interface StaffShift {
-  id: string;
-  staffId: string;
-  salonId: string;
-  date: string;
-  shiftStart: string;
-  shiftEnd: string;
-}
-
 // Booking APIs
 export const bookingApi = {
   getAll: async (params?: BookingQueryDto) => {
@@ -370,7 +207,6 @@ export const bookingApi = {
 // Payment APIs
 export const paymentApi = {
   generateQR: async (bookingId: string) => {
-    // The backend uses POST /payments and expects { bookingId, method: 'VIETQR' }
     const response = await apiClient.post<{
       id: string;
       qrCodeUrl: string;
@@ -381,27 +217,19 @@ export const paymentApi = {
       bankName: string;
     }>('/payments', { bookingId, method: 'VIETQR' });
 
-    // Map backend response 'qrCodeUrl' to frontend expectation 'qrCode'
     return {
       ...response.data,
       qrCode: response.data.qrCodeUrl || '',
     };
   },
   getStatus: async (bookingId: string) => {
-    // The backend does not have /payments/:id/status. We can use the booking summary endpoint
     const response = await apiClient.get<{
       isFullyPaid: boolean;
       depositPaid: number;
-      //...
     }>(`/payments/booking/${bookingId}/summary`);
 
-    // The frontend seems to expect the raw payment status or something. Let's return the summary
-    // Wait, the frontend might check a specific status string? Let me just return exactly what it asked for if we can.
-    // Let's actually check how the frontend uses it. It probably checks response.status === 'PAID'.
-    // The summary endpoint returns { depositPaid, finalPaid, isFullyPaid, payments: [] }
-    // Let's adapt it to what status usually returns.
     if (response.data && response.data.depositPaid > 0) {
-      return { paymentStatus: 'PAID' }; // Or whatever the frontend expects to move forward
+      return { paymentStatus: 'PAID' };
     }
     return { paymentStatus: 'PENDING' };
   },
@@ -426,65 +254,6 @@ export const paymentApi = {
     return response.data;
   },
 };
-
-// Admin APIs
-export interface DashboardStats {
-  todayBookings: number;
-  todayBookingsGrowth: number;
-  todayRevenue: number;
-  todayRevenueGrowth: number;
-  monthRevenue: number;
-  monthRevenueGrowth: number;
-  totalCustomers: number;
-  customerGrowth: number;
-  totalStaff: number;
-  totalSalons: number;
-  totalBookings: number;
-  pendingBookings: number;
-  monthBookings: number;
-  bookingGrowth: number;
-  recentBookings: Booking[];
-  topServices: TopService[];
-  activityFeed: ActivityItem[];
-}
-
-export interface TopService {
-  name: string;
-  category: string;
-  count: number;
-}
-
-export interface ActivityItem {
-  type: 'BOOKING' | 'REVIEW' | 'USER';
-  title: string;
-  description: string;
-  time: string;
-  status?: string;
-  rating?: number;
-}
-
-export interface BookingStats {
-  totalBookings: number;
-  byStatus: Record<string, number>;
-  dailyBookings: Array<{ date: string; count: number }>;
-  timeline: Array<{
-    date: string;
-    count: number;
-    completed: number;
-    cancelled: number;
-  }>;
-}
-
-export interface RevenueStats {
-  totalRevenue: number;
-  averageOrderValue: number;
-  dailyRevenue: Array<{ date: string; amount: number }>;
-  timeline: Array<{
-    date: string;
-    amount: number;
-    count: number;
-  }>;
-}
 
 export const managerApi = {
   getDashboardStats: async () => {
@@ -692,35 +461,11 @@ export const adminApi = {
     const response = await apiClient.get<PaginatedResponse<Review>>('/admin/reviews', { params });
     return response.data;
   },
-  createService: async (data: {
-    name: string;
-    description?: string | null;
-    price: number;
-    duration: number;
-    category: string;
-    isActive?: boolean;
-    salonId: string;
-    image?: string;
-    videoUrl?: string;
-    gallery?: string[];
-  }) => {
+  createService: async (data: any) => {
     const response = await apiClient.post<Service>('/services', data);
     return response.data;
   },
-  updateService: async (
-    id: string,
-    data: Partial<{
-      name: string;
-      description: string;
-      price: number;
-      duration: number;
-      category: string;
-      isActive: boolean;
-      image?: string;
-      videoUrl?: string;
-      gallery?: string[];
-    }>
-  ) => {
+  updateService: async (id: string, data: any) => {
     const response = await apiClient.patch<Service>(`/services/${id}`, data);
     return response.data;
   },
@@ -767,8 +512,6 @@ export const reviewApi = {
 };
 
 // Upload APIs
-export type UploadFolder = 'avatars' | 'salons' | 'services' | 'reviews';
-
 export const uploadApi = {
   uploadImage: async (file: File, folder: UploadFolder = 'avatars') => {
     const formData = new FormData();
