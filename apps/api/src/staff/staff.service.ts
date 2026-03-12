@@ -531,19 +531,41 @@ export class StaffService extends BaseQueryService {
     }
   }
 
-  async registerLeave(staffId: string, dto: { startDate: Date; endDate: Date; reason?: string }, user: User) {
-    const staff = await this.findOne(staffId);
-    await this.verifySalonOwnership(staff.salonId, user);
+  async registerLeave(staffId: string, dto: { startDate: string | Date; endDate: string | Date; reason?: string }, user: User) {
+    try {
+      const staff = await this.findOne(staffId);
+      await this.verifySalonOwnership(staff.salonId, user);
 
-    return (this.prisma as any).staffLeave.create({
-      data: {
-        staffId,
-        startDate: new Date(dto.startDate),
-        endDate: new Date(dto.endDate),
-        reason: dto.reason,
-        status: 'APPROVED', // Auto-approved if salon owner/admin creates it
-      },
-    });
+      // Ensure we have valid Date objects for Prisma
+      const startDate = new Date(dto.startDate);
+      const endDate = new Date(dto.endDate);
+
+      // Simple validation
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        throw new ConflictException('Ngày bắt đầu hoặc ngày kết thúc không hợp lệ');
+      }
+
+      const staffLeaveModel = (this.prisma as any).staffLeave;
+      if (!staffLeaveModel) {
+        throw new Error('Hệ thống chưa hỗ trợ ghi nhận lịch nghỉ. Vui lòng liên hệ kỹ thuật.');
+      }
+
+      return await staffLeaveModel.create({
+        data: {
+          staffId,
+          startDate,
+          endDate,
+          reason: dto.reason || '',
+          status: 'APPROVED',
+        },
+      });
+    } catch (error) {
+      console.error('Error registering staff leave:', error);
+      if (error instanceof NotFoundException || error instanceof ForbiddenException || error instanceof ConflictException) {
+        throw error;
+      }
+      throw new Error(`Không thể đăng ký nghỉ: ${error.message || 'Lỗi hệ thống'}`);
+    }
   }
 
   async getLeaves(staffId: string) {

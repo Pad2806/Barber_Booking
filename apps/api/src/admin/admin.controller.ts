@@ -85,7 +85,7 @@ export class AdminController {
   @ApiOperation({ summary: 'Register leave for staff' })
   registerLeave(
     @Param('id') id: string,
-    @Body() dto: { startDate: Date; endDate: Date; reason?: string },
+    @Body() dto: { startDate: string; endDate: string; reason?: string },
     @CurrentUser() user: User,
   ) {
     return this.staffService.registerLeave(id, dto, user);
