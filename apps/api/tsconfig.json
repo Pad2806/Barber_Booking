@@ -20,6 +20,9 @@
     "paths": {
       "@/*": [
         "src/*"
+      ],
+      "@reetro/shared": [
+        "../../packages/shared/src"
       ]
     }
   },

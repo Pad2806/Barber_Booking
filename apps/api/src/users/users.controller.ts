@@ -80,16 +80,16 @@ export class UsersController {
 
   @Get('me/bookings')
   @ApiOperation({ summary: 'Get current user booking history' })
-  @ApiQuery({ name: 'skip', required: false })
-  @ApiQuery({ name: 'take', required: false })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
   getMyBookings(
     @CurrentUser('id') userId: string,
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
     return this.usersService.getBookingHistory(userId, {
-      skip: skip ? parseInt(skip) : undefined,
-      take: take ? parseInt(take) : undefined,
+      page: page ? parseInt(page) : 1,
+      limit: limit ? parseInt(limit) : 10,
     });
   }
 

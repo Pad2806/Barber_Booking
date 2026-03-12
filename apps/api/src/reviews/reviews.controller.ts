@@ -48,21 +48,21 @@ export class ReviewsController {
   @Get('salon/:salonId')
   @Public()
   @ApiOperation({ summary: 'Get all reviews for a salon' })
-  @ApiQuery({ name: 'skip', required: false })
-  @ApiQuery({ name: 'take', required: false })
-  @ApiQuery({ name: 'minRating', required: false })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'minRating', required: false, type: Number })
   findAllBySalon(
     @Param('salonId') salonId: string,
-    @Query('skip') skip?: string,
-    @Query('take') take?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
     @Query('minRating') minRating?: string,
     @Query('rating') rating?: string,
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
     return this.reviewsService.findAllBySalon(salonId, {
-      skip: skip ? parseInt(skip) : undefined,
-      take: take ? parseInt(take) : undefined,
+      page: page ? parseInt(page) : 1,
+      limit: limit ? parseInt(limit) : 10,
       minRating: minRating ? parseInt(minRating) : undefined,
       rating: rating ? parseInt(rating) : undefined,
       dateFrom,

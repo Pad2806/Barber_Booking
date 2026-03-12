@@ -146,7 +146,7 @@ describe('AdminService', () => {
       };
       mockBookingsService.findAll.mockResolvedValue(mockResult);
 
-      const result = await service.getAllBookings({ skip: 0, take: 10 });
+      const result = await service.getAllBookings({ page: 1, limit: 10 });
 
       expect(result).toHaveProperty('data');
       expect(result).toHaveProperty('meta');
@@ -204,7 +204,7 @@ describe('AdminService', () => {
       mockPrismaService.staff.findMany.mockResolvedValue(mockStaff);
       mockPrismaService.staff.count.mockResolvedValue(1);
 
-      const result = await service.getAllStaff({ skip: 0, take: 10 });
+      const result = await service.getAllStaff({ page: 1, limit: 10 });
 
       expect(result).toHaveProperty('data');
       expect(result).toHaveProperty('meta');
@@ -229,7 +229,7 @@ describe('AdminService', () => {
       mockPrismaService.service.findMany.mockResolvedValue(mockServices);
       mockPrismaService.service.count.mockResolvedValue(1);
 
-      const result = await service.getAllServices({ skip: 0, take: 10 });
+      const result = await service.getAllServices({ page: 1, limit: 10 });
 
       expect(result).toHaveProperty('data');
       expect(result).toHaveProperty('meta');
@@ -257,7 +257,7 @@ describe('AdminService', () => {
       mockPrismaService.review.findMany.mockResolvedValue(mockReviews);
       mockPrismaService.review.count.mockResolvedValue(1);
 
-      const result = await service.getAllReviews({ skip: 0, take: 10 });
+      const result = await service.getAllReviews({ page: 1, limit: 10 });
 
       expect(result).toHaveProperty('data');
       expect(result).toHaveProperty('meta');

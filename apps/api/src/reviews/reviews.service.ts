@@ -184,8 +184,8 @@ export class ReviewsService extends BaseQueryService {
   async findAllBySalon(
     salonId: string,
     params: {
-      skip?: number;
-      take?: number;
+      page?: number;
+      limit?: number;
       minRating?: number;
       rating?: number;
       dateFrom?: string;
