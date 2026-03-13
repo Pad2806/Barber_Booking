@@ -36,6 +36,15 @@ export class ServicesController {
     return this.servicesService.create(dto, user);
   }
 
+  @Get('analytics')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MANAGER, Role.SALON_OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get service analytics' })
+  getAnalytics(@Query('salonId') salonId: string, @CurrentUser() user: User) {
+    return this.servicesService.getAnalytics(salonId, user);
+  }
+
   @Get()
   @Public()
   @ApiOperation({ summary: 'Get all services (public)' })

@@ -9,9 +9,11 @@ import toast from 'react-hot-toast';
 import { SERVICE_CATEGORIES } from '@/lib/utils';
 import ImageUpload from '@/components/ImageUpload';
 import MultiImageUpload from '@/components/MultiImageUpload';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function NewServicePage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [salons, setSalons] = useState<{ id: string; name: string }[]>([]);
   const [loadingSalons, setLoadingSalons] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -70,6 +72,7 @@ export default function NewServicePage() {
         gallery: formData.gallery,
       });
       toast.success('Tạo dịch vụ thành công!');
+      queryClient.invalidateQueries({ queryKey: ['admin', 'services'] });
       router.push('/admin/services');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Tạo dịch vụ thất bại');

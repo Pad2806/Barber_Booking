@@ -207,6 +207,67 @@ export class ServicesService extends BaseQueryService {
     return this.formatService(updated);
   }
 
+  async getAnalytics(salonId: string, user: User) {
+    if (salonId) {
+      await this.verifySalonOwnership(salonId, user);
+    }
+
+    // Most booked service
+    const mostBooked = await this.prisma.bookingService.groupBy({
+      by: ['serviceId'],
+      where: salonId ? { service: { salonId } } : {},
+      _count: {
+        _all: true,
+      },
+      orderBy: {
+        _count: {
+          serviceId: 'desc',
+        },
+      },
+      take: 1,
+    });
+
+    const mostBookedService = mostBooked.length > 0 
+      ? await this.prisma.service.findUnique({ 
+          where: { id: mostBooked[0].serviceId },
+          select: { name: true }
+        })
+      : null;
+
+    // Top revenue service
+    const topRevenue = await this.prisma.bookingService.groupBy({
+      by: ['serviceId'],
+      where: salonId ? { service: { salonId } } : {},
+      _sum: {
+        price: true,
+      },
+      orderBy: {
+        _sum: {
+          price: 'desc',
+        },
+      },
+      take: 1,
+    });
+
+    const topRevenueService = topRevenue.length > 0
+      ? await this.prisma.service.findUnique({
+          where: { id: topRevenue[0].serviceId },
+          select: { name: true }
+        })
+      : null;
+
+    return {
+      mostBookedService: mostBookedService ? {
+        name: mostBookedService.name,
+        totalBookings: mostBooked[0]._count._all,
+      } : { name: "N/A", totalBookings: 0 },
+      topRevenueService: topRevenueService ? {
+        name: topRevenueService.name,
+        revenue: Number(topRevenue[0]._sum.price || 0),
+      } : { name: "N/A", revenue: 0 },
+    };
+  }
+
   private formatService(service: any) {
     if (!service) return null;
     return {

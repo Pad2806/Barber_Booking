@@ -101,6 +101,10 @@ export const serviceApi = {
     const response = await apiClient.get<Service>(`/services/${id}`);
     return response.data;
   },
+  getAnalytics: async (salonId: string) => {
+    const response = await apiClient.get('/services/analytics', { params: { salonId } });
+    return response.data;
+  },
 };
 
 // Staff APIs

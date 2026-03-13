@@ -579,6 +579,7 @@ export class StaffService extends BaseQueryService {
     const staff = await this.findOne(staffId);
 
     // Check if staff has leave on this date
+    // Normalize date to 00:00:00 in local time for DB query
     const searchDate = new Date(date);
     searchDate.setHours(0, 0, 0, 0);
 
@@ -626,8 +627,12 @@ export class StaffService extends BaseQueryService {
       const end = new Date(shift.shiftEnd);
 
       let current = new Date(start);
+      // We need to iterate in 30-minute intervals
       while (current < end) {
-        const timeStr = `${current.getUTCHours().toString().padStart(2, '0')}:${current.getUTCMinutes().toString().padStart(2, '0')}`;
+        // Use local hours/minutes since we set them using setHours in calculateShiftTimes
+        const hours = current.getHours().toString().padStart(2, '0');
+        const minutes = current.getMinutes().toString().padStart(2, '0');
+        const timeStr = `${hours}:${minutes}`;
 
         // Check if slot overlaps with any booking
         const isOverlap = bookings.some(b => {
@@ -640,7 +645,7 @@ export class StaffService extends BaseQueryService {
           slots.push(timeStr);
         }
 
-        current.setMinutes(current.getMinutes() + 30); // 30 min slots
+        current.setMinutes(current.getMinutes() + 30);
       }
     }
 
@@ -810,7 +815,7 @@ export class StaffService extends BaseQueryService {
       case ShiftType.FULL_DAY:
       default:
         startHours = 8; startMins = 0;
-        endHours = 20; endMins = 0;
+        endHours = 18; endMins = 0;
         break;
     }
 

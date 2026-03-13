@@ -44,11 +44,11 @@ export class AnalyticsService {
         return performance.sort((a, b) => b.totalRevenue - a.totalRevenue);
     }
 
-    async getServicePerformance(salonId?: string) {
+    async getServiceAnalytics(salonId?: string) {
         const where: any = {};
-        if (salonId) where.booking = { salonId };
+        if (salonId) where.service = { salonId };
 
-        // Group by serviceId and sum the occurrences & prices in completed bookings
+        // Group by serviceId and sum the occurrences & prices
         const serviceStats = await this.prisma.bookingService.groupBy({
             by: ['serviceId'],
             where: {
@@ -58,32 +58,46 @@ export class AnalyticsService {
                 }
             },
             _count: {
-                bookingId: true,
+                _all: true,
             },
             _sum: {
                 price: true,
             }
         });
 
-        // Populate service names
-        const enrichedStats = await Promise.all(
-            serviceStats.map(async (stat) => {
-                const service = await this.prisma.service.findUnique({
-                    where: { id: stat.serviceId },
-                    select: { name: true, category: true }
-                });
+        // Most booked
+        const sortedByBooked = [...serviceStats].sort((a, b) => b._count._all - a._count._all);
+        const mostBooked = sortedByBooked[0];
+        
+        // Top revenue
+        const sortedByRevenue = [...serviceStats].sort((a, b) => Number(b._sum.price || 0) - Number(a._sum.price || 0));
+        const topRevenue = sortedByRevenue[0];
 
-                return {
-                    id: stat.serviceId,
-                    name: service?.name || 'Unknown',
-                    category: service?.category,
-                    timesBooked: stat._count.bookingId,
-                    totalRevenue: Number(stat._sum.price || 0),
-                };
-            })
-        );
+        const [mostBookedService, topRevenueService] = await Promise.all([
+            mostBooked ? this.prisma.service.findUnique({ where: { id: mostBooked.serviceId }, select: { name: true } }) : null,
+            topRevenue ? this.prisma.service.findUnique({ where: { id: topRevenue.serviceId }, select: { name: true } }) : null
+        ]);
 
-        return enrichedStats.sort((a, b) => b.timesBooked - a.timesBooked);
+        // Support both old and new format for compatibility if needed, but primary focus is current request
+        return {
+            mostBookedService: mostBookedService ? {
+                name: mostBookedService.name,
+                totalBookings: mostBooked._count._all
+            } : { name: "N/A", totalBookings: 0 },
+            topRevenueService: topRevenueService ? {
+                name: topRevenueService.name,
+                revenue: Number(topRevenue?._sum.price || 0)
+            } : { name: "N/A", revenue: 0 },
+            // Keeping arrays for the current UI's .map loops if possible, or I'll update the UI
+            topBooked: await Promise.all(sortedByBooked.slice(0, 5).map(async s => {
+                const svc = await this.prisma.service.findUnique({ where: { id: s.serviceId }, select: { name: true } });
+                return { name: svc?.name, _count: { bookings: s._count._all } };
+            })),
+            topRevenue: await Promise.all(sortedByRevenue.slice(0, 5).map(async s => {
+                const svc = await this.prisma.service.findUnique({ where: { id: s.serviceId }, select: { name: true } });
+                return { name: svc?.name, revenue: Number(s._sum.price || 0) };
+            }))
+        };
     }
 
     async getRatingDistribution() {

@@ -1,5 +1,7 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -201,15 +203,24 @@ export default function AdminServicesPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {analytics?.topBooked?.slice(0, 3).map((item: any, idx: number) => (
-                <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-[10px] font-bold">{idx + 1}</span>
-                    <span className="font-bold text-sm text-slate-800">{item.name}</span>
+              {analytics?.mostBookedService && analytics.mostBookedService.name !== "N/A" ? (
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-amber-100 rounded-xl text-amber-600 shadow-sm">
+                      <Zap className="w-5 h-5 fill-amber-500" />
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <span className="font-bold text-sm text-slate-900 line-clamp-1">{analytics.mostBookedService.name}</span>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Dịch vụ yêu thích nhất</span>
+                    </div>
                   </div>
-                  <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold">{item._count.bookings} lượt đặt</Badge>
+                  <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-black px-4 py-1.5 rounded-lg">
+                    {analytics.mostBookedService.totalBookings} lượt đặt
+                  </Badge>
                 </div>
-              ))}
+              ) : (
+                <div className="text-center py-6 text-slate-400 italic text-sm">Chưa có dữ liệu đặt lịch</div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -221,15 +232,24 @@ export default function AdminServicesPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {analytics?.topRevenue?.slice(0, 3).map((item: any, idx: number) => (
-                <div key={item.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="flex items-center gap-3">
-                    <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center text-[10px] font-bold">{idx + 1}</span>
-                    <span className="font-bold text-sm text-slate-800">{item.name}</span>
+              {analytics?.topRevenueService && analytics.topRevenueService.name !== "N/A" ? (
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 shadow-sm transition-all hover:shadow-md">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-emerald-100 rounded-xl text-emerald-600 shadow-sm">
+                      <TrendingUp className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col text-left">
+                      <span className="font-bold text-sm text-slate-900 line-clamp-1">{analytics.topRevenueService.name}</span>
+                      <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mt-0.5">Doanh thu cao nhất</span>
+                    </div>
                   </div>
-                  <span className="font-black text-sm text-slate-900">{formatPrice(item.revenue || 0)}</span>
+                  <div className="flex flex-col items-end">
+                    <span className="font-black text-lg text-slate-900 tracking-tight">{formatPrice(analytics.topRevenueService.revenue || 0)}</span>
+                  </div>
                 </div>
-              ))}
+              ) : (
+                <div className="text-center py-6 text-slate-400 italic text-sm">Chưa có dữ liệu doanh thu</div>
+              )}
             </div>
           </CardContent>
         </Card>

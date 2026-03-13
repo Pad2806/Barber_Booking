@@ -36,7 +36,7 @@ export class AdminController {
   @RequirePermissions(Permission.VIEW_REVENUE)
   @ApiOperation({ summary: 'Get service performance analytics' })
   getServicePerformance(@Query('salonId') salonId?: string) {
-    return this.analyticsService.getServicePerformance(salonId);
+    return this.analyticsService.getServiceAnalytics(salonId);
   }
 
   @Get('analytics/ratings/distribution')
