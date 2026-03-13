@@ -8,7 +8,7 @@ import { PrismaService } from '../database/prisma.service';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
-import { Staff, Role, User } from '@prisma/client';
+import { Staff, Role, User, ShiftType } from '@prisma/client';
 
 import { BaseQueryService } from '../common/services/base-query.service';
 import { StaffQueryDto } from './dto/staff-query.dto';
@@ -669,11 +669,16 @@ export class StaffService extends BaseQueryService {
     });
   }
 
-  async getSalonSchedules(salonId: string, date: string | undefined, user: User) {
+  async getSalonSchedules(salonId: string, date: string | undefined, user: User, startDate?: string, endDate?: string) {
     await this.verifySalonOwnership(salonId, user);
 
     const where: any = { salonId };
-    if (date) {
+    if (startDate && endDate) {
+      where.date = {
+        gte: new Date(startDate),
+        lte: new Date(endDate),
+      };
+    } else if (date) {
       const searchDate = new Date(date);
       searchDate.setHours(0, 0, 0, 0);
       where.date = searchDate;
@@ -700,6 +705,8 @@ export class StaffService extends BaseQueryService {
   async assignShift(dto: any, user: User) {
     await this.verifySalonOwnership(dto.salonId, user);
 
+    const shiftTimes = this.calculateShiftTimes(dto.date, dto.type, dto.shiftStart, dto.shiftEnd);
+
     // Check for existing shifts that might overlap
     const existingShifts = await (this.prisma as any).staffShift.findMany({
       where: {
@@ -708,17 +715,16 @@ export class StaffService extends BaseQueryService {
       },
     });
 
-    const newStart = new Date(dto.shiftStart);
-    const newEnd = new Date(dto.shiftEnd);
-
     const hasConflict = existingShifts.some((shift: any) => {
       const sStart = new Date(shift.shiftStart);
       const sEnd = new Date(shift.shiftEnd);
-      return (newStart >= sStart && newStart < sEnd) || (newEnd > sStart && newEnd <= sEnd);
+      return (shiftTimes.start >= sStart && shiftTimes.start < sEnd) || 
+             (shiftTimes.end > sStart && shiftTimes.end <= sEnd) ||
+             (shiftTimes.start <= sStart && shiftTimes.end >= sEnd);
     });
 
     if (hasConflict) {
-      throw new ConflictException('Staff already has a shift that overlaps with this time');
+      throw new ConflictException('Nhân viên đã có ca làm việc trùng lặp trong thời gian này');
     }
 
     return (this.prisma as any).staffShift.create({
@@ -726,10 +732,94 @@ export class StaffService extends BaseQueryService {
         staffId: dto.staffId,
         salonId: dto.salonId,
         date: new Date(dto.date),
-        shiftStart: newStart,
-        shiftEnd: newEnd,
+        type: dto.type || ShiftType.FULL_DAY,
+        shiftStart: shiftTimes.start,
+        shiftEnd: shiftTimes.end,
       },
     });
+  }
+
+  async updateShift(shiftId: string, dto: any, user: User) {
+    const shift = await (this.prisma as any).staffShift.findUnique({
+      where: { id: shiftId },
+    });
+
+    if (!shift) {
+      throw new NotFoundException('Không tìm thấy ca làm việc');
+    }
+
+    await this.verifySalonOwnership(shift.salonId, user);
+
+    const shiftTimes = this.calculateShiftTimes(
+      dto.date || shift.date, 
+      dto.type || shift.type, 
+      dto.shiftStart, 
+      dto.shiftEnd
+    );
+
+    // Check conflict (excluding current shift)
+    const existingShifts = await (this.prisma as any).staffShift.findMany({
+      where: {
+        staffId: dto.staffId || shift.staffId,
+        date: new Date(dto.date || shift.date),
+        id: { not: shiftId }
+      },
+    });
+
+    const hasConflict = existingShifts.some((s: any) => {
+      const sStart = new Date(s.shiftStart);
+      const sEnd = new Date(s.shiftEnd);
+      return (shiftTimes.start >= sStart && shiftTimes.start < sEnd) || 
+             (shiftTimes.end > sStart && shiftTimes.end <= sEnd) ||
+             (shiftTimes.start <= sStart && shiftTimes.end >= sEnd);
+    });
+
+    if (hasConflict) {
+      throw new ConflictException('Nhân viên đã có ca làm việc trùng lặp trong thời gian này');
+    }
+
+    return (this.prisma as any).staffShift.update({
+      where: { id: shiftId },
+      data: {
+        date: dto.date ? new Date(dto.date) : undefined,
+        type: dto.type,
+        shiftStart: shiftTimes.start,
+        shiftEnd: shiftTimes.end,
+      },
+    });
+  }
+
+  private calculateShiftTimes(dateStr: string, type?: ShiftType, customStart?: string, customEnd?: string) {
+    const date = new Date(dateStr);
+    let startHours = 8, startMins = 0;
+    let endHours = 20, endMins = 0;
+
+    if (customStart && customEnd) {
+      return { start: new Date(customStart), end: new Date(customEnd) };
+    }
+
+    switch (type) {
+      case ShiftType.MORNING:
+        startHours = 8; startMins = 0;
+        endHours = 12; endMins = 0;
+        break;
+      case ShiftType.AFTERNOON:
+        startHours = 13; startMins = 0;
+        endHours = 18; endMins = 0;
+        break;
+      case ShiftType.FULL_DAY:
+      default:
+        startHours = 8; startMins = 0;
+        endHours = 20; endMins = 0;
+        break;
+    }
+
+    const start = new Date(date);
+    start.setHours(startHours, startMins, 0, 0);
+    const end = new Date(date);
+    end.setHours(endHours, endMins, 0, 0);
+
+    return { start, end };
   }
 
   async removeShift(shiftId: string, user: User) {

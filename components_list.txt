@@ -1,8 +1,0 @@
-﻿Avatar.tsx
-footer.tsx
-header.tsx
-ImageUpload.tsx
-MultiImageUpload.tsx
-providers.tsx
-ReviewModal.tsx
-ServiceDetailModal.tsx
