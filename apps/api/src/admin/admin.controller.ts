@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Patch, Param, UseGuards, Body, Res, Post } from '@nestjs/common';
+import { Controller, Get, Query, Patch, Param, UseGuards, Body, Res, Post, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
 import { BookingStatus, User } from '@prisma/client';
 import { Permission } from '@reetro/shared';
@@ -11,6 +11,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { PermissionsGuard } from '../auth/guards/permissions.guard';
 import { RequirePermissions } from '../auth/decorators/permissions.decorator';
 import { BookingQueryDto } from '../bookings/dto/booking-query.dto';
+import { AssignShiftDto } from '../staff/dto/assign-shift.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Admin')
@@ -322,5 +323,39 @@ export class AdminController {
   @ApiOperation({ summary: 'Update system settings' })
   updateSettings(@Body() data: Record<string, any>) {
     return this.adminService.updateSettings(data);
+  }
+
+  @Get('schedules')
+  @RequirePermissions(Permission.VIEW_STAFF)
+  @ApiOperation({ summary: 'Get all staff schedules' })
+  getSchedules(
+    @CurrentUser() user: User, 
+    @Query('salonId') salonId: string, 
+    @Query('date') date?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string
+  ) {
+    return this.staffService.getSalonSchedules(salonId, date, user, startDate, endDate);
+  }
+
+  @Post('schedules')
+  @RequirePermissions(Permission.MANAGE_STAFF)
+  @ApiOperation({ summary: 'Create staff shift' })
+  createSchedule(@Body() dto: AssignShiftDto, @CurrentUser() user: User) {
+    return this.staffService.assignShift(dto, user);
+  }
+
+  @Patch('schedules/:id')
+  @RequirePermissions(Permission.MANAGE_STAFF)
+  @ApiOperation({ summary: 'Update staff shift' })
+  updateScheduleShift(@Param('id') id: string, @Body() dto: any, @CurrentUser() user: User) {
+    return this.staffService.updateShift(id, dto, user);
+  }
+
+  @Delete('schedules/:id')
+  @RequirePermissions(Permission.MANAGE_STAFF)
+  @ApiOperation({ summary: 'Delete staff shift' })
+  deleteShift(@Param('id') id: string, @CurrentUser() user: User) {
+    return this.staffService.removeShift(id, user);
   }
 }

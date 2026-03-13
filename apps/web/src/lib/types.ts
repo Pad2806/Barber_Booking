@@ -93,11 +93,18 @@ export interface StaffSchedule {
     isOff: boolean;
 }
 
+export enum ShiftType {
+    MORNING = 'MORNING',
+    AFTERNOON = 'AFTERNOON',
+    FULL_DAY = 'FULL_DAY',
+}
+
 export interface StaffShift {
     id: string;
     staffId: string;
     salonId: string;
     date: string;
+    type: ShiftType;
     shiftStart: string;
     shiftEnd: string;
     staff?: {

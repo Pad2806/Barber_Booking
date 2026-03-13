@@ -4,6 +4,10 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  mime: 1.6.0
+  eslint-plugin-react-hooks: 4.6.0
+
 importers:
 
   .:
@@ -83,6 +87,9 @@ importers:
       exceljs:
         specifier: ^4.4.0
         version: 4.4.0
+      mime:
+        specifier: 1.6.0
+        version: 1.6.0
       multer:
         specifier: ^2.0.2
         version: 2.0.2
@@ -9297,7 +9304,7 @@ packages:
       eslint-plugin-import: 2.32.0(@typescript-eslint/parser@6.21.0)(eslint-import-resolver-typescript@3.10.1)(eslint@8.57.0)
       eslint-plugin-jsx-a11y: 6.10.2(eslint@8.57.0)
       eslint-plugin-react: 7.37.5(eslint@8.57.0)
-      eslint-plugin-react-hooks: 5.0.0-canary-7118f5dd7-20230705(eslint@8.57.0)
+      eslint-plugin-react-hooks: 4.6.0(eslint@8.57.0)
       typescript: 5.9.3
     transitivePeerDependencies:
       - eslint-import-resolver-webpack
@@ -9432,8 +9439,8 @@ packages:
       string.prototype.includes: 2.0.1
     dev: true
 
-  /eslint-plugin-react-hooks@5.0.0-canary-7118f5dd7-20230705(eslint@8.57.0):
-    resolution: {integrity: sha512-AZYbMo/NW9chdL7vk6HQzQhT+PvTAEVqWk9ziruUoW2kAOcN5qNyelv70e0F1VNQAbvutOC9oc+xfWycI9FxDw==}
+  /eslint-plugin-react-hooks@4.6.0(eslint@8.57.0):
+    resolution: {integrity: sha512-oFc7Itz9Qxh2x4gNHStv3BqJq54ExXmfC+a1NjAta66IAN87Wu0R/QArgIS9qKzX3dXKPI9H5crl9QchNMY9+g==}
     engines: {node: '>=10'}
     peerDependencies:
       eslint: ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0-0
@@ -13038,29 +13045,10 @@ packages:
     dependencies:
       mime-db: 1.52.0
 
-  /mime@1.4.1:
-    resolution: {integrity: sha512-KI1+qOZu5DcW6wayYHSzR/tXKCDC5Om4s1z2QJjDULzLcmf3DvzS7oluY4HCTrc+9FiKmWUgeNLg7W3uIQvxtQ==}
-    hasBin: true
-    dev: true
-
   /mime@1.6.0:
     resolution: {integrity: sha512-x0Vn8spI+wuJ1O6S7gnbaQg8Pxh4NNHb7KSINmEWKiPE4RKOplvijn+NkmYmmRgP68mc70j2EbeTFRsrswaQeg==}
     engines: {node: '>=4'}
     hasBin: true
-
-  /mime@2.3.0:
-    resolution: {integrity: sha512-9dE160rWamibtUmS5kbAuu8Fbk9FihwN7ZYuWXbd6hSFKEKCqRe0hJ8pnqvmNOt5ljmXHmnKTxinIkdM1mKuPw==}
-    engines: {node: '>=6.0.0'}
-    hasBin: true
-    dev: true
-
-  /mime@2.6.0:
-    resolution: {integrity: sha512-USPkMeET31rOMiarsBNIHZKLGgvKc/LrjofAnBlOttf5ajRvqiRA8QsenbcooctK6d6Ts6aqZXBA+XbkKthiQg==}
-    engines: {node: '>=4.0.0'}
-    hasBin: true
-    requiresBuild: true
-    dev: false
-    optional: true
 
   /mimic-fn@1.2.0:
     resolution: {integrity: sha512-jf84uxzwiuiIVKiOLpfYk7N46TSy8ubTonmneY9vrpHNAnp0QBt2BxWV9dO3/j+BoVAb+a5G6YDPW3M5HOdMWQ==}
@@ -16095,7 +16083,7 @@ packages:
       etag: 1.8.1
       fresh: 0.5.2
       http-errors: 1.6.3
-      mime: 1.4.1
+      mime: 1.6.0
       ms: 2.0.0
       on-finished: 2.3.0
       range-parser: 1.2.1
@@ -18051,7 +18039,7 @@ packages:
       ansi-colors: 4.1.3
       escape-goat: 3.0.0
       htmlparser2: 5.0.1
-      mime: 2.6.0
+      mime: 1.6.0
       node-fetch: 2.7.0
       valid-data-url: 3.0.1
     transitivePeerDependencies:
@@ -18487,7 +18475,7 @@ packages:
       localtunnel: 2.0.2
       lodash: 4.17.23
       log-symbols: 3.0.0
-      mime: 2.3.0
+      mime: 1.6.0
       mini-css-extract-plugin: 1.6.2(webpack@5.104.1)
       minimist: 1.2.8
       multer: 1.4.4

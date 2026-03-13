@@ -92,6 +92,12 @@ enum NotificationType {
   SYSTEM
 }
 
+enum ShiftType {
+  MORNING
+  AFTERNOON
+  FULL_DAY
+}
+
 // ============== MODELS ==============
 
 model User {
@@ -290,6 +296,7 @@ model StaffShift {
   salon       Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
   
   date        DateTime @db.Date
+  type        ShiftType @default(FULL_DAY)
   shiftStart  DateTime
   shiftEnd    DateTime
   

@@ -35,5 +35,11 @@
   "workspaces": [
     "apps/*",
     "packages/*"
-  ]
+  ],
+  "pnpm": {
+    "overrides": {
+      "mime": "1.6.0",
+      "eslint-plugin-react-hooks": "4.6.0"
+    }
+  }
 }
