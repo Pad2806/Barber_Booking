@@ -248,7 +248,7 @@ export default function AdminDashboardPage(): JSX.Element {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={stats?.topServices}
+                    data={stats?.topServices || []}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -256,7 +256,7 @@ export default function AdminDashboardPage(): JSX.Element {
                     paddingAngle={5}
                     dataKey="count"
                   >
-                    {stats?.topServices.map((_: any, index: number) => (
+                    {stats?.topServices?.map((_: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -268,7 +268,7 @@ export default function AdminDashboardPage(): JSX.Element {
               </ResponsiveContainer>
             </div>
             <div className="mt-6 space-y-3">
-              {stats?.topServices.map((service: any, index: number) => (
+              {stats?.topServices?.map((service: any, index: number) => (
                 <div key={service.name} className="flex items-center justify-between group">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
@@ -328,7 +328,7 @@ export default function AdminDashboardPage(): JSX.Element {
           </CardHeader>
           <CardContent className="p-0 overflow-y-auto flex-1 max-h-[500px] custom-scrollbar">
             <div className="divide-y divide-gray-100">
-              {stats?.activityFeed.map((activity: any, index: number) => (
+              {stats?.activityFeed?.map((activity: any, index: number) => (
                 <div key={index} className="p-4 hover:bg-gray-50/50 transition-colors flex gap-4 text-left">
                   <div className={cn(
                     "w-10 h-10 rounded-full shrink-0 flex items-center justify-center",
@@ -344,7 +344,7 @@ export default function AdminDashboardPage(): JSX.Element {
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-bold text-gray-900">{activity.title}</p>
                       <span className="text-[10px] text-gray-400 font-medium whitespace-nowrap ml-2">
-                        {formatDistanceToNow(new Date(activity.time))}
+                        {activity.time ? formatDistanceToNow(new Date(activity.time)) : 'N/A'}
                       </span>
                     </div>
                     <p className="text-xs text-gray-500 leading-relaxed">{activity.description}</p>
@@ -420,8 +420,8 @@ export default function AdminDashboardPage(): JSX.Element {
                <Badge variant="outline" className="text-[10px] font-bold text-slate-400">HISTORY</Badge>
             </CardHeader>
             <CardContent className="p-6">
-               <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide">
-                  {botmHistory.map((winner: any, idx: number) => (
+                <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide">
+                  {botmHistory?.map((winner: any, idx: number) => (
                     <div key={`${winner.month}-${winner.year}`} className="flex flex-col items-center min-w-[140px] text-center space-y-3 group">
                        <div className="relative">
                           <Avatar className="w-20 h-20 border-2 border-slate-100 group-hover:border-indigo-200 transition-colors">
