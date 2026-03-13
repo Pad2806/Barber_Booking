@@ -11,6 +11,14 @@ import { Salon, Role, User, Service } from '@prisma/client';
 
 import { BaseQueryService } from '../common/services/base-query.service';
 import { SalonQueryDto } from './dto/salon-query.dto';
+import * as dayjs from 'dayjs';
+import * as utc from 'dayjs/plugin/utc';
+import * as timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const VIETNAM_TZ = 'Asia/Ho_Chi_Minh';
 
 @Injectable()
 export class SalonsService extends BaseQueryService {
@@ -273,12 +281,12 @@ export class SalonsService extends BaseQueryService {
   }
 
   async getSalonStats(salonId: string) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const nowInVN = dayjs.tz(undefined, VIETNAM_TZ);
+    const today = dayjs.utc(nowInVN.format('YYYY-MM-DD')).toDate();
 
-    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-    const startOfLastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-    const endOfLastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+    const startOfMonth = dayjs.utc(nowInVN.startOf('month').format('YYYY-MM-DD')).toDate();
+    const startOfLastMonth = dayjs.utc(nowInVN.subtract(1, 'month').startOf('month').format('YYYY-MM-DD')).toDate();
+    const endOfLastMonth = dayjs.utc(nowInVN.subtract(1, 'month').endOf('month').format('YYYY-MM-DD')).toDate();
 
     const [
       todayBookings,

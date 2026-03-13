@@ -552,8 +552,9 @@ export class BookingsService extends BaseQueryService {
     timeSlot: string,
     duration: number,
   ): Promise<boolean> {
-    const vDate = dayjs.tz(date, VIETNAM_TZ).startOf('day');
-    const bookingDate = vDate.toDate();
+    const dateStr = typeof date === 'string' ? date : dayjs(date).format('YYYY-MM-DD');
+    const bookingDate = dayjs.utc(dateStr).toDate();
+    const vDate = dayjs.tz(dateStr, VIETNAM_TZ).startOf('day');
     const endTime = this.calculateEndTime(timeSlot, duration);
 
     // 1. Check if staff has a shift covering this time

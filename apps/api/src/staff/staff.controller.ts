@@ -135,8 +135,13 @@ export class StaffController {
   @Public()
   @ApiOperation({ summary: 'Get available time slots for staff' })
   @ApiQuery({ name: 'date', required: true, description: 'Date in YYYY-MM-DD format' })
-  getAvailableSlots(@Param('id') id: string, @Query('date') dateStr: string) {
-    return this.staffService.getAvailableSlots(id, dateStr);
+  @ApiQuery({ name: 'salonId', required: false, description: 'Optional salon ID filter' })
+  getAvailableSlots(
+    @Param('id') id: string, 
+    @Query('date') dateStr: string,
+    @Query('salonId') salonId?: string
+  ) {
+    return this.staffService.getAvailableSlots(id, dateStr, salonId);
   }
 
   @Get(':id')

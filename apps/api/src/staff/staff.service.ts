@@ -583,13 +583,18 @@ export class StaffService extends BaseQueryService {
     });
   }
 
-  async getAvailableSlots(staffId: string, date: Date | string): Promise<string[]> {
-    const staff = await this.findOne(staffId);
+  async getAvailableSlots(staffId: string, date: Date | string, salonId?: string): Promise<string[]> {
+    const staff = await this.prisma.staff.findUnique({
+      where: { id: staffId },
+    });
 
-    // 1. Check if staff has any shifts assigned for this date
-    // Use dayjs for precise date matching in local timezone
-    const vDate = dayjs.tz(date, VIETNAM_TZ).startOf('day');
-    const searchDate = vDate.toDate();
+    if (!staff) {
+      throw new NotFoundException('Không tìm thấy nhân viên');
+    }
+
+    // 1. Get Shifts or Fallback to Weekly
+    const dateStr = typeof date === 'string' ? date : dayjs(date).format('YYYY-MM-DD');
+    const searchDate = dayjs.utc(dateStr).toDate();
 
     const shifts = await (this.prisma as any).staffShift.findMany({
       where: {
@@ -598,55 +603,37 @@ export class StaffService extends BaseQueryService {
       },
     });
 
-    if (shifts.length === 0) {
+    let activeSlots: { start: dayjs.Dayjs, end: dayjs.Dayjs }[] = [];
+
+    if (shifts.length > 0) {
+      // Use specific assigned shifts
+      activeSlots = shifts.map((s: any) => ({
+        start: dayjs.tz(s.shiftStart, VIETNAM_TZ),
+        end: dayjs.tz(s.shiftEnd, VIETNAM_TZ),
+      }));
+    } else {
       // Fallback to weekly schedule
+      const vDate = dayjs.tz(dateStr, VIETNAM_TZ);
       const dayOfWeek = vDate.day();
       const weekly = await (this.prisma as any).staffWeeklySchedule.findFirst({
         where: { staffId, dayOfWeek, isOff: false },
       });
 
-      if (!weekly) {
-        return [];
+      if (weekly) {
+        const [startH, startM] = weekly.startTime.split(':').map(Number);
+        const [endH, endM] = weekly.endTime.split(':').map(Number);
+        activeSlots = [{
+          start: vDate.startOf('day').set('hour', startH).set('minute', startM).set('second', 0).set('millisecond', 0),
+          end: vDate.startOf('day').set('hour', endH).set('minute', endM).set('second', 0).set('millisecond', 0),
+        }];
       }
-
-      // Generate slots from weekly schedule
-      const [startH, startM] = weekly.startTime.split(':').map(Number);
-      const [endH, endM] = weekly.endTime.split(':').map(Number);
-      
-      const start = vDate.set('hour', startH).set('minute', startM).set('second', 0).set('millisecond', 0);
-      const end = vDate.set('hour', endH).set('minute', endM).set('second', 0).set('millisecond', 0);
-
-      const slots: string[] = [];
-      let current = start;
-
-      // Get bookings again just in case (though searchDate is same)
-      const bookings = await this.prisma.booking.findMany({
-        where: {
-          staffId,
-          date: searchDate,
-          status: { notIn: ['CANCELLED', 'NO_SHOW'] },
-        },
-        select: {
-          timeSlot: true,
-          endTime: true,
-        },
-      });
-
-      while (current.isBefore(end)) {
-        const timeStr = current.format('HH:mm');
-        const isOverlap = bookings.some(b => {
-          return timeStr >= b.timeSlot && timeStr < b.endTime;
-        });
-
-        if (!isOverlap) {
-          slots.push(timeStr);
-        }
-        current = current.add(30, 'minute');
-      }
-      return slots.sort();
     }
 
-    // Get existing bookings
+    if (activeSlots.length === 0) {
+      return [];
+    }
+
+    // 2. Get existing bookings to filter
     const bookings = await this.prisma.booking.findMany({
       where: {
         staffId,
@@ -659,35 +646,22 @@ export class StaffService extends BaseQueryService {
       },
     });
 
-    // Generate slots based on shifts
-    const slots: string[] = [];
-
-    for (const shift of shifts) {
-      // Parse shift times strictly in Vietnam timezone
-      const start = dayjs.tz(shift.shiftStart, VIETNAM_TZ);
-      const end = dayjs.tz(shift.shiftEnd, VIETNAM_TZ);
-
-      let current = start;
-      // We need to iterate in 30-minute intervals
-      while (current.isBefore(end)) {
+    // 3. Generate 30-min slots
+    const finalSlots: string[] = [];
+    for (const slotRange of activeSlots) {
+      let current = slotRange.start;
+      while (current.isBefore(slotRange.end)) {
         const timeStr = current.format('HH:mm');
-
-        // Check if slot overlaps with any booking
-        const isOverlap = bookings.some(b => {
-          const bStart = b.timeSlot; // e.g. "08:30"
-          const bEnd = b.endTime;   // e.g. "09:30"
-          return timeStr >= bStart && timeStr < bEnd;
-        });
-
+        const isOverlap = bookings.some(b => timeStr >= b.timeSlot && timeStr < b.endTime);
+        
         if (!isOverlap) {
-          slots.push(timeStr);
+          finalSlots.push(timeStr);
         }
-
         current = current.add(30, 'minute');
       }
     }
 
-    return [...new Set(slots)].sort();
+    return [...new Set(finalSlots)].sort();
   }
 
   async getMySchedules(userId: string, date?: string) {
@@ -701,8 +675,7 @@ export class StaffService extends BaseQueryService {
 
     const where: any = { staffId: staff.id };
     if (date) {
-      const vDate = dayjs.tz(date, VIETNAM_TZ).startOf('day');
-      where.date = vDate.toDate();
+      where.date = dayjs.utc(date).toDate();
     }
 
     return (this.prisma as any).staffShift.findMany({
@@ -717,11 +690,11 @@ export class StaffService extends BaseQueryService {
     const where: any = { salonId };
     if (startDate && endDate) {
       where.date = {
-        gte: dayjs.tz(startDate, VIETNAM_TZ).startOf('day').toDate(),
-        lte: dayjs.tz(endDate, VIETNAM_TZ).startOf('day').toDate(),
+        gte: dayjs.utc(startDate).toDate(),
+        lte: dayjs.utc(endDate).toDate(),
       };
     } else if (date) {
-      where.date = dayjs.tz(date, VIETNAM_TZ).startOf('day').toDate();
+      where.date = dayjs.utc(date).toDate();
     }
 
     return (this.prisma as any).staffShift.findMany({
@@ -745,13 +718,13 @@ export class StaffService extends BaseQueryService {
   async assignShift(dto: any, user: User) {
     await this.verifySalonOwnership(dto.salonId, user);
 
-    const vDate = dayjs.tz(dto.date, VIETNAM_TZ).startOf('day');
+    const searchDate = dayjs.utc(dto.date).toDate();
     const shiftTimes = this.calculateShiftTimes(dto.date, dto.type, dto.shiftStart, dto.shiftEnd);
 
     const existingShifts = await (this.prisma as any).staffShift.findMany({
       where: {
         staffId: dto.staffId,
-        date: vDate.toDate(),
+        date: searchDate,
       },
     });
 
@@ -769,7 +742,7 @@ export class StaffService extends BaseQueryService {
       data: {
         staffId: dto.staffId,
         salonId: dto.salonId,
-        date: vDate.toDate(),
+        date: searchDate,
         type: dto.type || ShiftType.FULL_DAY,
         shiftStart: shiftTimes.start.toDate(),
         shiftEnd: shiftTimes.end.toDate(),
@@ -797,11 +770,11 @@ export class StaffService extends BaseQueryService {
     );
 
     // Check conflict (excluding current shift)
-    const vDate = dayjs.tz(dateToUse, VIETNAM_TZ).startOf('day');
+    const searchDate = dayjs.utc(dateToUse).toDate();
     const existingShifts = await (this.prisma as any).staffShift.findMany({
       where: {
         staffId: dto.staffId || shift.staffId,
-        date: vDate.toDate(),
+        date: searchDate,
         id: { not: shiftId }
       },
     });
@@ -819,7 +792,7 @@ export class StaffService extends BaseQueryService {
     return (this.prisma as any).staffShift.update({
       where: { id: shiftId },
       data: {
-        date: vDate.toDate(),
+        date: searchDate,
         type: dto.type,
         shiftStart: shiftTimes.start.toDate(),
         shiftEnd: shiftTimes.end.toDate(),

@@ -8,6 +8,14 @@ import { staffApi, serviceApi, Staff } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
 import { formatPrice, STAFF_POSITIONS, cn } from '@/lib/utils';
 import Avatar from '@/components/Avatar';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const VIETNAM_TZ = 'Asia/Ho_Chi_Minh';
 
 const DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 const FULL_DAYS = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
@@ -45,25 +53,22 @@ export default function BookingPage() {
   const DATES = useMemo(() => {
     if (!salon) return [];
     const dates = [];
-    const today = new Date();
-    const now = new Date();
+    const now = dayjs.tz(undefined, VIETNAM_TZ);
+    const today = now.startOf('day');
     let startOffset = 0;
 
-    let closeTime = salon.closeTime;
-    if (now.getDay() === 0) closeTime = '12:00';
-
+    const closeTime = salon.closeTime;
     if (closeTime) {
       const [h, m] = closeTime.split(':').map(Number);
-      const closeDate = new Date();
-      closeDate.setHours(h, m, 0, 0);
-      closeDate.setHours(closeDate.getHours() - 1);
-      if (now >= closeDate) startOffset = 1;
+      const closeTimeToday = today.set('hour', h).set('minute', m);
+      // If now is less than 1 hour before closing, start from tomorrow
+      if (now.isAfter(closeTimeToday.subtract(1, 'hour'))) {
+        startOffset = 1;
+      }
     }
 
     for (let i = startOffset; i < 14 + startOffset; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
-      dates.push(date);
+      dates.push(today.add(i, 'day'));
     }
     return dates;
   }, [salon]);
@@ -101,19 +106,27 @@ export default function BookingPage() {
       );
 
       const slotsData = Array.isArray(data) ? data : [];
-      const isToday = selectedDate === new Date().toISOString().split('T')[0];
+      const todayStr = dayjs.tz(undefined, VIETNAM_TZ).format('YYYY-MM-DD');
+      const isToday = selectedDate === todayStr;
+      
       if (isToday) {
-        const now = new Date();
-        now.setHours(now.getHours() + 1);
+        const now = dayjs.tz(undefined, VIETNAM_TZ);
+        const limit = now.add(1, 'hour');
+        
         const filteredData = slotsData.map((slot: any) => {
-          const [h, m] = slot.time.split(':').map(Number);
-          const slotTime = new Date();
-          slotTime.setHours(h, m, 0, 0);
-          return slotTime < now ? { ...slot, available: false } : slot;
+          const time = typeof slot === 'string' ? slot : slot.time;
+          const [h, m] = time.split(':').map(Number);
+          const slotTime = dayjs.tz(selectedDate, VIETNAM_TZ).set('hour', h).set('minute', m);
+          return slotTime.isBefore(limit) 
+            ? { time, available: false } 
+            : { time, available: true };
         });
         setTimeSlots(filteredData);
       } else {
-        setTimeSlots(slotsData);
+        const formattedSlots = slotsData.map((slot: any) => 
+          typeof slot === 'string' ? { time: slot, available: true } : slot
+        );
+        setTimeSlots(formattedSlots);
       }
     } catch (error) {
       console.error('Failed to fetch time slots:', error);
@@ -173,15 +186,16 @@ export default function BookingPage() {
   // Format selected date for display
   const formattedDate = useMemo(() => {
     if (!selectedDate) return '';
-    const d = new Date(selectedDate);
-    return `${FULL_DAYS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+    // Use dayjs to parse date string strictly to avoid timezone shift
+    const d = dayjs.tz(selectedDate, VIETNAM_TZ);
+    return `${FULL_DAYS[d.day()]}, ${d.date()} ${MONTHS[d.month()]}`;
   }, [selectedDate]);
 
   // Time sections
   const timeSections = useMemo(() => {
-    const morning = timeSlots.filter(s => s.available && parseInt(s.time) < 12);
-    const afternoon = timeSlots.filter(s => s.available && parseInt(s.time) >= 12 && parseInt(s.time) < 17);
-    const evening = timeSlots.filter(s => s.available && parseInt(s.time) >= 17);
+    const morning = timeSlots.filter(s => s.available && parseInt(s.time.split(':')[0]) < 12);
+    const afternoon = timeSlots.filter(s => s.available && parseInt(s.time.split(':')[0]) >= 12 && parseInt(s.time.split(':')[0]) < 17);
+    const evening = timeSlots.filter(s => s.available && parseInt(s.time.split(':')[0]) >= 17);
     return [
       { label: 'Sáng', slots: morning, icon: '🌅' },
       { label: 'Chiều', slots: afternoon, icon: '☀️' },
@@ -349,9 +363,9 @@ export default function BookingPage() {
 
               <div className="grid grid-cols-7 gap-1.5">
                 {DATES.map(date => {
-                  const dateStr = date.toISOString().split('T')[0];
+                  const dateStr = date.format('YYYY-MM-DD');
                   const isSelected = selectedDate === dateStr;
-                  const isToday = dateStr === new Date().toISOString().split('T')[0];
+                  const isToday = dateStr === dayjs.tz(undefined, VIETNAM_TZ).format('YYYY-MM-DD');
 
                   return (
                     <button
@@ -367,8 +381,8 @@ export default function BookingPage() {
                       <span className={cn(
                         "text-[10px] font-bold uppercase mb-0.5",
                         isSelected ? "text-white/70" : "text-[#8B7355]"
-                      )}>{DAYS[date.getDay()]}</span>
-                      <span className="text-base font-bold leading-tight">{date.getDate()}</span>
+                      )}>{DAYS[date.day()]}</span>
+                      <span className="text-base font-bold leading-tight">{date.date()}</span>
                       {isToday && (
                         <div className={cn(
                           "w-1 h-1 rounded-full mt-0.5",
