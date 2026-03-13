@@ -378,6 +378,22 @@ export const adminApi = {
     const response = await apiClient.get(`/admin/staff/${staffId}/leaves`);
     return response.data;
   },
+  getSchedules: async (salonId: string, date?: string, startDate?: string, endDate?: string) => {
+    const response = await apiClient.get('/admin/schedules', { params: { salonId, date, startDate, endDate } });
+    return response.data;
+  },
+  createSchedule: async (data: any) => {
+    const response = await apiClient.post('/admin/schedules', data);
+    return response.data;
+  },
+  updateSchedule: async (id: string, data: any) => {
+    const response = await apiClient.patch(`/admin/schedules/${id}`, data);
+    return response.data;
+  },
+  deleteSchedule: async (id: string) => {
+    const response = await apiClient.delete(`/admin/schedules/${id}`);
+    return response.data;
+  },
   getBookingById: async (bookingId: string) => {
     const response = await apiClient.get<AdminBookingDetail>(`/bookings/${bookingId}`);
     return response.data;
