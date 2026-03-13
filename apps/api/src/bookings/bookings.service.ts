@@ -9,6 +9,14 @@ import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
 import { Booking, BookingStatus, PaymentStatus, Role, User } from '@prisma/client';
 import * as crypto from 'crypto';
+import * as dayjs from 'dayjs';
+import * as utc from 'dayjs/plugin/utc';
+import * as timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const VIETNAM_TZ = 'Asia/Ho_Chi_Minh';
 
 
 import { BaseQueryService } from '../common/services/base-query.service';
@@ -544,27 +552,23 @@ export class BookingsService extends BaseQueryService {
     timeSlot: string,
     duration: number,
   ): Promise<boolean> {
-    const bookingDate = new Date(date);
-    bookingDate.setHours(0, 0, 0, 0);
+    const vDate = dayjs.tz(date, VIETNAM_TZ).startOf('day');
+    const bookingDate = vDate.toDate();
     const endTime = this.calculateEndTime(timeSlot, duration);
 
     // 1. Check if staff has a shift covering this time
-    // Convert timeSlot '08:30' and endTime '09:30' to Date objects for comparison
     const [startH, startM] = timeSlot.split(':').map(Number);
     const [endH, endM] = endTime.split(':').map(Number);
 
-    const requestStart = new Date(bookingDate);
-    requestStart.setHours(startH, startM, 0, 0);
-
-    const requestEnd = new Date(bookingDate);
-    requestEnd.setHours(endH, endM, 0, 0);
+    const requestStart = vDate.set('hour', startH).set('minute', startM).set('second', 0).set('millisecond', 0);
+    const requestEnd = vDate.set('hour', endH).set('minute', endM).set('second', 0).set('millisecond', 0);
 
     const shift = await (this.prisma as any).staffShift.findFirst({
       where: {
         staffId,
         date: bookingDate,
-        shiftStart: { lte: requestStart },
-        shiftEnd: { gte: requestEnd },
+        shiftStart: { lte: requestStart.toDate() },
+        shiftEnd: { gte: requestEnd.toDate() },
       },
     });
 

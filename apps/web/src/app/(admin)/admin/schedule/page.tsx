@@ -378,7 +378,7 @@ export default function AdminSchedulePage() {
                 {[
                   { id: ShiftType.MORNING, label: 'Ca Sáng (08:00 - 12:00)', icon: '☀️', color: 'bg-blue-50 text-blue-700' },
                   { id: ShiftType.AFTERNOON, label: 'Ca Chiều (13:00 - 18:00)', icon: '⛅', color: 'bg-orange-50 text-orange-700' },
-                  { id: ShiftType.FULL_DAY, label: 'Cả Ngày (08:00 - 20:00)', icon: '⏳', color: 'bg-emerald-50 text-emerald-700' },
+                  { id: ShiftType.FULL_DAY, label: 'Cả Ngày (08:00 - 18:00)', icon: '⏳', color: 'bg-emerald-50 text-emerald-700' },
                 ].map((type) => (
                   <div 
                     key={type.id}

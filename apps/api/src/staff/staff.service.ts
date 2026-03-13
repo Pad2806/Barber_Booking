@@ -9,6 +9,14 @@ import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
 import { Staff, Role, User, ShiftType } from '@prisma/client';
+import * as dayjs from 'dayjs';
+import * as utc from 'dayjs/plugin/utc';
+import * as timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const VIETNAM_TZ = 'Asia/Ho_Chi_Minh';
 
 import { BaseQueryService } from '../common/services/base-query.service';
 import { StaffQueryDto } from './dto/staff-query.dto';
@@ -575,26 +583,14 @@ export class StaffService extends BaseQueryService {
     });
   }
 
-  async getAvailableSlots(staffId: string, date: Date): Promise<string[]> {
+  async getAvailableSlots(staffId: string, date: Date | string): Promise<string[]> {
     const staff = await this.findOne(staffId);
 
-    // Check if staff has leave on this date
-    // Normalize date to 00:00:00 in local time for DB query
-    const searchDate = new Date(date);
-    searchDate.setHours(0, 0, 0, 0);
-
-    const onLeave = await (this.prisma as any).staffLeave.findFirst({
-      where: {
-        staffId,
-        startDate: { lte: searchDate },
-        endDate: { gte: searchDate },
-        status: 'APPROVED',
-      },
-    });
-
-    if (onLeave) return [];
-
     // 1. Check if staff has any shifts assigned for this date
+    // Use dayjs for precise date matching in local timezone
+    const vDate = dayjs.tz(date, VIETNAM_TZ).startOf('day');
+    const searchDate = vDate.toDate();
+
     const shifts = await (this.prisma as any).staffShift.findMany({
       where: {
         staffId,
@@ -603,7 +599,51 @@ export class StaffService extends BaseQueryService {
     });
 
     if (shifts.length === 0) {
-      return [];
+      // Fallback to weekly schedule
+      const dayOfWeek = vDate.day();
+      const weekly = await (this.prisma as any).staffWeeklySchedule.findFirst({
+        where: { staffId, dayOfWeek, isOff: false },
+      });
+
+      if (!weekly) {
+        return [];
+      }
+
+      // Generate slots from weekly schedule
+      const [startH, startM] = weekly.startTime.split(':').map(Number);
+      const [endH, endM] = weekly.endTime.split(':').map(Number);
+      
+      const start = vDate.set('hour', startH).set('minute', startM).set('second', 0).set('millisecond', 0);
+      const end = vDate.set('hour', endH).set('minute', endM).set('second', 0).set('millisecond', 0);
+
+      const slots: string[] = [];
+      let current = start;
+
+      // Get bookings again just in case (though searchDate is same)
+      const bookings = await this.prisma.booking.findMany({
+        where: {
+          staffId,
+          date: searchDate,
+          status: { notIn: ['CANCELLED', 'NO_SHOW'] },
+        },
+        select: {
+          timeSlot: true,
+          endTime: true,
+        },
+      });
+
+      while (current.isBefore(end)) {
+        const timeStr = current.format('HH:mm');
+        const isOverlap = bookings.some(b => {
+          return timeStr >= b.timeSlot && timeStr < b.endTime;
+        });
+
+        if (!isOverlap) {
+          slots.push(timeStr);
+        }
+        current = current.add(30, 'minute');
+      }
+      return slots.sort();
     }
 
     // Get existing bookings
@@ -623,21 +663,19 @@ export class StaffService extends BaseQueryService {
     const slots: string[] = [];
 
     for (const shift of shifts) {
-      const start = new Date(shift.shiftStart);
-      const end = new Date(shift.shiftEnd);
+      // Parse shift times strictly in Vietnam timezone
+      const start = dayjs.tz(shift.shiftStart, VIETNAM_TZ);
+      const end = dayjs.tz(shift.shiftEnd, VIETNAM_TZ);
 
-      let current = new Date(start);
+      let current = start;
       // We need to iterate in 30-minute intervals
-      while (current < end) {
-        // Use local hours/minutes since we set them using setHours in calculateShiftTimes
-        const hours = current.getHours().toString().padStart(2, '0');
-        const minutes = current.getMinutes().toString().padStart(2, '0');
-        const timeStr = `${hours}:${minutes}`;
+      while (current.isBefore(end)) {
+        const timeStr = current.format('HH:mm');
 
         // Check if slot overlaps with any booking
         const isOverlap = bookings.some(b => {
-          const bStart = b.timeSlot;
-          const bEnd = b.endTime;
+          const bStart = b.timeSlot; // e.g. "08:30"
+          const bEnd = b.endTime;   // e.g. "09:30"
           return timeStr >= bStart && timeStr < bEnd;
         });
 
@@ -645,7 +683,7 @@ export class StaffService extends BaseQueryService {
           slots.push(timeStr);
         }
 
-        current.setMinutes(current.getMinutes() + 30);
+        current = current.add(30, 'minute');
       }
     }
 
@@ -663,14 +701,13 @@ export class StaffService extends BaseQueryService {
 
     const where: any = { staffId: staff.id };
     if (date) {
-      const searchDate = new Date(date);
-      searchDate.setHours(0, 0, 0, 0);
-      where.date = searchDate;
+      const vDate = dayjs.tz(date, VIETNAM_TZ).startOf('day');
+      where.date = vDate.toDate();
     }
 
     return (this.prisma as any).staffShift.findMany({
       where,
-      orderBy: { shiftStart: 'asc' },
+      orderBy: { date: 'asc' },
     });
   }
 
@@ -680,13 +717,11 @@ export class StaffService extends BaseQueryService {
     const where: any = { salonId };
     if (startDate && endDate) {
       where.date = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
+        gte: dayjs.tz(startDate, VIETNAM_TZ).startOf('day').toDate(),
+        lte: dayjs.tz(endDate, VIETNAM_TZ).startOf('day').toDate(),
       };
     } else if (date) {
-      const searchDate = new Date(date);
-      searchDate.setHours(0, 0, 0, 0);
-      where.date = searchDate;
+      where.date = dayjs.tz(date, VIETNAM_TZ).startOf('day').toDate();
     }
 
     return (this.prisma as any).staffShift.findMany({
@@ -710,22 +745,20 @@ export class StaffService extends BaseQueryService {
   async assignShift(dto: any, user: User) {
     await this.verifySalonOwnership(dto.salonId, user);
 
+    const vDate = dayjs.tz(dto.date, VIETNAM_TZ).startOf('day');
     const shiftTimes = this.calculateShiftTimes(dto.date, dto.type, dto.shiftStart, dto.shiftEnd);
 
-    // Check for existing shifts that might overlap
     const existingShifts = await (this.prisma as any).staffShift.findMany({
       where: {
         staffId: dto.staffId,
-        date: new Date(dto.date),
+        date: vDate.toDate(),
       },
     });
 
     const hasConflict = existingShifts.some((shift: any) => {
-      const sStart = new Date(shift.shiftStart);
-      const sEnd = new Date(shift.shiftEnd);
-      return (shiftTimes.start >= sStart && shiftTimes.start < sEnd) || 
-             (shiftTimes.end > sStart && shiftTimes.end <= sEnd) ||
-             (shiftTimes.start <= sStart && shiftTimes.end >= sEnd);
+      const sStart = dayjs(shift.shiftStart);
+      const sEnd = dayjs(shift.shiftEnd);
+      return (shiftTimes.start.isBefore(sEnd) && shiftTimes.end.isAfter(sStart));
     });
 
     if (hasConflict) {
@@ -736,10 +769,10 @@ export class StaffService extends BaseQueryService {
       data: {
         staffId: dto.staffId,
         salonId: dto.salonId,
-        date: new Date(dto.date),
+        date: vDate.toDate(),
         type: dto.type || ShiftType.FULL_DAY,
-        shiftStart: shiftTimes.start,
-        shiftEnd: shiftTimes.end,
+        shiftStart: shiftTimes.start.toDate(),
+        shiftEnd: shiftTimes.end.toDate(),
       },
     });
   }
@@ -755,28 +788,28 @@ export class StaffService extends BaseQueryService {
 
     await this.verifySalonOwnership(shift.salonId, user);
 
+    const dateToUse = dto.date || dayjs(shift.date).format('YYYY-MM-DD');
     const shiftTimes = this.calculateShiftTimes(
-      dto.date || shift.date, 
+      dateToUse, 
       dto.type || shift.type, 
       dto.shiftStart, 
       dto.shiftEnd
     );
 
     // Check conflict (excluding current shift)
+    const vDate = dayjs.tz(dateToUse, VIETNAM_TZ).startOf('day');
     const existingShifts = await (this.prisma as any).staffShift.findMany({
       where: {
         staffId: dto.staffId || shift.staffId,
-        date: new Date(dto.date || shift.date),
+        date: vDate.toDate(),
         id: { not: shiftId }
       },
     });
 
     const hasConflict = existingShifts.some((s: any) => {
-      const sStart = new Date(s.shiftStart);
-      const sEnd = new Date(s.shiftEnd);
-      return (shiftTimes.start >= sStart && shiftTimes.start < sEnd) || 
-             (shiftTimes.end > sStart && shiftTimes.end <= sEnd) ||
-             (shiftTimes.start <= sStart && shiftTimes.end >= sEnd);
+      const sStart = dayjs(s.shiftStart);
+      const sEnd = dayjs(s.shiftEnd);
+      return (shiftTimes.start.isBefore(sEnd) && shiftTimes.end.isAfter(sStart));
     });
 
     if (hasConflict) {
@@ -786,22 +819,24 @@ export class StaffService extends BaseQueryService {
     return (this.prisma as any).staffShift.update({
       where: { id: shiftId },
       data: {
-        date: dto.date ? new Date(dto.date) : undefined,
+        date: vDate.toDate(),
         type: dto.type,
-        shiftStart: shiftTimes.start,
-        shiftEnd: shiftTimes.end,
+        shiftStart: shiftTimes.start.toDate(),
+        shiftEnd: shiftTimes.end.toDate(),
       },
     });
   }
 
   private calculateShiftTimes(dateStr: string, type?: ShiftType, customStart?: string, customEnd?: string) {
-    const date = new Date(dateStr);
-    let startHours = 8, startMins = 0;
-    let endHours = 20, endMins = 0;
-
     if (customStart && customEnd) {
-      return { start: new Date(customStart), end: new Date(customEnd) };
+      return { 
+        start: dayjs.tz(customStart, VIETNAM_TZ), 
+        end: dayjs.tz(customEnd, VIETNAM_TZ) 
+      };
     }
+
+    let startHours = 8, startMins = 0;
+    let endHours = 18, endMins = 0;
 
     switch (type) {
       case ShiftType.MORNING:
@@ -819,10 +854,9 @@ export class StaffService extends BaseQueryService {
         break;
     }
 
-    const start = new Date(date);
-    start.setHours(startHours, startMins, 0, 0);
-    const end = new Date(date);
-    end.setHours(endHours, endMins, 0, 0);
+    const baseDate = dayjs.tz(dateStr, VIETNAM_TZ).startOf('day');
+    const start = baseDate.set('hour', startHours).set('minute', startMins).set('second', 0).set('millisecond', 0);
+    const end = baseDate.set('hour', endHours).set('minute', endMins).set('second', 0).set('millisecond', 0);
 
     return { start, end };
   }

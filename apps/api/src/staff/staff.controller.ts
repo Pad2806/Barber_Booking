@@ -70,8 +70,14 @@ export class StaffController {
   @Roles(Role.SUPER_ADMIN, Role.MANAGER, Role.SALON_OWNER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all staff schedules for a salon' })
-  getSalonSchedules(@CurrentUser() user: User, @Query('salonId') salonId: string, @Query('date') date?: string) {
-    return this.staffService.getSalonSchedules(salonId, date, user);
+  getSalonSchedules(
+    @CurrentUser() user: User, 
+    @Query('salonId') salonId: string, 
+    @Query('date') date?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string
+  ) {
+    return this.staffService.getSalonSchedules(salonId, date, user, startDate, endDate);
   }
 
   @Post('assign-shift')
@@ -130,8 +136,7 @@ export class StaffController {
   @ApiOperation({ summary: 'Get available time slots for staff' })
   @ApiQuery({ name: 'date', required: true, description: 'Date in YYYY-MM-DD format' })
   getAvailableSlots(@Param('id') id: string, @Query('date') dateStr: string) {
-    const date = new Date(dateStr);
-    return this.staffService.getAvailableSlots(id, date);
+    return this.staffService.getAvailableSlots(id, dateStr);
   }
 
   @Get(':id')
