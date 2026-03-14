@@ -475,3 +475,56 @@ model Setting {
 
   @@map("settings")
 }
+
+model ChatConversation {
+  id           String        @id @default(uuid())
+  userId       String?
+  sessionId    String        @unique
+  messages     ChatMessage[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@map("chat_conversations")
+}
+
+model ChatMessage {
+  id             String           @id @default(uuid())
+  conversationId String
+  conversation   ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String           // "user" or "assistant"
+  content        String           @db.Text
+  attachments    Json?
+  toolCalls      Json?            
+  createdAt      DateTime         @default(now())
+
+  @@map("chat_messages")
+}
+
+model BookingRequest {
+  id            String   @id @default(uuid())
+  sessionId     String
+  customerName  String?
+  phone         String?
+  serviceId     String?
+  barberId      String?
+  date          String?
+  time          String?
+  status        String   @default("PENDING") // PENDING, COMPLETED, CANCELLED
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("booking_requests")
+}
+
+model AiLog {
+  id             String   @id @default(uuid())
+  sessionId      String?
+  userMessage    String?  @db.Text
+  aiResponse     String?  @db.Text
+  toolCalls      Json?
+  bookingCreated Boolean  @default(false)
+  latency        Int?     // ms
+  timestamp      DateTime @default(now())
+
+  @@map("ai_logs")
+}

@@ -1,0 +1,11 @@
+{
+  "shop_name": "Reetro Barber Shop",
+  "opening_hours": "08:30 - 20:30",
+  "location": "123 Đường ABC, Quận 1, TP. Hồ Chí Minh",
+  "parking": "Có chỗ đậu xe máy và ô tô miễn phí",
+  "amenities": ["Wifi tốc độ cao", "Nước uống miễn phí", "Phòng chờ máy lạnh", "Tư vấn kiểu tóc miễn phí"],
+  "policy": {
+    "cancellation": "Vui lòng hủy lịch trước ít nhất 1 giờ.",
+    "late": "Nếu trễ quá 15 phút, cửa hàng có quyền dời lịch của bạn."
+  }
+}

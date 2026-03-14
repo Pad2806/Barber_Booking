@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
-import { Toaster } from 'react-hot-toast';
-import { AntdRegistry } from '@ant-design/nextjs-registry';
 import './globals.css';
 import { Providers } from '@/components/providers';
+import dynamicImport from 'next/dynamic';
+
+const AIChatWidget = dynamicImport(() => import('@/components/chat/AIChatWidget').then(mod => mod.AIChatWidget), { ssr: false });
+
+const Toaster = dynamicImport(() => import('react-hot-toast').then(mod => mod.Toaster), { ssr: false });
 
 const inter = Inter({
   subsets: ['latin', 'vietnamese'],
@@ -53,12 +56,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
   return (
     <html lang="vi" suppressHydrationWarning>
       <body className={`${inter.variable} ${playfair.variable} font-body antialiased`}>
-        <AntdRegistry>
+        <Suspense fallback={<div className="min-h-screen bg-[#FAF8F5]" />}>
           <Providers>
             {children}
             <Toaster position="top-center" />
+            <AIChatWidget />
           </Providers>
-        </AntdRegistry>
+        </Suspense>
       </body>
     </html>
   );

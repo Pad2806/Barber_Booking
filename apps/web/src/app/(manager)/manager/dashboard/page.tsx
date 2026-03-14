@@ -12,15 +12,15 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  AreaChart,
-  Area
-} from 'recharts';
+import dynamicImport from 'next/dynamic';
+
+const ResponsiveContainer = dynamicImport(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false });
+const AreaChart = dynamicImport(() => import('recharts').then(mod => mod.AreaChart), { ssr: false });
+const Area = dynamicImport(() => import('recharts').then(mod => mod.Area), { ssr: false });
+const XAxis = dynamicImport(() => import('recharts').then(mod => mod.XAxis), { ssr: false });
+const YAxis = dynamicImport(() => import('recharts').then(mod => mod.YAxis), { ssr: false });
+const CartesianGrid = dynamicImport(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false });
+const Tooltip = dynamicImport(() => import('recharts').then(mod => mod.Tooltip), { ssr: false });
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';

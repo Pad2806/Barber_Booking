@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from 'next-auth/react';
+import { AntdRegistry } from '@ant-design/nextjs-registry';
 
 export function Providers({ children }: { children: React.ReactNode }): React.ReactElement {
   const [queryClient] = useState(
@@ -21,7 +22,9 @@ export function Providers({ children }: { children: React.ReactNode }): React.Re
   return (
     <SessionProvider>
       <QueryClientProvider client={queryClient}>
-        {children}
+        <AntdRegistry>
+          {children}
+        </AntdRegistry>
       </QueryClientProvider>
     </SessionProvider>
   );

@@ -24,15 +24,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { STAFF_POSITIONS, cn, formatCurrency } from '@/lib/utils';
-import { 
-  AreaChart,
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-} from 'recharts';
+import dynamicImport from 'next/dynamic';
+
+const AreaChart = dynamicImport(() => import('recharts').then(mod => mod.AreaChart), { ssr: false });
+const Area = dynamicImport(() => import('recharts').then(mod => mod.Area), { ssr: false });
+const XAxis = dynamicImport(() => import('recharts').then(mod => mod.XAxis), { ssr: false });
+const YAxis = dynamicImport(() => import('recharts').then(mod => mod.YAxis), { ssr: false });
+const CartesianGrid = dynamicImport(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false });
+const Tooltip = dynamicImport(() => import('recharts').then(mod => mod.Tooltip), { ssr: false });
+const ResponsiveContainer = dynamicImport(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false });
 import { toast } from 'react-hot-toast';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';

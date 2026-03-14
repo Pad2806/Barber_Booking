@@ -16,21 +16,21 @@ import {
   UserPlus,
   Trophy,
 } from 'lucide-react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-} from 'recharts';
+import dynamicImport from 'next/dynamic';
+
+const ResponsiveContainer = dynamicImport(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false });
+const LineChart = dynamicImport(() => import('recharts').then(mod => mod.LineChart), { ssr: false });
+const Line = dynamicImport(() => import('recharts').then(mod => mod.Line), { ssr: false });
+const XAxis = dynamicImport(() => import('recharts').then(mod => mod.XAxis), { ssr: false });
+const YAxis = dynamicImport(() => import('recharts').then(mod => mod.YAxis), { ssr: false });
+const CartesianGrid = dynamicImport(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false });
+const Tooltip = dynamicImport(() => import('recharts').then(mod => mod.Tooltip), { ssr: false });
+const BarChart = dynamicImport(() => import('recharts').then(mod => mod.BarChart), { ssr: false });
+const Bar = dynamicImport(() => import('recharts').then(mod => mod.Bar), { ssr: false });
+const PieChart = dynamicImport(() => import('recharts').then(mod => mod.PieChart), { ssr: false });
+const Pie = dynamicImport(() => import('recharts').then(mod => mod.Pie), { ssr: false });
+const Cell = dynamicImport(() => import('recharts').then(mod => mod.Cell), { ssr: false });
+const Legend = dynamicImport(() => import('recharts').then(mod => mod.Legend), { ssr: false });
 import { adminApi } from '@/lib/api';
 import { formatPrice, cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
