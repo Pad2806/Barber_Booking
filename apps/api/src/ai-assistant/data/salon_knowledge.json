@@ -1,0 +1,23 @@
+{
+  "salon": {
+    "name": "Reetro Barber Shop",
+    "style": "Classic & Modern Gentlemen",
+    "motto": "Nâng tầm phong cách quý ông",
+    "services_summary": [
+      {
+        "name": "Cắt tóc cao cấp",
+        "price_range": "200.000đ - 350.000đ",
+        "description": "Bao gồm tư vấn form đầu, gội đầu, massage và sấy tạo kiểu."
+      },
+      {
+        "name": "Combo De-Luxe",
+        "price_range": "500.000đ",
+        "description": "Trải nghiệm trọn gói từ cắt, cạo, tẩy da chết mặt và dưỡng da."
+      }
+    ],
+    "policies": {
+      "cancellation": "Quý khách vui lòng hủy trước 1 tiếng.",
+      "late": "Nếu quý khách trễ quá 15 phút, salon xin phép dời lịch hoặc hủy để đảm bảo quyền lợi khách khác."
+    }
+  }
+}

@@ -17,7 +17,7 @@ import { ManagerModule } from './manager/manager.module';
 import configuration from './config/configuration';
 import { HealthModule } from './health/health.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
-import { AIChatModule } from './ai-chat/ai-chat.module';
+import { AIAssistantModule } from './ai-assistant/ai-assistant.module';
 
 @Module({
   imports: [
@@ -48,7 +48,7 @@ import { AIChatModule } from './ai-chat/ai-chat.module';
     ManagerModule,
     HealthModule,
     CloudinaryModule,
-    AIChatModule,
+    AIAssistantModule,
   ],
 })
 export class AppModule { }
