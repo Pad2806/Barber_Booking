@@ -7,20 +7,24 @@ export async function POST(req: Request) {
 
   console.log(`[AI Proxy] Request:`, { message, session_id });
 
-  const makeRequest = async () => {
-    return await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/ai-chat`, {
+  const makeRequest = async (url: string) => {
+    return await axios.post(url, {
       message,
-      session_id,
+      sessionId: session_id, // Match new API field name
     }, { timeout: 30000 });
   };
+
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+  const endpoint = `${apiUrl}/api/ai-assistant/chat`;
+  const fallbackEndpoint = endpoint.replace('localhost', '127.0.0.1');
 
   try {
     let response;
     try {
-      response = await makeRequest();
+      response = await makeRequest(endpoint);
     } catch (firstError) {
-      console.warn(`[AI Proxy] First attempt failed, retrying...`);
-      response = await makeRequest();
+      console.warn(`[AI Proxy] Attempt with ${endpoint} failed, retrying with fallback...`);
+      response = await makeRequest(fallbackEndpoint);
     }
 
     console.log(`[AI Proxy] Success`);
