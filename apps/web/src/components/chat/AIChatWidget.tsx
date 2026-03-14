@@ -141,18 +141,41 @@ export function AIChatWidget() {
                 )}
               >
                 <div className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border",
+                  "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border shadow-sm",
                   msg.role === 'user' ? "bg-white border-gray-200" : "bg-[#C8A97E] border-[#C8A97E]"
                 )}>
                   {msg.role === 'user' ? <User className="w-4 h-4 text-gray-600" /> : <Bot className="w-4 h-4 text-black" />}
                 </div>
                 <div className={cn(
-                  "p-3 rounded-2xl text-sm leading-relaxed shadow-sm",
+                  "p-3.5 rounded-2xl text-[13px] leading-relaxed shadow-sm whitespace-pre-wrap transition-all duration-200",
                   msg.role === 'user' 
-                    ? "bg-[#1A1A1A] text-white rounded-tr-none" 
-                    : "bg-white text-gray-800 border border-[#E8E0D4] rounded-tl-none"
+                    ? "bg-[#1A1A1A] text-white rounded-tr-none max-w-[75%]" 
+                    : "bg-white text-gray-800 border border-[#E8E0D4] rounded-tl-none max-w-[80%]"
                 )}>
-                  {msg.content}
+                  {msg.content.split('\n').map((line, i) => {
+                    // Xử lý Bold (**text**)
+                    const parts = line.split(/(\*\*.*?\*\*)/g);
+                    const formattedLine = parts.map((part, index) => {
+                      if (part.startsWith('**') && part.endsWith('**')) {
+                        return <strong key={index} className="font-bold text-[#C8A97E]">{part.slice(2, -2)}</strong>;
+                      }
+                      return part;
+                    });
+
+                    // Xử lý danh sách (• hoặc -)
+                    if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
+                      return (
+                        <div key={i} className="flex gap-2 my-1 pl-1">
+                          <span className="text-[#C8A97E] mt-1 flex-shrink-0">●</span>
+                          <div className="flex-1">
+                            {formattedLine.map(p => typeof p === 'string' ? p.trim().replace(/^[•-]\s*/, '') : p)}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return <p key={i} className={cn(line.trim() === "" ? "h-2" : "mb-1")}>{formattedLine}</p>;
+                  })}
                 </div>
               </div>
             ))}
