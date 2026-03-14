@@ -14,6 +14,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { AdminModule } from './admin/admin.module';
 import { ManagerModule } from './manager/manager.module';
+import { CashierModule } from './cashier/cashier.module';
 import configuration from './config/configuration';
 import { HealthModule } from './health/health.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
@@ -23,9 +24,6 @@ import { AIAssistantModule } from './ai-assistant/ai-assistant.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      // When running via Turborepo from repo root, process.cwd() is the repo root.
-      // When running directly inside apps/api, process.cwd() is apps/api.
-      // Support both so PORT/DATABASE_URL/etc are loaded consistently.
       envFilePath: [
         resolve(process.cwd(), '.env'),
         resolve(process.cwd(), 'apps/api/.env'),
@@ -41,6 +39,7 @@ import { AIAssistantModule } from './ai-assistant/ai-assistant.module';
     StaffModule,
     BookingsModule,
     PaymentsModule,
+    CashierModule,
     ReviewsModule,
     NotificationsModule,
     FavoritesModule,

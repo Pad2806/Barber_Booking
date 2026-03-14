@@ -56,13 +56,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
   return (
     <html lang="vi" suppressHydrationWarning>
       <body className={`${inter.variable} ${playfair.variable} font-body antialiased`}>
-        <Suspense fallback={<div className="min-h-screen bg-[#FAF8F5]" />}>
-          <Providers>
-            {children}
-            <Toaster position="top-center" />
-            <AIChatWidget />
-          </Providers>
-        </Suspense>
+        <Providers>
+          {children}
+        </Providers>
       </body>
     </html>
   );

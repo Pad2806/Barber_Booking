@@ -173,4 +173,86 @@ export class StaffController {
     return this.staffService.delete(id, user);
   }
 
+  // --- STAFF DASHBOARD ENDPOINTS ---
+
+  @Get('me/dashboard')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.BARBER, Role.SKINNER, Role.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current staff dashboard stats' })
+  async getMyDashboard(@CurrentUser() user: User) {
+    const staff = await this.staffService.getStaffByUserId(user.id);
+    return this.staffService.getDashboardStats(staff.id);
+  }
+
+  @Get('me/schedule')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.BARBER, Role.SKINNER, Role.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current staff daily schedule' })
+  async getMySchedule(@CurrentUser() user: User, @Query('date') date: string) {
+    const staff = await this.staffService.getStaffByUserId(user.id);
+    return this.staffService.getStaffSchedule(staff.id, date);
+  }
+
+  @Get('me/weekly-customers')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.BARBER, Role.SKINNER, Role.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get customers for current week' })
+  async getMyWeeklyCustomers(@CurrentUser() user: User) {
+    const staff = await this.staffService.getStaffByUserId(user.id);
+    return this.staffService.getWeeklyCustomers(staff.id);
+  }
+
+  @Patch('me/bookings/:id/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.BARBER, Role.SKINNER, Role.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update booking status (Staff)' })
+  async updateMyBookingStatus(
+    @Param('id') id: string,
+    @Body('status') status: string,
+    @CurrentUser() user: User
+  ) {
+    const staff = await this.staffService.getStaffByUserId(user.id);
+    return this.staffService.updateBookingStatus(id, status, staff.id);
+  }
+
+  @Post('me/customers/:customerId/notes')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.BARBER, Role.SKINNER, Role.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add note for a customer' })
+  async addCustomerNote(
+    @Param('customerId') customerId: string,
+    @Body('content') content: string,
+    @CurrentUser() user: User
+  ) {
+    const staff = await this.staffService.getStaffByUserId(user.id);
+    return this.staffService.addCustomerNote(staff.id, customerId, content);
+  }
+
+  @Get('me/customers/:customerId/history')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.BARBER, Role.SKINNER, Role.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get customer history and preferences' })
+  async getCustomerHistory(@Param('customerId') customerId: string) {
+    return this.staffService.getCustomerHistory(customerId);
+  }
+
+  @Post('me/day-off')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.BARBER, Role.SKINNER, Role.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Register a day off' })
+  async registerDayOff(
+    @Body() dto: { date: string, reason?: string },
+    @CurrentUser() user: User
+  ) {
+    const staff = await this.staffService.getStaffByUserId(user.id);
+    return this.staffService.registerDayOffImproved(staff.id, dto.date, dto.reason);
+  }
+
 }

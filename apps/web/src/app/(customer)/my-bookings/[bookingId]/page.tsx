@@ -166,7 +166,7 @@ export default function BookingDetailPage(): React.ReactNode {
                         key={star} 
                         className={cn(
                           "w-4 h-4",
-                          star <= booking.review!.rating ? "text-[#C8A97E] fill-current" : "text-[#E8E0D4]"
+                          booking.review && star <= booking.review.rating ? "text-[#C8A97E] fill-current" : "text-[#E8E0D4]"
                         )} 
                       />
                     ))}
@@ -176,8 +176,8 @@ export default function BookingDetailPage(): React.ReactNode {
                   <MessageSquare className="w-5 h-5 text-[#C8A97E]" />
                </div>
             </div>
-            <p className="text-[#2C1E12] font-medium italic text-sm leading-relaxed">&ldquo;{booking.review.comment}&rdquo;</p>
-            {booking.review.images && booking.review.images.length > 0 && (
+            <p className="text-[#2C1E12] font-medium italic text-sm leading-relaxed">&ldquo;{booking.review?.comment}&rdquo;</p>
+            {booking.review?.images && booking.review.images.length > 0 && (
               <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
                 {booking.review.images.map((img: string, i: number) => (
                   <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-[#E8E0D4] shrink-0">

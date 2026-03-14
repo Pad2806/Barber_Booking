@@ -72,7 +72,7 @@ export default function Header(): React.ReactElement {
                 >
                   <div className="w-10 h-10 rounded-full bg-[#F0EBE3] flex items-center justify-center border border-[#E8E0D4] group-hover:border-[#C8A97E] transition-colors overflow-hidden shrink-0">
                     {session?.user?.image ? (
-                      <Image src={session.user.image} alt="User" width={40} height={40} className="object-cover" />
+                      <Image src={session?.user?.image} alt="User" width={40} height={40} className="object-cover" />
                     ) : (
                        <User className="w-5 h-5 text-[#C8A97E]" />
                     )}
@@ -107,7 +107,7 @@ export default function Header(): React.ReactElement {
               {isLoggedIn && (
                 <Link href="/profile" className="md:hidden w-10 h-10 rounded-full bg-[#F0EBE3] flex items-center justify-center border border-[#E8E0D4] active:scale-95 transition-transform">
                   {session?.user?.image ? (
-                    <Image src={session.user.image} alt="User" width={40} height={40} className="rounded-full" />
+                    <Image src={session?.user?.image} alt="User" width={40} height={40} className="rounded-full" />
                   ) : (
                     <User className="w-5 h-5 text-[#C8A97E]" />
                   )}

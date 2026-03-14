@@ -16,6 +16,7 @@ import {
   User
 } from './types';
 
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
 export * from './types';
@@ -173,6 +174,168 @@ export const staffApi = {
     const response = await apiClient.delete(`/staff/remove-shift/${id}`);
     return response.data;
   },
+
+  // --- STAFF DASHBOARD APIS ---
+  getDashboardStats: async () => {
+    const response = await apiClient.get('/staff/me/dashboard');
+    return response.data;
+  },
+  getTodaySchedule: async (date: string) => {
+    const response = await apiClient.get('/staff/me/schedule', { params: { date } });
+    return response.data;
+  },
+  getWeeklyCustomers: async () => {
+    const response = await apiClient.get('/staff/me/weekly-customers');
+    return response.data;
+  },
+  updateBookingStatus: async (id: string, status: string) => {
+    const response = await apiClient.patch(`/staff/me/bookings/${id}/status`, { status });
+    return response.data;
+  },
+  addCustomerNote: async (customerId: string, content: string) => {
+    const response = await apiClient.post(`/staff/me/customers/${customerId}/notes`, { content });
+    return response.data;
+  },
+  getCustomerHistory: async (customerId: string) => {
+    const response = await apiClient.get(`/staff/me/customers/${customerId}/history`);
+    return response.data;
+  },
+  registerDayOff: async (date: string, reason?: string) => {
+    const response = await apiClient.post('/staff/me/day-off', { date, reason });
+    return response.data;
+  },
+};
+
+export const managerApi = {
+  getDashboardStats: async () => {
+    const response = await apiClient.get('/manager/dashboard');
+    return response.data;
+  },
+  getStaff: async () => {
+    const response = await apiClient.get('/manager/staff');
+    return response.data;
+  },
+  getStaffPerformance: async (staffId: string) => {
+    const response = await apiClient.get(`/manager/staff/${staffId}/performance`);
+    return response.data;
+  },
+  rateStaff: async (staffId: string, data: any) => {
+    const response = await apiClient.post(`/manager/staff/${staffId}/performance`, data);
+    return response.data;
+  },
+  getLeaveRequests: async () => {
+    const response = await apiClient.get('/manager/leave-requests');
+    return response.data;
+  },
+  approveLeave: async (id: string, data: { status: string; reason?: string }) => {
+    const response = await apiClient.patch(`/manager/leave-requests/${id}/status`, data);
+    return response.data;
+  },
+  getBookings: async (params: any) => {
+    const response = await apiClient.get('/manager/bookings', { params });
+    return response.data;
+  },
+  rescheduleBooking: async (id: string, data: any) => {
+    const response = await apiClient.patch(`/manager/bookings/${id}/reschedule`, data);
+    return response.data;
+  },
+  getRevenueReport: async (period: string = 'month') => {
+    const response = await apiClient.get('/manager/reports/revenue', { params: { period } });
+    return response.data;
+  },
+  getReviews: async () => {
+    const response = await apiClient.get('/manager/reviews');
+    return response.data;
+  },
+  replyToReview: async (id: string, reply: string) => {
+    const response = await apiClient.post(`/manager/reviews/${id}/reply`, { reply });
+    return response.data;
+  },
+  getSchedules: async (date?: string) => {
+    const response = await apiClient.get('/manager/schedules', { params: { date } });
+    return response.data;
+  },
+  createShift: async (data: any) => {
+    const response = await apiClient.post('/manager/schedules', data);
+    return response.data;
+  },
+  updateShift: async (id: string, data: any) => {
+    const response = await apiClient.patch(`/manager/schedules/${id}`, data);
+    return response.data;
+  },
+  deleteShift: async (id: string) => {
+    const response = await apiClient.delete(`/manager/schedules/${id}`);
+    return response.data;
+  },
+};
+
+export const cashierApi = {
+  getDashboardStats: async () => {
+    const response = await apiClient.get('/cashier/dashboard');
+    return response.data;
+  },
+  getPendingBookings: async () => {
+    const response = await apiClient.get('/cashier/bookings/pending');
+    return response.data;
+  },
+  approveBooking: async (id: string, data: { staffId?: string; timeSlot?: string; date?: string }) => {
+    const response = await apiClient.patch(`/cashier/bookings/${id}/approve`, data);
+    return response.data;
+  },
+  rejectBooking: async (id: string, reason: string) => {
+    const response = await apiClient.patch(`/cashier/bookings/${id}/reject`, { reason });
+    return response.data;
+  },
+  createWalkinBooking: async (data: {
+    customerName: string;
+    phone?: string;
+    serviceIds: string[];
+    staffId?: string;
+    note?: string;
+  }) => {
+    const response = await apiClient.post('/cashier/bookings/walk-in', data);
+    return response.data;
+  },
+  addServices: async (id: string, serviceIds: string[]) => {
+    const response = await apiClient.patch(`/cashier/bookings/${id}/add-services`, { serviceIds });
+    return response.data;
+  },
+  checkout: async (id: string, method: string) => {
+    const response = await apiClient.post(`/cashier/bookings/${id}/checkout`, { method });
+    return response.data;
+  },
+  getDetailedRevenue: async () => {
+    const response = await apiClient.get('/cashier/revenue/today');
+    return response.data;
+  },
+  searchCustomers: async (query: string) => {
+    const response = await apiClient.get('/cashier/customers/search', { params: { q: query } });
+    return response.data;
+  },
+  getQueue: async () => {
+    const response = await apiClient.get('/cashier/queue');
+    return response.data;
+  },
+  addToQueue: async (data: { customerName: string; serviceId?: string; staffId?: string }) => {
+    const response = await apiClient.post('/cashier/queue', data);
+    return response.data;
+  },
+  updateQueueStatus: async (id: string, data: { status: string; staffId?: string }) => {
+    const response = await apiClient.patch(`/cashier/queue/${id}/status`, data);
+    return response.data;
+  },
+  updateBookingStatus: async (id: string, status: string) => {
+    const response = await apiClient.patch(`/cashier/bookings/${id}/status`, { status });
+    return response.data;
+  },
+  getBookings: async (params: any) => {
+    const response = await apiClient.get('/cashier/bookings', { params });
+    return response.data;
+  },
+  getAvailableBarbers: async (date: string, timeSlot: string) => {
+    const response = await apiClient.get('/cashier/barbers/available', { params: { date, timeSlot } });
+    return response.data;
+  },
 };
 
 // Booking APIs
@@ -259,32 +422,7 @@ export const paymentApi = {
   },
 };
 
-export const managerApi = {
-  getDashboardStats: async () => {
-    const response = await apiClient.get('/manager/dashboard');
-    return response.data;
-  },
-  getStaff: async () => {
-    const response = await apiClient.get<Staff[]>('/manager/staff');
-    return response.data;
-  },
-  getSchedules: async (date?: string) => {
-    const response = await apiClient.get('/manager/schedules', { params: { date } });
-    return response.data;
-  },
-  createSchedule: async (data: { staffId: string; date: string; shiftStart: string; shiftEnd: string }) => {
-    const response = await apiClient.post('/manager/schedules', data);
-    return response.data;
-  },
-  updateSchedule: async (id: string, data: any) => {
-    const response = await apiClient.patch(`/manager/schedules/${id}`, data);
-    return response.data;
-  },
-  deleteSchedule: async (id: string) => {
-    const response = await apiClient.delete(`/manager/schedules/${id}`);
-    return response.data;
-  },
-};
+
 
 export const adminApi = {
   getDashboardStats: async () => {

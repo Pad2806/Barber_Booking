@@ -131,6 +131,8 @@ model User {
   passwordResetTokens PasswordResetToken[]
   notifications Notification[]
   favorites     UserFavoriteSalon[]
+  customerNotes CustomerNote[] @relation("UserNotes")
+  managerRatings StaffPerformance[] @relation("ManagerRating")
 
   @@map("users")
 }
@@ -203,6 +205,7 @@ model Salon {
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  waitingQueue WaitingQueue[]
 
   @@map("salons")
 }
@@ -227,6 +230,7 @@ model Service {
 
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+  waitingQueue WaitingQueue[]
 
   @@map("services")
 }
@@ -253,8 +257,35 @@ model Staff {
   leaves          StaffLeave[]
   bookings        Booking[]
   reviews         Review[]
+  customerNotes   CustomerNote[] @relation("StaffNotes")
+  performanceLogs StaffPerformance[]
+
+  waitingQueue WaitingQueue[]
 
   @@map("staff")
+}
+
+model StaffPerformance {
+  id                  String   @id @default(uuid())
+  staffId             String
+  staff               Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  
+  managerId           String
+  manager             User     @relation("ManagerRating", fields: [managerId], references: [id])
+
+  serviceQuality      Int      // 1-5
+  punctuality         Int      // 1-5
+  customerSatisfaction Int      // 1-5
+  comment             String?  @db.Text
+  
+  month               Int      // 1-12
+  year                Int
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@unique([staffId, month, year])
+  @@map("staff_performance")
 }
 
 model StaffLeave {
@@ -339,6 +370,7 @@ model Booking {
 
   // Customer notes
   note            String?
+  staffNote       String?         @db.Text
 
   // Cancellation
   cancelReason    String?
@@ -355,6 +387,20 @@ model Booking {
   @@index([customerId])
   @@index([salonId])
   @@map("bookings")
+}
+
+model CustomerNote {
+  id          String   @id @default(uuid())
+  customerId  String
+  customer    User     @relation("UserNotes", fields: [customerId], references: [id])
+  staffId     String
+  staff       Staff    @relation("StaffNotes", fields: [staffId], references: [id])
+  content     String   @db.Text
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("customer_notes")
 }
 
 model BookingService {
@@ -528,4 +574,26 @@ model AiLog {
   timestamp      DateTime @default(now())
 
   @@map("ai_logs")
+}
+
+model WaitingQueue {
+  id           String   @id @default(uuid())
+  salonId      String
+  salon        Salon    @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  
+  customerName String
+  phone        String?
+  serviceId    String?
+  service      Service? @relation(fields: [serviceId], references: [id])
+  
+  staffId      String?
+  staff        Staff?   @relation(fields: [staffId], references: [id])
+  
+  status       String   @default("WAITING") // WAITING, SERVING, COMPLETED, CANCELLED
+  arrivalTime   DateTime @default(now())
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("waiting_queue")
 }

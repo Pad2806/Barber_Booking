@@ -30,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import toast from 'react-hot-toast';
 
 interface BarberLayoutProps {
   children: ReactNode;
@@ -57,8 +58,14 @@ export default function BarberLayout({ children }: BarberLayoutProps) {
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login?callbackUrl=/barber/dashboard');
+    } else if (status === 'authenticated' && session?.user?.role) {
+      const allowedRoles = ['BARBER', 'SKINNER', 'STAFF', 'SUPER_ADMIN'];
+      if (!allowedRoles.includes(session.user.role)) {
+        toast.error('Bạn không có quyền truy cập trang này');
+        router.push('/');
+      }
     }
-  }, [status, router]);
+  }, [status, router, session]);
 
   if (status === 'loading' || (status === 'authenticated' && isLoadingMe)) {
     return (
@@ -151,7 +158,7 @@ export default function BarberLayout({ children }: BarberLayoutProps) {
                   <SidebarContent />
                 </SheetContent>
               </Sheet>
-              <h2 className="text-sm font-semibold text-slate-500 hidden sm:block uppercase tracking-wider">
+              <h2 className="text-sm font-semibold text-slate-500 hidden sm:block uppercase tracking-wider font-sans">
                 Barber Panel
               </h2>
             </div>
@@ -164,23 +171,26 @@ export default function BarberLayout({ children }: BarberLayoutProps) {
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-3 pl-2 pr-1 rounded-full hover:bg-slate-100">
+                  <Button variant="ghost" className="flex items-center gap-3 pl-2 pr-1 rounded-full hover:bg-slate-100 h-auto py-1">
                     <div className="text-right hidden sm:block">
                       <p className="text-xs font-bold text-slate-900 leading-none">{session?.user?.name}</p>
                       <p className="text-[10px] text-[#C8A97E] mt-1 font-bold uppercase">{me?.staff?.position || 'Barber'}</p>
                     </div>
-                    <Avatar className="h-8 w-8 border-2 border-[#C8A97E]/20">
+                    <Avatar className="h-8 w-8 border border-[#C8A97E]/20">
                        <AvatarImage src={session?.user?.image || undefined} />
-                       <AvatarFallback className="bg-[#C8A97E]/10 text-[#C8A97E] text-xs font-bold">
+                       <AvatarFallback className="bg-[#C8A97E]/10 text-[#C8A97E] text-xs font-bold font-sans">
                          {session?.user?.name?.charAt(0) || 'B'}
                        </AvatarFallback>
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>Tài khoản Barber</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/' })}>
+                <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 mt-2">
+                  <DropdownMenuLabel className="font-black italic uppercase text-[10px] text-slate-400 tracking-widest px-3 py-2">Tài khoản Barber</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="my-2" />
+                  <DropdownMenuItem 
+                    className="rounded-xl h-10 px-3 font-bold text-slate-600 hover:text-rose-500 hover:bg-rose-50 cursor-pointer transition-colors"
+                    onClick={() => signOut({ callbackUrl: '/' })}
+                  >
                     <LogOut className="w-4 h-4 mr-2" /> Đăng xuất
                   </DropdownMenuItem>
                 </DropdownMenuContent>

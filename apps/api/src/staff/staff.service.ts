@@ -533,7 +533,7 @@ export class StaffService extends BaseQueryService {
           totalRevenue: 0,
           avgRating: "5.0",
           totalReviews: 0,
-        },
+         },
         monthlyRevenue: [],
       };
     }
@@ -800,40 +800,6 @@ export class StaffService extends BaseQueryService {
     });
   }
 
-  private calculateShiftTimes(dateStr: string, type?: ShiftType, customStart?: string, customEnd?: string) {
-    if (customStart && customEnd) {
-      return { 
-        start: dayjs.tz(customStart, VIETNAM_TZ), 
-        end: dayjs.tz(customEnd, VIETNAM_TZ) 
-      };
-    }
-
-    let startHours = 8, startMins = 0;
-    let endHours = 18, endMins = 0;
-
-    switch (type) {
-      case ShiftType.MORNING:
-        startHours = 8; startMins = 0;
-        endHours = 12; endMins = 0;
-        break;
-      case ShiftType.AFTERNOON:
-        startHours = 13; startMins = 0;
-        endHours = 18; endMins = 0;
-        break;
-      case ShiftType.FULL_DAY:
-      default:
-        startHours = 8; startMins = 0;
-        endHours = 18; endMins = 0;
-        break;
-    }
-
-    const baseDate = dayjs.tz(dateStr, VIETNAM_TZ).startOf('day');
-    const start = baseDate.set('hour', startHours).set('minute', startMins).set('second', 0).set('millisecond', 0);
-    const end = baseDate.set('hour', endHours).set('minute', endMins).set('second', 0).set('millisecond', 0);
-
-    return { start, end };
-  }
-
   async removeShift(shiftId: string, user: User) {
     const shift = await (this.prisma as any).staffShift.findUnique({
       where: { id: shiftId },
@@ -850,35 +816,277 @@ export class StaffService extends BaseQueryService {
     });
   }
 
-  private async verifySalonOwnership(salonId: string, user: User): Promise<void> {
-    if (user.role === Role.SUPER_ADMIN) {
-      return;
-    }
+  // --- STAFF DASHBOARD METHODS ---
 
-    const salon = await this.prisma.salon.findUnique({
-      where: { id: salonId },
+  async getStaffByUserId(userId: string) {
+    const staff = await this.prisma.staff.findUnique({
+      where: { userId },
+      include: {
+        user: true,
+        salon: true,
+      },
+    });
+    if (!staff) throw new NotFoundException('Không tìm thấy thông tin nhân viên');
+    return staff;
+  }
+
+  async getDashboardStats(staffId: string) {
+    const nowVietnam = dayjs().tz(VIETNAM_TZ);
+    const startOfToday = nowVietnam.startOf('day').toDate();
+
+    const [todayBookings, completedToday, totalRevenueToday, staff] = await Promise.all([
+      this.prisma.booking.count({
+        where: {
+          staffId,
+          date: startOfToday,
+          status: { not: 'CANCELLED' },
+        },
+      }),
+      this.prisma.booking.count({
+        where: {
+          staffId,
+          date: startOfToday,
+          status: 'COMPLETED',
+        },
+      }),
+      this.prisma.booking.aggregate({
+        where: {
+          staffId,
+          date: startOfToday,
+          status: 'COMPLETED',
+        },
+        _sum: { totalAmount: true },
+      }),
+      this.prisma.staff.findUnique({
+        where: { id: staffId },
+        select: { rating: true },
+      }),
+    ]);
+
+    // Next customer alert logic
+    const nextBooking = await this.prisma.booking.findFirst({
+      where: {
+        staffId,
+        date: startOfToday,
+        status: 'CONFIRMED',
+        timeSlot: { gte: nowVietnam.format('HH:mm') },
+      },
+      orderBy: { timeSlot: 'asc' },
+      include: { customer: { select: { name: true } } },
     });
 
-    if (!salon) {
-      throw new NotFoundException(`Salon with ID ${salonId} not found`);
+    let nextCustomerAlert = null;
+    if (nextBooking) {
+      const [h, m] = nextBooking.timeSlot.split(':').map(Number);
+      const bookingTime = nowVietnam.hour(h).minute(m);
+      const diffMins = bookingTime.diff(nowVietnam, 'minute');
+      if (diffMins > 0 && diffMins <= 60) {
+        nextCustomerAlert = `Khách tiếp theo (${nextBooking.customer.name}) sẽ đến trong ${diffMins} phút nữa.`;
+      }
     }
 
-    // MANAGER can manage their own salon too
-    const isManager = user.role === (Role as any).MANAGER;
+    return {
+      todayAppointments: todayBookings,
+      completedToday,
+      todayRevenue: Number(totalRevenueToday._sum.totalAmount || 0),
+      averageRating: staff?.rating || 5.0,
+      nextCustomerAlert,
+    };
+  }
+
+  async getStaffSchedule(staffId: string, date: string) {
+    const targetDate = dayjs.tz(date, VIETNAM_TZ).startOf('day').toDate();
+    await this.autoUpdateBookingsStatus(staffId);
+
+    return this.prisma.booking.findMany({
+      where: { staffId, date: targetDate },
+      include: {
+        customer: { select: { id: true, name: true, phone: true, avatar: true } },
+        services: { include: { service: true } },
+      },
+      orderBy: { timeSlot: 'asc' },
+    });
+  }
+
+  async getWeeklyCustomers(staffId: string) {
+    const now = dayjs().tz(VIETNAM_TZ);
+    const startOfWeek = now.startOf('week').add(1, 'day'); // Monday
+    const endOfWeek = now.add(7, 'day').endOf('week').add(1, 'day'); // Next Sunday
+
+    return this.prisma.booking.findMany({
+      where: {
+        staffId,
+        date: { gte: startOfWeek.toDate(), lte: endOfWeek.toDate() },
+        status: { not: 'CANCELLED' },
+      },
+      include: {
+        customer: { select: { name: true, phone: true } },
+        services: { include: { service: true } },
+      },
+      orderBy: [{ date: 'asc' }, { timeSlot: 'asc' }],
+    });
+  }
+
+  async updateBookingStatus(bookingId: string, status: any, staffId: string) {
+    const booking = await this.prisma.booking.findUnique({ where: { id: bookingId } });
+    if (!booking || booking.staffId !== staffId) {
+      throw new ForbiddenException('Bạn không có quyền cập nhật lịch hẹn này');
+    }
+
+    return this.prisma.booking.update({
+      where: { id: bookingId },
+      data: { 
+        status,
+        ...(status === 'COMPLETED' ? { paymentStatus: 'PAID' } : {}),
+      },
+      include: { services: { include: { service: true } }, customer: true },
+    });
+  }
+
+  async addCustomerNote(staffId: string, customerId: string, content: string) {
+    return (this.prisma as any).customerNote.create({
+      data: { staffId, customerId, content },
+    });
+  }
+
+  async getCustomerHistory(customerId: string) {
+    const [pastBookings, notes] = await Promise.all([
+      this.prisma.booking.findMany({
+        where: { customerId, status: 'COMPLETED' },
+        include: {
+          staff: { include: { user: { select: { name: true } } } },
+          services: { include: { service: true } },
+        },
+        orderBy: { date: 'desc' },
+        take: 10,
+      }),
+      (this.prisma as any).customerNote.findMany({
+        where: { customerId },
+        include: { staff: { include: { user: { select: { name: true } } } } },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ]);
+
+    const bookingsByBarber = await this.prisma.booking.groupBy({
+      by: ['staffId'],
+      where: { customerId, status: 'COMPLETED', staffId: { not: null } },
+      _count: { staffId: true },
+    });
+
+    let preferredBarber = 'Chưa rõ';
+    if (bookingsByBarber.length > 0) {
+      const topBarberId = bookingsByBarber.sort((a, b) => b._count.staffId - a._count.staffId)[0].staffId;
+      const staff = await this.prisma.staff.findUnique({
+        where: { id: topBarberId as string },
+        include: { user: { select: { name: true } } },
+      });
+      preferredBarber = staff?.user?.name || 'Chưa rõ';
+    }
+
+    return {
+      pastBookings,
+      notes,
+      preferredBarber,
+      lastVisit: pastBookings[0]?.date || null,
+    };
+  }
+
+  private async autoUpdateBookingsStatus(staffId: string) {
+    const now = dayjs().tz(VIETNAM_TZ);
+    const today = now.startOf('day').toDate();
+
+    const pendingInProgress = await this.prisma.booking.findMany({
+      where: {
+        staffId,
+        date: today,
+        status: { in: ['IN_PROGRESS', 'CONFIRMED'] },
+      },
+    });
+
+    for (const b of pendingInProgress) {
+      const [h, m] = b.endTime.split(':').map(Number);
+      const endDateTime = dayjs(b.date).hour(h).minute(m);
+      if (now.isAfter(endDateTime.add(15, 'minute'))) {
+        await this.prisma.booking.update({
+          where: { id: b.id },
+          data: { status: 'COMPLETED', paymentStatus: 'PAID' },
+        });
+      }
+    }
+  }
+
+  async registerDayOffImproved(staffId: string, date: string, reason?: string) {
+    const targetDate = dayjs.tz(date, VIETNAM_TZ).startOf('day');
+    if (targetDate.isBefore(dayjs().tz(VIETNAM_TZ).startOf('day'))) {
+      throw new ConflictException('Không thể đăng ký nghỉ cho ngày đã qua');
+    }
+
+    const confirmedBookings = await this.prisma.booking.count({
+      where: { staffId, date: targetDate.toDate(), status: 'CONFIRMED' },
+    });
+
+    if (confirmedBookings > 0) {
+      throw new ConflictException(`Bạn đã có ${confirmedBookings} lịch hẹn đã xác nhận vào ngày này. Vui lòng xử lý trước khi nghỉ.`);
+    }
+
+    return (this.prisma as any).staffLeave.create({
+      data: {
+        staffId,
+        startDate: targetDate.toDate(),
+        endDate: targetDate.toDate(),
+        reason: reason || '',
+        status: 'APPROVED',
+      },
+    });
+  }
+
+  private async verifySalonOwnership(salonId: string, user: User): Promise<void> {
+    if (user.role === Role.SUPER_ADMIN) return;
+
+    const salon = await this.prisma.salon.findUnique({ where: { id: salonId } });
+    if (!salon) throw new NotFoundException(`Salon with ID ${salonId} not found`);
+
     const isOwner = salon.ownerId === user.id;
+    const isManager = user.role === Role.MANAGER;
 
     if (!isOwner && !isManager) {
-      throw new ForbiddenException('You do not have permission to manage this salon');
+      const staff = await this.prisma.staff.findFirst({ where: { userId: user.id } });
+      if (!staff || staff.userId !== user.id) {
+        throw new ForbiddenException('You do not have permission to manage this salon');
+      }
     }
 
     if (isManager) {
-      // Check if manager belongs to this salon
-      const staff = await this.prisma.staff.findFirst({
-        where: { userId: user.id, salonId }
-      });
-      if (!staff) {
-        throw new ForbiddenException('You can only manage your assigned salon');
-      }
+      const staff = await this.prisma.staff.findFirst({ where: { userId: user.id, salonId } });
+      if (!staff) throw new ForbiddenException('You can only manage your assigned salon');
     }
+  }
+
+  private calculateShiftTimes(dateStr: string, type?: ShiftType, customStart?: string, customEnd?: string) {
+    if (customStart && customEnd) {
+      return { start: dayjs.tz(customStart, VIETNAM_TZ), end: dayjs.tz(customEnd, VIETNAM_TZ) };
+    }
+
+    let startHours = 8, startMins = 0;
+    let endHours = 18, endMins = 0;
+
+    switch (type) {
+      case ShiftType.MORNING:
+        startHours = 8; endHours = 12;
+        break;
+      case ShiftType.AFTERNOON:
+        startHours = 13; endHours = 18;
+        break;
+      case ShiftType.FULL_DAY:
+      default:
+        startHours = 8; endHours = 18;
+        break;
+    }
+
+    const baseDate = dayjs.tz(dateStr, VIETNAM_TZ).startOf('day');
+    const start = baseDate.set('hour', startHours).set('minute', startMins).set('second', 0).set('millisecond', 0);
+    const end = baseDate.set('hour', endHours).set('minute', endMins).set('second', 0).set('millisecond', 0);
+
+    return { start, end };
   }
 }
