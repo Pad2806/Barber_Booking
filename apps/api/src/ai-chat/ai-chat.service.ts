@@ -41,7 +41,7 @@ export class AIChatService implements OnModuleInit {
   private async checkGeminiConnection() {
     try {
       this.model = this.genAI.getGenerativeModel({
-        model: 'gemini-1.5-pro',
+        model: 'gemini-2.0-flash',
         tools: [
           {
             functionDeclarations: [
