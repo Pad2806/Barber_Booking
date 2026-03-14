@@ -27,67 +27,100 @@ export class AIChatService implements OnModuleInit {
     private staffService: StaffService,
     private bookingsService: BookingsService,
   ) {
-    const apiKey = this.configService.get<string>('GEMINI_API_KEY')!;
+    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
+    if (!apiKey) {
+      throw new Error('GEMINI_API_KEY is not configured');
+    }
     this.genAI = new GoogleGenerativeAI(apiKey);
   }
 
-  onModuleInit() {
-    this.model = this.genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
-      tools: [
-        {
-          functionDeclarations: [
-            {
-              name: 'get_services',
-              description: 'Lấy danh sách các dịch vụ cắt tóc và làm đẹp của salon.',
-            },
-            {
-              name: 'get_barbers',
-              description: 'Lấy danh sách các thợ cắt tóc (barber) đang làm việc.',
-            },
-            {
-              name: 'get_available_slots',
-              description: 'Kiểm tra các khung giờ còn trống (HH:mm) của một thợ cắt tóc vào một ngày cụ thể.',
-              parameters: {
-                type: 'object',
-                properties: {
-                  barber_id: { type: 'string', description: 'ID của thợ cắt tóc' },
-                  date: { type: 'string', description: 'Ngày cần kiểm tra (YYYY-MM-DD)' },
-                },
-                required: ['barber_id', 'date'],
+  async onModuleInit() {
+    this.initializeModel('gemini-1.5-flash-latest');
+    await this.checkGeminiConnection();
+  }
+
+  private initializeModel(modelName: string) {
+    try {
+      this.logger.log(`Initializing Gemini model: ${modelName}`);
+      this.model = this.genAI.getGenerativeModel({
+        model: modelName,
+        tools: [
+          {
+            functionDeclarations: [
+              {
+                name: 'get_services',
+                description: 'Lấy danh sách các dịch vụ cắt tóc và làm đẹp của salon.',
               },
-            },
-            {
-              name: 'create_booking',
-              description: 'Tạo một lịch hẹn đặt chỗ mới.',
-              parameters: {
-                type: 'object',
-                properties: {
-                  customer_name: { type: 'string' },
-                  phone: { type: 'string' },
-                  service_id: { type: 'string' },
-                  barber_id: { type: 'string' },
-                  date: { type: 'string', description: 'YYYY-MM-DD' },
-                  time: { type: 'string', description: 'HH:mm' },
-                },
-                required: ['customer_name', 'phone', 'service_id', 'barber_id', 'date', 'time'],
+              {
+                name: 'get_barbers',
+                description: 'Lấy danh sách các thợ cắt tóc (barber) đang làm việc.',
               },
-            },
-            {
-              name: 'cancel_booking',
-              description: 'Hủy một lịch hẹn đã đặt dựa trên mã booking.',
-              parameters: {
-                type: 'object',
-                properties: {
-                  booking_id: { type: 'string', description: 'Mã đặt lịch (booking code hoặc ID)' },
+              {
+                name: 'get_available_slots',
+                description: 'Kiểm tra các khung giờ còn trống (HH:mm) của một thợ cắt tóc vào một ngày cụ thể.',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    barber_id: { type: 'string', description: 'ID của thợ cắt tóc' },
+                    date: { type: 'string', description: 'Ngày cần kiểm tra (YYYY-MM-DD)' },
+                  },
+                  required: ['barber_id', 'date'],
                 },
-                required: ['booking_id'],
               },
-            },
-          ],
-        },
-      ] as any,
-    });
+              {
+                name: 'create_booking',
+                description: 'Tạo một lịch hẹn đặt chỗ mới.',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    customer_name: { type: 'string' },
+                    phone: { type: 'string' },
+                    service_id: { type: 'string' },
+                    barber_id: { type: 'string' },
+                    date: { type: 'string', description: 'YYYY-MM-DD' },
+                    time: { type: 'string', description: 'HH:mm' },
+                  },
+                  required: ['customer_name', 'phone', 'service_id', 'barber_id', 'date', 'time'],
+                },
+              },
+              {
+                name: 'cancel_booking',
+                description: 'Hủy một lịch hẹn đã đặt dựa trên mã booking.',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    booking_id: { type: 'string', description: 'Mã đặt lịch (booking code hoặc ID)' },
+                  },
+                  required: ['booking_id'],
+                },
+              },
+            ],
+          },
+        ] as any,
+      });
+    } catch (error) {
+      this.logger.error(`Failed to initialize model ${modelName}`, error);
+      if (modelName !== 'gemini-1.5-pro-latest') {
+        this.initializeModel('gemini-1.5-pro-latest');
+      }
+    }
+  }
+
+  private async checkGeminiConnection() {
+    try {
+      const result = await this.model.generateContent('ping');
+      if (result) {
+        this.logger.log('✅ Gemini connection OK');
+      }
+    } catch (error: any) {
+      this.logger.error('❌ Gemini connection failed', error.message);
+      // Fallback check
+      if (this.model.model === 'gemini-1.5-flash-latest') {
+        this.logger.log('🔄 Attempting fallback to gemini-1.5-pro-latest');
+        this.initializeModel('gemini-1.5-pro-latest');
+        await this.checkGeminiConnection();
+      }
+    }
   }
 
   async chat(message: string, sessionId: string, userId?: string) {
@@ -179,7 +212,7 @@ export class AIChatService implements OnModuleInit {
       this.logger.error(`AI CHAT ERROR (Session: ${sessionId}):`, error.stack || error.message);
       
       return { 
-        response: "Xin lỗi, em đang gặp chút trục trặc khi kết nối với bộ não AI. Anh thử lại sau giây lát nhé! 🙏",
+        response: "Xin lỗi, hệ thống AI đang tạm thời gặp lỗi. Vui lòng thử lại sau.",
         error: true 
       };
     }
