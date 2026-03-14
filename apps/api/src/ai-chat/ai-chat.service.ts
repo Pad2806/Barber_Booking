@@ -192,14 +192,22 @@ export class AIChatService implements OnModuleInit {
         case 'create_booking':
           // Cập nhật booking_requests table để track
           await this.prisma.bookingRequest.upsert({
-            where: { sessionId },
+            where: { sessionId: sessionId } as any,
             update: { ...args },
             create: { sessionId, ...args },
           });
 
           // Thực hiện đặt lịch thật
-          // Lưu ý: Cần fetch salonId từ Barber. Ở đây em giả định salon mặc định hoặc lấy từ BarberService.
-          const barber = await this.staffService.findOne(args.barber_id);
+          // Lấy thông tin thợ kèm theo thông tin User
+          const barber = await this.prisma.staff.findUnique({
+            where: { id: args.barber_id },
+            include: { user: true }
+          });
+          
+          if (!barber) {
+             throw new Error('Không tìm thấy thợ cắt tóc này.');
+          }
+
           const booking = await this.bookingsService.create({
             salonId: barber.salonId,
             staffId: args.barber_id,
@@ -213,7 +221,7 @@ export class AIChatService implements OnModuleInit {
 
           isBooking = true;
           return { 
-            output: `THÀNH CÔNG! Mã đặt lịch: ${booking.bookingCode}. Khách: ${args.customer_name}, Dịch vụ ID: ${args.service_id}, Thợ: ${barber.user.name}, Lúc: ${args.time} ngày ${args.date}.`,
+            output: `THÀNH CÔNG! Mã đặt lịch: ${booking.bookingCode}. Khách: ${args.customer_name}, Dịch vụ ID: ${args.service_id}, Thợ: ${barber.user?.name || 'N/A'}, Lúc: ${args.time} ngày ${args.date}.`,
             isBooking: true 
           };
 
