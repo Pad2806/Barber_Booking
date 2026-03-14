@@ -11,9 +11,9 @@ import { Salon, Role, User, Service } from '@prisma/client';
 
 import { BaseQueryService } from '../common/services/base-query.service';
 import { SalonQueryDto } from './dto/salon-query.dto';
-import * as dayjs from 'dayjs';
-import * as utc from 'dayjs/plugin/utc';
-import * as timezone from 'dayjs/plugin/timezone';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);

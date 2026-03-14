@@ -5,9 +5,9 @@ import { PrismaService } from '../database/prisma.service';
 import { ServicesService } from '../services/services.service';
 import { StaffService } from '../staff/staff.service';
 import { BookingsService } from '../bookings/bookings.service';
-import * as dayjs from 'dayjs';
-import * as timezone from 'dayjs/plugin/timezone';
-import * as utc from 'dayjs/plugin/utc';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { systemPrompt } from './prompts/system-prompt';
 import * as salonKnowledge from './data/salon_knowledge.json';
 
