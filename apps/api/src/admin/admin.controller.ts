@@ -1,8 +1,12 @@
 import { Controller, Get, Query, Patch, Param, UseGuards, Body, Res, Post, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery, ApiParam, ApiBody } from '@nestjs/swagger';
-import { BookingStatus, User } from '@prisma/client';
+import { BookingStatus, User, Role } from '@prisma/client';
 import { Permission } from '@reetro/shared';
 import { Response } from 'express';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { HttpException, HttpStatus } from '@nestjs/common';
 
 import { AdminService } from './admin.service';
 import { AnalyticsService } from './analytics.service';
@@ -133,6 +137,30 @@ export class AdminController {
   @ApiParam({ name: 'id', description: 'User ID' })
   getUserById(@Param('id') id: string) {
     return this.adminService.getUserById(id);
+  }
+
+  @Patch('users/:id/reset-password')
+  @UseGuards(RolesGuard)
+  @Roles(Role.SUPER_ADMIN)
+  @RequirePermissions(Permission.MANAGE_USERS)
+  @ApiOperation({ summary: 'Reset a user password' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  async resetPassword(
+    @Param('id') id: string,
+    @Body() dto: ResetPasswordDto,
+    @CurrentUser() admin: User,
+  ) {
+    try {
+      return await this.adminService.resetPassword(id, dto, admin);
+    } catch (error: any) {
+      if (error.message === 'User not found') {
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+      throw new HttpException(
+        'Unexpected server error',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
   @Get('salons')
   @RequirePermissions(Permission.VIEW_SALONS)

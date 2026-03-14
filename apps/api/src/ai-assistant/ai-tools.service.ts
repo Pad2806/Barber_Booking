@@ -15,6 +15,33 @@ export class AIToolsService {
     private bookingsService: BookingsService,
   ) {}
 
+  async update_booking_state(sessionId: string, data: {
+    customer_name?: string;
+    phone?: string;
+    service_id?: string;
+    barber_id?: string;
+    date?: string;
+    time?: string;
+  }) {
+    this.logger.log(`[AIToolsService] Updating booking state for session ${sessionId}: ${JSON.stringify(data)}`);
+    const prismaData = {
+      customerName: data.customer_name,
+      phone: data.phone,
+      serviceId: data.service_id,
+      barberId: data.barber_id,
+      date: data.date,
+      time: data.time,
+    };
+    return await (this.prisma.bookingRequest as any).upsert({
+      where: { sessionId },
+      create: {
+        sessionId,
+        ...prismaData,
+      },
+      update: prismaData,
+    });
+  }
+
   async handleToolCall(name: string, args: any, sessionId: string) {
     this.logger.log(`Executing tool: ${name} with args: ${JSON.stringify(args)}`);
     
@@ -68,6 +95,12 @@ export class AIToolsService {
             note: 'Đặt lịch qua Trợ lý AI',
           } as any, { role: 'CUSTOMER' } as any);
 
+          // Update booking request status to COMPLETED
+          await (this.prisma.bookingRequest as any).update({
+            where: { sessionId },
+            data: { status: 'COMPLETED' }
+          });
+
           return {
             content: `ĐẶT LỊCH THÀNH CÔNG! Mã đặt lịch: ${booking.bookingCode}. Khách hàng: ${args.customer_name}, Thợ: ${barber.user.name}, Lúc: ${args.time} ngày ${args.date}.`,
             isBooking: true
@@ -77,6 +110,10 @@ export class AIToolsService {
           if (!args.booking_id) return { content: 'Lỗi: Thiếu mã đặt lịch (Booking ID).' };
           await this.bookingsService.cancel(args.booking_id, 'Hủy qua Trợ lý AI', { role: 'CUSTOMER' } as any);
           return { content: `Đã hủy lịch hẹn ${args.booking_id} thành công.` };
+
+        case 'update_booking_state':
+          await this.update_booking_state(sessionId, args);
+          return { content: 'Đã cập nhật trạng thái đặt lịch thành công.' };
 
         default:
           return { content: 'Lỗi: Công cụ không được hỗ trợ.' };

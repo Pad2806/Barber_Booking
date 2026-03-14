@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { Role, BookingStatus, PaymentStatus, User } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 import { BookingsService } from '../bookings/bookings.service';
 import { BookingQueryDto } from '../bookings/dto/booking-query.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 
 import { BaseQueryService } from '../common/services/base-query.service';
 
@@ -885,5 +887,26 @@ export class AdminService extends BaseQueryService {
     );
     await Promise.all(updates);
     return this.getSettings();
+  }
+
+  async resetPassword(userId: string, dto: ResetPasswordDto, admin: User) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new Error('User not found');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    console.log(`[AUDIT] Admin ${admin.id} reset password for user ${userId} at ${new Date().toISOString()}`);
+
+    return { message: 'Password updated successfully' };
   }
 }

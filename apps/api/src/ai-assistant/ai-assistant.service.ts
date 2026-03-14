@@ -73,8 +73,23 @@ export class AIAssistantService implements OnModuleInit {
               },
             },
             {
+              name: 'update_booking_state',
+              description: 'Lưu hoặc cập nhật thông tin khách hàng cung cấp (Tên, SĐT, Dịch vụ, Thợ, Ngày, Giờ) để duy trì ngữ cảnh.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  customer_name: { type: 'string' },
+                  phone: { type: 'string' },
+                  service_id: { type: 'string' },
+                  barber_id: { type: 'string' },
+                  date: { type: 'string', description: 'YYYY-MM-DD' },
+                  time: { type: 'string', description: 'HH:mm' },
+                },
+              },
+            },
+            {
               name: 'cancel_booking',
-              description: 'Hủy lịch hẹn.',
+              description: 'Hủy lịch hẹn đã có.',
               parameters: {
                 type: 'object',
                 properties: {
@@ -114,9 +129,30 @@ export class AIAssistantService implements OnModuleInit {
       });
     }
 
-    // 2. Build history
+    // 2. Load or Initialize Booking State
+    let bookingRequest = await (this.prisma.bookingRequest as any).findUnique({
+      where: { sessionId },
+    });
+
+    if (!bookingRequest || bookingRequest.status === 'COMPLETED') {
+      bookingRequest = await (this.prisma.bookingRequest as any).upsert({
+        where: { sessionId },
+        create: { sessionId },
+        update: {
+          status: 'PENDING',
+          customerName: null,
+          phone: null,
+          serviceId: null,
+          barberId: null,
+          date: null,
+          time: null,
+        }
+      });
+    }
+
+    // 3. Build history
     const now = dayjs().tz('Asia/Ho_Chi_Minh');
-    const systemInstruction = systemPrompt(now.format('dddd, DD/MM/YYYY HH:mm'), salonKnowledge);
+    const systemInstruction = systemPrompt(now.format('dddd, DD/MM/YYYY HH:mm'), salonKnowledge, bookingRequest);
 
     const history = [
       { role: 'user', parts: [{ text: systemInstruction }] },

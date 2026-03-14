@@ -513,6 +513,7 @@ model BookingRequest {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  @@unique([sessionId])
   @@map("booking_requests")
 }
 
