@@ -29,6 +29,7 @@ export const authOptions: NextAuthOptions = {
               name: response.data.user.name,
               image: response.data.user.avatar,
               role: response.data.user.role,
+              position: response.data.user.position,
               accessToken: response.data.accessToken,
               refreshToken: response.data.refreshToken,
             };
@@ -68,6 +69,8 @@ export const authOptions: NextAuthOptions = {
             (user as any).refreshToken = response.data.refreshToken;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (user as any).role = response.data.user.role;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (user as any).position = response.data.user.position;
             return true;
           }
         } catch {
@@ -82,6 +85,8 @@ export const authOptions: NextAuthOptions = {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.role = (user as any).role;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        token.position = (user as any).position;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.accessToken = (user as any).accessToken;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.refreshToken = (user as any).refreshToken;
@@ -94,6 +99,8 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = token.id;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session.user as any).role = token.role;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (session.user as any).position = token.position;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session as any).accessToken = token.accessToken;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

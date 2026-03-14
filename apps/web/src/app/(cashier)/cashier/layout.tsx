@@ -71,9 +71,18 @@ export default function CashierLayout({ children }: CashierLayoutProps) {
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login?callbackUrl=/cashier/dashboard');
-    } else if (status === 'authenticated' && session?.user?.role) {
-      const allowedRoles = ['CASHIER', 'MANAGER', 'SALON_OWNER', 'SUPER_ADMIN'];
-      if (!allowedRoles.includes(session.user.role)) {
+    } else if (status === 'authenticated') {
+      const userRole = session?.user?.role;
+      const staffPosition = me?.staff?.position;
+
+      const isCashier = 
+        userRole === 'CASHIER' || 
+        userRole === 'MANAGER' || 
+        userRole === 'SALON_OWNER' || 
+        userRole === 'SUPER_ADMIN' ||
+        (userRole === 'STAFF' && ['CASHIER', 'RECEPTIONIST'].includes(staffPosition || ''));
+
+      if (!isCashier && !isLoadingMe) {
         toast.error('Bạn không có quyền truy cập khu vực Thu ngân');
         router.push('/');
       }

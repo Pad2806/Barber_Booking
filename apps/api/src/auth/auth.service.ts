@@ -16,6 +16,7 @@ export interface JwtPayload {
   sub: string;
   email: string;
   role: string;
+  position?: string;
 }
 
 export interface TokenResponse {
@@ -175,10 +176,21 @@ export class AuthService {
   }
 
   async generateTokens(user: User): Promise<TokenResponse> {
+    // Determine staff position if applicable
+    let position: string | undefined;
+    if (user.role === 'STAFF' || user.role === 'BARBER' || user.role === 'CASHIER' || user.role === 'MANAGER') {
+      const staff = await this.prisma.staff.findUnique({
+        where: { userId: user.id },
+        select: { position: true },
+      });
+      position = staff?.position;
+    }
+
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email ?? '',
       role: user.role,
+      position,
     };
 
     const [accessToken, refreshToken] = await Promise.all([
@@ -201,10 +213,14 @@ export class AuthService {
       },
     });
 
+    const sanitizedUser = this.sanitizeUser(user);
     return {
       accessToken,
       refreshToken,
-      user: this.sanitizeUser(user),
+      user: {
+        ...sanitizedUser,
+        position,
+      } as any,
     };
   }
 

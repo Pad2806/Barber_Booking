@@ -10,15 +10,17 @@ import toast from 'react-hot-toast';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl');
+  const callbackUrl = searchParams?.get('callbackUrl');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const getRedirectUrl = (role: string): string => {
+  const getRedirectUrl = (role: string, position?: string): string => {
     if (callbackUrl) return callbackUrl;
+    
+    // Check role first
     switch (role) {
       case 'SUPER_ADMIN':
       case 'SALON_OWNER':
@@ -30,13 +32,27 @@ function LoginForm() {
       case 'CASHIER':
         return '/cashier/dashboard';
       case 'SKINNER':
-        return '/skinner/dashboard';
-      case 'STAFF':
-        return '/staff';
-      case 'CUSTOMER':
-      default:
-        return '/';
+        return '/barber/dashboard'; // Assuming skinner uses barber dashboard
     }
+
+    // If role is STAFF, redirect based on position
+    if (role === 'STAFF' && position) {
+      switch (position) {
+        case 'MANAGER':
+          return '/manager/dashboard';
+        case 'CASHIER':
+        case 'RECEPTIONIST':
+          return '/cashier/dashboard';
+        case 'BARBER':
+        case 'STYLIST':
+        case 'SENIOR_STYLIST':
+        case 'MASTER_STYLIST':
+        case 'SKINNER':
+          return '/barber/dashboard';
+      }
+    }
+
+    return '/';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -56,7 +72,8 @@ function LoginForm() {
         toast.success('Đăng nhập thành công!');
         const session = await getSession();
         const role = (session?.user as any)?.role || 'CUSTOMER';
-        const redirectUrl = getRedirectUrl(role);
+        const position = (session?.user as any)?.position;
+        const redirectUrl = getRedirectUrl(role, position);
         router.push(redirectUrl);
       }
     } catch (error) {

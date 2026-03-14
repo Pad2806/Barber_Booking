@@ -58,9 +58,17 @@ export default function BarberLayout({ children }: BarberLayoutProps) {
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login?callbackUrl=/barber/dashboard');
-    } else if (status === 'authenticated' && session?.user?.role) {
-      const allowedRoles = ['BARBER', 'SKINNER', 'STAFF', 'SUPER_ADMIN'];
-      if (!allowedRoles.includes(session.user.role)) {
+    } else if (status === 'authenticated') {
+      const userRole = session?.user?.role;
+      const staffPosition = me?.staff?.position;
+
+      const isBarber = 
+        userRole === 'BARBER' || 
+        userRole === 'SKINNER' || 
+        userRole === 'SUPER_ADMIN' ||
+        (userRole === 'STAFF' && ['BARBER', 'STYLIST', 'SENIOR_STYLIST', 'MASTER_STYLIST', 'SKINNER'].includes(staffPosition || ''));
+
+      if (!isBarber && !isLoadingMe) {
         toast.error('Bạn không có quyền truy cập trang này');
         router.push('/');
       }
