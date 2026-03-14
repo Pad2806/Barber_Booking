@@ -319,7 +319,7 @@ export default function StaffDetailPage() {
                           {leave.status === 'APPROVED' ? 'APPROVED' : leave.status === 'REJECTED' ? 'REJECTED' : 'PENDING'}
                         </Badge>
                       </div>
-                      <p className="text-[11px] text-slate-500 font-medium italic">"{leave.reason || 'Nghỉ gia đình'}"</p>
+                      <p className="text-[11px] text-slate-500 font-medium italic">&quot;{leave.reason || 'Nghỉ gia đình'}&quot;</p>
                    </div>
                  ))}
                </div>

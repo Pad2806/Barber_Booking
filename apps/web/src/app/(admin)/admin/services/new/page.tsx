@@ -11,7 +11,7 @@ import ImageUpload from '@/components/ImageUpload';
 import MultiImageUpload from '@/components/MultiImageUpload';
 import { useQueryClient } from '@tanstack/react-query';
 
-export default function NewServicePage() {
+export default function NewServicePage(): React.JSX.Element {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [salons, setSalons] = useState<{ id: string; name: string }[]>([]);

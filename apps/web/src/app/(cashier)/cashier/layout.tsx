@@ -82,12 +82,12 @@ export default function CashierLayout({ children }: CashierLayoutProps) {
         userRole === 'SUPER_ADMIN' ||
         (userRole === 'STAFF' && ['CASHIER', 'RECEPTIONIST'].includes(staffPosition || ''));
 
-      if (!isCashier && !isLoadingMe) {
+      if (!isCashier && !isLoadingMe && me) {
         toast.error('Bạn không có quyền truy cập khu vực Thu ngân');
         router.push('/');
       }
     }
-  }, [status, router, session]);
+  }, [status, router, session, me, isLoadingMe]);
 
   if (status === 'loading' || (status === 'authenticated' && isLoadingMe)) {
     return (

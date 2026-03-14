@@ -42,7 +42,7 @@ const STATUS_CONFIG: any = {
   false: { label: 'Tạm đóng', variant: 'destructive' },
 };
 
-export default function AdminSalonsPage() {
+export default function AdminSalonsPage(): React.JSX.Element {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [limit] = useState(10);

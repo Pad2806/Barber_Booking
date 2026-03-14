@@ -10,10 +10,10 @@ import { SERVICE_CATEGORIES } from '@/lib/utils';
 import ImageUpload from '@/components/ImageUpload';
 import MultiImageUpload from '@/components/MultiImageUpload';
 
-export default function EditServicePage() {
+export default function EditServicePage(): React.JSX.Element {
   const router = useRouter();
   const params = useParams();
-  const serviceId = params.id as string;
+  const serviceId = params?.id as string;
   
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -32,32 +32,31 @@ export default function EditServicePage() {
   });
 
   useEffect(() => {
-    fetchService();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serviceId]);
+    const fetchService = async () => {
+      try {
+        setLoading(true);
+        const data = await serviceApi.getById(serviceId);
+        setFormData({
+          name: data.name,
+          description: data.description || '',
+          price: data.price.toString(),
+          duration: data.duration.toString(),
+          category: data.category,
+          isActive: data.isActive ?? true,
+          image: data.image || '',
+          videoUrl: data.videoUrl || '',
+          gallery: data.gallery || [],
+        } as any);
+      } catch (error: any) {
+        toast.error('Không thể tải thông tin dịch vụ');
+        router.push('/admin/services');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchService = async () => {
-    try {
-      setLoading(true);
-      const data = await serviceApi.getById(serviceId);
-      setFormData({
-        name: data.name,
-        description: data.description || '',
-        price: data.price.toString(),
-        duration: data.duration.toString(),
-        category: data.category,
-        isActive: data.isActive ?? true,
-        image: data.image || '',
-        videoUrl: data.videoUrl || '',
-        gallery: data.gallery || [],
-      } as any);
-    } catch (error: any) {
-      toast.error('Không thể tải thông tin dịch vụ');
-      router.push('/admin/services');
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchService();
+  }, [serviceId, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

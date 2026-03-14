@@ -15,7 +15,7 @@ import {
   Filter,
   Trash2,
 } from 'lucide-react';
-import { formatPrice, formatDate, cn } from '@/lib/utils';
+import { formatPrice, formatDate } from '@/lib/utils';
 import { adminApi, Booking } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';

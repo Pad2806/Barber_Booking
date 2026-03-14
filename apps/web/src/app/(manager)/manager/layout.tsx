@@ -79,12 +79,12 @@ export default function ManagerLayout({ children }: ManagerLayoutProps): React.J
         userRole === 'SUPER_ADMIN' ||
         (userRole === 'STAFF' && staffPosition === 'MANAGER');
 
-      if (!isManager && !isLoadingMe) {
+      if (!isManager && !isLoadingMe && me) {
         toast.error('Bạn không có quyền truy cập khu vực Quản lý');
         router.push('/');
       }
     }
-  }, [status, router, session]);
+  }, [status, router, session, me, isLoadingMe]);
 
   if (status === 'loading' || (status === 'authenticated' && isLoadingMe)) {
     return (

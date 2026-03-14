@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import ImageUpload from '@/components/ImageUpload';
 import { slugify } from '@/lib/utils';
 
-export default function NewSalonPage() {
+export default function NewSalonPage(): React.JSX.Element {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
 

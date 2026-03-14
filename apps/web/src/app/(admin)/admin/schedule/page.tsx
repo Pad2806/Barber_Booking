@@ -7,7 +7,6 @@ import {
   ChevronRight, 
   Plus, 
   Clock, 
-  User, 
   MapPin,
   Coffee,
   X,
@@ -17,7 +16,7 @@ import { format, addDays, startOfWeek, isSameDay, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { adminApi, StaffShift } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { toast } from 'react-hot-toast';

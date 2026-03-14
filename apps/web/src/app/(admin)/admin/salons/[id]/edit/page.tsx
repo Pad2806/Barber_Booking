@@ -9,10 +9,10 @@ import toast from 'react-hot-toast';
 import ImageUpload from '@/components/ImageUpload';
 import { slugify } from '@/lib/utils';
 
-export default function EditSalonPage() {
+export default function EditSalonPage(): React.JSX.Element {
   const router = useRouter();
   const params = useParams();
-  const salonId = params.id as string;
+  const salonId = params?.id as string;
   
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -39,40 +39,39 @@ export default function EditSalonPage() {
   });
 
   useEffect(() => {
-    fetchSalon();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [salonId]);
+    const fetchSalon = async () => {
+      try {
+        setLoading(true);
+        const data = await salonApi.getById(salonId);
+        setFormData({
+          name: data.name,
+          slug: data.slug,
+          description: data.description || '',
+          address: data.address,
+          city: data.city,
+          district: data.district,
+          ward: data.ward || '',
+          phone: data.phone,
+          email: (data as any).email || '',
+          openTime: data.openTime,
+          closeTime: data.closeTime,
+          bankCode: (data as any).bankCode || '',
+          bankAccount: (data as any).bankAccount || '',
+          bankName: (data as any).bankName || '',
+          logo: data.logo || '',
+          coverImage: data.coverImage || '',
+          isActive: data.isActive,
+        } as any);
+      } catch (error: any) {
+        toast.error('Không thể tải thông tin chi nhánh');
+        router.push('/admin/salons');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const fetchSalon = async () => {
-    try {
-      setLoading(true);
-      const data = await salonApi.getById(salonId);
-      setFormData({
-        name: data.name,
-        slug: data.slug,
-        description: data.description || '',
-        address: data.address,
-        city: data.city,
-        district: data.district,
-        ward: data.ward || '',
-        phone: data.phone,
-        email: (data as any).email || '',
-        openTime: data.openTime,
-        closeTime: data.closeTime,
-        bankCode: (data as any).bankCode || '',
-        bankAccount: (data as any).bankAccount || '',
-        bankName: (data as any).bankName || '',
-        logo: data.logo || '',
-        coverImage: data.coverImage || '',
-        isActive: data.isActive,
-      } as any);
-    } catch (error: any) {
-      toast.error('Không thể tải thông tin chi nhánh');
-      router.push('/admin/salons');
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchSalon();
+  }, [salonId, router]);
 
   const handleNameChange = (name: string) => {
     setFormData(prev => ({
