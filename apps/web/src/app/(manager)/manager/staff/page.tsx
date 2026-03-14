@@ -83,8 +83,8 @@ export default function ManagerStaffPage() {
   };
 
   const filteredStaff = staff?.filter((s: any) =>
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.role.toLowerCase().includes(searchTerm.toLowerCase())
+    (s.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (s.role?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   if (isLoading) {
@@ -132,7 +132,7 @@ export default function ManagerStaffPage() {
                      <div className="relative">
                         <Avatar className="h-16 w-16 border-2 border-white shadow-xl">
                           <AvatarImage src={member.avatar} />
-                          <AvatarFallback className="bg-slate-100 text-slate-400 font-black italic">{member.name.charAt(0)}</AvatarFallback>
+                          <AvatarFallback className="bg-slate-100 text-slate-400 font-black italic">{member.name?.charAt(0) || 'S'}</AvatarFallback>
                         </Avatar>
                         <div className={cn(
                           "absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-4 border-white",

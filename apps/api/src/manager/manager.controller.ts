@@ -45,6 +45,12 @@ export class ManagerController {
         return this.managerService.getStaffPerformance(userId, staffId);
     }
 
+    @Get('staff/:id')
+    @ApiOperation({ summary: 'Get detailed info for a staff member' })
+    getStaffDetail(@CurrentUser('id') userId: string, @Param('id') staffId: string) {
+        return this.managerService.getStaffDetail(userId, staffId);
+    }
+
     @Post('staff/:id/performance')
     @ApiOperation({ summary: 'Rate a staff member performance' })
     rateStaffPerformance(

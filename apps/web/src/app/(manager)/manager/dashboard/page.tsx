@@ -126,7 +126,7 @@ export default function ManagerDashboard() {
           </CardHeader>
           <CardContent className="p-8">
             <div className="h-[350px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height={350} minWidth={0}>
                 <AreaChart data={stats?.reports?.revenueTrend || []}>
                   <defs>
                     <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
@@ -171,7 +171,9 @@ export default function ManagerDashboard() {
                    <div className="relative">
                       <Avatar className="h-12 w-12 border-2 border-slate-800 group-hover:border-[#C8A97E] transition-colors">
                         <AvatarImage src={member.avatar} />
-                        <AvatarFallback className="bg-slate-800 text-slate-400">{member.name.charAt(0)}</AvatarFallback>
+                        <AvatarFallback className="bg-slate-800 text-slate-400">
+                          {member.name?.charAt(0) || 'M'}
+                        </AvatarFallback>
                       </Avatar>
                       <div className="absolute -bottom-1 -right-1 bg-amber-500 text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-[#0f172a]">
                         #{idx + 1}

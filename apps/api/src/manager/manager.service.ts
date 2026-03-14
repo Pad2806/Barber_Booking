@@ -163,6 +163,41 @@ export class ManagerService {
         }));
     }
 
+    async getStaffDetail(userId: string, staffId: string) {
+        const salonId = await this.getManagerSalonId(userId);
+        
+        const staff = await this.prisma.staff.findUnique({
+            where: { id: staffId },
+            include: {
+                user: { select: { name: true, avatar: true, email: true, phone: true } },
+                salon: { select: { name: true } },
+                shifts: { 
+                    where: { date: { gte: dayjs().tz(VIETNAM_TZ).startOf('week').toDate() } },
+                    orderBy: { date: 'asc' }
+                },
+                leaves: {
+                    orderBy: { startDate: 'desc' },
+                    take: 10
+                },
+                _count: {
+                    select: { bookings: true }
+                }
+            }
+        });
+
+        if (!staff || staff.salonId !== salonId) {
+            throw new NotFoundException('Staff not found in your salon');
+        }
+
+        // Analytics
+        const analytics = await this.getStaffPerformance(userId, staffId);
+
+        return {
+            ...staff,
+            analytics: analytics.metrics
+        };
+    }
+
     async getStaffPerformance(userId: string, staffId: string) {
         const salonId = await this.getManagerSalonId(userId);
         

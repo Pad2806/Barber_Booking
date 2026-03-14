@@ -215,6 +215,10 @@ export const managerApi = {
     const response = await apiClient.get('/manager/staff');
     return response.data;
   },
+  getStaffById: async (staffId: string) => {
+    const response = await apiClient.get(`/manager/staff/${staffId}`);
+    return response.data;
+  },
   getStaffPerformance: async (staffId: string) => {
     const response = await apiClient.get(`/manager/staff/${staffId}/performance`);
     return response.data;
