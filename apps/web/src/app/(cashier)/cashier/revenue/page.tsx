@@ -201,7 +201,7 @@ export default function CashierRevenuePage() {
                         <PieChart className="w-5 h-5 text-[#C8A97E]" />
                         <h4 className="font-black italic uppercase tracking-tighter">Smart Insight</h4>
                      </div>
-                     <p className="text-xs font-medium text-slate-400 leading-relaxed font-serif italic">"Khách hàng ưu tiên thanh toán qua **VietQR** hơn bình thường trong buổi sáng. Đảm bảo mã QR luôn được hiển thị tại quầy."</p>
+                     <p className="text-xs font-medium text-slate-400 leading-relaxed font-serif italic">&quot;Khách hàng ưu tiên thanh toán qua **VietQR** hơn bình thường trong buổi sáng. Đảm bảo mã QR luôn được hiển thị tại quầy.&quot;</p>
                   </div>
 
                   <div className="pt-6">

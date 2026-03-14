@@ -1,52 +1,51 @@
 {
-    "updated_at": "2026-03-11T18:15:00Z",
-    "working_on": {
-        "feature": "Admin Refactor & Optimization",
-        "task": "Nâng cấp Settings & Tối ưu hệ thống",
-        "status": "completed",
-        "files": [
-            "apps/api/src/admin/admin.service.ts",
-            "apps/api/src/bookings/bookings.service.ts",
-            "apps/web/src/hooks/use-bookings.ts",
-            "apps/web/src/app/(admin)/admin/settings/page.tsx"
-        ],
-        "notes": "Đã tối ưu query, dùng Custom Hooks và hoàn thiện UI Settings."
+  "updated_at": "2026-03-14T23:25:46+07:00",
+  "working_on": {
+    "feature": "Next.js Build Fix",
+    "task": "Fix static generation issues on /_error, 404, 500 pages",
+    "status": "completed",
+    "files": [
+      "apps/web/package.json",
+      "apps/web/src/pages/404.tsx",
+      "apps/web/src/pages/500.tsx",
+      "apps/web/src/app/(manager)/manager/dashboard/page.tsx",
+      "apps/web/src/app/(manager)/manager/revenue/page.tsx",
+      "apps/web/src/app/(cashier)/cashier/revenue/page.tsx"
+    ],
+    "blockers": [],
+    "notes": "Downgraded React to 18.2.0 to match Next.js 14.2.0 internal version caching. Applied dynamic imports for recharts."
+  },
+  "pending_tasks": [
+    { "task": "Deploy to Dokploy via GitHub Actions & GHCR", "priority": "high", "notes": "Production environment deployment" }
+  ],
+  "recent_changes": [
+    {
+      "timestamp": "2026-03-14T23:25:46+07:00",
+      "type": "bugfix",
+      "description": "Resolved Next.js 14.2.0 export error by downgrading React to 18.2.0 and adding explicit error files.",
+      "files": ["apps/web/package.json", "apps/web/src/pages/404.tsx", "apps/web/src/pages/500.tsx"]
+    }
+  ],
+  "errors_encountered": [
+    {
+      "error": "TypeError: Cannot read properties of null (reading 'useRef')",
+      "solution": "Downgraded react and react-dom to 18.2.0 due to internal mismatch with Next.js 14.2.0",
+      "resolved": true
     },
-    "pending_tasks": [
-        {
-            "task": "Triển khai Notification Center (In-app)",
-            "priority": "medium"
-        },
-        {
-            "task": "Tối ưu hóa hình ảnh (Cloudinary/S3)",
-            "priority": "low"
-        }
-    ],
-    "recent_changes": [
-        {
-            "type": "refactor",
-            "description": "Tối ưu hóa DB Query & Custom Hooks",
-            "files": [
-                "bookings.service.ts",
-                "use-bookings.ts"
-            ]
-        },
-        {
-            "type": "feature",
-            "description": "Hoàn thiện Settings Dashboard",
-            "files": [
-                "settings/page.tsx"
-            ]
-        }
-    ],
-    "decisions_made": [
-        {
-            "decision": "Dùng Prisma Select thay vì Include",
-            "reason": "Giảm N+1 query"
-        },
-        {
-            "decision": "Dùng Tabs thay vì trang rời cho Settings",
-            "reason": "Trải nghiệm mượt mà hơn"
-        }
-    ]
+    {
+      "error": "Warning: Expected server HTML to contain a matching <g> in <svg> from Recharts",
+      "solution": "Wrapped all recharts components in next/dynamic with ssr: false",
+      "resolved": true
+    }
+  ],
+  "decisions_made": [
+    {
+      "decision": "Downgraded to React 18.2.0",
+      "reason": "Compatibility mismatch with Next.js 14.2.0 static generator"
+    },
+    {
+      "decision": "Created pages/404.tsx and pages/500.tsx",
+      "reason": "Next.js needs specific static fallbacks to avoid edge case build crashes"
+    }
+  ]
 }

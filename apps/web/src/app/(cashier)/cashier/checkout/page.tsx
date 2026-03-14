@@ -150,7 +150,7 @@ export default function CheckoutPage() {
                         ))
                      ) : searchTerm.length > 2 && !isLoading ? (
                         <div className="text-center py-10">
-                           <p className="text-slate-400 font-black italic uppercase text-xs">No active sessions found for "{searchTerm}"</p>
+                           <p className="text-slate-400 font-black italic uppercase text-xs">No active sessions found for &quot;{searchTerm}&quot;</p>
                         </div>
                      ) : null}
                   </div>

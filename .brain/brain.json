@@ -97,7 +97,9 @@
         "gotchas": [
             "MappedTypes trigger TS2742, avoid PartialType across monorepos and explicitly declare properties",
             "React exhaustive-deps strictness on useEffect",
-            "NestJS JWT Guard missing properties if relations not included"
+            "NestJS JWT Guard missing properties if relations not included",
+            "Next.js 14.2.0 export breaks on static pages (404/500) if internal react version is > 18.2.0. Lock react to 18.2.0",
+            "Recharts charts crash SSR in Server Components, must use next/dynamic { ssr: false }"
         ],
         "conventions": [
             "Use next/image for rendering",

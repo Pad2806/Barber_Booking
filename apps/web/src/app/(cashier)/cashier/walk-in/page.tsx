@@ -255,7 +255,7 @@ export default function WalkinPage() {
                   <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest italic flex items-center gap-2">
                      <PlusCircle className="w-3.5 h-3.5" /> Upsell Opportunity
                   </p>
-                  <p className="text-xs font-medium text-amber-900 leading-relaxed font-serif italic">"Nếu khách đặt **Haircut**, hãy gợi ý thêm combo **Hair Wash + Massage** để tăng 30% doanh thu!"</p>
+                  <p className="text-xs font-medium text-amber-900 leading-relaxed font-serif italic">&quot;Nếu khách đặt **Haircut**, hãy gợi ý thêm combo **Hair Wash + Massage** để tăng 30% doanh thu!&quot;</p>
                </div>
 
                <div className="space-y-3">

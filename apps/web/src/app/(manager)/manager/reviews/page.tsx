@@ -183,7 +183,7 @@ export default function ManagerReviewsPage() {
 
                          {/* Review Comment */}
                          <p className="text-slate-600 text-lg font-bold italic leading-relaxed tracking-tight">
-                            "{review.comment}"
+                            &quot;{review.comment}&quot;
                          </p>
 
                          {/* Context Info */}
@@ -281,7 +281,7 @@ export default function ManagerReviewsPage() {
                         <Star key={i} className={cn("w-3 h-3", selectedReview?.rating >= i ? "text-amber-400 fill-amber-400" : "text-slate-200")} />
                      ))}
                   </div>
-                  <p className="text-xs font-bold text-slate-400 italic">"{selectedReview?.comment}"</p>
+                  <p className="text-xs font-bold text-slate-400 italic">&quot;{selectedReview?.comment}&quot;</p>
                </div>
 
                <div className="space-y-4">

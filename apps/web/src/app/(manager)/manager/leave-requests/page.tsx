@@ -185,7 +185,7 @@ export default function ManagerLeaveRequestsPage() {
                         {req.status === 'REJECTED' && req.rejectionReason && (
                           <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100 max-w-xs">
                              <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Manager Note</p>
-                             <p className="text-xs font-bold text-rose-600 italic">"{req.rejectionReason}"</p>
+                             <p className="text-xs font-bold text-rose-600 italic">&quot;{req.rejectionReason}&quot;</p>
                           </div>
                         )}
                      </div>

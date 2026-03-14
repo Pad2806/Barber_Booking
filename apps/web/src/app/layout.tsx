@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import type { Metadata } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import './globals.css';
@@ -58,6 +58,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
       <body className={`${inter.variable} ${playfair.variable} font-body antialiased`}>
         <Providers>
           {children}
+          <Toaster position="top-center" />
+          <AIChatWidget />
         </Providers>
       </body>
     </html>
