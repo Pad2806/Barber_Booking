@@ -6,8 +6,11 @@ import { PrismaService } from '../database/prisma.service';
 
 import * as crypto from 'crypto';
 
-// Setup crypto spy before tests
-jest.spyOn(crypto, 'randomUUID').mockReturnValue('mock-uuid-1234' as `${string}-${string}-${string}-${string}-${string}`);
+// Mock crypto.randomUUID properly for Node 20+
+jest.mock('crypto', () => ({
+  ...jest.requireActual('crypto'),
+  randomUUID: jest.fn().mockReturnValue('mock-uuid-1234-5678-9012-345678901234'),
+}));
 
 describe('BookingsService', () => {
   let service: BookingsService;
