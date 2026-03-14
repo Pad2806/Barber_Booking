@@ -124,51 +124,65 @@ export class AIChatService implements OnModuleInit {
     });
 
     // 3. Xử lý tin nhắn
-    let result = await chatSession.sendMessage(message);
-    let responseText = result.response.text();
+    try {
+      this.logger.log(`AI Request (Session: ${sessionId}): ${message}`);
 
-    await this.prisma.chatMessage.create({
-      data: { conversationId: conversation.id, role: 'user', content: message },
-    });
+      // Save user message
+      await this.prisma.chatMessage.create({
+        data: { conversationId: conversation.id, role: 'user', content: message },
+      });
 
-    // 4. Loop xử lý Function Calling (hỗ trợ nhiều call cùng lúc)
-    let calls = result.response.functionCalls();
-    while (calls && calls.length > 0) {
-      const toolOutputs = [];
-      for (const call of calls) {
-        const { output, isBooking } = await this.handleFunctionCall(call, sessionId);
-        if (isBooking) bookingCreated = true;
-        
-        toolCallsLog.push({ name: call.name, args: call.args, output });
-        
-        toolOutputs.push({
-          functionResponse: { name: call.name, response: { content: output } },
-        });
+      let result = await chatSession.sendMessage(message);
+      let responseText = result.response.text();
+
+      // 4. Loop xử lý Function Calling (hỗ trợ nhiều call cùng lúc)
+      let calls = result.response.functionCalls();
+      while (calls && calls.length > 0) {
+        const toolOutputs = [];
+        for (const call of calls) {
+          const { output, isBooking } = await this.handleFunctionCall(call, sessionId);
+          if (isBooking) bookingCreated = true;
+          
+          toolCallsLog.push({ name: call.name, args: call.args, output });
+          
+          toolOutputs.push({
+            functionResponse: { name: call.name, response: { content: output } },
+          });
+        }
+
+        const nextStep = await chatSession.sendMessage(toolOutputs as any);
+        responseText = nextStep.response.text();
+        calls = nextStep.response.functionCalls();
       }
 
-      const nextStep = await chatSession.sendMessage(toolOutputs as any);
-      responseText = nextStep.response.text();
-      calls = nextStep.response.functionCalls();
+      this.logger.log(`AI Response (Session: ${sessionId}): ${responseText.substring(0, 100)}...`);
+
+      // 5. Lưu phản hồi và Log
+      await this.prisma.chatMessage.create({
+        data: { conversationId: conversation.id, role: 'assistant', content: responseText },
+      });
+
+      const latency = Date.now() - startTime;
+      await this.prisma.aiLog.create({
+        data: {
+          sessionId,
+          userMessage: message,
+          aiResponse: responseText,
+          toolCalls: toolCallsLog as any,
+          bookingCreated,
+          latency,
+        },
+      });
+
+      return { response: responseText };
+    } catch (error: any) {
+      this.logger.error(`AI CHAT ERROR (Session: ${sessionId}):`, error.stack || error.message);
+      
+      return { 
+        response: "Xin lỗi, em đang gặp chút trục trặc khi kết nối với bộ não AI. Anh thử lại sau giây lát nhé! 🙏",
+        error: true 
+      };
     }
-
-    // 5. Lưu phản hồi và Log
-    await this.prisma.chatMessage.create({
-      data: { conversationId: conversation.id, role: 'assistant', content: responseText },
-    });
-
-    const latency = Date.now() - startTime;
-    await this.prisma.aiLog.create({
-      data: {
-        sessionId,
-        userMessage: message,
-        aiResponse: responseText,
-        toolCalls: toolCallsLog as any,
-        bookingCreated,
-        latency,
-      },
-    });
-
-    return { response: responseText };
   }
 
   private async handleFunctionCall(call: any, sessionId: string) {

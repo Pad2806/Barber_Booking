@@ -11,30 +11,14 @@ const nextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     // Allow remote images in production
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**.cloudinary.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'lh3.googleusercontent.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'platform-lookaside.fbsbx.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'ui-avatars.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'img.vietqr.io',
-      },
+      { protocol: 'https', hostname: '**.cloudinary.com' },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      { protocol: 'https', hostname: 'platform-lookaside.fbsbx.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+      { protocol: 'https', hostname: '**.unsplash.com' },
+      { protocol: 'https', hostname: 'ui-avatars.com' },
+      { protocol: 'https', hostname: 'img.vietqr.io' },
+      { protocol: 'https', hostname: 'reetrobarber.pages.dev' },
     ],
   },
   env: {
