@@ -32,65 +32,62 @@ export class AIChatService implements OnModuleInit {
   }
 
   onModuleInit() {
-    this.model = this.genAI.getGenerativeModel(
-      { 
-        model: 'gemini-1.5-flash',
-        tools: [
-          {
-            functionDeclarations: [
-              {
-                name: 'get_services',
-                description: 'Lấy danh sách các dịch vụ cắt tóc và làm đẹp của salon.',
-              },
-              {
-                name: 'get_barbers',
-                description: 'Lấy danh sách các thợ cắt tóc (barber) đang làm việc.',
-              },
-              {
-                name: 'get_available_slots',
-                description: 'Kiểm tra các khung giờ còn trống (HH:mm) của một thợ cắt tóc vào một ngày cụ thể.',
-                parameters: {
-                  type: 'object',
-                  properties: {
-                    barber_id: { type: 'string', description: 'ID của thợ cắt tóc' },
-                    date: { type: 'string', description: 'Ngày cần kiểm tra (YYYY-MM-DD)' },
-                  },
-                  required: ['barber_id', 'date'],
+    this.model = this.genAI.getGenerativeModel({
+      model: 'gemini-1.5-flash',
+      tools: [
+        {
+          functionDeclarations: [
+            {
+              name: 'get_services',
+              description: 'Lấy danh sách các dịch vụ cắt tóc và làm đẹp của salon.',
+            },
+            {
+              name: 'get_barbers',
+              description: 'Lấy danh sách các thợ cắt tóc (barber) đang làm việc.',
+            },
+            {
+              name: 'get_available_slots',
+              description: 'Kiểm tra các khung giờ còn trống (HH:mm) của một thợ cắt tóc vào một ngày cụ thể.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  barber_id: { type: 'string', description: 'ID của thợ cắt tóc' },
+                  date: { type: 'string', description: 'Ngày cần kiểm tra (YYYY-MM-DD)' },
                 },
+                required: ['barber_id', 'date'],
               },
-              {
-                name: 'create_booking',
-                description: 'Tạo một lịch hẹn đặt chỗ mới.',
-                parameters: {
-                  type: 'object',
-                  properties: {
-                    customer_name: { type: 'string' },
-                    phone: { type: 'string' },
-                    service_id: { type: 'string' },
-                    barber_id: { type: 'string' },
-                    date: { type: 'string', description: 'YYYY-MM-DD' },
-                    time: { type: 'string', description: 'HH:mm' },
-                  },
-                  required: ['customer_name', 'phone', 'service_id', 'barber_id', 'date', 'time'],
+            },
+            {
+              name: 'create_booking',
+              description: 'Tạo một lịch hẹn đặt chỗ mới.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  customer_name: { type: 'string' },
+                  phone: { type: 'string' },
+                  service_id: { type: 'string' },
+                  barber_id: { type: 'string' },
+                  date: { type: 'string', description: 'YYYY-MM-DD' },
+                  time: { type: 'string', description: 'HH:mm' },
                 },
+                required: ['customer_name', 'phone', 'service_id', 'barber_id', 'date', 'time'],
               },
-              {
-                name: 'cancel_booking',
-                description: 'Hủy một lịch hẹn đã đặt dựa trên mã booking.',
-                parameters: {
-                  type: 'object',
-                  properties: {
-                    booking_id: { type: 'string', description: 'Mã đặt lịch (booking code hoặc ID)' },
-                  },
-                  required: ['booking_id'],
+            },
+            {
+              name: 'cancel_booking',
+              description: 'Hủy một lịch hẹn đã đặt dựa trên mã booking.',
+              parameters: {
+                type: 'object',
+                properties: {
+                  booking_id: { type: 'string', description: 'Mã đặt lịch (booking code hoặc ID)' },
                 },
+                required: ['booking_id'],
               },
-            ],
-          },
-        ] as any,
-      },
-      { apiVersion: 'v1' } as any
-    );
+            },
+          ],
+        },
+      ] as any,
+    });
   }
 
   async chat(message: string, sessionId: string, userId?: string) {
