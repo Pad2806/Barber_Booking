@@ -187,7 +187,7 @@ export default async function HomePage(): Promise<React.ReactElement> {
               >
                 <div className="relative h-56">
                   <Image
-                    src={salon.coverImage || 'https://images.unsplash.com/photo-1592647420148-bfcc1a004eb7?w=800&h=600&fit=crop&q=80'}
+                    src={salon.coverImage || 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&h=600&fit=crop&q=80'}
                     alt={salon.name}
                     fill
                     loading="lazy"
