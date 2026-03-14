@@ -257,9 +257,12 @@ export class AuthService {
     return sanitized;
   }
 
-  async validateJwtPayload(payload: JwtPayload): Promise<User | null> {
+  async validateJwtPayload(payload: JwtPayload): Promise<any | null> {
     return this.prisma.user.findUnique({
       where: { id: payload.sub },
+      include: {
+        staff: true,
+      },
     });
   }
 

@@ -22,14 +22,39 @@ export class ManagerService {
     async getManagerSalonId(userId: string): Promise<string> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
-            include: { staff: true },
+            include: { 
+                staff: true,
+                ownedSalons: true 
+            },
         });
 
-        if (!user || user.role !== Role.MANAGER || !user.staff) {
-            throw new ForbiddenException('User is not a manager or not assigned to a salon');
+        if (!user) {
+            throw new ForbiddenException('User not found');
         }
 
-        return user.staff.salonId;
+        // Check if user has manager privileges
+        const isManager = 
+            user.role === Role.MANAGER || 
+            user.role === Role.SALON_OWNER || 
+            user.role === Role.SUPER_ADMIN ||
+            (user.role === Role.STAFF && user.staff?.position === StaffPosition.MANAGER);
+
+        if (!isManager) {
+            throw new ForbiddenException('User is not authorized as a manager');
+        }
+
+        // For individuals who belong to a specific salon via Staff record
+        if (user.staff?.salonId) {
+            return user.staff.salonId;
+        }
+
+        // For SALON_OWNER who might not be in the staff table, pick their first salon
+        if (user.role === Role.SALON_OWNER && user.ownedSalons && user.ownedSalons.length > 0) {
+            return user.ownedSalons[0].id;
+        }
+
+        // Fallback for SUPER_ADMIN or MANAGER without assigned salon
+        throw new ForbiddenException('User is not assigned to any salon. Please ensure the user is added to the Staff table for a specific salon.');
     }
 
     /**

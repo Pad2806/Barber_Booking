@@ -35,7 +35,12 @@ export class RolesGuard implements CanActivate {
       [Role.CUSTOMER]: 10,
     };
 
-    const userRoleLevel = roleHierarchy[user.role as Role] || 0;
+    let userRoleLevel = roleHierarchy[user.role as Role] || 0;
+
+    // If staff has MANAGER position, they get MANAGER level access
+    if (user.role === Role.STAFF && user.staff?.position === 'MANAGER') {
+      userRoleLevel = Math.max(userRoleLevel, roleHierarchy[Role.MANAGER]);
+    }
 
     // User can access if their role level is >= any of the required roles
     return requiredRoles.some(

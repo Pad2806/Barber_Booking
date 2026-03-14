@@ -53,7 +53,7 @@ const MANAGER_MENU_ITEMS = [
   { key: 'reviews', href: '/manager/reviews', label: 'Đánh giá', icon: MessageSquare },
 ];
 
-export default function ManagerLayout({ children }: ManagerLayoutProps) {
+export default function ManagerLayout({ children }: ManagerLayoutProps): React.JSX.Element {
   const { data: session, status } = useSession();
   const router = useRouter();
   const pathname = usePathname();
@@ -109,7 +109,7 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
       <nav className="flex-1 px-3 space-y-1">
         {MANAGER_MENU_ITEMS.map(item => {
           const Icon = item.icon;
-          const isActive = pathname === item.href || (item.key !== 'dashboard' && pathname.startsWith(item.href));
+          const isActive = pathname === item.href || (item.key !== 'dashboard' && pathname?.startsWith(item.href));
           
           return (
             <Link
