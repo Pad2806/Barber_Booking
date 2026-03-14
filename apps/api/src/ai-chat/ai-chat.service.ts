@@ -35,15 +35,13 @@ export class AIChatService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    this.initializeModel('gemini-1.5-flash-latest');
     await this.checkGeminiConnection();
   }
 
-  private initializeModel(modelName: string) {
+  private async checkGeminiConnection() {
     try {
-      this.logger.log(`Initializing Gemini model: ${modelName}`);
       this.model = this.genAI.getGenerativeModel({
-        model: modelName,
+        model: 'gemini-1.5-pro',
         tools: [
           {
             functionDeclarations: [
@@ -98,28 +96,12 @@ export class AIChatService implements OnModuleInit {
           },
         ] as any,
       });
-    } catch (error) {
-      this.logger.error(`Failed to initialize model ${modelName}`, error);
-      if (modelName !== 'gemini-1.5-pro-latest') {
-        this.initializeModel('gemini-1.5-pro-latest');
-      }
-    }
-  }
 
-  private async checkGeminiConnection() {
-    try {
-      const result = await this.model.generateContent('ping');
-      if (result) {
-        this.logger.log('✅ Gemini connection OK');
-      }
+      // Startup connection test
+      await this.model.generateContent('hello');
+      this.logger.log('✅ Gemini (gemini-1.5-pro) connection OK');
     } catch (error: any) {
-      this.logger.error('❌ Gemini connection failed', error.message);
-      // Fallback check
-      if (this.model.model === 'gemini-1.5-flash-latest') {
-        this.logger.log('🔄 Attempting fallback to gemini-1.5-pro-latest');
-        this.initializeModel('gemini-1.5-pro-latest');
-        await this.checkGeminiConnection();
-      }
+      this.logger.error('❌ Gemini connection failed or model not found', error.message);
     }
   }
 
@@ -165,7 +147,15 @@ export class AIChatService implements OnModuleInit {
         data: { conversationId: conversation.id, role: 'user', content: message },
       });
 
-      let result = await chatSession.sendMessage(message);
+      // Utility for timeout
+      const timeout = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms));
+
+      // Send message with 10s timeout protection
+      let result: any = await Promise.race([
+        chatSession.sendMessage(message),
+        timeout(10000)
+      ]);
+      
       let responseText = result.response.text();
 
       // 4. Loop xử lý Function Calling (hỗ trợ nhiều call cùng lúc)
@@ -183,12 +173,16 @@ export class AIChatService implements OnModuleInit {
           });
         }
 
-        const nextStep = await chatSession.sendMessage(toolOutputs as any);
+        const nextStep: any = await Promise.race([
+          chatSession.sendMessage(toolOutputs as any),
+          timeout(10000)
+        ]);
         responseText = nextStep.response.text();
         calls = nextStep.response.functionCalls();
       }
 
       this.logger.log(`AI Response (Session: ${sessionId}): ${responseText.substring(0, 100)}...`);
+      this.logger.log(`Full Response: ${responseText}`);
 
       // 5. Lưu phản hồi và Log
       await this.prisma.chatMessage.create({
