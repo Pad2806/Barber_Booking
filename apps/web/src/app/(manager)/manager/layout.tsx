@@ -69,9 +69,17 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login?callbackUrl=/manager/dashboard');
-    } else if (status === 'authenticated' && session?.user?.role) {
-      const allowedRoles = ['MANAGER', 'SALON_OWNER', 'SUPER_ADMIN'];
-      if (!allowedRoles.includes(session.user.role)) {
+    } else if (status === 'authenticated') {
+      const userRole = session?.user?.role;
+      const staffPosition = me?.staff?.position;
+      
+      const isManager = 
+        userRole === 'MANAGER' || 
+        userRole === 'SALON_OWNER' || 
+        userRole === 'SUPER_ADMIN' ||
+        (userRole === 'STAFF' && staffPosition === 'MANAGER');
+
+      if (!isManager && !isLoadingMe) {
         toast.error('Bạn không có quyền truy cập khu vực Quản lý');
         router.push('/');
       }
