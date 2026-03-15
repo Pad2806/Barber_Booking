@@ -3,21 +3,16 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { managerApi } from '@/lib/api';
 import { 
-  Calendar, 
   Clock, 
   CheckCircle2, 
   XCircle, 
-  AlertCircle,
   FileText,
-  User,
-  History,
-  MoreVertical,
   CalendarDays,
   ShieldCheck,
   ShieldAlert,
   Loader2
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

@@ -291,14 +291,6 @@ export const managerApi = {
     const response = await apiClient.patch('/manager/bookings/bulk-status', { ids, status });
     return response.data;
   },
-  getLeaveRequests: async () => {
-    const response = await apiClient.get('/manager/leaves');
-    return response.data;
-  },
-  approveLeave: async (id: string, data: { status: string; reason?: string }) => {
-    const response = await apiClient.patch(`/manager/leaves/${id}`, data);
-    return response.data;
-  },
 };
 
 export const cashierApi = {

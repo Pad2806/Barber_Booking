@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   ChevronLeft, 
@@ -16,7 +16,7 @@ import { format, addDays, startOfWeek, isSameDay, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { managerApi, usersApi, StaffShift } from '@/lib/api';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
@@ -56,7 +56,7 @@ export default function ManagerSchedulePage() {
     queryFn: usersApi.getMe,
   });
 
-  const { data: schedules, isLoading: isSchedulesLoading } = useQuery({
+  const { data: schedules, isLoading: _isSchedulesLoading } = useQuery({
     queryKey: ['manager', 'schedules', format(weekStart, 'yyyy-MM-dd')],
     queryFn: () => managerApi.getSchedules(
       undefined, 

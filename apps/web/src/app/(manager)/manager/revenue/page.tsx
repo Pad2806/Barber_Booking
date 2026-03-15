@@ -3,19 +3,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { managerApi } from '@/lib/api';
 import { 
-  BarChart3, 
-  TrendingUp, 
   DollarSign, 
   ArrowUpRight, 
-  ArrowDownRight, 
   Scissors, 
-  User, 
-  Calendar, 
-  Filter, 
   Trophy,
-  Activity,
-  Layers,
-  TrendingDown
+  Activity
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';

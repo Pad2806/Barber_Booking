@@ -9,9 +9,6 @@ import {
   Eye,
   Star,
   Users,
-  Award,
-  Activity,
-  Calendar,
   Loader2,
   Search,
 } from 'lucide-react';

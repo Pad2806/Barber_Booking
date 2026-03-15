@@ -7,17 +7,11 @@ import {
   Calendar, 
   Clock, 
   User, 
-  Scissors, 
   MoreVertical, 
-  Eye,
   CheckCircle,
   XCircle,
   Clock3,
-  Award,
-  Filter,
-  ArrowRight,
-  MapPin,
-  Smartphone
+  Filter
 } from 'lucide-react';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge } from '@/components/admin/status-badge';

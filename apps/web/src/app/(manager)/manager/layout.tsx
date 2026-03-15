@@ -9,9 +9,6 @@ import {
   LayoutDashboard,
   Calendar,
   Users,
-  Scissors,
-  Star,
-  Settings,
   LogOut,
   Menu,
   ChevronLeft,
@@ -20,7 +17,8 @@ import {
   ClipboardList,
   BarChart3,
   MessageSquare,
-  MapPin
+  MapPin,
+  Bell
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
@@ -109,7 +107,7 @@ export default function ManagerLayout({ children }: ManagerLayoutProps): React.J
       <nav className="flex-1 px-3 space-y-1">
         {MANAGER_MENU_ITEMS.map(item => {
           const Icon = item.icon;
-          const isActive = item.href === '/manager/dashboard' ? pathname === '/manager/dashboard' : pathname.startsWith(item.href);
+          const isActive = pathname ? (item.href === '/manager/dashboard' ? pathname === '/manager/dashboard' : pathname.startsWith(item.href)) : false;
           
           return (
             <Link
@@ -180,7 +178,7 @@ export default function ManagerLayout({ children }: ManagerLayoutProps): React.J
               </Sheet>
               
               <h2 className="text-sm font-semibold text-slate-500 hidden sm:block uppercase tracking-wider">
-                {MANAGER_MENU_ITEMS.find(i => pathname.startsWith(i.href))?.label || 'Dashboard'}
+                {MANAGER_MENU_ITEMS.find(i => pathname?.startsWith(i.href))?.label || 'Dashboard'}
               </h2>
 
               <div className="hidden md:flex items-center gap-2 px-3 py-1 bg-slate-100 rounded-full border border-slate-200 ml-4">

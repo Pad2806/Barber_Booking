@@ -6,8 +6,6 @@ import {
   Star, 
   MessageSquare,   
   MoreVertical, 
-  Clock, 
-  Trash2, 
   CheckCircle2,
   XCircle,
   TrendingUp,
@@ -15,18 +13,15 @@ import {
   Scissors,
   Filter,
   Search,
-  Loader2,
-  Quote
+  Loader2
 } from 'lucide-react';
 import { DataTable } from '@/components/admin/data-table';
-import { StatusBadge } from '@/components/admin/status-badge';
 import { ErrorState } from '@/components/admin/error-state';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
 import { 
   Dialog, 
   DialogContent, 
@@ -39,18 +34,14 @@ import {
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
+  DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { ColumnDef } from '@tanstack/react-table';
-import { cn, formatDate } from '@/lib/utils';
+import { formatDate } from '@/lib/utils';
 import React, { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 
-const VISIBILITY_CONFIG: any = {
-  true: { label: 'Hiển thị', variant: 'success' },
-  false: { label: 'Đã ẩn', variant: 'destructive' },
-};
+
 
 export default function ManagerReviewsPage() {
   const queryClient = useQueryClient();

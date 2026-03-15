@@ -8,10 +8,6 @@ import {
   CalendarCheck, 
   Star, 
   DollarSign,
-  ArrowUpRight,
-  ArrowDownRight,
-  Clock,
-  Briefcase,
   Activity,
   UserCheck
 } from 'lucide-react';
