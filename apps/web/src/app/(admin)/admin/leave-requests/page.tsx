@@ -339,9 +339,9 @@ export default function AdminLeaveRequestsPage() {
                <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter text-rose-500">
                   Reject <span className="text-slate-900 underline decoration-rose-500/30">Request</span>
                </DialogTitle>
-               <DialogHeader className="font-medium text-slate-500 pt-2">
+               <DialogDescription className="font-medium text-slate-500 pt-2">
                   Vui lòng cung cấp lý do từ chối đơn nghỉ phép của <span className="font-black text-slate-900">{selectedRequest?.staff?.user?.name}</span>.
-               </DialogHeader>
+               </DialogDescription>
             </DialogHeader>
 
             <div className="p-8 space-y-4">
