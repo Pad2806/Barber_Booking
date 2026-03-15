@@ -17,7 +17,7 @@ import Avatar from '@/components/Avatar';
 export default function SalonDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const slug = params.slug as string;
+  const slug = params?.slug as string;
 
   const { setSalon, selectedServices, toggleService, isServiceSelected } = useBookingStore();
 

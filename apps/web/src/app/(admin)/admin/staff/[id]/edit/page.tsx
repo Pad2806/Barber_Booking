@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 export default function EditStaffPage() {
   const params = useParams();
   const router = useRouter();
-  const staffId = params.id as string;
+  const staffId = params?.id as string;
 
   useEffect(() => {
     router.replace(`/admin/staff?action=edit&id=${staffId}`);

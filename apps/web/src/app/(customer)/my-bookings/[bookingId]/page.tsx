@@ -22,7 +22,7 @@ export default function BookingDetailPage(): React.ReactNode {
   const params = useParams();
   const router = useRouter();
   const { status } = useSession();
-  const bookingId = params.bookingId as string;
+  const bookingId = params?.bookingId as string;
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);

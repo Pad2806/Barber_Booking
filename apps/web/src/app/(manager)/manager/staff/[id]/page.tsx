@@ -333,7 +333,7 @@ export default function StaffDetailPage() {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-sm animate-in fade-in duration-300">
           <Card className="w-full max-w-lg border-none shadow-2xl overflow-hidden rounded-[40px]">
             <CardHeader className="bg-[#C8A97E] text-white p-10 relative">
-               <div className="absolute top-[-20%] right-[-10%] opacity-10"><Star size={200} weight="fill" /></div>
+                <div className="absolute top-[-20%] right-[-10%] opacity-10"><Star size={200} className="fill-white" /></div>
               <CardTitle className="text-3xl font-black flex items-center gap-3 font-heading italic uppercase italic">
                 <Star className="w-8 h-8 fill-white" /> ĐÁNH GIÁ NHÂN SỰ
               </CardTitle>

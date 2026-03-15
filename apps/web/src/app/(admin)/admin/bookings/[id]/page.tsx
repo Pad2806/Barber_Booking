@@ -28,7 +28,7 @@ import toast from 'react-hot-toast';
 export default function BookingDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const bookingId = params.id as string;
+  const bookingId = params?.id as string;
 
   const [booking, setBooking] = useState<AdminBookingDetail | null>(null);
   const [salonServices, setSalonServices] = useState<Service[]>([]);

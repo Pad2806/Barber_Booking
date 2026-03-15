@@ -61,7 +61,7 @@ const MENU_ICONS: Record<string, React.ElementType> = {
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const pathname = usePathname();
+  const pathname = usePathname() || '';
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 

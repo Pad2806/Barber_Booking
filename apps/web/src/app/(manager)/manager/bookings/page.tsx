@@ -2,20 +2,21 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { managerApi } from '@/lib/api';
-import { 
+  import { 
   Search, 
   Calendar, 
   Clock, 
-  User, 
   MoreVertical, 
   CheckCircle,
   XCircle,
   Clock3,
-  Filter
+  Filter,
+  Award,
+  ArrowRight
 } from 'lucide-react';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge } from '@/components/admin/status-badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,7 +43,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
-import { cn, formatPrice, formatDate } from '@/lib/utils';
+import { formatPrice, formatDate } from '@/lib/utils';
 import React, { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
@@ -74,7 +75,7 @@ export default function ManagerBookingsPage() {
     staffId: ''
   });
 
-  const { data: bookings, isLoading, isError, error, refetch } = useQuery({
+  const { data: bookings, isLoading } = useQuery({
     queryKey: ['manager', 'bookings', { status: statusFilter, date: dateFilter, search: searchTerm }],
     queryFn: () => managerApi.getBookings({ 
         status: statusFilter === 'ALL' ? undefined : statusFilter as any, 

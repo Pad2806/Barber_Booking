@@ -36,7 +36,7 @@ export default function AdminSchedulePage() {
   
   // Sheet states
   const [isLeaveSheetOpen, setIsLeaveSheetOpen] = useState(false);
-  const [selectedStaffForLeave, setSelectedStaffForLeave] = useState<any>(null);
+  const [selectedStaffForLeave, _setSelectedStaffForLeave] = useState<any>(null);
   const [isShiftSheetOpen, setIsShiftSheetOpen] = useState(false);
   const [selectedStaffForShift, setSelectedStaffForShift] = useState<any>(null);
   const [selectedDayForShift, setSelectedDayForShift] = useState<Date | null>(null);
@@ -64,7 +64,7 @@ export default function AdminSchedulePage() {
     queryFn: () => adminApi.getAllSalons({ limit: 100 }),
   });
 
-  const { data: schedules, isLoading: isSchedulesLoading } = useQuery({
+  const { data: schedules, isLoading: _isSchedulesLoading } = useQuery({
     queryKey: ['admin', 'schedules', selectedSalonId, format(weekStart, 'yyyy-MM-dd')],
     queryFn: () => adminApi.getSchedules(
       selectedSalonId, 
@@ -439,10 +439,4 @@ export default function AdminSchedulePage() {
   );
 }
 
-function CheckCircle({ className }: { className?: string }) {
-  return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  );
-}
+

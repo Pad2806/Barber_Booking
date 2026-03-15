@@ -4,11 +4,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { cashierApi, salonApi } from '@/lib/api';
 import { 
   Search, 
-  CreditCard, 
   Banknote, 
-  CheckCircle2, 
   Scissors, 
-  User, 
   Plus, 
   QrCode,
   ArrowRight,
@@ -23,16 +20,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
-  DialogFooter 
-} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 

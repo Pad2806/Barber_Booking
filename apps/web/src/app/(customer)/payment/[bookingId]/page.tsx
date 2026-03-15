@@ -12,7 +12,7 @@ import { formatPrice, cn } from '@/lib/utils';
 export default function PaymentPage() {
   const params = useParams();
   const router = useRouter();
-  const bookingId = params.bookingId as string;
+  const bookingId = params?.bookingId as string;
   const { reset } = useBookingStore();
 
   const [booking, setBooking] = useState<Booking | null>(null);

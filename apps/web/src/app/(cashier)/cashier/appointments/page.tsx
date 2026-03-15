@@ -1,21 +1,11 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { cashierApi } from '@/lib/api';
 import { 
   Search, 
-  Filter, 
   Calendar, 
-  Clock, 
-  User, 
-  Scissors, 
-  MoreHorizontal, 
-  ChevronRight,
-  ArrowRight,
-  CheckCircle2,
-  AlertCircle,
-  MapPin,
-  Smartphone,
+  Smartphone, 
   XCircle
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
