@@ -13,6 +13,8 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ManagerService } from './manager.service';
 import { CreateShiftDto } from './dto/create-shift.dto';
 import { UpdateShiftDto } from './dto/update-shift.dto';
+import { CreateStaffDto } from '../users/dto/create-staff.dto';
+import { UpdateStaffDto } from '../users/dto/update-staff.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -61,6 +63,28 @@ export class ManagerController {
         return this.managerService.rateStaffPerformance(userId, staffId, dto);
     }
 
+    @Post('staff')
+    @ApiOperation({ summary: 'Add a new staff member to the branch' })
+    createStaff(@CurrentUser('id') userId: string, @Body() dto: CreateStaffDto) {
+        return this.managerService.createStaff(userId, dto);
+    }
+
+    @Patch('staff/:id')
+    @ApiOperation({ summary: 'Update branch staff member' })
+    updateStaff(
+        @CurrentUser('id') userId: string,
+        @Param('id') staffUserId: string,
+        @Body() dto: UpdateStaffDto
+    ) {
+        return this.managerService.updateStaff(userId, staffUserId, dto);
+    }
+
+    @Delete('staff/:id')
+    @ApiOperation({ summary: 'Remove staff from the branch' })
+    deleteStaff(@CurrentUser('id') userId: string, @Param('id') staffUserId: string) {
+        return this.managerService.deleteStaff(userId, staffUserId);
+    }
+
     @Get('leave-requests')
     @ApiOperation({ summary: 'Get all leave/day off requests for the branch' })
     getLeaveRequests(@CurrentUser('id') userId: string) {
@@ -97,6 +121,26 @@ export class ManagerController {
         @Body() dto: { date: string; timeSlot: string; staffId?: string }
     ) {
         return this.managerService.rescheduleBooking(userId, bookingId, dto);
+    }
+
+    @Patch('bookings/bulk-status')
+    @ApiOperation({ summary: 'Bulk update booking status' })
+    bulkUpdateStatus(
+        @CurrentUser('id') userId: string,
+        @Body('ids') ids: string[],
+        @Body('status') status: BookingStatus,
+    ) {
+        return this.managerService.bulkUpdateBookingStatus(userId, ids, status);
+    }
+
+    @Patch('bookings/:id/status')
+    @ApiOperation({ summary: 'Update booking status' })
+    updateStatus(
+        @CurrentUser('id') userId: string,
+        @Param('id') id: string,
+        @Body('status') status: BookingStatus,
+    ) {
+        return this.managerService.updateBookingStatus(userId, id, status);
     }
 
     @Get('reports/revenue')

@@ -271,6 +271,26 @@ export const managerApi = {
     const response = await apiClient.delete(`/manager/schedules/${id}`);
     return response.data;
   },
+  createStaff: async (data: any) => {
+    const response = await apiClient.post('/manager/staff', data);
+    return response.data;
+  },
+  updateStaff: async (id: string, data: any) => {
+    const response = await apiClient.patch(`/manager/staff/${id}`, data);
+    return response.data;
+  },
+  deleteStaff: async (id: string) => {
+    const response = await apiClient.delete(`/manager/staff/${id}`);
+    return response.data;
+  },
+  updateBookingStatus: async (id: string, status: string) => {
+    const response = await apiClient.patch(`/manager/bookings/${id}/status`, { status });
+    return response.data;
+  },
+  bulkUpdateBookingStatus: async (ids: string[], status: string) => {
+    const response = await apiClient.patch('/manager/bookings/bulk-status', { ids, status });
+    return response.data;
+  },
 };
 
 export const cashierApi = {

@@ -12,9 +12,16 @@ dayjs.extend(timezone);
 
 const VIETNAM_TZ = 'Asia/Ho_Chi_Minh';
 
+import { UsersService } from '../users/users.service';
+import { CreateStaffDto } from '../users/dto/create-staff.dto';
+import { UpdateStaffDto } from '../users/dto/update-staff.dto';
+
 @Injectable()
 export class ManagerService {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly usersService: UsersService,
+    ) { }
 
     /**
      * Helper: Get salon ID for a manager user
@@ -279,6 +286,54 @@ export class ManagerService {
         });
     }
 
+    async createStaff(userId: string, dto: CreateStaffDto) {
+        const managerSalonId = await this.getManagerSalonId(userId);
+        
+        // Force salonId to be the manager's salon
+        const staffDto = {
+            ...dto,
+            salonId: managerSalonId
+        };
+
+        return this.usersService.createStaff(staffDto);
+    }
+
+    async updateStaff(userId: string, staffUserId: string, dto: UpdateStaffDto) {
+        const managerSalonId = await this.getManagerSalonId(userId);
+        
+        // Verify staff belongs to manager's salon
+        const staff = await this.prisma.staff.findUnique({
+            where: { userId: staffUserId }
+        });
+
+        if (!staff || staff.salonId !== managerSalonId) {
+            throw new ForbiddenException('Staff not found in your salon');
+        }
+
+        // Force salonId to be the manager's salon if it was provided in dto
+        const staffDto = {
+            ...dto,
+            salonId: managerSalonId
+        };
+
+        return this.usersService.updateStaff(staffUserId, staffDto);
+    }
+
+    async deleteStaff(userId: string, staffUserId: string) {
+        const managerSalonId = await this.getManagerSalonId(userId);
+        
+        // Verify staff belongs to manager's salon
+        const staff = await this.prisma.staff.findUnique({
+            where: { userId: staffUserId }
+        });
+
+        if (!staff || staff.salonId !== managerSalonId) {
+            throw new ForbiddenException('Staff not found in your salon');
+        }
+
+        return this.usersService.delete(staffUserId);
+    }
+
     /**
      * 3. DAY OFF MANAGEMENT
      */
@@ -388,6 +443,35 @@ export class ManagerService {
                 timeSlot: dto.timeSlot,
                 staffId: dto.staffId || booking.staffId
             }
+        });
+    }
+
+    async updateBookingStatus(userId: string, bookingId: string, status: BookingStatus) {
+        const salonId = await this.getManagerSalonId(userId);
+        const booking = await this.prisma.booking.findUnique({
+            where: { id: bookingId }
+        });
+
+        if (!booking || booking.salonId !== salonId) {
+            throw new ForbiddenException('Access denied');
+        }
+
+        return this.prisma.booking.update({
+            where: { id: bookingId },
+            data: { status, updatedAt: new Date() }
+        });
+    }
+
+    async bulkUpdateBookingStatus(userId: string, ids: string[], status: BookingStatus) {
+        const salonId = await this.getManagerSalonId(userId);
+        
+        // Only update bookings that belong to this salon
+        return this.prisma.booking.updateMany({
+            where: {
+                id: { in: ids },
+                salonId: salonId
+            },
+            data: { status, updatedAt: new Date() }
         });
     }
 

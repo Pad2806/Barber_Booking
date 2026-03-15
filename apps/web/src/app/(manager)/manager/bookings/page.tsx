@@ -18,8 +18,10 @@ import {
   CheckCircle2,
   AlertCircle,
   MapPin,
-  Smartphone
+  Smartphone,
+  Award
 } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -47,16 +49,18 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 
+type BookingStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+
 export default function ManagerBookingsPage() {
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [statusFilter, setStatusFilter] = useState<BookingStatus | 'ALL'>('ALL');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [dateFilter, setDateFilter] = useState(dayjs().format('YYYY-MM-DD'));
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
@@ -82,6 +86,27 @@ export default function ManagerBookingsPage() {
     queryFn: managerApi.getStaff,
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: BookingStatus }) => 
+      managerApi.updateBookingStatus(id, status),
+    onSuccess: () => {
+      toast.success('Đã cập nhật trạng thái');
+      queryClient.invalidateQueries({ queryKey: ['manager', 'bookings'] });
+    },
+    onError: () => toast.error('Không thể cập nhật trạng thái')
+  });
+
+  const bulkUpdateStatusMutation = useMutation({
+    mutationFn: (status: BookingStatus) => 
+      managerApi.bulkUpdateBookingStatus(selectedIds, status),
+    onSuccess: () => {
+      toast.success(`Đã cập nhật ${selectedIds.length} lịch đặt`);
+      setSelectedIds([]);
+      queryClient.invalidateQueries({ queryKey: ['manager', 'bookings'] });
+    },
+    onError: () => toast.error('Lỗi khi cập nhật hàng loạt')
+  });
+
   const rescheduleMutation = useMutation({
     mutationFn: (data: any) => managerApi.rescheduleBooking(selectedBooking.id, data),
     onSuccess: () => {
@@ -93,6 +118,20 @@ export default function ManagerBookingsPage() {
       toast.error('Không thể dời lịch. Vui lòng kiểm tra lại.');
     }
   });
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === bookings?.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(bookings?.map((b: any) => b.id) || []);
+    }
+  };
 
   const statusColors: any = {
     CONFIRMED: 'bg-emerald-50 text-emerald-600 border-emerald-100',
@@ -133,6 +172,36 @@ export default function ManagerBookingsPage() {
               <p className="text-slate-500 font-medium">Giám sát và điều phối tất cả lịch đặt tại chi nhánh.</p>
            </div>
            <div className="flex flex-wrap items-center gap-3">
+              {selectedIds.length > 0 && (
+                <div className="flex items-center gap-2 bg-[#C8A97E]/10 px-4 py-2 rounded-2xl border border-[#C8A97E]/20 animate-in fade-in zoom-in duration-300">
+                  <span className="text-[10px] font-black uppercase text-[#C8A97E] mr-2">Đã chọn {selectedIds.length}</span>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="sm" className="bg-[#C8A97E] hover:bg-[#B8975E] text-white rounded-xl font-bold text-[10px] uppercase h-8">
+                        Thao tác hàng loạt <ChevronRight className="w-3 h-3 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="rounded-2xl p-2 border-slate-100 shadow-2xl w-48">
+                      <DropdownMenuItem onClick={() => bulkUpdateStatusMutation.mutate('CONFIRMED')} className="rounded-xl font-bold text-[10px] uppercase cursor-pointer">
+                        <CheckCircle2 className="w-3.5 h-3.5 mr-2 text-emerald-500" /> Xác nhận tất cả
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => bulkUpdateStatusMutation.mutate('IN_PROGRESS')} className="rounded-xl font-bold text-[10px] uppercase cursor-pointer">
+                         <Clock className="w-3.5 h-3.5 mr-2 text-indigo-500" /> Bắt đầu phục vụ
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => bulkUpdateStatusMutation.mutate('COMPLETED')} className="rounded-xl font-bold text-[10px] uppercase cursor-pointer">
+                         <Award className="w-3.5 h-3.5 mr-2 text-blue-500" /> Hoàn tất tất cả
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator className="bg-slate-50 my-1" />
+                      <DropdownMenuItem onClick={() => bulkUpdateStatusMutation.mutate('CANCELLED')} className="rounded-xl font-bold text-[10px] uppercase text-rose-500 cursor-pointer">
+                         <XCircle className="w-3.5 h-3.5 mr-2" /> Hủy tất cả
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  <Button variant="ghost" size="sm" onClick={() => setSelectedIds([])} className="h-8 w-8 p-0 text-slate-400 hover:text-rose-500 hover:bg-transparent">
+                    <XCircle className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
               <div className="relative group flex-1 md:flex-none">
                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#C8A97E]" />
                  <Input 
@@ -151,7 +220,7 @@ export default function ManagerBookingsPage() {
            </div>
         </div>
 
-        <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+        <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as BookingStatus | 'ALL')} className="w-full">
            <TabsList className="bg-slate-100/50 p-1.5 rounded-2xl h-14 w-full md:w-auto flex overflow-x-auto no-scrollbar">
               {['ALL', 'PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'].map((s) => (
                 <TabsTrigger key={s} value={s} className="rounded-xl px-6 font-black italic uppercase text-[10px] tracking-widest data-[state=active]:bg-white data-[state=active]:text-[#C8A97E] data-[state=active]:shadow-sm">
@@ -177,7 +246,15 @@ export default function ManagerBookingsPage() {
                <CardContent className="p-0">
                   <div className="flex flex-col lg:flex-row items-stretch">
                      {/* Time & Status Side */}
-                     <div className="lg:w-48 bg-slate-50 p-6 flex lg:flex-col items-center justify-center lg:border-r border-slate-100 text-center gap-4">
+                     <div className="lg:w-48 bg-slate-50 p-6 flex lg:flex-col items-center justify-center lg:border-r border-slate-100 text-center gap-4 relative">
+                        <div className="absolute top-4 left-4">
+                           <input 
+                             type="checkbox" 
+                             checked={selectedIds.includes(booking.id)}
+                             onChange={() => toggleSelect(booking.id)}
+                             className="w-5 h-5 rounded-lg border-slate-300 text-[#C8A97E] focus:ring-[#C8A97E] transition-all cursor-pointer"
+                           />
+                        </div>
                         <div className="space-y-1">
                            <p className="text-2xl font-black text-slate-900 tracking-tighter italic">{booking.timeSlot}</p>
                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{dayjs(booking.date).format('DD MMM')}</p>
@@ -254,14 +331,31 @@ export default function ManagerBookingsPage() {
                                  </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 border-slate-100 shadow-2xl">
-                                 <DropdownMenuItem className="rounded-xl h-10 px-3 font-bold text-xs uppercase cursor-pointer">
-                                    <Smartphone className="w-4 h-4 mr-3 text-[#C8A97E]" /> Gọi khách hàng
+                                 <DropdownMenuItem 
+                                   className="rounded-xl h-10 px-3 font-bold text-xs uppercase cursor-pointer"
+                                   onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'CONFIRMED' })}
+                                   disabled={booking.status === 'CONFIRMED'}
+                                 >
+                                    <CheckCircle2 className="w-4 h-4 mr-3 text-emerald-500" /> Xác nhận lịch
                                  </DropdownMenuItem>
-                                 <DropdownMenuItem className="rounded-xl h-10 px-3 font-bold text-xs uppercase cursor-pointer">
-                                    <CheckCircle2 className="w-4 h-4 mr-3 text-emerald-500" /> Hoàn tất sớm
+                                 <DropdownMenuItem 
+                                    className="rounded-xl h-10 px-3 font-bold text-xs uppercase cursor-pointer"
+                                    onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'IN_PROGRESS' })}
+                                    disabled={booking.status === 'IN_PROGRESS'}
+                                 >
+                                    <Clock className="w-4 h-4 mr-3 text-indigo-500" /> Bắt đầu phục vụ
+                                 </DropdownMenuItem>
+                                 <DropdownMenuItem 
+                                    className="rounded-xl h-10 px-3 font-bold text-xs uppercase cursor-pointer"
+                                    onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'COMPLETED' })}
+                                 >
+                                    <Award className="w-4 h-4 mr-3 text-blue-500" /> Hoàn tất phục vụ
                                  </DropdownMenuItem>
                                  <DropdownMenuSeparator className="my-1 bg-slate-50" />
-                                 <DropdownMenuItem className="rounded-xl h-10 px-3 font-bold text-xs uppercase text-rose-500 hover:bg-rose-50 hover:text-rose-600 cursor-pointer">
+                                 <DropdownMenuItem 
+                                    className="rounded-xl h-10 px-3 font-bold text-xs uppercase text-rose-500 hover:bg-rose-50 hover:text-rose-600 cursor-pointer"
+                                    onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'CANCELLED' })}
+                                 >
                                     <XCircle className="w-4 h-4 mr-3" /> Hủy lịch hẹn
                                  </DropdownMenuItem>
                               </DropdownMenuContent>
