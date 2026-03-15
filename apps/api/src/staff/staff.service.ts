@@ -606,6 +606,11 @@ export class StaffService extends BaseQueryService {
     let activeSlots: { start: dayjs.Dayjs, end: dayjs.Dayjs }[] = [];
 
     if (shifts.length > 0) {
+      // If any shift is explicitly marked as OFF, return no slots
+      if (shifts.some((s: any) => s.type === ShiftType.OFF)) {
+        return [];
+      }
+
       // Use specific assigned shifts
       activeSlots = shifts.map((s: any) => ({
         start: dayjs.tz(s.shiftStart, VIETNAM_TZ),

@@ -311,10 +311,11 @@ export default function ManagerSchedulePage() {
                   { id: ShiftType.MORNING, label: 'Ca Sáng (08:00 - 12:00)', icon: '☀️', color: 'bg-amber-50 text-amber-600 border-amber-200' },
                   { id: ShiftType.AFTERNOON, label: 'Ca Chiều (13:00 - 18:00)', icon: '⛅', color: 'bg-blue-50 text-blue-600 border-blue-200' },
                   { id: ShiftType.FULL_DAY, label: 'Cả Ngày (08:00 - 18:00)', icon: '⏳', color: 'bg-slate-900 text-white border-slate-800' },
+                  { id: ShiftType.OFF, label: 'Nghỉ (Không làm việc)', icon: '🏠', color: 'bg-rose-50 text-rose-600 border-rose-200' },
                 ].map((type) => (
                   <div 
                     key={type.id}
-                    onClick={() => setShiftData({ ...shiftData, type: type.id })}
+                    onClick={() => setShiftData({ ...shiftData, type: type.id as any })}
                     className={cn(
                       "flex items-center gap-5 p-5 rounded-[2rem] border-2 cursor-pointer transition-all duration-300 shadow-sm hover:shadow-md active:scale-[0.98]",
                       shiftData.type === type.id 
@@ -344,9 +345,8 @@ export default function ManagerSchedulePage() {
                     if (selectedShiftForEdit) {
                       updateShiftMutation.mutate({ id: selectedShiftForEdit.id, data: { type: shiftData.type } });
                     } else {
-                      createShiftMutation.mutate({
+                       createShiftMutation.mutate({
                         staffId: selectedStaffForShift.id,
-                        salonId: me?.staff?.salonId,
                         date: format(selectedDayForShift!, 'yyyy-MM-dd'),
                         type: shiftData.type
                       });

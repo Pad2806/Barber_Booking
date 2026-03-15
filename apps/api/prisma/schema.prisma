@@ -96,6 +96,7 @@ enum ShiftType {
   MORNING
   AFTERNOON
   FULL_DAY
+  OFF
 }
 
 // ============== MODELS ==============

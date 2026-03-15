@@ -41,7 +41,7 @@ export default function ManagerLeaveRequestsPage() {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [isRejectOpen, setIsRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
-  const [activeTab, setActiveTab] = useState('ALL');
+  const [activeTab, setActiveTab] = useState('PENDING');
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['manager', 'leave-requests'],
@@ -142,7 +142,11 @@ export default function ManagerLeaveRequestsPage() {
                         req.status === 'PENDING' ? "bg-amber-50/50" : "bg-slate-50/50"
                      )}>
                         <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Absence Date</p>
-                        <h3 className="text-2xl font-black text-slate-900 tracking-tighter italic">{dayjs(req.date).format('DD MMM')}</h3>
+                        <h3 className="text-xl font-black text-slate-900 tracking-tighter italic whitespace-nowrap">
+                           {dayjs(req.startDate).isSame(dayjs(req.endDate), 'day') 
+                             ? dayjs(req.startDate).format('DD MMM') 
+                             : `${dayjs(req.startDate).format('DD/MM')} - ${dayjs(req.endDate).format('DD/MM')}`}
+                        </h3>
                         <Badge className={cn("border-none px-4 py-1.5 font-black uppercase text-[9px] tracking-widest rounded-xl shadow-sm", statusMap[req.status].color)}>
                            {statusMap[req.status].label}
                         </Badge>
@@ -171,30 +175,40 @@ export default function ManagerLeaveRequestsPage() {
                            </div>
                         </div>
 
-                        {/* Control Actions (Only for Pending) */}
-                        {req.status === 'PENDING' && (
-                          <div className="flex flex-col sm:flex-row items-center gap-3">
-                             <Button 
-                               onClick={() => approveMutation.mutate(req.id)}
-                               disabled={approveMutation.isPending}
-                               className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white rounded-2xl h-14 px-8 font-black italic uppercase text-xs tracking-widest shadow-xl transition-all hover:scale-105"
-                             >
-                                {approveMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <ShieldCheck className="w-5 h-5 mr-3 text-[#C8A97E]" />}
-                                Approve Request
-                             </Button>
-                             <Button 
-                               variant="outline"
-                               onClick={() => {
-                                  setSelectedRequest(req);
-                                  setIsRejectOpen(true);
-                               }}
-                               className="w-full sm:w-auto border-rose-100 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl h-14 px-8 font-black italic uppercase text-xs tracking-widest transition-all"
-                             >
-                                <ShieldAlert className="w-5 h-5 mr-3" />
-                                Reject
-                             </Button>
-                          </div>
-                        )}
+                         {/* Control Actions (Only for Pending) */}
+                         {req.status === 'PENDING' ? (
+                           <div className="flex flex-col sm:flex-row items-center gap-3">
+                              <Button 
+                                onClick={() => approveMutation.mutate(req.id)}
+                                disabled={approveMutation.isPending}
+                                className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white rounded-2xl h-14 px-8 font-black italic uppercase text-xs tracking-widest shadow-xl transition-all hover:scale-105"
+                              >
+                                 {approveMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <ShieldCheck className="w-5 h-5 mr-3 text-[#C8A97E]" />}
+                                 Approve Request
+                              </Button>
+                              <Button 
+                                variant="outline"
+                                onClick={() => {
+                                   setSelectedRequest(req);
+                                   setIsRejectOpen(true);
+                                }}
+                                className="w-full sm:w-auto border-rose-100 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl h-14 px-8 font-black italic uppercase text-xs tracking-widest transition-all"
+                              >
+                                 <ShieldAlert className="w-5 h-5 mr-3" />
+                                 Reject
+                              </Button>
+                           </div>
+                         ) : req.status === 'APPROVED' ? (
+                           <Button 
+                             variant="outline"
+                             onClick={() => rejectMutation.mutate(req.id)}
+                             disabled={rejectMutation.isPending}
+                             className="w-full sm:w-auto border-slate-100 bg-slate-50 text-slate-500 hover:bg-slate-200 rounded-2xl h-14 px-8 font-black italic uppercase text-xs tracking-widest transition-all"
+                           >
+                              <XCircle className="w-5 h-5 mr-3" />
+                              Hủy Duyệt
+                           </Button>
+                         ) : null}
 
                         {/* Rejection Details Info */}
                         {req.status === 'REJECTED' && req.rejectionReason && (

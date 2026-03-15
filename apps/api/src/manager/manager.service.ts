@@ -382,6 +382,46 @@ export class ManagerService {
             if (conflictCount > 0) {
                 throw new ConflictException(`Nhân viên này có ${conflictCount} lịch hẹn đã xác nhận trong thời gian xin nghỉ. Hãy dời lịch trước.`);
             }
+
+            // Auto-create OFF shifts for the period
+            let current = dayjs(leave.startDate);
+            const end = dayjs(leave.endDate);
+
+            while (current.isBefore(end) || current.isSame(end, 'day')) {
+                const date = current.startOf('day').toDate();
+                
+                // Delete existing shifts for this day to avoid duplicates/conflicts
+                await this.prisma.staffShift.deleteMany({
+                    where: { staffId: leave.staffId, date }
+                });
+
+                // Create OFF shift
+                await this.prisma.staffShift.create({
+                    data: {
+                        staffId: leave.staffId,
+                        salonId: leave.staff.salonId,
+                        date,
+                        type: ShiftType.OFF,
+                        shiftStart: current.startOf('day').toDate(),
+                        shiftEnd: current.startOf('day').toDate(),
+                    }
+                });
+
+                current = current.add(1, 'day');
+            }
+        } else if (status === 'REJECTED' && leave.status === 'APPROVED') {
+            // If we are cancelling an already approved leave, remove the OFF shifts 
+            // so it falls back to the weekly schedule
+            await this.prisma.staffShift.deleteMany({
+                where: {
+                    staffId: leave.staffId,
+                    type: ShiftType.OFF,
+                    date: {
+                        gte: leave.startDate,
+                        lte: leave.endDate
+                    }
+                }
+            });
         }
 
         return (this.prisma as any).staffLeave.update({
@@ -696,6 +736,9 @@ export class ManagerService {
                 break;
             case ShiftType.AFTERNOON:
                 startHours = 13; endHours = 18;
+                break;
+            case ShiftType.OFF:
+                startHours = 0; endHours = 0;
                 break;
             case ShiftType.FULL_DAY:
             default:
