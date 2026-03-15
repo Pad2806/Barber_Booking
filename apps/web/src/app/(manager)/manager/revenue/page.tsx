@@ -146,8 +146,8 @@ export default function ManagerRevenuePage() {
                         <YAxis axisLine={false} tickLine={false} tick={{fill: '#6b7280', fontSize: 10, fontWeight: 700}} />
                         <Tooltip contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'}} />
                         <Bar dataKey="amount" radius={[4, 4, 4, 4]} fill="#0ea5e9" barSize={32}>
-                           {report?.trend?.map((entry: any, index: number) => (
-                              <Cell key={`cell-${index}`} fill={index === report.trend.length - 1 ? '#C8A97E' : '#e2e8f0'} />
+                           {(report?.trend || []).map((entry: any, index: number) => (
+                              <Cell key={`cell-${index}`} fill={index === (report?.trend?.length || 0) - 1 ? '#C8A97E' : '#e2e8f0'} />
                            ))}
                         </Bar>
                      </BarChart>
@@ -212,7 +212,9 @@ export default function ManagerRevenuePage() {
                                  <div className="relative">
                                     <Avatar className="h-10 w-10 border shadow-sm">
                                        <AvatarImage src={barber.avatar} />
-                                       <AvatarFallback className="bg-slate-50 text-slate-400 font-bold">{barber.barber.charAt(0)}</AvatarFallback>
+                                       <AvatarFallback className="bg-slate-50 text-slate-400 font-bold">
+                                          {barber.barber?.charAt(0) || 'B'}
+                                       </AvatarFallback>
                                     </Avatar>
                                     {idx === 0 && (
                                        <div className="absolute -top-1 -right-1 bg-amber-400 text-white rounded-full p-0.5 border-2 border-white shadow">

@@ -15,7 +15,7 @@ import {
   Search,
 } from 'lucide-react';
 import { STAFF_POSITIONS } from '@/lib/utils';
-import { managerApi } from '@/lib/api';
+import { managerApi, usersApi } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge } from '@/components/admin/status-badge';
@@ -72,6 +72,13 @@ export default function ManagerStaffPage() {
     queryFn: managerApi.getStaff,
   });
 
+  const { data: me } = useQuery({
+    queryKey: ['users', 'me'],
+    queryFn: usersApi.getMe,
+  });
+
+  const currentSalonId = me?.staff?.salonId;
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => managerApi.deleteStaff(id),
     onSuccess: () => {
@@ -123,10 +130,10 @@ export default function ManagerStaffPage() {
       if (member) {
         setFormData({
           name: member.name || '',
-          email: member.user?.email || '',
-          phone: member.user?.phone || '',
+          email: member.user?.email || member.email || '',
+          phone: member.user?.phone || member.phone || '',
           avatar: member.avatar || '',
-          position: member.role || 'STYLIST',
+          position: member.role || member.position || 'STYLIST',
           password: '',
           isActive: member.isActive !== false,
         });
@@ -137,7 +144,11 @@ export default function ManagerStaffPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (panelMode === 'create') {
-      createMutation.mutate(formData);
+      if (!currentSalonId) {
+        toast.error('Thiếu thông tin chi nhánh. Vui lòng thử lại sau.');
+        return;
+      }
+      createMutation.mutate({ ...formData, salonId: currentSalonId });
     } else if (panelMode === 'edit' && selectedStaffId) {
       updateMutation.mutate({ id: selectedStaffId, updateData: formData });
     }
@@ -427,9 +438,11 @@ export default function ManagerStaffPage() {
                       onChange={e => setFormData({ ...formData, position: e.target.value })}
                       className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C8A97E]/20 transition-all bg-white disabled:bg-slate-50 cursor-pointer"
                     >
-                      {Object.entries(STAFF_POSITIONS).map(([key, value]) => (
-                        <option key={key} value={key}>{value as string}</option>
-                      ))}
+                      {Object.entries(STAFF_POSITIONS)
+                        .filter(([key]) => key !== 'MANAGER')
+                        .map(([key, value]) => (
+                          <option key={key} value={key}>{value as string}</option>
+                        ))}
                     </select>
                   </div>
                   {panelMode === 'create' && (

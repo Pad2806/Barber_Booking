@@ -564,7 +564,7 @@ export class StaffService extends BaseQueryService {
           startDate,
           endDate,
           reason: dto.reason || '',
-          status: 'APPROVED',
+          status: 'PENDING',
         },
       });
     } catch (error) {

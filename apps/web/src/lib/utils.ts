@@ -79,12 +79,12 @@ export const SERVICE_CATEGORIES: Record<string, { label: string; icon: string }>
 
 // Staff positions
 export const STAFF_POSITIONS: Record<string, string> = {
-  STYLIST: 'Stylist',
-  SENIOR_STYLIST: 'Senior Stylist',
-  MASTER_STYLIST: 'Master Stylist',
-  SKINNER: 'Skinner',
-  RECEPTIONIST: 'Thu Ngân',
-  MANAGER: 'Quản lý',
+  STYLIST: 'Thợ cắt tóc',
+  SENIOR_STYLIST: 'Thợ cắt tóc cao cấp',
+  MASTER_STYLIST: 'Chuyên gia tạo mẫu tóc',
+  SKINNER: 'Thợ gội đầu',
+  RECEPTIONIST: 'Lễ tân',
+  MANAGER: 'Quản lý salon',
 };
 
 export function slugify(text: string): string {

@@ -184,15 +184,15 @@ export default function ManagerSchedulePage() {
                 <div className="p-4 border-r bg-slate-50/10 flex items-center gap-4 min-w-[180px]">
                   <div className="relative">
                      <Avatar className="h-10 w-10 border-2 border-white shadow-md group-hover:border-[#C8A97E] transition-all duration-300">
-                        <AvatarImage src={staff.user.avatar} />
+                        <AvatarImage src={staff.user?.avatar} />
                         <AvatarFallback className="bg-slate-100 text-slate-400 text-xs font-black italic">
-                           {staff.user.name.charAt(0)}
+                           {staff.user?.name?.charAt(0) || 'B'}
                         </AvatarFallback>
                      </Avatar>
                      <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white"></div>
                   </div>
                   <div className="min-w-0 flex flex-col items-start text-left">
-                    <p className="text-xs font-black text-slate-900 group-hover:text-[#C8A97E] transition-colors truncate uppercase italic">{staff.user.name}</p>
+                    <p className="text-xs font-black text-slate-900 group-hover:text-[#C8A97E] transition-colors truncate uppercase italic">{staff.user?.name || 'Unknown'}</p>
                     <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider truncate">{staff.position}</p>
                   </div>
                 </div>
@@ -296,12 +296,12 @@ export default function ManagerSchedulePage() {
                   <Avatar className="h-6 w-6 mb-2 border border-white shadow-sm">
                      <AvatarImage src={selectedStaffForShift?.user?.avatar} />
                      <AvatarFallback className="bg-slate-200 text-[10px] font-bold">
-                        {selectedStaffForShift?.user?.name.charAt(0)}
+                        {selectedStaffForShift?.user?.name?.charAt(0) || 'B'}
                      </AvatarFallback>
                   </Avatar>
                   <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Nhân viên</p>
                   <p className="text-sm font-black text-slate-900 italic truncate w-full px-2">
-                    {selectedStaffForShift?.user?.name}
+                    {selectedStaffForShift?.user?.name || 'Đang tải...'}
                   </p>
                </div>
             </div>

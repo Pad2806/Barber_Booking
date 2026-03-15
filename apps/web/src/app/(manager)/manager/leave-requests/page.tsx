@@ -17,6 +17,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
+  Tabs, 
+  TabsList, 
+  TabsTrigger, 
+  TabsContent 
+} from '@/components/ui/tabs';
+import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
@@ -35,6 +41,7 @@ export default function ManagerLeaveRequestsPage() {
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [isRejectOpen, setIsRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [activeTab, setActiveTab] = useState('ALL');
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['manager', 'leave-requests'],
@@ -64,6 +71,11 @@ export default function ManagerLeaveRequestsPage() {
     onError: () => {
       toast.error('Có lỗi xảy ra khi từ chối đơn');
     }
+  });
+
+  const filteredRequests = requests?.filter((req: any) => {
+    if (activeTab === 'ALL') return true;
+    return req.status === activeTab;
   });
 
   const statusMap: any = {
@@ -100,16 +112,24 @@ export default function ManagerLeaveRequestsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        {requests?.length === 0 ? (
-          <div className="bg-white rounded-[2rem] p-24 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 shadow-xl">
-             <div className="p-8 rounded-full bg-slate-50 text-slate-200 mb-8 transform scale-125">
-                <FileText className="w-16 h-16" />
-             </div>
-             <p className="text-slate-300 font-black italic uppercase text-lg tracking-tighter">Hiện không có đơn nghỉ phép nào cần xử lý</p>
-          </div>
-        ) : (
-          requests?.map((req: any) => (
+      <Tabs defaultValue="ALL" onValueChange={setActiveTab} className="space-y-8">
+        <TabsList className="bg-white p-1 rounded-2xl border border-slate-100 shadow-sm h-14 w-full md:w-auto flex overflow-x-auto whitespace-nowrap">
+           <TabsTrigger value="ALL" className="rounded-xl px-8 font-black italic uppercase text-[10px] tracking-widest data-[state=active]:bg-slate-950 data-[state=active]:text-[#C8A97E] h-full transition-all">TẤT CẢ ({requests?.length || 0})</TabsTrigger>
+           <TabsTrigger value="PENDING" className="rounded-xl px-8 font-black italic uppercase text-[10px] tracking-widest data-[state=active]:bg-amber-100 data-[state=active]:text-amber-700 h-full transition-all">CHỜ DUYỆT ({requests?.filter((r:any) => r.status === 'PENDING').length || 0})</TabsTrigger>
+           <TabsTrigger value="APPROVED" className="rounded-xl px-8 font-black italic uppercase text-[10px] tracking-widest data-[state=active]:bg-emerald-100 data-[state=active]:text-emerald-700 h-full transition-all">ĐÃ DUYỆT ({requests?.filter((r:any) => r.status === 'APPROVED').length || 0})</TabsTrigger>
+           <TabsTrigger value="REJECTED" className="rounded-xl px-8 font-black italic uppercase text-[10px] tracking-widest data-[state=active]:bg-rose-100 data-[state=active]:text-rose-700 h-full transition-all">TỪ CHỐI ({requests?.filter((r:any) => r.status === 'REJECTED').length || 0})</TabsTrigger>
+        </TabsList>
+
+        <div className="grid grid-cols-1 gap-6">
+          {filteredRequests?.length === 0 ? (
+            <div className="bg-white rounded-[2rem] p-24 flex flex-col items-center justify-center border-2 border-dashed border-slate-100 shadow-xl">
+               <div className="p-8 rounded-full bg-slate-50 text-slate-200 mb-8 transform scale-125">
+                  <FileText className="w-16 h-16" />
+               </div>
+               <p className="text-slate-300 font-black italic uppercase text-lg tracking-tighter">Không tìm thấy đơn nào phù hợp</p>
+            </div>
+          ) : (
+            filteredRequests?.map((req: any) => (
             <Card key={req.id} className={cn(
               "group border-none shadow-xl hover:shadow-2xl transition-all duration-700 rounded-[2rem] bg-white overflow-hidden relative",
               req.status === 'PENDING' && "ring-2 ring-amber-400/20 shadow-amber-900/5"
@@ -189,7 +209,8 @@ export default function ManagerLeaveRequestsPage() {
             </Card>
           ))
         )}
-      </div>
+        </div>
+      </Tabs>
 
       {/* Reject Reason Modal */}
       <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>

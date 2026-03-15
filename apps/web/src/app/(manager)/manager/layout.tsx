@@ -44,8 +44,8 @@ interface ManagerLayoutProps {
 const MANAGER_MENU_ITEMS = [
   { key: 'dashboard', href: '/manager/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { key: 'staff', href: '/manager/staff', label: 'Nhân viên', icon: Users },
-  { key: 'bookings', href: '/manager/bookings', label: 'Lịch đặt bàn', icon: ClipboardList },
-  { key: 'schedule', href: '/manager/schedule', label: 'Lịch chi nhánh', icon: Calendar },
+  { key: 'bookings', href: '/manager/bookings', label: 'Lịch hẹn', icon: ClipboardList },
+  { key: 'schedule', href: '/manager/schedule', label: 'Lịch làm việc', icon: Calendar },
   { key: 'leaves', href: '/manager/leave-requests', label: 'Duyệt nghỉ phép', icon: Clock },
   { key: 'revenue', href: '/manager/revenue', label: 'Doanh thu', icon: BarChart3 },
   { key: 'reviews', href: '/manager/reviews', label: 'Đánh giá', icon: MessageSquare },
