@@ -17,9 +17,16 @@ export function ShiftCard({ type, onDelete }: ShiftCardProps): React.ReactElemen
       <div className="flex items-center justify-between">
         <span className={`text-[10px] font-black uppercase italic tracking-wider ${
             type === 'MORNING' ? 'text-blue-600' :
-            type === 'AFTERNOON' ? 'text-amber-600' : 'text-purple-600'
+            type === 'AFTERNOON' ? 'text-amber-600' : 
+            type === 'EVENING' ? 'text-purple-600' :
+            type === 'FULL_DAY' ? 'text-emerald-600' : 'text-rose-600'
         }`}>
-          {type === 'MORNING' ? 'Sáng' : type === 'AFTERNOON' ? 'Chiều' : 'Tối'}
+          {
+            type === 'MORNING' ? 'Sáng' : 
+            type === 'AFTERNOON' ? 'Chiều' : 
+            type === 'EVENING' ? 'Tối' : 
+            type === 'FULL_DAY' ? 'Cả ngày' : 'Nghỉ'
+          }
         </span>
         {onDelete && (
           <button 

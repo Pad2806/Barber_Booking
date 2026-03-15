@@ -103,16 +103,10 @@ export function ScheduleCalendar({
                     <div key={day.toString()} className={cn("p-3 border-r border-[#E8E0D4] last:border-r-0 min-h-[120px]", isSameDay(day, new Date()) && "bg-[#C8A97E]/5")}>
                       <div className="space-y-2">
                         {dayShifts.map(shift => {
-                            // Identify shift type based on start time
-                            const startHour = new Date(shift.shiftStart).getUTCHours();
-                            let type = 'MORNING';
-                            if (startHour >= 17) type = 'EVENING';
-                            else if (startHour >= 12) type = 'AFTERNOON';
-
                             return (
                                 <ShiftCard 
                                     key={shift.id} 
-                                    type={type} 
+                                    type={shift.type} 
                                     onDelete={() => onDeleteShift(shift.id)} 
                                 />
                             );

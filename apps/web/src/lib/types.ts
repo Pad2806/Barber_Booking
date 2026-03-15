@@ -96,6 +96,7 @@ export interface StaffSchedule {
 export enum ShiftType {
     MORNING = 'MORNING',
     AFTERNOON = 'AFTERNOON',
+    EVENING = 'EVENING',
     FULL_DAY = 'FULL_DAY',
     OFF = 'OFF',
 }

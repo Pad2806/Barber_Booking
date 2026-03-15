@@ -484,7 +484,7 @@ export class ManagerService {
         return this.prisma.booking.update({
             where: { id: bookingId },
             data: {
-                date: dayjs.tz(dto.date, VIETNAM_TZ).startOf('day').toDate(),
+                date: dayjs.utc(dto.date).startOf('day').toDate(),
                 timeSlot: dto.timeSlot,
                 staffId: dto.staffId || booking.staffId
             }
@@ -663,11 +663,11 @@ export class ManagerService {
 
         if (startDate && endDate) {
             where.date = {
-                gte: dayjs.tz(startDate, VIETNAM_TZ).startOf('day').toDate(),
-                lte: dayjs.tz(endDate, VIETNAM_TZ).startOf('day').toDate(),
+                gte: dayjs.utc(startDate).startOf('day').toDate(),
+                lte: dayjs.utc(endDate).endOf('day').toDate(),
             };
         } else if (date) {
-            where.date = dayjs.tz(date, VIETNAM_TZ).startOf('day').toDate();
+            where.date = dayjs.utc(date).startOf('day').toDate();
         }
 
         return this.prisma.staffShift.findMany({
@@ -691,7 +691,7 @@ export class ManagerService {
             data: {
                 staffId: dto.staffId,
                 salonId,
-                date: dayjs.tz(dto.date, VIETNAM_TZ).startOf('day').toDate(),
+                date: dayjs.utc(dto.date).startOf('day').toDate(),
                 shiftStart: shiftTimes.start.toDate(),
                 shiftEnd: shiftTimes.end.toDate(),
                 type
@@ -711,7 +711,7 @@ export class ManagerService {
         return this.prisma.staffShift.update({
             where: { id },
             data: {
-                date: dayjs.tz(dateToUse, VIETNAM_TZ).startOf('day').toDate(),
+                date: dayjs.utc(dateToUse).startOf('day').toDate(),
                 shiftStart: shiftTimes.start.toDate(),
                 shiftEnd: shiftTimes.end.toDate(),
                 type

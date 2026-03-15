@@ -219,6 +219,8 @@ export default function ManagerSchedulePage() {
                               "w-full h-full p-3 rounded-2xl border transition-all duration-300 cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98] group/shift flex flex-col justify-between items-start gap-1 relative overflow-hidden",
                               staffShift.type === ShiftType.MORNING ? "bg-amber-50/30 border-amber-200/50 text-amber-700" :
                               staffShift.type === ShiftType.AFTERNOON ? "bg-blue-50/30 border-blue-200/50 text-blue-700" :
+                              staffShift.type === ShiftType.EVENING ? "bg-purple-50/30 border-purple-200/50 text-purple-700" :
+                              staffShift.type === ShiftType.OFF ? "bg-rose-50 border-rose-200 text-rose-600" :
                               "bg-slate-900 border-slate-800 text-white"
                             )}
                           >
@@ -228,12 +230,16 @@ export default function ManagerSchedulePage() {
                                 staffShift.type === ShiftType.FULL_DAY ? "text-[#C8A97E]" : "opacity-60"
                               )}>
                                 {staffShift.type === ShiftType.MORNING ? 'Sáng' : 
-                                 staffShift.type === ShiftType.AFTERNOON ? 'Chiều' : 'Cả ngày'}
+                                 staffShift.type === ShiftType.AFTERNOON ? 'Chiều' : 
+                                 staffShift.type === ShiftType.EVENING ? 'Tối' : 
+                                 staffShift.type === ShiftType.OFF ? 'Nghỉ' : 'Cả ngày'}
                               </span>
                               <div className="transform group-hover/shift:rotate-12 transition-transform duration-500">
                                  {staffShift.type === ShiftType.MORNING && <span>☀️</span>}
                                  {staffShift.type === ShiftType.AFTERNOON && <span>⛅</span>}
+                                 {staffShift.type === ShiftType.EVENING && <span>🌙</span>}
                                  {staffShift.type === ShiftType.FULL_DAY && <span>⏳</span>}
+                                 {staffShift.type === ShiftType.OFF && <span>🏠</span>}
                               </div>
                             </div>
                             <div className="flex items-center gap-1.5 text-[10px] font-black italic tracking-tight">
@@ -310,6 +316,7 @@ export default function ManagerSchedulePage() {
                 {[
                   { id: ShiftType.MORNING, label: 'Ca Sáng (08:00 - 12:00)', icon: '☀️', color: 'bg-amber-50 text-amber-600 border-amber-200' },
                   { id: ShiftType.AFTERNOON, label: 'Ca Chiều (13:00 - 18:00)', icon: '⛅', color: 'bg-blue-50 text-blue-600 border-blue-200' },
+                  { id: ShiftType.EVENING, label: 'Ca Tối (17:00 - 21:00)', icon: '🌙', color: 'bg-purple-50 text-purple-600 border-purple-200' },
                   { id: ShiftType.FULL_DAY, label: 'Cả Ngày (08:00 - 18:00)', icon: '⏳', color: 'bg-slate-900 text-white border-slate-800' },
                   { id: ShiftType.OFF, label: 'Nghỉ (Không làm việc)', icon: '🏠', color: 'bg-rose-50 text-rose-600 border-rose-200' },
                 ].map((type) => (
