@@ -1,7 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
-import { Role, BookingStatus, PaymentStatus, User } from '@prisma/client';
+import { Role, BookingStatus, PaymentStatus, User, ShiftType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const VIETNAM_TZ = 'Asia/Ho_Chi_Minh';
 import { BookingsService } from '../bookings/bookings.service';
 import { BookingQueryDto } from '../bookings/dto/booking-query.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -341,6 +349,104 @@ export class AdminService extends BaseQueryService {
         count: c._count,
       })),
     };
+  }
+
+  async getLeaveRequests(filters: { status?: 'PENDING' | 'APPROVED' | 'REJECTED'; search?: string; salonId?: string }) {
+    const where: any = {};
+    if (filters.status) where.status = filters.status;
+    if (filters.salonId) where.staff = { salonId: filters.salonId };
+    if (filters.search) {
+      where.staff = {
+        ...where.staff,
+        user: { name: { contains: filters.search, mode: 'insensitive' } }
+      };
+    }
+
+    return (this.prisma as any).staffLeave.findMany({
+      where,
+      include: {
+        staff: {
+          include: { 
+            user: { select: { name: true, avatar: true } },
+            salon: { select: { name: true } }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  async approveLeaveRequest(leaveId: string, status: 'APPROVED' | 'REJECTED', reason?: string) {
+    const leave = await (this.prisma as any).staffLeave.findUnique({
+      where: { id: leaveId },
+      include: { staff: true }
+    });
+
+    if (!leave) {
+      throw new Error('Leave request not found');
+    }
+
+    if (status === 'APPROVED') {
+      // Rule: Cannot approve if barber has confirmed bookings on those days
+      const conflictCount = await this.prisma.booking.count({
+        where: {
+          staffId: leave.staffId,
+          status: BookingStatus.CONFIRMED,
+          date: {
+            gte: leave.startDate,
+            lte: leave.endDate
+          }
+        }
+      });
+
+      if (conflictCount > 0) {
+        throw new Error(`Nhân viên này có ${conflictCount} lịch hẹn đã xác nhận trong thời gian xin nghỉ. Hãy dời lịch trước.`);
+      }
+
+      // Auto-create OFF shifts for the period
+      let current = dayjs.utc(leave.startDate).startOf('day');
+      const end = dayjs.utc(leave.endDate).startOf('day');
+
+      while (current.isBefore(end) || current.isSame(end, 'day')) {
+        const date = current.toDate();
+        
+        // Delete existing shifts for this day
+        await (this.prisma as any).staffShift.deleteMany({
+          where: { staffId: leave.staffId, date }
+        });
+
+        // Create OFF shift
+        await (this.prisma as any).staffShift.create({
+          data: {
+            staffId: leave.staffId,
+            salonId: leave.staff.salonId,
+            date,
+            type: ShiftType.OFF,
+            shiftStart: current.toDate(),
+            shiftEnd: current.set('hour', 23).set('minute', 59).toDate(),
+          }
+        });
+
+        current = current.add(1, 'day');
+      }
+    } else if (status === 'REJECTED' && leave.status === 'APPROVED') {
+      // If we are cancelling an already approved leave, remove the OFF shifts
+      await (this.prisma as any).staffShift.deleteMany({
+        where: {
+          staffId: leave.staffId,
+          type: ShiftType.OFF,
+          date: {
+            gte: dayjs.utc(leave.startDate).startOf('day').toDate(),
+            lte: dayjs.utc(leave.endDate).startOf('day').toDate()
+          }
+        }
+      });
+    }
+
+    return (this.prisma as any).staffLeave.update({
+      where: { id: leaveId },
+      data: { status, updatedAt: new Date() }
+    });
   }
 
   async getBookingStats(period: 'week' | 'month' | 'year') {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { managerApi } from '@/lib/api';
+import { adminApi, salonApi } from '@/lib/api';
 import { 
   Clock, 
   CheckCircle2, 
@@ -10,7 +10,8 @@ import {
   CalendarDays,
   ShieldCheck,
   ShieldAlert,
-  Loader2
+  Loader2,
+  Store
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -36,33 +37,39 @@ import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { cn } from '@/lib/utils';
-import { DatePicker, Input, ConfigProvider } from 'antd';
+import { DatePicker, Input, ConfigProvider, Select } from 'antd';
 import { Search, Filter } from 'lucide-react';
 
 dayjs.extend(isBetween);
 
 const { RangePicker } = DatePicker;
 
-export default function ManagerLeaveRequestsPage() {
+export default function AdminLeaveRequestsPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState('PENDING');
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null);
   const [searchStaff, setSearchStaff] = useState('');
+  const [selectedSalon, setSelectedSalon] = useState<string>('ALL');
   const [selectedRequest, setSelectedRequest] = useState<any>(null);
   const [isRejectOpen, setIsRejectOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
 
   const { data: requests, isLoading } = useQuery({
-    queryKey: ['manager', 'leave-requests'],
-    queryFn: managerApi.getLeaveRequests,
+    queryKey: ['admin', 'leave-requests'],
+    queryFn: () => adminApi.getGlobalLeaveRequests(),
+  });
+
+  const { data: salons } = useQuery({
+    queryKey: ['salons'],
+    queryFn: () => salonApi.getAll(),
   });
 
   const approveMutation = useMutation({
-    mutationFn: (id: string) => managerApi.approveLeave(id, { status: 'APPROVED' }),
+    mutationFn: (id: string) => adminApi.approveGlobalLeave(id, { status: 'APPROVED' }),
     onSuccess: () => {
       toast.success('Đã duyệt đơn nghỉ phép');
-      queryClient.invalidateQueries({ queryKey: ['manager', 'leave-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['manager', 'schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'schedules'] });
     },
     onError: (err: any) => {
       const msg = err.response?.data?.message || 'Không thể duyệt đơn. Có thể do đã có lịch hẹn.';
@@ -71,13 +78,13 @@ export default function ManagerLeaveRequestsPage() {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: (id: string) => managerApi.approveLeave(id, { status: 'REJECTED', reason: rejectReason }),
+    mutationFn: (id: string) => adminApi.approveGlobalLeave(id, { status: 'REJECTED', reason: rejectReason }),
     onSuccess: () => {
       toast.success('Đã từ chối đơn nghỉ phép');
       setIsRejectOpen(false);
       setRejectReason('');
-      queryClient.invalidateQueries({ queryKey: ['manager', 'leave-requests'] });
-      queryClient.invalidateQueries({ queryKey: ['manager', 'schedules'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: ['admin', 'schedules'] });
     },
     onError: () => {
       toast.error('Có lỗi xảy ra khi từ chối đơn');
@@ -95,7 +102,10 @@ export default function ManagerLeaveRequestsPage() {
       const staffName = req.staff?.user?.name?.toLowerCase() || '';
       const matchesSearch = !searchStaff || staffName.includes(searchStaff.toLowerCase());
       
-      // 3. Filter by Date Range
+      // 3. Filter by Salon
+      const matchesSalon = selectedSalon === 'ALL' || req.staff?.salonId === selectedSalon;
+
+      // 4. Filter by Date Range
       let matchesDate = true;
       if (dateRange && dateRange[0] && dateRange[1]) {
         const start = dateRange[0].startOf('day');
@@ -109,9 +119,9 @@ export default function ManagerLeaveRequestsPage() {
                       (reqStart.isBefore(start) && reqEnd.isAfter(end)));
       }
       
-      return matchesStatus && matchesSearch && matchesDate;
+      return matchesStatus && matchesSearch && matchesDate && matchesSalon;
     });
-  }, [requests, activeTab, searchStaff, dateRange]);
+  }, [requests, activeTab, searchStaff, dateRange, selectedSalon]);
 
   const statusMap: any = {
     PENDING: { label: 'Đang chờ', color: 'bg-amber-50 text-amber-600 border-amber-100', icon: Clock },
@@ -135,11 +145,11 @@ export default function ManagerLeaveRequestsPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
         <div>
            <Badge className="bg-[#C8A97E]/10 text-[#C8A97E] border-none mb-4 px-3 py-1 font-bold text-[9px] uppercase tracking-[0.2em] rounded-lg">
-              Management Portal
+              Admin Control Panel
            </Badge>
            <h1 className="text-5xl font-black text-slate-900 tracking-tighter italic uppercase leading-tight">
-              Staff <span className="text-[#C8A97E]">Absence</span><br/>
-              <span className="text-slate-300">Approval</span>
+              Global <span className="text-[#C8A97E]">Leave</span><br/>
+              <span className="text-slate-300">Management</span>
            </h1>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -166,6 +176,21 @@ export default function ManagerLeaveRequestsPage() {
          </div>
          
          <div className="flex flex-col sm:flex-row gap-4 items-stretch">
+            {/* Salon Filter */}
+            <div className="flex items-center gap-3 bg-slate-50/50 border border-slate-100 rounded-[1.8rem] px-6 h-14 group hover:border-[#C8A97E]/30 transition-all">
+               <Store className="w-4 h-4 text-slate-300 group-hover:text-[#C8A97E] transition-colors" />
+               <Select
+                  defaultValue="ALL"
+                  onChange={setSelectedSalon}
+                  className="w-40 border-none bg-transparent hover:bg-transparent focus:bg-transparent shadow-none font-bold text-slate-700"
+                  bordered={false}
+                  options={[
+                    { label: 'Tất cả Chi nhánh', value: 'ALL' },
+                    ...(salons?.data.map((s: any) => ({ label: s.name, value: s.id })) || [])
+                  ]}
+               />
+            </div>
+
             <div className="flex items-center gap-3 bg-slate-50/50 border border-slate-100 rounded-[1.8rem] px-6 h-14 group hover:border-[#C8A97E]/30 transition-all">
                <Filter className="w-4 h-4 text-slate-300 group-hover:text-[#C8A97E] transition-colors" />
                <ConfigProvider
@@ -202,7 +227,7 @@ export default function ManagerLeaveRequestsPage() {
                   <FileText className="w-16 h-16" />
                </div>
                 <p className="text-slate-300 font-black italic uppercase text-lg tracking-tighter">
-                   {searchStaff || dateRange 
+                   {searchStaff || dateRange || selectedSalon !== 'ALL'
                      ? "Không tìm thấy kết quả khớp với bộ lọc" 
                      : "Hiện không có đơn nghỉ phép nào"}
                 </p>
@@ -241,9 +266,12 @@ export default function ManagerLeaveRequestsPage() {
                               </AvatarFallback>
                            </Avatar>
                            <div className="space-y-3">
-                              <div>
+                              <div className="flex flex-col">
                                  <h4 className="text-2xl font-black text-slate-900 italic tracking-tight">{req.staff?.user?.name}</h4>
-                                 <p className="text-[10px] font-black text-[#C8A97E] uppercase tracking-widest mt-1">Staff ID: {req.staffId.slice(-6)}</p>
+                                 <div className="flex items-center gap-2 mt-1">
+                                    <Store className="w-3 h-3 text-[#C8A97E]" />
+                                    <p className="text-[10px] font-black text-[#C8A97E] uppercase tracking-widest">{req.staff?.salon?.name}</p>
+                                 </div>
                               </div>
                               <div className="flex items-center gap-2 p-3 bg-slate-50/50 rounded-2xl border border-slate-100 border-dashed max-w-md">
                                  <FileText className="w-4 h-4 text-slate-400 flex-shrink-0" />
@@ -292,7 +320,7 @@ export default function ManagerLeaveRequestsPage() {
                         {/* Rejection Details Info */}
                         {req.status === 'REJECTED' && req.rejectionReason && (
                           <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100 max-w-xs">
-                             <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Manager Note</p>
+                             <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Admin Note</p>
                              <p className="text-xs font-bold text-rose-600 italic">&quot;{req.rejectionReason}&quot;</p>
                           </div>
                         )}
@@ -311,9 +339,9 @@ export default function ManagerLeaveRequestsPage() {
                <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter text-rose-500">
                   Reject <span className="text-slate-900 underline decoration-rose-500/30">Request</span>
                </DialogTitle>
-               <DialogDescription className="font-medium text-slate-500">
+               <DialogHeader className="font-medium text-slate-500 pt-2">
                   Vui lòng cung cấp lý do từ chối đơn nghỉ phép của <span className="font-black text-slate-900">{selectedRequest?.staff?.user?.name}</span>.
-               </DialogDescription>
+               </DialogHeader>
             </DialogHeader>
 
             <div className="p-8 space-y-4">

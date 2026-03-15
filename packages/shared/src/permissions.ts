@@ -199,6 +199,7 @@ export const ADMIN_MENU_ITEMS = [
     { key: 'dashboard', href: '/admin', label: 'Dashboard', permission: Permission.VIEW_DASHBOARD },
     { key: 'bookings', href: '/admin/bookings', label: 'Đặt lịch', permission: Permission.VIEW_ALL_BOOKINGS },
     { key: 'staff', href: '/admin/staff', label: 'Nhân viên', permission: Permission.VIEW_STAFF },
+    { key: 'leave-requests', href: '/admin/leave-requests', label: 'Duyệt nghỉ phép', permission: Permission.VIEW_STAFF },
     { key: 'schedule', href: '/admin/schedule', label: 'Lịch làm', permission: Permission.MANAGE_SCHEDULE },
     { key: 'services', href: '/admin/services', label: 'Dịch vụ', permission: Permission.VIEW_SERVICES },
     { key: 'salons', href: '/admin/salons', label: 'Chi nhánh', permission: Permission.VIEW_SALONS },

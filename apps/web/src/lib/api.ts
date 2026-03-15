@@ -544,6 +544,14 @@ export const adminApi = {
     const response = await apiClient.get(`/admin/staff/${staffId}/leaves`);
     return response.data;
   },
+  getGlobalLeaveRequests: async (params?: { status?: string; search?: string; salonId?: string }) => {
+    const response = await apiClient.get<any[]>('/admin/leave-requests', { params });
+    return response.data;
+  },
+  approveGlobalLeave: async (id: string, data: { status: string; reason?: string }) => {
+    const response = await apiClient.patch(`/admin/leave-requests/${id}/status`, data);
+    return response.data;
+  },
   getSchedules: async (salonId: string, date?: string, startDate?: string, endDate?: string) => {
     const response = await apiClient.get('/admin/schedules', { params: { salonId, date, startDate, endDate } });
     return response.data;

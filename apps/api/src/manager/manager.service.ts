@@ -384,11 +384,11 @@ export class ManagerService {
             }
 
             // Auto-create OFF shifts for the period
-            let current = dayjs(leave.startDate);
-            const end = dayjs(leave.endDate);
+            let current = dayjs.utc(leave.startDate).startOf('day');
+            const end = dayjs.utc(leave.endDate).startOf('day');
 
             while (current.isBefore(end) || current.isSame(end, 'day')) {
-                const date = current.startOf('day').toDate();
+                const date = current.toDate();
                 
                 // Delete existing shifts for this day to avoid duplicates/conflicts
                 await this.prisma.staffShift.deleteMany({
@@ -402,8 +402,8 @@ export class ManagerService {
                         salonId: leave.staff.salonId,
                         date,
                         type: ShiftType.OFF,
-                        shiftStart: current.startOf('day').toDate(),
-                        shiftEnd: current.startOf('day').toDate(),
+                        shiftStart: current.toDate(),
+                        shiftEnd: current.set('hour', 23).set('minute', 59).toDate(),
                     }
                 });
 
@@ -417,8 +417,8 @@ export class ManagerService {
                     staffId: leave.staffId,
                     type: ShiftType.OFF,
                     date: {
-                        gte: leave.startDate,
-                        lte: leave.endDate
+                        gte: dayjs.utc(leave.startDate).startOf('day').toDate(),
+                        lte: dayjs.utc(leave.endDate).startOf('day').toDate()
                     }
                 }
             });
@@ -736,6 +736,9 @@ export class ManagerService {
                 break;
             case ShiftType.AFTERNOON:
                 startHours = 13; endHours = 18;
+                break;
+            case ShiftType.EVENING:
+                startHours = 17; endHours = 21;
                 break;
             case ShiftType.OFF:
                 startHours = 0; endHours = 0;

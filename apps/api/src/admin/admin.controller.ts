@@ -339,6 +339,33 @@ export class AdminController {
     });
   }
 
+  @Get('leave-requests')
+  @RequirePermissions(Permission.VIEW_STAFF)
+  @ApiOperation({ summary: 'Get all staff leave requests' })
+  @ApiQuery({ name: 'status', required: false, enum: ['PENDING', 'APPROVED', 'REJECTED'] })
+  @ApiQuery({ name: 'salonId', required: false })
+  @ApiQuery({ name: 'search', required: false })
+  getLeaveRequests(
+    @Query('status') status?: 'PENDING' | 'APPROVED' | 'REJECTED',
+    @Query('salonId') salonId?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.adminService.getLeaveRequests({ status, salonId, search });
+  }
+
+  @Patch('leave-requests/:id/status')
+  @RequirePermissions(Permission.MANAGE_STAFF)
+  @ApiOperation({ summary: 'Update leave request status' })
+  @ApiParam({ name: 'id', description: 'Leave request ID' })
+  @ApiBody({ schema: { properties: { status: { enum: ['APPROVED', 'REJECTED'] }, reason: { type: 'string' } } } })
+  approveLeaveRequest(
+    @Param('id') id: string,
+    @Body('status') status: 'APPROVED' | 'REJECTED',
+    @Body('reason') reason?: string,
+  ) {
+    return this.adminService.approveLeaveRequest(id, status, reason);
+  }
+
   @Get('settings')
   @RequirePermissions(Permission.MANAGE_SETTINGS)
   @ApiOperation({ summary: 'Get system settings' })
