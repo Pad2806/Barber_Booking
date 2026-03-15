@@ -81,6 +81,7 @@ export default function BarberSchedulePage() {
           const dayShifts = shifts?.filter(s => isSameDay(new Date(s.date), day)) || [];
           const isToday = isSameDay(day, new Date());
           const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+          const isOff = dayShifts.some(s => s.type === 'OFF');
 
           return (
             <Card 
@@ -88,12 +89,14 @@ export default function BarberSchedulePage() {
                 className={cn(
                     "border-none shadow-sm transition-all duration-300",
                     isToday ? "ring-2 ring-[#C8A97E] shadow-xl shadow-[#C8A97E]/10" : "bg-white",
-                    isWeekend && !isToday ? "opacity-90" : ""
+                    isOff && !isToday ? "bg-rose-50/50" : "",
+                    isWeekend && !isToday && !isOff ? "opacity-90" : ""
                 )}
             >
               <CardHeader className={cn(
                   "p-4 text-center border-b",
-                  isToday ? "bg-[#C8A97E] text-white" : "bg-[#FAF8F5] text-[#2C1E12]"
+                  isToday ? "bg-[#C8A97E] text-white" : "bg-[#FAF8F5] text-[#2C1E12]",
+                  isOff && !isToday ? "bg-rose-100/30" : ""
               )}>
                 <p className="text-[10px] font-black uppercase tracking-tighter opacity-80 mb-0.5">
                     {format(day, 'EEEE', { locale: vi })}
@@ -103,7 +106,15 @@ export default function BarberSchedulePage() {
                 </p>
               </CardHeader>
               <CardContent className="p-3 min-h-[150px]">
-                {dayShifts.length > 0 ? (
+                {isOff ? (
+                  <div className="flex flex-col items-center justify-center h-full text-rose-500 p-4 text-center py-10">
+                    <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center mb-3">
+                       <Info className="w-6 h-6 text-rose-400" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase italic tracking-widest leading-tight">Ngày nghỉ</span>
+                    <span className="text-[8px] font-bold text-rose-300 uppercase mt-1">(Đã duyệt)</span>
+                  </div>
+                ) : dayShifts.length > 0 ? (
                   dayShifts.map((shift) => (
                     <div 
                         key={shift.id} 
@@ -121,7 +132,7 @@ export default function BarberSchedulePage() {
                 ) : (
                   <div className="flex flex-col items-center justify-center h-full text-[#8B7355]/40 p-4 text-center">
                     <Info className="w-8 h-8 mb-2 opacity-20" />
-                    <span className="text-[10px] font-bold uppercase italic tracking-widest leading-tight">Lịch nghỉ (Off)</span>
+                    <span className="text-[10px] font-bold uppercase italic tracking-widest leading-tight">Chưa có lịch</span>
                   </div>
                 )}
               </CardContent>

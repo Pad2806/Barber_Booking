@@ -1040,7 +1040,7 @@ export class StaffService extends BaseQueryService {
         startDate: targetDate.toDate(),
         endDate: targetDate.toDate(),
         reason: reason || '',
-        status: 'APPROVED',
+        status: 'PENDING',
       },
     });
   }
@@ -1083,6 +1083,12 @@ export class StaffService extends BaseQueryService {
         startHours = 13; endHours = 18;
         break;
       case ShiftType.FULL_DAY:
+        startHours = 8; endHours = 18;
+        break;
+      case ShiftType.OFF:
+        startHours = 0; startMins = 0;
+        endHours = 23; endMins = 59;
+        break;
       default:
         startHours = 8; endHours = 18;
         break;
