@@ -1,5 +1,6 @@
-import { IsOptional, IsDateString, IsUUID } from 'class-validator';
+import { IsOptional, IsDateString, IsUUID, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { ShiftType } from '@prisma/client';
 
 export class UpdateShiftDto {
     @ApiProperty({ example: 'staff-uuid-here', required: false })
@@ -21,4 +22,9 @@ export class UpdateShiftDto {
     @IsDateString()
     @IsOptional()
     shiftEnd?: string;
+
+    @ApiProperty({ enum: ShiftType, example: ShiftType.FULL_DAY, required: false })
+    @IsEnum(ShiftType)
+    @IsOptional()
+    type?: ShiftType;
 }

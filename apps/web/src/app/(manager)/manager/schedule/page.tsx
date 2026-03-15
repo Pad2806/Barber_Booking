@@ -56,7 +56,7 @@ export default function ManagerSchedulePage() {
     queryFn: usersApi.getMe,
   });
 
-  const { data: schedules, isLoading: _isSchedulesLoading } = useQuery({
+  const { data: schedules, isLoading: isSchedulesLoading } = useQuery({
     queryKey: ['manager', 'schedules', format(weekStart, 'yyyy-MM-dd')],
     queryFn: () => managerApi.getSchedules(
       undefined, 
@@ -129,19 +129,19 @@ export default function ManagerSchedulePage() {
         <div className="flex items-center gap-3">
           <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-white border border-slate-100 rounded-xl shadow-sm mr-2">
              <MapPin className="w-4 h-4 text-[#C8A97E]" />
-             <span className="text-xs font-black uppercase text-slate-600 tracking-wider transition-all">
+             <span className="text-xs font-black uppercase text-slate-600 tracking-wider">
                 {me?.staff?.salon?.name || 'Chi nhánh hiện tại'}
              </span>
           </div>
 
           <div className="flex items-center bg-white border border-slate-200 rounded-xl p-1 shadow-sm">
-            <Button variant="ghost" size="icon" onClick={handlePrevWeek} className="h-8 w-8 rounded-lg hover:bg-slate-100 transition-colors">
+            <Button variant="ghost" size="icon" onClick={handlePrevWeek} className="h-8 w-8 rounded-lg">
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <Button variant="ghost" size="sm" onClick={handleToday} className="px-3 h-8 font-black text-[10px] uppercase tracking-widest text-[#C8A97E]">
               Hôm nay
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleNextWeek} className="h-8 w-8 rounded-lg hover:bg-slate-100 transition-colors">
+            <Button variant="ghost" size="icon" onClick={handleNextWeek} className="h-8 w-8 rounded-lg">
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
@@ -149,10 +149,10 @@ export default function ManagerSchedulePage() {
       </div>
 
       <div className="overflow-x-auto relative no-scrollbar">
-        <Card className="border-none shadow-xl bg-white min-w-[1000px] rounded-[2rem] overflow-hidden">
-          <div className="grid grid-cols-8 border-b bg-slate-50/50 sticky top-0 z-10 backdrop-blur-sm">
+        <Card className="border-none shadow-premium bg-white min-w-[1000px] rounded-[2rem] overflow-hidden">
+          <div className="grid grid-cols-8 border-b bg-slate-50/50 sticky top-0 z-10 backdrop-blur-md">
             <div className="p-6 border-r flex items-center justify-center font-black text-slate-400 text-[10px] uppercase tracking-widest bg-white">
-              Đội ngũ Barber
+              Nhân sự
             </div>
             {weekDays.map((day) => (
               <div 
@@ -163,13 +163,13 @@ export default function ManagerSchedulePage() {
                 )}
               >
                 {isSameDay(day, new Date()) && (
-                  <div className="absolute top-0 left-1/4 right-1/4 h-1 bg-[#C8A97E] rounded-b-full" />
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-[#C8A97E]" />
                 )}
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] italic">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
                   {format(day, 'eee', { locale: vi })}
                 </span>
                 <span className={cn(
-                  "text-xl font-black tabular-nums tracking-tighter",
+                  "text-xl font-black tabular-nums",
                   isSameDay(day, new Date()) ? "text-[#C8A97E]" : "text-slate-700"
                 )}>
                   {format(day, 'dd')}
@@ -179,91 +179,89 @@ export default function ManagerSchedulePage() {
           </div>
 
           <div className="divide-y divide-slate-100">
-            {staffList?.map((staff: any) => (
-              <div key={staff.id} className="grid grid-cols-8 group">
-                <div className="p-4 border-r bg-slate-50/10 flex items-center gap-4 min-w-[180px]">
-                  <div className="relative">
-                     <Avatar className="h-10 w-10 border-2 border-white shadow-md group-hover:border-[#C8A97E] transition-all duration-300">
-                        <AvatarImage src={staff.user?.avatar} />
-                        <AvatarFallback className="bg-slate-100 text-slate-400 text-xs font-black italic">
-                           {staff.user?.name?.charAt(0) || 'B'}
-                        </AvatarFallback>
-                     </Avatar>
-                     <div className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white"></div>
+            {isSchedulesLoading ? (
+              <div className="py-20 flex flex-col items-center justify-center col-span-8">
+                <Loader2 className="w-8 h-8 text-[#C8A97E] animate-spin mb-4" />
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest animate-pulse">Đang tải lịch làm việc...</p>
+              </div>
+            ) : (
+              staffList?.map((staff: any) => (
+                <div key={staff.id} className="grid grid-cols-8 group">
+                  <div className="p-4 border-r bg-slate-50/10 flex items-center gap-4 min-w-[180px]">
+                    <Avatar className="h-10 w-10 border-2 border-white shadow-md group-hover:border-[#C8A97E] transition-all">
+                      <AvatarImage src={staff.user?.avatar} />
+                      <AvatarFallback className="bg-[#C8A97E]/5 text-[#C8A97E] text-[10px] font-black uppercase">
+                        {staff.user?.name?.charAt(0) || 'B'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0">
+                      <p className="text-xs font-black text-slate-900 truncate uppercase italic">{staff.user?.name || 'Unknown'}</p>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider truncate">{staff.position}</p>
+                    </div>
                   </div>
-                  <div className="min-w-0 flex flex-col items-start text-left">
-                    <p className="text-xs font-black text-slate-900 group-hover:text-[#C8A97E] transition-colors truncate uppercase italic">{staff.user?.name || 'Unknown'}</p>
-                    <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider truncate">{staff.position}</p>
-                  </div>
-                </div>
 
-                {weekDays.map((day) => {
-                  const dayShifts = getShiftsForDay(day);
-                  const staffShift = dayShifts.find((s) => s.staffId === staff.id);
-                  
-                  return (
-                    <div key={day.toString()} className="border-r last:border-r-0 p-3 min-h-[120px] bg-white group-hover:bg-slate-50/20 transition-colors relative flex items-center justify-center">
-                      {staffShift ? (
-                        <div 
-                          onClick={() => {
-                            setSelectedStaffForShift(staff);
-                            setSelectedDayForShift(day);
-                            setSelectedShiftForEdit(staffShift);
-                            setShiftData({ type: staffShift.type, note: '' });
-                            setIsShiftSheetOpen(true);
-                          }}
-                          className={cn(
-                            "w-full h-full p-3 rounded-2xl border transition-all duration-300 cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98] group/shift flex flex-col justify-between items-start gap-1 relative overflow-hidden",
-                            staffShift.type === ShiftType.MORNING ? "bg-amber-50/30 border-amber-200/50 text-amber-700" :
-                            staffShift.type === ShiftType.AFTERNOON ? "bg-blue-50/30 border-blue-200/50 text-blue-700" :
-                            "bg-slate-900 border-slate-800 text-white"
-                          )}
-                        >
-                          <div className="flex items-center justify-between w-full">
-                            <span className={cn(
-                              "text-[8px] font-black uppercase tracking-widest",
-                              staffShift.type === ShiftType.FULL_DAY ? "text-[#C8A97E]" : "opacity-60"
-                            )}>
-                              {staffShift.type === ShiftType.MORNING ? 'Morning' : 
-                               staffShift.type === ShiftType.AFTERNOON ? 'Afternoon' : 'Full Shift'}
-                            </span>
-                            <div className="transform group-hover/shift:rotate-12 transition-transform duration-500">
-                               {staffShift.type === ShiftType.MORNING && <span>☀️</span>}
-                               {staffShift.type === ShiftType.AFTERNOON && <span>⛅</span>}
-                               {staffShift.type === ShiftType.FULL_DAY && <span>⏳</span>}
+                  {weekDays.map((day) => {
+                    const dayShifts = getShiftsForDay(day);
+                    const staffShift = dayShifts.find((s) => s.staffId === staff.id);
+                    
+                    return (
+                      <div key={day.toString()} className="border-r last:border-r-0 p-3 min-h-[120px] bg-white group-hover:bg-slate-50/20 transition-colors relative flex items-center justify-center">
+                        {staffShift ? (
+                          <div 
+                            onClick={() => {
+                              setSelectedStaffForShift(staff);
+                              setSelectedDayForShift(day);
+                              setSelectedShiftForEdit(staffShift);
+                              setShiftData({ type: staffShift.type, note: '' });
+                              setIsShiftSheetOpen(true);
+                            }}
+                            className={cn(
+                              "w-full h-full p-3 rounded-2xl border transition-all duration-300 cursor-pointer shadow-sm hover:scale-[1.02] active:scale-[0.98] group/shift flex flex-col justify-between items-start gap-1 relative overflow-hidden",
+                              staffShift.type === ShiftType.MORNING ? "bg-amber-50/30 border-amber-200/50 text-amber-700" :
+                              staffShift.type === ShiftType.AFTERNOON ? "bg-blue-50/30 border-blue-200/50 text-blue-700" :
+                              "bg-slate-900 border-slate-800 text-white"
+                            )}
+                          >
+                            <div className="flex items-center justify-between w-full">
+                              <span className={cn(
+                                "text-[8px] font-black uppercase tracking-widest",
+                                staffShift.type === ShiftType.FULL_DAY ? "text-[#C8A97E]" : "opacity-60"
+                              )}>
+                                {staffShift.type === ShiftType.MORNING ? 'Sáng' : 
+                                 staffShift.type === ShiftType.AFTERNOON ? 'Chiều' : 'Cả ngày'}
+                              </span>
+                              <div className="transform group-hover/shift:rotate-12 transition-transform duration-500">
+                                 {staffShift.type === ShiftType.MORNING && <span>☀️</span>}
+                                 {staffShift.type === ShiftType.AFTERNOON && <span>⛅</span>}
+                                 {staffShift.type === ShiftType.FULL_DAY && <span>⏳</span>}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-[10px] font-black italic tracking-tight">
+                              <Clock className={cn("w-3 h-3", staffShift.type === ShiftType.FULL_DAY ? "text-[#C8A97E]" : "")} />
+                              {format(new Date(staffShift.shiftStart), 'HH:mm')} - {format(new Date(staffShift.shiftEnd), 'HH:mm')}
                             </div>
                           </div>
-                          <div className="flex items-center gap-1.5 text-[10px] font-black italic tracking-tight">
-                            <Clock className={cn("w-3 h-3", staffShift.type === ShiftType.FULL_DAY ? "text-[#C8A97E]" : "")} />
-                            {format(new Date(staffShift.shiftStart), 'HH:mm')} - {format(new Date(staffShift.shiftEnd), 'HH:mm')}
-                          </div>
-                          
-                          {staffShift.type === ShiftType.FULL_DAY && (
-                             <div className="absolute -bottom-1 -right-1 opacity-5">
-                                <Clock className="w-12 h-12" />
-                             </div>
-                          )}
-                        </div>
-                      ) : (
-                        <button 
-                          onClick={() => {
-                            setSelectedStaffForShift(staff);
-                            setSelectedDayForShift(day);
-                            setSelectedShiftForEdit(null);
-                            setShiftData({ type: ShiftType.FULL_DAY, note: '' });
-                            setIsShiftSheetOpen(true);
-                          }}
-                          className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-2xl opacity-0 hover:opacity-100 hover:border-[#C8A97E]/30 hover:bg-[#C8A97E]/5 transition-all duration-300 text-slate-300 group-hover:opacity-40"
-                        >
-                          <Plus className="w-6 h-6 mb-1" />
-                          <span className="text-[8px] font-black uppercase tracking-widest">Assign</span>
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ))}
+                        ) : (
+                          <button 
+                            onClick={() => {
+                              setSelectedStaffForShift(staff);
+                              setSelectedDayForShift(day);
+                              setSelectedShiftForEdit(null);
+                              setShiftData({ type: ShiftType.FULL_DAY, note: '' });
+                              setIsShiftSheetOpen(true);
+                            }}
+                            className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-2xl opacity-0 hover:opacity-100 hover:border-[#C8A97E]/30 hover:bg-[#C8A97E]/5 transition-all duration-300 text-slate-300 group-hover:opacity-40"
+                          >
+                            <Plus className="w-6 h-6 mb-1" />
+                            <span className="text-[8px] font-black uppercase tracking-widest">Phân ca</span>
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ))
+            )}
           </div>
         </Card>
       </div>
@@ -276,7 +274,7 @@ export default function ManagerSchedulePage() {
                <Clock className="w-8 h-8 text-[#C8A97E]" />
             </div>
             <SheetTitle className="text-3xl font-black font-heading italic uppercase tracking-tighter text-slate-900">
-              {selectedShiftForEdit ? 'Update' : 'Schedule'} <span className="text-[#C8A97E]">Shift</span>
+              {selectedShiftForEdit ? 'Cập nhật' : 'Thiết lập'} <span className="text-[#C8A97E]">Ca làm</span>
             </SheetTitle>
             <SheetDescription className="font-medium text-slate-500 italic">
                Thiết lập thời gian làm việc cho nhân viên tại chi nhánh.
@@ -357,7 +355,7 @@ export default function ManagerSchedulePage() {
                   disabled={createShiftMutation.isPending || updateShiftMutation.isPending}
                 >
                   {(createShiftMutation.isPending || updateShiftMutation.isPending) && <Loader2 className="w-4 h-4 animate-spin mr-3 text-[#C8A97E]" />}
-                  {selectedShiftForEdit ? 'Update Shift' : 'Punch In'}
+                  {selectedShiftForEdit ? 'Cập nhật' : 'Xác nhận'}
                 </Button>
               </div>
               
@@ -371,7 +369,7 @@ export default function ManagerSchedulePage() {
                   disabled={deleteShiftMutation.isPending}
                 >
                   {deleteShiftMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
-                  Delete Schedule
+                  Xóa ca làm
                 </Button>
               )}
             </div>

@@ -18,7 +18,7 @@ import { UpdateStaffDto } from '../users/dto/update-staff.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { Role, BookingStatus } from '@prisma/client';
+import { Role, User, BookingStatus } from '@prisma/client';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 
 @ApiTags('Manager')
@@ -171,10 +171,12 @@ export class ManagerController {
     @Get('schedules')
     @ApiOperation({ summary: 'Get staff shifts/schedules' })
     getStaffShifts(
-        @CurrentUser('id') userId: string,
+        @CurrentUser() user: User,
         @Query('date') date?: string,
+        @Query('startDate') startDate?: string,
+        @Query('endDate') endDate?: string
     ) {
-        return this.managerService.getStaffShifts(userId, date);
+        return this.managerService.getStaffShifts(user.id, date, startDate, endDate);
     }
 
     @Post('schedules')

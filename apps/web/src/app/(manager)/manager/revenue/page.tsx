@@ -104,7 +104,7 @@ export default function ManagerRevenuePage() {
                </div>
                <p className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Trung bình dịch vụ</p>
                <h3 className="text-3xl font-black text-slate-900 tracking-tight">
-                  {formatPrice(report?.totalRevenue / (period === 'day' ? 12 : 84))}
+                  {formatPrice(report?.totalRevenue / (report?.totalServiceCount || 1))}
                </h3>
             </CardContent>
          </Card>
@@ -120,7 +120,9 @@ export default function ManagerRevenuePage() {
                   </Badge>
                </div>
                <p className="text-slate-400 text-xs font-medium uppercase tracking-wider mb-1">Tỉ lệ quay lại</p>
-               <h3 className="text-3xl font-black text-slate-900 tracking-tight">92%</h3>
+               <h3 className="text-3xl font-black text-slate-900 tracking-tight">
+                  {report?.retentionRate || 0}%
+               </h3>
             </CardContent>
          </Card>
       </div>
@@ -238,14 +240,18 @@ export default function ManagerRevenuePage() {
                                  12%
                               </div>
                            </td>
-                           <td className="px-6 py-4 text-right">
-                              <div className="w-24 ml-auto h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                 <div 
-                                   className="h-full bg-[#C8A97E]" 
-                                   style={{ width: `${85 - idx * 8}%` }}
-                                 ></div>
-                              </div>
-                           </td>
+                            <td className="px-6 py-4 text-right">
+                               <div className="w-24 ml-auto h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-[#C8A97E] transition-all duration-1000" 
+                                    style={{ 
+                                       width: `${report?.byBarber?.[0]?.revenue > 0 
+                                          ? (barber.revenue / report.byBarber[0].revenue) * 100 
+                                          : 0}%` 
+                                    }}
+                                  ></div>
+                               </div>
+                            </td>
                         </tr>
                      ))}
                   </tbody>

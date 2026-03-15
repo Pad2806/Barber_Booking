@@ -141,7 +141,7 @@ export class ManagerService {
         const staffList = await this.prisma.staff.findMany({
             where: { salonId },
             include: {
-                user: { select: { name: true, avatar: true, email: true, phone: true } },
+                user: { select: { id: true, name: true, avatar: true, email: true, phone: true } },
                 shifts: { where: { date: today } },
                 leaves: { 
                     where: { 
@@ -160,13 +160,18 @@ export class ManagerService {
 
         return staffList.map(s => ({
             id: s.id,
-            name: s.user.name,
-            avatar: s.user.avatar,
-            role: s.position,
+            user: {
+                id: s.user?.id,
+                name: s.user?.name,
+                avatar: s.user?.avatar,
+                email: s.user?.email,
+                phone: s.user?.phone
+            },
+            position: s.position,
             rating: s.rating,
             todayAppointments: s._count.bookings,
             status: s.leaves.length > 0 ? 'DAY_OFF' : (s.shifts.length > 0 ? 'WORKING' : 'NOT_SCHEDULED'),
-            performance: null // Added in detailed view
+            performance: null
         }));
     }
 
@@ -486,20 +491,20 @@ export class ManagerService {
         if (period === 'day') startDate = now.startOf('day').toDate();
         if (period === 'week') startDate = now.startOf('week').toDate();
 
-        const [revenueByService, revenueByBarber, dailyTrend] = await Promise.all([
-            // Revenue by Service Category
+        // 1. Get Base Revenue Data
+        const [revenueByServiceGroup, revenueByBarberGroup, dailyTrendGroup] = await Promise.all([
             this.prisma.bookingService.groupBy({
                 by: ['serviceId'],
                 where: { booking: { salonId, status: 'COMPLETED', date: { gte: startDate } } },
-                _sum: { price: true }
+                _sum: { price: true },
+                _count: { _all: true }
             }),
-            // Revenue by Barber
             this.prisma.booking.groupBy({
                 by: ['staffId'],
                 where: { salonId, status: 'COMPLETED', date: { gte: startDate } },
-                _sum: { totalAmount: true }
+                _sum: { totalAmount: true },
+                _count: { _all: true }
             }),
-            // Daily Trend
             this.prisma.booking.groupBy({
                 by: ['date'],
                 where: { salonId, status: 'COMPLETED', date: { gte: startDate } },
@@ -508,10 +513,66 @@ export class ManagerService {
             })
         ]);
 
+        // 2. Map Service Names
+        const serviceIds = revenueByServiceGroup.map(s => s.serviceId);
+        const services = await this.prisma.service.findMany({
+            where: { id: { in: serviceIds } },
+            select: { id: true, name: true, category: true }
+        });
+
+        const byService = revenueByServiceGroup.map(rg => {
+            const service = services.find(s => s.id === rg.serviceId);
+            return {
+                service: service?.name || 'Khác',
+                category: service?.category || 'OTHER',
+                revenue: Number(rg._sum.price || 0),
+                count: rg._count._all
+            };
+        });
+
+        // 3. Map Barber Names
+        const staffIds = revenueByBarberGroup.map(b => b.staffId).filter(Boolean) as string[];
+        const staffList = await this.prisma.staff.findMany({
+            where: { id: { in: staffIds } },
+            include: { user: { select: { name: true, avatar: true } } }
+        });
+
+        const byBarber = revenueByBarberGroup.map(rg => {
+            const staff = staffList.find(s => s.id === rg.staffId);
+            return {
+                barber: staff?.user?.name || 'Chưa xác định',
+                avatar: staff?.user?.avatar,
+                revenue: Number(rg._sum.totalAmount || 0),
+                count: rg._count._all
+            };
+        });
+
+        // 4. Calculate Summary Stats
+        const totalRevenue = byBarber.reduce((acc, b) => acc + b.revenue, 0);
+        const totalServiceCount = byService.reduce((acc, s) => acc + s.count, 0);
+
+        // 5. Retention Rate (Simple: repeat customers / total customers)
+        const allSalonBookings = await this.prisma.booking.findMany({
+            where: { salonId, status: 'COMPLETED' },
+            select: { customerId: true }
+        });
+
+        const customerBookingCounts = new Map<string, number>();
+        allSalonBookings.forEach(b => {
+            customerBookingCounts.set(b.customerId, (customerBookingCounts.get(b.customerId) || 0) + 1);
+        });
+
+        const totalCustomers = customerBookingCounts.size;
+        const repeatCustomers = Array.from(customerBookingCounts.values()).filter(count => count > 1).length;
+        const retentionRate = totalCustomers > 0 ? Math.round((repeatCustomers / totalCustomers) * 100) : 0;
+
         return {
-            byService: revenueByService,
-            byBarber: revenueByBarber,
-            trend: dailyTrend.map(t => ({
+            totalRevenue,
+            totalServiceCount,
+            retentionRate,
+            byService,
+            byBarber,
+            trend: dailyTrendGroup.map(t => ({
                 date: dayjs(t.date).format('YYYY-MM-DD'),
                 amount: Number(t._sum.totalAmount || 0)
             }))
@@ -556,15 +617,23 @@ export class ManagerService {
     /**
      * Legacy & Helpers
      */
-    async getStaffShifts(userId: string, date?: string) {
+    async getStaffShifts(userId: string, date?: string, startDate?: string, endDate?: string) {
         const salonId = await this.getManagerSalonId(userId);
         const where: any = { salonId };
-        if (date) where.date = dayjs.tz(date, VIETNAM_TZ).startOf('day').toDate();
+
+        if (startDate && endDate) {
+            where.date = {
+                gte: dayjs.tz(startDate, VIETNAM_TZ).startOf('day').toDate(),
+                lte: dayjs.tz(endDate, VIETNAM_TZ).startOf('day').toDate(),
+            };
+        } else if (date) {
+            where.date = dayjs.tz(date, VIETNAM_TZ).startOf('day').toDate();
+        }
 
         return this.prisma.staffShift.findMany({
             where,
             include: {
-                staff: { include: { user: { select: { name: true, avatar: true } } } }
+                staff: { include: { user: { select: { id: true, name: true, avatar: true } } } }
             },
             orderBy: { shiftStart: 'asc' }
         });
@@ -575,14 +644,17 @@ export class ManagerService {
         const staff = await this.prisma.staff.findUnique({ where: { id: dto.staffId } });
         if (!staff || staff.salonId !== salonId) throw new ForbiddenException('Staff access denied');
 
+        const type = (dto as any).type || ShiftType.FULL_DAY;
+        const shiftTimes = this.calculateShiftTimes(dto.date, type, dto.shiftStart, dto.shiftEnd);
+
         return this.prisma.staffShift.create({
             data: {
                 staffId: dto.staffId,
                 salonId,
                 date: dayjs.tz(dto.date, VIETNAM_TZ).startOf('day').toDate(),
-                shiftStart: dayjs.tz(dto.shiftStart, VIETNAM_TZ).toDate(),
-                shiftEnd: dayjs.tz(dto.shiftEnd, VIETNAM_TZ).toDate(),
-                type: (dto as any).type || ShiftType.FULL_DAY
+                shiftStart: shiftTimes.start.toDate(),
+                shiftEnd: shiftTimes.end.toDate(),
+                type
             }
         });
     }
@@ -592,14 +664,50 @@ export class ManagerService {
         const shift = await this.prisma.staffShift.findUnique({ where: { id } });
         if (!shift || shift.salonId !== salonId) throw new ForbiddenException('Shift access denied');
 
+        const type = (dto as any).type || shift.type;
+        const dateToUse = dto.date || dayjs(shift.date).format('YYYY-MM-DD');
+        const shiftTimes = this.calculateShiftTimes(dateToUse, type, dto.shiftStart, dto.shiftEnd);
+
         return this.prisma.staffShift.update({
             where: { id },
             data: {
-                date: dto.date ? dayjs.tz(dto.date, VIETNAM_TZ).startOf('day').toDate() : undefined,
-                shiftStart: dto.shiftStart ? dayjs.tz(dto.shiftStart, VIETNAM_TZ).toDate() : undefined,
-                shiftEnd: dto.shiftEnd ? dayjs.tz(dto.shiftEnd, VIETNAM_TZ).toDate() : undefined
+                date: dayjs.tz(dateToUse, VIETNAM_TZ).startOf('day').toDate(),
+                shiftStart: shiftTimes.start.toDate(),
+                shiftEnd: shiftTimes.end.toDate(),
+                type
             }
         });
+    }
+
+    private calculateShiftTimes(dateStr: string, type?: ShiftType, customStart?: string, customEnd?: string) {
+        if (customStart && customEnd) {
+            return {
+                start: dayjs.tz(customStart, VIETNAM_TZ),
+                end: dayjs.tz(customEnd, VIETNAM_TZ)
+            };
+        }
+
+        let startHours = 8, startMins = 0;
+        let endHours = 18, endMins = 0;
+
+        switch (type) {
+            case ShiftType.MORNING:
+                startHours = 8; endHours = 12;
+                break;
+            case ShiftType.AFTERNOON:
+                startHours = 13; endHours = 18;
+                break;
+            case ShiftType.FULL_DAY:
+            default:
+                startHours = 8; endHours = 18;
+                break;
+        }
+
+        const baseDate = dayjs.tz(dateStr, VIETNAM_TZ).startOf('day');
+        const start = baseDate.set('hour', startHours).set('minute', startMins).set('second', 0).set('millisecond', 0);
+        const end = baseDate.set('hour', endHours).set('minute', endMins).set('second', 0).set('millisecond', 0);
+
+        return { start, end };
     }
 
     async deleteShift(userId: string, id: string) {

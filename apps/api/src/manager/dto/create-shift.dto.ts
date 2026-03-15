@@ -1,5 +1,6 @@
-import { IsString, IsNotEmpty, IsDateString, IsUUID } from 'class-validator';
+import { IsString, IsNotEmpty, IsDateString, IsUUID, IsOptional, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { ShiftType } from '@prisma/client';
 
 export class CreateShiftDto {
     @ApiProperty({ example: 'staff-uuid-here' })
@@ -12,13 +13,18 @@ export class CreateShiftDto {
     @IsNotEmpty()
     date: string;
 
-    @ApiProperty({ example: '2024-03-20T08:00:00Z', description: 'Shift start time' })
+    @ApiProperty({ example: '2024-03-20T08:00:00Z', description: 'Shift start time', required: false })
     @IsDateString()
-    @IsNotEmpty()
-    shiftStart: string;
+    @IsOptional()
+    shiftStart?: string;
 
-    @ApiProperty({ example: '2024-03-20T12:00:00Z', description: 'Shift end time' })
+    @ApiProperty({ example: '2024-03-20T12:00:00Z', description: 'Shift end time', required: false })
     @IsDateString()
-    @IsNotEmpty()
-    shiftEnd: string;
+    @IsOptional()
+    shiftEnd?: string;
+
+    @ApiProperty({ enum: ShiftType, example: ShiftType.FULL_DAY, required: false })
+    @IsEnum(ShiftType)
+    @IsOptional()
+    type?: ShiftType;
 }
