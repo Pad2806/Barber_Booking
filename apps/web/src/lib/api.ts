@@ -255,8 +255,8 @@ export const managerApi = {
     const response = await apiClient.post(`/manager/reviews/${id}/reply`, { reply });
     return response.data;
   },
-  getSchedules: async (date?: string) => {
-    const response = await apiClient.get('/manager/schedules', { params: { date } });
+  getSchedules: async (date?: string, startDate?: string, endDate?: string) => {
+    const response = await apiClient.get('/manager/schedules', { params: { date, startDate, endDate } });
     return response.data;
   },
   createShift: async (data: any) => {
@@ -289,6 +289,14 @@ export const managerApi = {
   },
   bulkUpdateBookingStatus: async (ids: string[], status: string) => {
     const response = await apiClient.patch('/manager/bookings/bulk-status', { ids, status });
+    return response.data;
+  },
+  getLeaveRequests: async () => {
+    const response = await apiClient.get('/manager/leaves');
+    return response.data;
+  },
+  approveLeave: async (id: string, data: { status: string; reason?: string }) => {
+    const response = await apiClient.patch(`/manager/leaves/${id}`, data);
     return response.data;
   },
 };
