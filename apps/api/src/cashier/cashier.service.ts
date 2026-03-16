@@ -120,6 +120,38 @@ export class CashierService {
         });
     }
 
+    async getAllBookings(userId: string, filters: { date?: string, status?: BookingStatus, search?: string }) {
+        const salonId = await this.getCashierSalonId(userId);
+        
+        const where: any = { salonId };
+        
+        if (filters.date) {
+            where.date = dayjs.tz(filters.date, VIETNAM_TZ).startOf('day').toDate();
+        }
+        
+        if (filters.status) {
+            where.status = filters.status;
+        }
+        
+        if (filters.search) {
+            where.OR = [
+                { customer: { name: { contains: filters.search, mode: 'insensitive' } } },
+                { customer: { phone: { contains: filters.search } } },
+                { bookingCode: { contains: filters.search, mode: 'insensitive' } }
+            ];
+        }
+
+        return this.prisma.booking.findMany({
+            where,
+            include: {
+                customer: { select: { id: true, name: true, phone: true } },
+                services: { include: { service: { select: { name: true, price: true } } } },
+                staff: { include: { user: { select: { name: true, avatar: true } } } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+    }
+
     /**
      * 3. WALK-IN BOOKINGS
      */
@@ -402,7 +434,7 @@ export class CashierService {
             where: { 
                 salonId, 
                 isActive: true,
-                position: { in: [StaffPosition.BARBER, StaffPosition.SKINNER] }
+                position: { in: [StaffPosition.BARBER, StaffPosition.SKINNER, 'STYLIST', 'MASTER_STYLIST', 'SENIOR_STYLIST'] as any }
             },
             include: {
                 user: { select: { name: true, avatar: true } },

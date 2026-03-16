@@ -139,6 +139,17 @@ export class CashierController {
         return this.cashierService.updateBookingStatus(userId, bookingId, body.status);
     }
 
+    @Get('bookings')
+    @ApiOperation({ summary: 'Get all bookings for the salon' })
+    getAllBookings(
+        @CurrentUser('id') userId: string,
+        @Query('date') date?: string,
+        @Query('status') status?: BookingStatus,
+        @Query('search') search?: string,
+    ) {
+        return this.cashierService.getAllBookings(userId, { date, status, search });
+    }
+
     @Get('barbers/available')
     @ApiOperation({ summary: 'Check available barbers' })
     getAvailableBarbers(
