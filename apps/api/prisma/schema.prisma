@@ -48,7 +48,6 @@ enum StaffPosition {
   MASTER_STYLIST
   SKINNER
   CASHIER
-  RECEPTIONIST
   MANAGER
 }
 

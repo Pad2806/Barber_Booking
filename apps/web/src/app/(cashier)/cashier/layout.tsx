@@ -79,8 +79,7 @@ export default function CashierLayout({ children }: CashierLayoutProps) {
         userRole === 'CASHIER' || 
         userRole === 'MANAGER' || 
         userRole === 'SALON_OWNER' || 
-        userRole === 'SUPER_ADMIN' ||
-        (userRole === 'STAFF' && ['CASHIER', 'RECEPTIONIST'].includes(staffPosition || ''));
+        userRole === 'SUPER_ADMIN';
 
       if (!isCashier && !isLoadingMe && me) {
         toast.error('Bạn không có quyền truy cập khu vực Thu ngân');

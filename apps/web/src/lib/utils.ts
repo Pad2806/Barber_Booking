@@ -79,11 +79,12 @@ export const SERVICE_CATEGORIES: Record<string, { label: string; icon: string }>
 
 // Staff positions
 export const STAFF_POSITIONS: Record<string, string> = {
-  STYLIST: 'Thợ cắt tóc',
+  BARBER: 'Thợ cắt tóc',
+  STYLIST: 'Thợ cắt tóc chuyên nghiệp',
   SENIOR_STYLIST: 'Thợ cắt tóc cao cấp',
   MASTER_STYLIST: 'Chuyên gia tạo mẫu tóc',
   SKINNER: 'Thợ gội đầu',
-  RECEPTIONIST: 'Lễ tân',
+  CASHIER: 'Thu ngân / Lễ tân',
   MANAGER: 'Quản lý salon',
 };
 

@@ -40,10 +40,11 @@ export class StaffService extends BaseQueryService {
       throw new ConflictException('User is already staff at another salon');
     }
 
-    // Update user role to STAFF
+    // Update user role based on position
+    const userRole = dto.position === 'CASHIER' ? Role.CASHIER : Role.STAFF;
     await this.prisma.user.update({
       where: { id: dto.userId },
-      data: { role: Role.STAFF },
+      data: { role: userRole },
     });
 
     // Create staff record
