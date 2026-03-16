@@ -41,6 +41,9 @@ import { cn } from '@/lib/utils';
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
+import 'dayjs/locale/vi';
+
+dayjs.locale('vi');
 
 export default function OnlineBookingsPage() {
   const queryClient = useQueryClient();
@@ -64,13 +67,13 @@ export default function OnlineBookingsPage() {
   const { data: availableBarbers } = useQuery({
     queryKey: ['cashier', 'available-barbers', approvalData.date, approvalData.timeSlot],
     queryFn: () => cashierApi.getAvailableBarbers(approvalData.date, approvalData.timeSlot),
-    enabled: !!approvalData.date && !!approvalData.timeSlot,
+    enabled: !!approvalData.date && !!approvalData.timeSlot && isApproveOpen,
   });
 
   const approveMutation = useMutation({
     mutationFn: (data: any) => cashierApi.approveBooking(selectedBooking.id, data),
     onSuccess: () => {
-      toast.success('Đã xác nhận lịch hẹn!');
+      toast.success('Đã xác nhận lịch hẹn thành công!');
       setIsApproveOpen(false);
       queryClient.invalidateQueries({ queryKey: ['cashier', 'bookings'] });
       queryClient.invalidateQueries({ queryKey: ['cashier', 'stats'] });
@@ -93,7 +96,7 @@ export default function OnlineBookingsPage() {
       <div className="flex bg-white rounded-[2rem] border border-slate-100 items-center justify-center min-h-[500px]">
         <div className="flex flex-col items-center gap-4">
            <div className="w-12 h-12 border-4 border-[#C8A97E] border-t-transparent rounded-full animate-spin" />
-           <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Loading Requests...</p>
+           <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Đang tải danh sách yều cầu...</p>
         </div>
       </div>
     );
@@ -106,17 +109,34 @@ export default function OnlineBookingsPage() {
         timeSlot: booking.timeSlot,
         date: dayjs(booking.date).format('YYYY-MM-DD')
     });
-    setIsApproveOpen(true);
+    
+    // logic: if staffId is already there, we might confirm directly if the user wants 
+    // but the prompt says "if selected, confirm directly", so let's check
+    if (booking.staffId) {
+        // We still open the modal to allow confirmation or change, 
+        // but we'll highlight the pre-selected barber
+        setIsApproveOpen(true);
+    } else {
+        setIsApproveOpen(true);
+    }
+  };
+
+  const handleConfirmDirectly = (booking: any) => {
+     approveMutation.mutate({
+        staffId: booking.staffId,
+        timeSlot: booking.timeSlot,
+        date: dayjs(booking.date).format('YYYY-MM-DD')
+     });
   };
 
   return (
     <div className="space-y-8 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-           <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic uppercase">
-              Online <span className="text-[#C8A97E]">Requests</span>
+           <h1 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">
+              Duyệt lịch <span className="text-[#C8A97E]">Trực tuyến</span>
            </h1>
-           <p className="text-slate-500 font-medium font-serif italic">Review and approve bookings from Website & Chatbot.</p>
+           <p className="text-slate-500 font-medium italic text-sm">Xem và xác nhận các lịch đặt từ Website & Chatbot.</p>
         </div>
       </div>
 
@@ -126,7 +146,7 @@ export default function OnlineBookingsPage() {
              <div className="p-8 rounded-full bg-slate-50 text-slate-200 mb-6 group hover:text-[#C8A97E] transition-colors">
                 <Smartphone className="w-16 h-16 transition-transform group-hover:scale-110" />
              </div>
-             <p className="text-slate-400 font-black italic uppercase text-xs tracking-widest">No pending online bookings</p>
+             <p className="text-slate-400 font-black italic uppercase text-xs tracking-widest">Không có lịch hẹn đang chờ duyệt</p>
           </div>
         ) : (
           bookings?.map((booking: any) => (
@@ -136,11 +156,11 @@ export default function OnlineBookingsPage() {
                      {/* Time Side */}
                      <div className="lg:w-56 bg-gradient-to-br from-slate-900 to-slate-800 p-8 flex flex-col items-center justify-center text-center gap-3 relative">
                         <div className="absolute top-4 left-4">
-                           <Badge className="bg-amber-500 text-white border-none font-black italic text-[8px] uppercase tracking-tighter shadow-lg shadow-amber-500/20">PENDING</Badge>
+                           <Badge className="bg-amber-500 text-white border-none font-black italic text-[8px] uppercase tracking-tighter shadow-lg shadow-amber-500/20">CHỜ DUYỆT</Badge>
                         </div>
                         <div className="space-y-1">
                            <p className="text-3xl font-black text-white tracking-tighter italic leading-none">{booking.timeSlot}</p>
-                           <p className="text-[10px] font-black text-[#C8A97E] uppercase tracking-[0.2em]">{dayjs(booking.date).format('dddd, DD MMM')}</p>
+                           <p className="text-[10px] font-black text-[#C8A97E] uppercase tracking-[0.1em]">{dayjs(booking.date).format('dddd, DD/MM')}</p>
                         </div>
                         <div className="w-8 h-1 bg-[#C8A97E] rounded-full mt-2"></div>
                      </div>
@@ -156,6 +176,11 @@ export default function OnlineBookingsPage() {
                            <div>
                               <h3 className="text-xl font-black text-slate-900 italic tracking-tight">{booking.customer?.name}</h3>
                               <p className="text-sm font-bold text-slate-500">{booking.customer?.phone}</p>
+                              {booking.staff && (
+                                <Badge variant="outline" className="mt-2 border-[#C8A97E]/30 text-[#C8A97E] bg-amber-50 font-bold text-[9px] uppercase tracking-wider">
+                                    Yêu cầu: {booking.staff.name}
+                                </Badge>
+                              )}
                            </div>
                         </div>
 
@@ -181,15 +206,26 @@ export default function OnlineBookingsPage() {
                              onClick={() => { setSelectedBooking(booking); setIsRejectOpen(true); }}
                              className="w-full sm:w-auto xl:w-32 border-rose-100 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl font-black italic uppercase text-[10px] tracking-widest h-12 transition-all"
                            >
-                              Reject
+                              Từ chối
                            </Button>
-                           <Button 
-                             onClick={() => handleOpenApprove(booking)}
-                             className="w-full sm:w-auto xl:w-40 bg-[#C8A97E] hover:bg-amber-600 text-white rounded-2xl font-black italic uppercase text-[10px] tracking-widest h-12 px-6 shadow-xl shadow-[#C8A97E]/20 group"
-                           >
-                              Review & Approve
-                              <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                           </Button>
+                           
+                           {booking.staffId ? (
+                             <Button 
+                                onClick={() => handleConfirmDirectly(booking)}
+                                className="w-full sm:w-auto xl:w-40 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black italic uppercase text-[10px] tracking-widest h-12 px-6 shadow-xl shadow-emerald-200 group"
+                             >
+                                Xác nhận ngay
+                                <CheckCircle2 className="w-4 h-4 ml-2 group-hover:scale-110 transition-transform" />
+                             </Button>
+                           ) : (
+                             <Button 
+                                onClick={() => handleOpenApprove(booking)}
+                                className="w-full sm:w-auto xl:w-40 bg-[#C8A97E] hover:bg-amber-600 text-white rounded-2xl font-black italic uppercase text-[10px] tracking-widest h-12 px-6 shadow-xl shadow-[#C8A97E]/20 group"
+                             >
+                                Phân công Barber
+                                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                             </Button>
+                           )}
                         </div>
                      </div>
                   </div>
@@ -203,7 +239,7 @@ export default function OnlineBookingsPage() {
       <Dialog open={isApproveOpen} onOpenChange={setIsApproveOpen}>
          <DialogContent className="sm:max-w-xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-[0_30px_60px_-15px_rgba(0,0,0,0.3)] bg-white">
             <div className="bg-slate-900 p-10 text-white">
-               <h2 className="text-3xl font-black italic uppercase tracking-tighter">Finalize <span className="text-[#C8A97E]">Booking</span></h2>
+               <h2 className="text-3xl font-black italic uppercase tracking-tighter">Hoàn tất <span className="text-[#C8A97E]">Duyệt lịch</span></h2>
                <p className="text-slate-400 font-bold text-xs uppercase tracking-[0.2em] mt-2">Duyệt & Gán kỹ thuật viên phục vụ</p>
             </div>
 
@@ -214,10 +250,10 @@ export default function OnlineBookingsPage() {
                      <div className="relative">
                         <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                         <Input 
-                          type="date"
-                          value={approvalData.date}
-                          onChange={(e) => setApprovalData({ ...approvalData, date: e.target.value })}
-                          className="pl-12 border-slate-100 bg-slate-50 h-14 rounded-2xl font-bold focus:ring-[#C8A97E]/20"
+                           type="date"
+                           value={approvalData.date}
+                           onChange={(e) => setApprovalData({ ...approvalData, date: e.target.value })}
+                           className="pl-12 border-slate-100 bg-slate-50 h-14 rounded-2xl font-bold focus:ring-[#C8A97E]/20"
                         />
                      </div>
                   </div>
@@ -230,7 +266,7 @@ export default function OnlineBookingsPage() {
                               <SelectValue placeholder="Chọn giờ" />
                            </SelectTrigger>
                            <SelectContent className="rounded-2xl shadow-2xl border-slate-50">
-                              {['08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'].map(t => (
+                              {['08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'].map(t => (
                                  <SelectItem key={t} value={t} className="font-bold py-3 rounded-xl">{t}</SelectItem>
                               ))}
                            </SelectContent>
@@ -244,7 +280,7 @@ export default function OnlineBookingsPage() {
                      <label className="text-[10px] font-black uppercase tracking-widest text-[#C8A97E]">Chọn Barber khả dụng</label>
                      {availableBarbers && (
                         <Badge className="bg-emerald-50 text-emerald-600 border-none font-bold text-[8px] uppercase tracking-widest px-2">
-                           {availableBarbers.filter((b: any) => b.isAvailable).length} Available
+                           {availableBarbers.filter((b: any) => b.isAvailable).length} Sẵn sàng
                         </Badge>
                      )}
                   </div>
@@ -252,15 +288,15 @@ export default function OnlineBookingsPage() {
                   <div className="grid grid-cols-2 gap-4">
                      {availableBarbers?.map((barber: any) => (
                         <div 
-                          key={barber.id}
-                          onClick={() => barber.isAvailable && setApprovalData({ ...approvalData, staffId: barber.id })}
-                          className={cn(
-                            "flex items-center gap-3 p-4 rounded-3xl border-2 transition-all cursor-pointer relative group",
-                            approvalData.staffId === barber.id 
-                              ? "border-[#C8A97E] bg-amber-50/50 shadow-lg scale-[1.02]" 
-                              : "border-slate-50 bg-slate-50/50 hover:border-slate-200",
-                            !barber.isAvailable && "opacity-40 cursor-not-allowed grayscale"
-                          )}
+                           key={barber.id}
+                           onClick={() => barber.isAvailable && setApprovalData({ ...approvalData, staffId: barber.id })}
+                           className={cn(
+                             "flex items-center gap-3 p-4 rounded-3xl border-2 transition-all cursor-pointer relative group",
+                             approvalData.staffId === barber.id 
+                               ? "border-[#C8A97E] bg-amber-50/50 shadow-lg scale-[1.02]" 
+                               : "border-slate-50 bg-slate-50/50 hover:border-slate-200",
+                             !barber.isAvailable && "opacity-40 cursor-not-allowed grayscale"
+                           )}
                         >
                            <Avatar className="h-10 w-10 border-2 border-white">
                               <AvatarImage src={barber.avatar} />
@@ -269,7 +305,7 @@ export default function OnlineBookingsPage() {
                            <div className="min-w-0">
                               <p className="font-black text-[11px] text-slate-900 uppercase tracking-tighter truncate">{barber.name}</p>
                               <p className={cn("text-[8px] font-bold uppercase tracking-widest", barber.isAvailable ? "text-emerald-500" : "text-rose-400")}>
-                                 {barber.reason}
+                                 {barber.isAvailable ? 'Có thể phục vụ' : (barber.reason || 'Bận')}
                               </p>
                            </div>
                            {approvalData.staffId === barber.id && (
@@ -283,20 +319,20 @@ export default function OnlineBookingsPage() {
                   {!availableBarbers && approvalData.date && (
                      <div className="flex flex-col items-center py-6 gap-2">
                         <Loader2 className="w-5 h-5 text-slate-300 animate-spin" />
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Checking Availability...</p>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Đang kiểm tra Barber trống...</p>
                      </div>
                   )}
                </div>
             </div>
 
             <DialogFooter className="p-10 pt-0 flex gap-4">
-               <Button variant="ghost" onClick={() => setIsApproveOpen(false)} className="flex-1 h-14 rounded-2xl font-bold uppercase text-[10px] tracking-widest text-slate-400">Cancel</Button>
+               <Button variant="ghost" onClick={() => setIsApproveOpen(false)} className="flex-1 h-14 rounded-2xl font-bold uppercase text-[10px] tracking-widest text-slate-400">Hủy bỏ</Button>
                <Button 
                 onClick={() => approveMutation.mutate(approvalData)}
                 disabled={approveMutation.isPending || !approvalData.staffId}
-                className="flex-1 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl h-14 font-black italic uppercase text-[10px] tracking-[0.2em] shadow-2xl shadow-slate-900/20"
+                className="flex-[2] bg-slate-900 hover:bg-slate-800 text-white rounded-2xl h-14 font-black italic uppercase text-[10px] tracking-[0.2em] shadow-2xl shadow-slate-900/20"
                >
-                  {approveMutation.isPending ? 'Propagating...' : 'Approve Booking'}
+                  {approveMutation.isPending ? 'Đang thực hiện...' : 'Xác nhận Đặt lịch'}
                </Button>
             </DialogFooter>
          </DialogContent>
@@ -346,7 +382,7 @@ export default function OnlineBookingsPage() {
                 disabled={rejectMutation.isPending || !rejectReason}
                 className="flex-[2] bg-rose-500 hover:bg-rose-600 text-white rounded-2xl h-12 font-black italic uppercase text-xs tracking-[0.2em]"
                >
-                  Reject Forever
+                  Xác nhận Từ chối
                </Button>
             </div>
          </DialogContent>

@@ -104,7 +104,7 @@ export default function CashierLayout({ children }: CashierLayoutProps) {
           {isCollapsed && !isMobileOpen ? (
             <span className="text-[#C8A97E] text-2xl font-black">R</span>
           ) : (
-            <span className="text-white">REETRO<span className="text-[#C8A97E] ml-1">CASHIER</span></span>
+            <span className="text-white">REETRO<span className="text-[#C8A97E] ml-1">THU NGÂN</span></span>
           )}
         </Link>
       </div>
@@ -191,14 +191,14 @@ export default function CashierLayout({ children }: CashierLayoutProps) {
             </div>
 
             <div className="flex items-center gap-3 lg:gap-6">
-               <div className="hidden lg:flex flex-col text-right">
-                  <span className="text-sm font-black text-slate-900 uppercase tracking-tighter italic">
-                     {session?.user?.name}
-                  </span>
-                  <span className="text-[8px] font-black text-[#C8A97E] uppercase tracking-[0.3em] mt-0.5">
-                     Official Cashier
-                  </span>
-               </div>
+                <div className="hidden lg:flex flex-col text-right">
+                   <span className="text-sm font-black text-slate-900 uppercase tracking-tighter italic">
+                      {session?.user?.name}
+                   </span>
+                   <span className="text-[8px] font-black text-[#C8A97E] uppercase tracking-[0.3em] mt-0.5">
+                      Thu ngân chính thức
+                   </span>
+                </div>
 
                <DropdownMenu>
                   <DropdownMenuTrigger asChild>

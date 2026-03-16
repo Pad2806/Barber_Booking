@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { cashierApi, salonApi } from '@/lib/api';
+import { cashierApi } from '@/lib/api';
 import { 
   Search, 
   Banknote, 
@@ -20,7 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
+import { cn, formatPrice } from '@/lib/utils';
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
@@ -30,12 +30,11 @@ export default function CheckoutPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'VIETQR'>('CASH');
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   
   // Search bookings ready for checkout
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['cashier', 'checkout-eligible', searchTerm],
-    queryFn: () => cashierApi.searchCustomers(searchTerm), // Reusing search or specific endpoint
+    queryFn: () => cashierApi.searchCustomers(searchTerm),
     enabled: searchTerm.length > 2,
   });
 
@@ -43,8 +42,8 @@ export default function CheckoutPage() {
     mutationFn: () => cashierApi.checkout(selectedBooking.id, paymentMethod),
     onSuccess: () => {
       toast.success('Thanh toán thành công!');
-      setIsCheckoutOpen(false);
       setSelectedBooking(null);
+      setSearchTerm('');
       queryClient.invalidateQueries({ queryKey: ['cashier', 'stats'] });
       queryClient.invalidateQueries({ queryKey: ['cashier', 'revenue'] });
     },
@@ -53,17 +52,17 @@ export default function CheckoutPage() {
 
   const calculateTotal = (booking: any) => {
     if (!booking) return 0;
-    return (booking.services || []).reduce((acc: number, s: any) => acc + Number(s.price || 0), 0);
+    return (booking.services || []).reduce((acc: number, s: any) => acc + Number(s.price || s.service?.price || 0), 0);
   };
 
   return (
     <div className="space-y-10 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-           <h1 className="text-4xl font-black text-slate-900 tracking-tighter italic uppercase">
-              Terminal <span className="text-[#C8A97E]">Checkout</span>
+           <h1 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">
+              Quyết toán <span className="text-[#C8A97E]">Thanh toán</span>
            </h1>
-           <p className="text-slate-500 font-medium font-serif italic text-sm">Hệ thống quyết toán và xử lý giao dịch tại quầy.</p>
+           <p className="text-slate-500 font-medium italic text-sm">Hệ thống xử lý giao dịch và xuất hóa đơn tại quầy.</p>
         </div>
       </div>
 
@@ -77,8 +76,8 @@ export default function CheckoutPage() {
                         <Search className="w-5 h-5" />
                      </div>
                      <div>
-                        <h3 className="text-xl font-black italic uppercase tracking-tighter">Locate Patient</h3>
-                        <p className="font-bold text-slate-400 uppercase text-[9px] tracking-widest leading-none">Tìm kiếm khách hàng cần thanh toán</p>
+                        <h3 className="text-xl font-black italic uppercase tracking-tighter">Tìm kiếm Khách hàng</h3>
+                        <p className="font-bold text-slate-400 uppercase text-[9px] tracking-widest leading-none">Nhập thông tin để thực hiện thanh toán</p>
                      </div>
                   </div>
                   
@@ -96,7 +95,7 @@ export default function CheckoutPage() {
                      {isLoading && (
                         <div className="flex flex-col items-center py-10 gap-2">
                            <Loader2 className="w-6 h-6 text-[#C8A97E] animate-spin" />
-                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Scanning Repository...</p>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Đang tìm kiếm dữ liệu...</p>
                         </div>
                      )}
 
@@ -108,7 +107,7 @@ export default function CheckoutPage() {
                              className={cn(
                                "p-6 rounded-3xl border-2 transition-all cursor-pointer flex items-center justify-between group/item",
                                selectedBooking?.id === booking.id 
-                                 ? "border-[#C8A97E] bg-amber-50/50 shadow-lg" 
+                                 ? "border-[#C8A97E] bg-amber-50/50 shadow-lg scale-[1.01]" 
                                  : "border-slate-50 bg-white hover:border-slate-200"
                              )}
                            >
@@ -125,8 +124,8 @@ export default function CheckoutPage() {
                               </div>
                               <div className="text-right flex items-center gap-6">
                                  <div className="hidden md:block">
-                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic mb-1">Total Bill</p>
-                                    <p className="text-xl font-black text-slate-900 italic tracking-tighter">{calculateTotal(booking).toLocaleString()}đ</p>
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic mb-1">Tổng tiền</p>
+                                    <p className="text-xl font-black text-slate-900 italic tracking-tighter">{formatPrice(calculateTotal(booking))}</p>
                                  </div>
                                  <div className={cn(
                                    "w-10 h-10 rounded-full flex items-center justify-center transition-all",
@@ -139,7 +138,7 @@ export default function CheckoutPage() {
                         ))
                      ) : searchTerm.length > 2 && !isLoading ? (
                         <div className="text-center py-10">
-                           <p className="text-slate-400 font-black italic uppercase text-xs">No active sessions found for &quot;{searchTerm}&quot;</p>
+                           <p className="text-slate-400 font-black italic uppercase text-xs">Không tìm thấy yêu cầu thanh toán cho &quot;{searchTerm}&quot;</p>
                         </div>
                      ) : null}
                   </div>
@@ -153,9 +152,9 @@ export default function CheckoutPage() {
                      <div className="flex items-center justify-between pb-10">
                         <div>
                            <CardTitle className="text-2xl font-black italic uppercase tracking-tighter flex items-center gap-3">
-                              Order <span className="text-[#C8A97E]">Summary</span> <span className="text-slate-200 text-sm font-light">#{selectedBooking.id.slice(-6)}</span>
+                              Chi tiết <span className="text-[#C8A97E]">Hóa đơn</span> <span className="text-slate-200 text-sm font-light">#{selectedBooking.id.slice(-6).toUpperCase()}</span>
                            </CardTitle>
-                           <CardDescription className="font-medium text-slate-500 italic">Kiểm tra chi tiết dịch vụ trước khi in hóa đơn.</CardDescription>
+                           <CardDescription className="font-medium text-slate-500 italic text-xs">Kiểm tra lại các dịch vụ trước khi xác nhận thanh toán.</CardDescription>
                         </div>
                         <Button variant="outline" className="rounded-2xl border-slate-100 h-11 font-bold text-xs">
                            <Printer className="w-4 h-4 mr-2" /> In hóa đơn
@@ -164,42 +163,42 @@ export default function CheckoutPage() {
                   </CardHeader>
                   <CardContent className="p-10 pt-0 space-y-10">
                      <div className="space-y-4">
-                        {selectedBooking.services?.map((s: any) => (
+                        {(selectedBooking.services || []).map((s: any) => (
                            <div key={s.id} className="flex items-center justify-between p-6 rounded-[2rem] bg-slate-50/50 group hover:bg-white hover:shadow-xl transition-all border border-transparent hover:border-slate-100">
                               <div className="flex items-center gap-4">
                                  <div className="p-3 bg-white rounded-2xl shadow-sm text-[#C8A97E]">
                                     <Scissors className="w-4 h-4" />
                                  </div>
                                  <div>
-                                    <p className="font-black text-slate-900 uppercase tracking-tighter italic text-sm">{s.name}</p>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Professional Service</p>
+                                    <p className="font-black text-slate-900 uppercase tracking-tighter italic text-sm">{s.name || s.service?.name}</p>
+                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Dịch vụ chuyên nghiệp</p>
                                  </div>
                               </div>
-                              <p className="font-black text-slate-900 italic tracking-tighter text-lg">{Number(s.price).toLocaleString()}đ</p>
+                              <p className="font-black text-slate-900 italic tracking-tighter text-lg">{formatPrice(s.price || s.service?.price)}</p>
                            </div>
                         ))}
                         
                         <Button variant="ghost" className="w-full h-16 rounded-[2rem] border-2 border-dashed border-slate-100 text-slate-400 hover:text-[#C8A97E] hover:border-[#C8A97E] hover:bg-amber-50 transition-all font-black italic uppercase text-[10px] tracking-widest">
-                           <Plus className="w-4 h-4 mr-2" /> Thêm dịch vụ phát sinh
+                           <Plus className="w-4 h-4 mr-2" /> Thêm dịch vụ/sản phẩm phát sinh
                         </Button>
                      </div>
 
                      <div className="pt-10 border-t border-slate-100 flex flex-col items-center">
                         <div className="w-full max-w-sm space-y-6">
                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-black text-slate-400 uppercase tracking-widest italic">Sub-total:</span>
-                              <span className="text-lg font-black text-slate-900 italic tracking-tighter">{calculateTotal(selectedBooking).toLocaleString()}đ</span>
+                              <span className="text-sm font-black text-slate-400 uppercase tracking-widest italic">Tạm tính:</span>
+                              <span className="text-lg font-black text-slate-900 italic tracking-tighter">{formatPrice(calculateTotal(selectedBooking))}</span>
                            </div>
                            <div className="flex items-center justify-between">
-                              <span className="text-sm font-black text-slate-400 uppercase tracking-widest italic">Discount:</span>
+                              <span className="text-sm font-black text-slate-400 uppercase tracking-widest italic">Giảm giá:</span>
                               <span className="text-lg font-black text-emerald-500 italic tracking-tighter">0đ</span>
                            </div>
                            <div className="h-px w-full bg-slate-100 my-4"></div>
                            <div className="flex items-center justify-between">
-                              <span className="text-xl font-black text-slate-900 uppercase tracking-tighter italic">Total Amount:</span>
+                              <span className="text-xl font-black text-slate-900 uppercase tracking-tighter italic">Tổng cộng:</span>
                               <div className="text-right">
-                                 <h2 className="text-4xl font-black text-slate-900 italic tracking-tighter leading-none">{calculateTotal(selectedBooking).toLocaleString()}đ</h2>
-                                 <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-1 italic">Paid in full (Cash/QR)</p>
+                                 <h2 className="text-4xl font-black text-slate-900 italic tracking-tighter leading-none">{formatPrice(calculateTotal(selectedBooking))}</h2>
+                                 <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mt-1 italic sm:text-[9px]">Gồm VAT (nếu có)</p>
                               </div>
                            </div>
                         </div>
@@ -215,7 +214,7 @@ export default function CheckoutPage() {
                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#C8A97E] to-transparent opacity-10 blur-3xl transition-opacity group-hover:opacity-30"></div>
                
                <h3 className="text-2xl font-black italic uppercase tracking-tighter mb-8 flex items-center gap-3">
-                  Select <span className="text-[#C8A97E]">Method</span>
+                  Phương thức <span className="text-[#C8A97E]">Thanh toán</span>
                </h3>
 
                <div className="space-y-4">
@@ -233,7 +232,7 @@ export default function CheckoutPage() {
                      </div>
                      <div>
                         <p className="font-black italic uppercase tracking-tighter text-lg">Tiền mặt</p>
-                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">Physical Settlement</p>
+                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5 italic">Thanh toán trực tiếp</p>
                      </div>
                   </div>
 
@@ -251,7 +250,7 @@ export default function CheckoutPage() {
                      </div>
                      <div>
                         <p className="font-black italic uppercase tracking-tighter text-lg">Chuyển khoản / QR</p>
-                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5">SePay Auto Terminal</p>
+                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mt-0.5 italic">Xác nhận tự động SePay</p>
                      </div>
                   </div>
                </div>
@@ -262,7 +261,7 @@ export default function CheckoutPage() {
                 className="w-full mt-12 bg-[#C8A97E] hover:bg-amber-600 text-white rounded-[2rem] h-20 font-black italic uppercase text-lg tracking-[0.2em] shadow-3xl shadow-[#C8A97E]/30 relative group overflow-hidden"
                >
                   <span className="relative z-10 flex items-center gap-4">
-                     {checkoutMutation.isPending ? 'Propagating...' : 'Authorize Checkout'} 
+                     {checkoutMutation.isPending ? 'Đang xử lý...' : 'Xác nhận Thanh toán'} 
                      <ArrowRight className="w-6 h-6 group-hover:translate-x-2 transition-transform" />
                   </span>
                   <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10 transition-opacity"></div>
@@ -271,7 +270,7 @@ export default function CheckoutPage() {
                {!selectedBooking && (
                   <div className="mt-8 flex items-start gap-3 p-4 bg-white/5 rounded-2xl border border-white/10">
                      <Info className="w-4 h-4 text-[#C8A97E] mt-1 shrink-0" />
-                     <p className="text-[10px] font-medium text-slate-400 italic leading-relaxed">Vui lòng tìm và chọn khách hàng bên trái để mở khóa Terminal Checkout.</p>
+                     <p className="text-[10px] font-medium text-slate-400 italic leading-relaxed">Vui lòng chọn khách hàng để mở khóa chức năng quyết toán.</p>
                   </div>
                )}
             </Card>
@@ -282,18 +281,18 @@ export default function CheckoutPage() {
                      <DollarSign className="w-5 h-5" />
                   </div>
                   <div>
-                     <h3 className="font-black italic uppercase tracking-tighter text-lg">Revenue Shield</h3>
-                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Hệ thống bảo vệ doanh thu & kiểm soát gian lận</p>
+                     <h3 className="font-black italic uppercase tracking-tighter text-lg italic">Kiểm soát Doanh thu</h3>
+                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Dữ liệu được mã hóa và bảo mật tuyệt đối</p>
                   </div>
                </div>
                <div className="space-y-4">
-                  <div className="flex items-center justify-between text-xs">
-                     <span className="text-slate-500 font-bold italic">Audit Status:</span>
-                     <Badge className="bg-emerald-50 text-emerald-600 border-none font-black italic tracking-widest">SECURE</Badge>
+                  <div className="flex items-center justify-between text-[11px]">
+                     <span className="text-slate-500 font-bold italic uppercase tracking-widest">Trạng thái:</span>
+                     <Badge className="bg-emerald-50 text-emerald-600 border-none font-black italic tracking-widest text-[9px]">AN TOÀN</Badge>
                   </div>
-                  <div className="flex items-center justify-between text-xs">
-                     <span className="text-slate-500 font-bold italic">Last Refresh:</span>
-                     <span className="font-bold text-slate-900">Just now</span>
+                  <div className="flex items-center justify-between text-[11px]">
+                     <span className="text-slate-500 font-bold italic uppercase tracking-widest">Cập nhật:</span>
+                     <span className="font-bold text-slate-900 italic">Vừa xong</span>
                   </div>
                </div>
             </Card>
