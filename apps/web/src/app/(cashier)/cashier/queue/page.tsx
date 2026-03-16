@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { cashierApi } from '@/lib/api';
+import { cashierApi, usersApi } from '@/lib/api';
 import { 
   ListOrdered, 
   Clock, 
@@ -34,16 +34,23 @@ import dayjs from 'dayjs';
 
 export default function QueuePage() {
   const queryClient = useQueryClient();
+
+  const { data: me } = useQuery({
+    queryKey: ['users', 'me'],
+    queryFn: usersApi.getMe,
+  });
   
   const { data: queue, isLoading } = useQuery({
-    queryKey: ['cashier', 'queue'],
-    queryFn: cashierApi.getQueue,
+    queryKey: ['cashier', 'queue', me?.staff?.salonId],
+    queryFn: () => cashierApi.getQueue(me?.staff?.salonId),
+    enabled: !!me?.staff?.salonId,
     refetchInterval: 10000,
   });
 
   const { data: branchStaff } = useQuery({
-    queryKey: ['cashier', 'staff-list'],
-    queryFn: () => cashierApi.getAvailableBarbers(dayjs().format('YYYY-MM-DD'), dayjs().format('HH:mm')),
+    queryKey: ['cashier', 'staff-list', me?.staff?.salonId],
+    queryFn: () => cashierApi.getAvailableBarbers(dayjs().format('YYYY-MM-DD'), dayjs().format('HH:mm'), me?.staff?.salonId),
+    enabled: !!me?.staff?.salonId,
   });
 
   const updateStatusMutation = useMutation({
@@ -78,7 +85,7 @@ export default function QueuePage() {
            <h1 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">
               Quản lý <span className="text-[#C8A97E]">Hàng chờ</span>
            </h1>
-           <p className="text-slate-500 font-medium italic text-sm text-serif">Điều phối khách vãng lai và phân công Barber trực tiếp.</p>
+           <p className="text-slate-500 font-medium italic text-sm">Điều phối khách vãng lai và phân công Barber trực tiếp.</p>
         </div>
         <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-8">
            <div className="text-center">

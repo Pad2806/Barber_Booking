@@ -1,7 +1,6 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { cashierApi } from '@/lib/api';
 import { 
   TrendingUp, 
   Users, 
@@ -14,46 +13,54 @@ import {
   Bell,
   CheckCircle2,
   AlertCircle,
-  ArrowRight
+  ArrowRight,
+  MapPin
 } from 'lucide-react';
+import { cashierApi, usersApi } from '@/lib/api';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { formatPrice, cn } from '@/lib/utils';
 import Link from 'next/link';
-import dynamicImport from 'next/dynamic';
-import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
+import dynamic from 'next/dynamic';
 
-const ResponsiveContainer = dynamicImport(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false });
-const LineChart = dynamicImport(() => import('recharts').then(mod => mod.LineChart), { ssr: false });
-const Line = dynamicImport(() => import('recharts').then(mod => mod.Line), { ssr: false });
-const XAxis = dynamicImport(() => import('recharts').then(mod => mod.XAxis), { ssr: false });
-const YAxis = dynamicImport(() => import('recharts').then(mod => mod.YAxis), { ssr: false });
-const CartesianGrid = dynamicImport(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false });
-const Tooltip = dynamicImport(() => import('recharts').then(mod => mod.Tooltip), { ssr: false });
-const PieChart = dynamicImport(() => import('recharts').then(mod => mod.PieChart), { ssr: false });
-const Pie = dynamicImport(() => import('recharts').then(mod => mod.Pie), { ssr: false });
-const Cell = dynamicImport(() => import('recharts').then(mod => mod.Cell), { ssr: false });
-const Legend = dynamicImport(() => import('recharts').then(mod => mod.Legend), { ssr: false });
+const ResponsiveContainer = dynamic(() => import('recharts').then(mod => mod.ResponsiveContainer), { ssr: false });
+const LineChart = dynamic(() => import('recharts').then(mod => mod.LineChart), { ssr: false });
+const Line = dynamic(() => import('recharts').then(mod => mod.Line), { ssr: false });
+const XAxis = dynamic(() => import('recharts').then(mod => mod.XAxis), { ssr: false });
+const YAxis = dynamic(() => import('recharts').then(mod => mod.YAxis), { ssr: false });
+const CartesianGrid = dynamic(() => import('recharts').then(mod => mod.CartesianGrid), { ssr: false });
+const Tooltip = dynamic(() => import('recharts').then(mod => mod.Tooltip), { ssr: false });
+const PieChart = dynamic(() => import('recharts').then(mod => mod.PieChart), { ssr: false });
+const Pie = dynamic(() => import('recharts').then(mod => mod.Pie), { ssr: false });
+const Cell = dynamic(() => import('recharts').then(mod => mod.Cell), { ssr: false });
+const Legend = dynamic(() => import('recharts').then(mod => mod.Legend), { ssr: false });
 
 const COLORS = ['#C8A97E', '#1e293b', '#64748b', '#94a3b8', '#cbd5e1'];
 
 export default function CashierDashboard() {
+  const { data: me } = useQuery({
+    queryKey: ['users', 'me'],
+    queryFn: usersApi.getMe,
+  });
+
   const { data: stats, isLoading } = useQuery({
-    queryKey: ['cashier', 'stats'],
-    queryFn: cashierApi.getDashboardStats,
+    queryKey: ['cashier', 'stats', me?.staff?.salonId],
+    queryFn: () => cashierApi.getDashboardStats(me?.staff?.salonId),
+    enabled: !!me?.staff?.salonId,
     refetchInterval: 30000,
   });
 
   const { data: queue } = useQuery({
-    queryKey: ['cashier', 'queue'],
-    queryFn: cashierApi.getQueue,
+    queryKey: ['cashier', 'queue', me?.staff?.salonId],
+    queryFn: () => cashierApi.getQueue(me?.staff?.salonId),
+    enabled: !!me?.staff?.salonId,
   });
 
   const { data: revenueData } = useQuery({
-    queryKey: ['cashier', 'revenue-trends'],
-    queryFn: cashierApi.getDetailedRevenue,
+    queryKey: ['cashier', 'revenue-trends', me?.staff?.salonId],
+    queryFn: () => cashierApi.getDetailedRevenue(me?.staff?.salonId),
+    enabled: !!me?.staff?.salonId,
   });
 
   if (isLoading) {
@@ -71,9 +78,9 @@ export default function CashierDashboard() {
   }
 
   const statCards = [
-    { label: 'Lịch hẹn hôm nay', value: stats?.todayAppointments || 0, icon: CalendarCheck, color: 'from-[#C8A97E] to-amber-600', sub: 'Tổng lượt đặt' },
-    { label: 'Khách đang chờ', value: stats?.waitingCustomers || 0, icon: ListOrdered, color: 'from-orange-500 to-rose-500', sub: 'Hàng chờ hiện tại' },
-    { label: 'Đã hoàn tất', value: stats?.completedServices || 0, icon: CheckCircle2, color: 'from-emerald-500 to-teal-600', sub: 'Ca phục vụ xong' },
+    { label: 'Lịch hẹn hôm nay', value: String(stats?.todayAppointments || 0), icon: CalendarCheck, color: 'from-[#C8A97E] to-amber-600', sub: 'Tổng lượt đặt' },
+    { label: 'Khách đang chờ', value: String(stats?.waitingCustomers || 0), icon: ListOrdered, color: 'from-orange-500 to-rose-500', sub: 'Hàng chờ hiện tại' },
+    { label: 'Đã hoàn tất', value: String(stats?.completedServices || 0), icon: CheckCircle2, color: 'from-emerald-500 to-teal-600', sub: 'Ca phục vụ xong' },
     { label: 'Doanh thu hôm nay', value: formatPrice(stats?.todayRevenue || 0), icon: DollarSign, color: 'from-blue-600 to-indigo-700', sub: 'Tổng tiền thu' },
   ];
 

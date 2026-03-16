@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { cashierApi, serviceApi, staffApi } from '@/lib/api';
+import { cashierApi, serviceApi, usersApi } from '@/lib/api';
 import { 
   UserPlus, 
   Scissors, 
@@ -43,18 +43,24 @@ export default function WalkinPage() {
     note: ''
   });
 
+  const { data: me } = useQuery({
+    queryKey: ['users', 'me'],
+    queryFn: usersApi.getMe,
+  });
+
   const { data: services } = useQuery({
     queryKey: ['services', 'all'],
     queryFn: () => serviceApi.getAll({ limit: 100 }),
   });
 
   const { data: branchStaff } = useQuery({
-    queryKey: ['cashier', 'staff-list'],
-    queryFn: () => cashierApi.getAvailableBarbers(dayjs().format('YYYY-MM-DD'), dayjs().format('HH:mm')),
+    queryKey: ['cashier', 'staff-list', me?.staff?.salonId],
+    queryFn: () => cashierApi.getAvailableBarbers(dayjs().format('YYYY-MM-DD'), dayjs().format('HH:mm'), me?.staff?.salonId),
+    enabled: !!me?.staff?.salonId,
   });
 
   const walkinMutation = useMutation({
-    mutationFn: (data: any) => cashierApi.createWalkinBooking(data),
+    mutationFn: (data: any) => cashierApi.createWalkinBooking({ ...data, salonId: me?.staff?.salonId }),
     onSuccess: () => {
       toast.success('Đã bắt đầu phục vụ khách hàng!');
       setFormData({ customerName: '', phone: '', serviceIds: [], staffId: '', note: '' });
@@ -66,7 +72,7 @@ export default function WalkinPage() {
   });
 
   const queueMutation = useMutation({
-    mutationFn: (data: any) => cashierApi.addToQueue(data),
+    mutationFn: (data: any) => cashierApi.addToQueue({ ...data, salonId: me?.staff?.salonId }),
     onSuccess: () => {
       toast.success('Đã thêm khách vào hàng chờ thành công!');
       setFormData({ customerName: '', phone: '', serviceIds: [], staffId: '', note: '' });
@@ -216,7 +222,7 @@ export default function WalkinPage() {
                        disabled={queueMutation.isPending || walkinMutation.isPending || !formData.customerName}
                        className="flex-1 bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-100 rounded-[1.5rem] h-14 font-black italic uppercase text-xs tracking-[0.2em] shadow-xl shadow-slate-200/50"
                      >
-                        <ListOrdered className="w-4 h-4 mr-2" /> Thêm vào Chàng chờ
+                        <ListOrdered className="w-4 h-4 mr-2" /> Thêm vào Hàng chờ
                      </Button>
                      <Button 
                        onClick={() => walkinMutation.mutate(formData)}

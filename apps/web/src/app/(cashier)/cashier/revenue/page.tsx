@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { cashierApi } from '@/lib/api';
+import { cashierApi, usersApi } from '@/lib/api';
 import { 
   BarChart3, 
   TrendingUp, 
@@ -27,9 +27,15 @@ import React from 'react';
 import dayjs from 'dayjs';
 
 export default function CashierRevenuePage() {
+  const { data: me } = useQuery({
+    queryKey: ['users', 'me'],
+    queryFn: usersApi.getMe,
+  });
+
   const { data: revenueData, isLoading } = useQuery({
-    queryKey: ['cashier', 'revenue', 'today'],
-    queryFn: cashierApi.getDetailedRevenue,
+    queryKey: ['cashier', 'revenue', 'today', me?.staff?.salonId],
+    queryFn: () => cashierApi.getDetailedRevenue(me?.staff?.salonId),
+    enabled: !!me?.staff?.salonId,
     refetchInterval: 60000, // Refresh every minute
   });
 

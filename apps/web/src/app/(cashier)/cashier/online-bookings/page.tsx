@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { cashierApi } from '@/lib/api';
+import { cashierApi, usersApi } from '@/lib/api';
 import { 
   Smartphone, 
   CheckCircle2, 
@@ -59,15 +59,21 @@ export default function OnlineBookingsPage() {
     date: ''
   });
 
+  const { data: me } = useQuery({
+    queryKey: ['users', 'me'],
+    queryFn: usersApi.getMe,
+  });
+
   const { data: bookings, isLoading } = useQuery({
-    queryKey: ['cashier', 'bookings', 'pending'],
-    queryFn: cashierApi.getPendingBookings,
+    queryKey: ['cashier', 'bookings', 'pending', me?.staff?.salonId],
+    queryFn: () => cashierApi.getPendingBookings(me?.staff?.salonId),
+    enabled: !!me?.staff?.salonId,
   });
 
   const { data: availableBarbers } = useQuery({
-    queryKey: ['cashier', 'available-barbers', approvalData.date, approvalData.timeSlot],
-    queryFn: () => cashierApi.getAvailableBarbers(approvalData.date, approvalData.timeSlot),
-    enabled: !!approvalData.date && !!approvalData.timeSlot && isApproveOpen,
+    queryKey: ['cashier', 'available-barbers', approvalData.date, approvalData.timeSlot, me?.staff?.salonId],
+    queryFn: () => cashierApi.getAvailableBarbers(approvalData.date, approvalData.timeSlot, me?.staff?.salonId),
+    enabled: !!approvalData.date && !!approvalData.timeSlot && isApproveOpen && !!me?.staff?.salonId,
   });
 
   const approveMutation = useMutation({
@@ -110,15 +116,7 @@ export default function OnlineBookingsPage() {
         date: dayjs(booking.date).format('YYYY-MM-DD')
     });
     
-    // logic: if staffId is already there, we might confirm directly if the user wants 
-    // but the prompt says "if selected, confirm directly", so let's check
-    if (booking.staffId) {
-        // We still open the modal to allow confirmation or change, 
-        // but we'll highlight the pre-selected barber
-        setIsApproveOpen(true);
-    } else {
-        setIsApproveOpen(true);
-    }
+    setIsApproveOpen(true);
   };
 
   const handleConfirmDirectly = (booking: any) => {

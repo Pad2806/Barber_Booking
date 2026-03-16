@@ -294,12 +294,12 @@ export const managerApi = {
 };
 
 export const cashierApi = {
-  getDashboardStats: async () => {
-    const response = await apiClient.get('/cashier/dashboard');
+  getDashboardStats: async (salonId?: string) => {
+    const response = await apiClient.get('/cashier/dashboard', { params: { salonId } });
     return response.data;
   },
-  getPendingBookings: async () => {
-    const response = await apiClient.get('/cashier/bookings/pending');
+  getPendingBookings: async (salonId?: string) => {
+    const response = await apiClient.get('/cashier/bookings/pending', { params: { salonId } });
     return response.data;
   },
   approveBooking: async (id: string, data: { staffId?: string; timeSlot?: string; date?: string }) => {
@@ -315,6 +315,7 @@ export const cashierApi = {
     phone?: string;
     serviceIds: string[];
     staffId?: string;
+    salonId?: string;
     note?: string;
   }) => {
     const response = await apiClient.post('/cashier/bookings/walk-in', data);
@@ -328,19 +329,19 @@ export const cashierApi = {
     const response = await apiClient.post(`/cashier/bookings/${id}/checkout`, { method });
     return response.data;
   },
-  getDetailedRevenue: async () => {
-    const response = await apiClient.get('/cashier/revenue/today');
+  getDetailedRevenue: async (salonId?: string) => {
+    const response = await apiClient.get('/cashier/revenue/today', { params: { salonId } });
     return response.data;
   },
   searchCustomers: async (query: string) => {
     const response = await apiClient.get('/cashier/customers/search', { params: { q: query } });
     return response.data;
   },
-  getQueue: async () => {
-    const response = await apiClient.get('/cashier/queue');
+  getQueue: async (salonId?: string) => {
+    const response = await apiClient.get('/cashier/queue', { params: { salonId } });
     return response.data;
   },
-  addToQueue: async (data: { customerName: string; serviceId?: string; staffId?: string }) => {
+  addToQueue: async (data: { customerName: string; serviceId?: string; staffId?: string; salonId?: string }) => {
     const response = await apiClient.post('/cashier/queue', data);
     return response.data;
   },
@@ -353,11 +354,12 @@ export const cashierApi = {
     return response.data;
   },
   getBookings: async (params: any) => {
+    // Try /cashier/bookings first, but allow for fallback or extra params
     const response = await apiClient.get('/cashier/bookings', { params });
     return response.data;
   },
-  getAvailableBarbers: async (date: string, timeSlot: string) => {
-    const response = await apiClient.get('/cashier/barbers/available', { params: { date, timeSlot } });
+  getAvailableBarbers: async (date: string, timeSlot: string, salonId?: string) => {
+    const response = await apiClient.get('/cashier/barbers/available', { params: { date, timeSlot, salonId } });
     return response.data;
   },
 };

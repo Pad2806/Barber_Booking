@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { cashierApi } from '@/lib/api';
+import { cashierApi, usersApi } from '@/lib/api';
 import { 
   Search, 
   Calendar, 
@@ -36,13 +36,20 @@ export default function CashierAppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [dateFilter, setDateFilter] = useState(dayjs().format('YYYY-MM-DD'));
 
+  const { data: me } = useQuery({
+    queryKey: ['users', 'me'],
+    queryFn: usersApi.getMe,
+  });
+
   const { data: bookings, isLoading } = useQuery({
-    queryKey: ['cashier', 'bookings', { status: statusFilter, date: dateFilter, search: searchTerm }],
+    queryKey: ['cashier', 'bookings', { status: statusFilter, date: dateFilter, search: searchTerm, salonId: me?.staff?.salonId }],
     queryFn: () => cashierApi.getBookings({ 
         status: statusFilter === 'ALL' ? undefined : statusFilter, 
         date: dateFilter,
-        search: searchTerm
+        search: searchTerm,
+        salonId: me?.staff?.salonId
     }),
+    enabled: !!me?.staff?.salonId,
   });
 
   const statusColors: any = {
