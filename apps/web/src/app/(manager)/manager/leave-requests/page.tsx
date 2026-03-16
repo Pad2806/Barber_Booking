@@ -124,7 +124,7 @@ export default function ManagerLeaveRequestsPage() {
       <div className="flex bg-white/50 backdrop-blur-md rounded-3xl border border-slate-100 items-center justify-center min-h-[600px] shadow-2xl">
         <div className="flex flex-col items-center gap-4">
            <div className="w-12 h-12 border-4 border-[#C8A97E] border-t-transparent rounded-full animate-spin" />
-           <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Checking Leave Requests...</p>
+           <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Đang kiểm tra yêu cầu nghỉ phép...</p>
         </div>
       </div>
     );
@@ -135,18 +135,18 @@ export default function ManagerLeaveRequestsPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
         <div>
            <Badge className="bg-[#C8A97E]/10 text-[#C8A97E] border-none mb-4 px-3 py-1 font-bold text-[9px] uppercase tracking-[0.2em] rounded-lg">
-              Management Portal
+              Trình quản lý chi nhánh
            </Badge>
-           <h1 className="text-5xl font-black text-slate-900 tracking-tighter italic uppercase leading-tight">
-              Staff <span className="text-[#C8A97E]">Absence</span><br/>
-              <span className="text-slate-300">Approval</span>
+           <h1 className="text-2xl font-black text-slate-900 tracking-tighter italic uppercase leading-tight">
+              Duyệt <span className="text-[#C8A97E]">Nghỉ phép</span><br/>
+              <span className="text-slate-400">Nhân viên</span>
            </h1>
         </div>
         <div className="flex flex-col items-end gap-2">
            <div className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm">
               <ShieldCheck className="w-5 h-5 text-[#C8A97E]" />
               <span className="text-xs font-black uppercase tracking-widest text-slate-600">
-                 {requests?.filter((r: any) => r.status === 'PENDING').length || 0} Pending Requests
+                 {requests?.filter((r: any) => r.status === 'PENDING').length || 0} Đơn đang chờ xử lý
               </span>
            </div>
            <p className="text-[10px] font-bold text-slate-400 italic">Cập nhật lúc {dayjs().format('HH:mm DD/MM')}</p>
@@ -220,10 +220,10 @@ export default function ManagerLeaveRequestsPage() {
                         "lg:w-48 p-8 flex lg:flex-col items-center justify-center lg:border-r border-slate-100 text-center gap-4 transition-colors duration-500",
                         req.status === 'PENDING' ? "bg-amber-50/50" : "bg-slate-50/50"
                      )}>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Absence Date</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Ngày nghỉ</p>
                         <h3 className="text-xl font-black text-slate-900 tracking-tighter italic whitespace-nowrap">
                            {dayjs(req.startDate).isSame(dayjs(req.endDate), 'day') 
-                             ? dayjs(req.startDate).format('DD MMM') 
+                             ? dayjs(req.startDate).format('DD [Tháng] MM') 
                              : `${dayjs(req.startDate).format('DD/MM')} - ${dayjs(req.endDate).format('DD/MM')}`}
                         </h3>
                         <Badge className={cn("border-none px-4 py-1.5 font-black uppercase text-[9px] tracking-widest rounded-xl shadow-sm", statusMap[req.status].color)}>
@@ -243,7 +243,7 @@ export default function ManagerLeaveRequestsPage() {
                            <div className="space-y-3">
                               <div>
                                  <h4 className="text-2xl font-black text-slate-900 italic tracking-tight">{req.staff?.user?.name}</h4>
-                                 <p className="text-[10px] font-black text-[#C8A97E] uppercase tracking-widest mt-1">Staff ID: {req.staffId.slice(-6)}</p>
+                                  <p className="text-[10px] font-black text-[#C8A97E] uppercase tracking-widest mt-1">Mã nhân viên: {req.staffId.slice(-6).toUpperCase()}</p>
                               </div>
                               <div className="flex items-center gap-2 p-3 bg-slate-50/50 rounded-2xl border border-slate-100 border-dashed max-w-md">
                                  <FileText className="w-4 h-4 text-slate-400 flex-shrink-0" />
@@ -258,24 +258,24 @@ export default function ManagerLeaveRequestsPage() {
                          {req.status === 'PENDING' ? (
                            <div className="flex flex-col sm:flex-row items-center gap-3">
                               <Button 
-                                onClick={() => approveMutation.mutate(req.id)}
-                                disabled={approveMutation.isPending}
-                                className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white rounded-2xl h-14 px-8 font-black italic uppercase text-xs tracking-widest shadow-xl transition-all hover:scale-105"
-                              >
-                                 {approveMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <ShieldCheck className="w-5 h-5 mr-3 text-[#C8A97E]" />}
-                                 Approve Request
-                              </Button>
+                                 onClick={() => approveMutation.mutate(req.id)}
+                                 disabled={approveMutation.isPending}
+                                 className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white rounded-2xl h-14 px-8 font-black italic uppercase text-xs tracking-widest shadow-xl transition-all hover:scale-105"
+                               >
+                                  {approveMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <ShieldCheck className="w-5 h-5 mr-3 text-[#C8A97E]" />}
+                                  Phê Duyệt
+                               </Button>
                               <Button 
-                                variant="outline"
-                                onClick={() => {
-                                   setSelectedRequest(req);
-                                   setIsRejectOpen(true);
-                                }}
-                                className="w-full sm:w-auto border-rose-100 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl h-14 px-8 font-black italic uppercase text-xs tracking-widest transition-all"
-                              >
-                                 <ShieldAlert className="w-5 h-5 mr-3" />
-                                 Reject
-                              </Button>
+                                 variant="outline"
+                                 onClick={() => {
+                                    setSelectedRequest(req);
+                                    setIsRejectOpen(true);
+                                 }}
+                                 className="w-full sm:w-auto border-rose-100 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl h-14 px-8 font-black italic uppercase text-xs tracking-widest transition-all"
+                               >
+                                  <ShieldAlert className="w-5 h-5 mr-3" />
+                                  Từ chối
+                               </Button>
                            </div>
                          ) : req.status === 'APPROVED' ? (
                            <Button 
@@ -292,7 +292,7 @@ export default function ManagerLeaveRequestsPage() {
                         {/* Rejection Details Info */}
                         {req.status === 'REJECTED' && req.rejectionReason && (
                           <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100 max-w-xs">
-                             <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Manager Note</p>
+                             <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Ghi chú Quản lý</p>
                              <p className="text-xs font-bold text-rose-600 italic">&quot;{req.rejectionReason}&quot;</p>
                           </div>
                         )}
@@ -309,7 +309,7 @@ export default function ManagerLeaveRequestsPage() {
          <DialogContent className="sm:max-w-[450px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden bg-white">
             <DialogHeader className="p-8 pb-0 text-left">
                <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter text-rose-500">
-                  Reject <span className="text-slate-900 underline decoration-rose-500/30">Request</span>
+                  Từ chối <span className="text-slate-900 underline decoration-rose-500/30">yêu cầu</span>
                </DialogTitle>
                <DialogDescription className="font-medium text-slate-500 pt-2">
                   Vui lòng cung cấp lý do từ chối đơn nghỉ phép của <span className="font-black text-slate-900">{selectedRequest?.staff?.user?.name}</span>.

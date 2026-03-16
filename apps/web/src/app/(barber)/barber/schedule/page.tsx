@@ -48,7 +48,7 @@ export default function BarberSchedulePage() {
       <div className="flex bg-white/50 backdrop-blur-md rounded-3xl border border-slate-100 items-center justify-center min-h-[400px] shadow-2xl">
         <div className="flex flex-col items-center gap-4">
            <div className="w-12 h-12 border-4 border-[#C8A97E] border-t-transparent rounded-full animate-spin" />
-           <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Accessing Schedule...</p>
+           <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Đang tải lịch làm việc...</p>
         </div>
       </div>
     );
@@ -59,11 +59,11 @@ export default function BarberSchedulePage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
         <div>
            <Badge className="bg-[#C8A97E]/10 text-[#C8A97E] border-none mb-4 px-3 py-1 font-bold text-[9px] uppercase tracking-[0.2em] rounded-lg">
-              Personal Workspace
+              Khu vực cá nhân
            </Badge>
-           <h1 className="text-5xl font-black text-slate-900 tracking-tighter italic uppercase leading-tight">
-              My <span className="text-[#C8A97E]">Professional</span><br/>
-              <span className="text-slate-300">Schedule</span>
+           <h1 className="text-2xl font-black text-slate-900 tracking-tighter italic uppercase leading-tight">
+              Lịch <span className="text-[#C8A97E]">Làm việc</span><br/>
+              <span className="text-slate-400">Cá nhân</span>
            </h1>
         </div>
         
@@ -73,7 +73,7 @@ export default function BarberSchedulePage() {
                   <ChevronLeft className="w-5 h-5" />
                 </Button>
                 <div className="px-6 text-center min-w-[200px]">
-                   <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Current Period</p>
+                   <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Thời gian</p>
                    <p className="text-[12px] font-black text-[#C8A97E] uppercase italic whitespace-nowrap tracking-tight">
                       {format(weekStart, 'dd MMM')} – {format(weekEnd, 'dd MMM yyyy')}
                    </p>
@@ -131,8 +131,8 @@ export default function BarberSchedulePage() {
                        <CalendarDays className="w-6 h-6 text-rose-500" />
                     </div>
                     <div>
-                       <span className="text-[10px] font-black uppercase italic tracking-widest text-rose-500">Day Off</span>
-                       <p className="text-[8px] font-bold text-rose-300 uppercase mt-1 tracking-tighter italic">Approved Absence</p>
+                       <span className="text-[10px] font-black uppercase italic tracking-widest text-rose-500">Ngày nghỉ</span>
+                       <p className="text-[8px] font-bold text-rose-300 uppercase mt-1 tracking-tighter italic">Đã được duyệt</p>
                     </div>
                   </div>
                 ) : dayShifts.length > 0 ? (
@@ -148,7 +148,7 @@ export default function BarberSchedulePage() {
                         <div className="p-2 bg-white rounded-xl shadow-sm group-hover/shift:bg-[#C8A97E]/10 transition-colors">
                            <Clock className="w-4 h-4 text-[#C8A97E]" />
                         </div>
-                        <span className="text-[10px] font-black text-slate-900 uppercase italic tracking-tighter">Shift Assignment</span>
+                        <span className="text-[10px] font-black text-slate-900 uppercase italic tracking-tighter">Lịch làm việc</span>
                       </div>
                       <div className="text-xl font-black text-slate-900 italic tracking-tighter tabular-nums flex items-baseline gap-1">
                         {format(new Date(shift.shiftStart), 'HH:mm')}
@@ -165,7 +165,7 @@ export default function BarberSchedulePage() {
                 ) : (
                   <div className="flex flex-col items-center justify-center text-slate-200 animate-pulse">
                     <Info className="w-10 h-10 mb-2 opacity-10" />
-                    <span className="text-[9px] font-black uppercase italic tracking-widest leading-none">Not Scheduled</span>
+                    <span className="text-[9px] font-black uppercase italic tracking-widest leading-none">Chưa có lịch</span>
                   </div>
                 )}
               </div>
@@ -179,12 +179,12 @@ export default function BarberSchedulePage() {
             <div className="lg:col-span-8 space-y-6">
                 <div className="inline-flex items-center gap-3 px-4 py-1.5 bg-[#C8A97E]/10 rounded-full border border-[#C8A97E]/20">
                    <ShieldCheck className="w-4 h-4 text-[#C8A97E]" />
-                   <span className="text-[9px] font-black text-[#C8A97E] uppercase tracking-widest italic">Barber Protocol & Guidelines</span>
+                   <span className="text-[9px] font-black text-[#C8A97E] uppercase tracking-widest italic">Quy định & Hướng dẫn</span>
                 </div>
-                <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter">Essential Work Directives</h3>
+                <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter">Nội quy làm việc</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
                     {[
-                        'Vui lòng có mặt trước ca làm least 15 mins.',
+                        'Vui lòng có mặt trước ca làm ít nhất 15 phút.',
                         'Đồng phục sạch sẽ, chỉn chu là bắt buộc.',
                         'Dụng cụ phải được khử khuẩn sau mỗi lượt khách.',
                         'Cập nhật tình trạng hoàn tất ngay khi xong việc.'

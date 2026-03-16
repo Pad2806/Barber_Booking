@@ -134,7 +134,7 @@ export default function AdminLeaveRequestsPage() {
       <div className="flex bg-white/50 backdrop-blur-md rounded-3xl border border-slate-100 items-center justify-center min-h-[600px] shadow-2xl">
         <div className="flex flex-col items-center gap-4">
            <div className="w-12 h-12 border-4 border-[#C8A97E] border-t-transparent rounded-full animate-spin" />
-           <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Checking Leave Requests...</p>
+           <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Đang kiểm tra yêu cầu nghỉ phép...</p>
         </div>
       </div>
     );
@@ -145,18 +145,18 @@ export default function AdminLeaveRequestsPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
         <div>
            <Badge className="bg-[#C8A97E]/10 text-[#C8A97E] border-none mb-4 px-3 py-1 font-bold text-[9px] uppercase tracking-[0.2em] rounded-lg">
-              Admin Control Panel
+              Trình quản trị hệ thống
            </Badge>
-           <h1 className="text-5xl font-black text-slate-900 tracking-tighter italic uppercase leading-tight">
-              Global <span className="text-[#C8A97E]">Leave</span><br/>
-              <span className="text-slate-300">Management</span>
+           <h1 className="text-2xl font-black text-slate-900 tracking-tighter italic uppercase leading-tight">
+              Quản lý <span className="text-[#C8A97E]">Nghỉ phép</span><br/>
+              <span className="text-slate-400">Toàn hệ thống</span>
            </h1>
         </div>
         <div className="flex flex-col items-end gap-2">
            <div className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm">
               <ShieldCheck className="w-5 h-5 text-[#C8A97E]" />
               <span className="text-xs font-black uppercase tracking-widest text-slate-600">
-                 {requests?.filter((r: any) => r.status === 'PENDING').length || 0} Pending Requests
+                 {requests?.filter((r: any) => r.status === 'PENDING').length || 0} Yêu cầu chưa xử lý
               </span>
            </div>
            <p className="text-[10px] font-bold text-slate-400 italic">Cập nhật lúc {dayjs().format('HH:mm DD/MM')}</p>
@@ -245,10 +245,10 @@ export default function AdminLeaveRequestsPage() {
                         "lg:w-48 p-8 flex lg:flex-col items-center justify-center lg:border-r border-slate-100 text-center gap-4 transition-colors duration-500",
                         req.status === 'PENDING' ? "bg-amber-50/50" : "bg-slate-50/50"
                      )}>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Absence Date</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Ngày nghỉ</p>
                         <h3 className="text-xl font-black text-slate-900 tracking-tighter italic whitespace-nowrap">
                            {dayjs(req.startDate).isSame(dayjs(req.endDate), 'day') 
-                             ? dayjs(req.startDate).format('DD MMM') 
+                             ? dayjs(req.startDate).format('DD [Tháng] MM') 
                              : `${dayjs(req.startDate).format('DD/MM')} - ${dayjs(req.endDate).format('DD/MM')}`}
                         </h3>
                         <Badge className={cn("border-none px-4 py-1.5 font-black uppercase text-[9px] tracking-widest rounded-xl shadow-sm", statusMap[req.status].color)}>
@@ -291,7 +291,7 @@ export default function AdminLeaveRequestsPage() {
                                 className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white rounded-2xl h-14 px-8 font-black italic uppercase text-xs tracking-widest shadow-xl transition-all hover:scale-105"
                               >
                                  {approveMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : <ShieldCheck className="w-5 h-5 mr-3 text-[#C8A97E]" />}
-                                 Approve Request
+                                 Duyệt Đơn
                               </Button>
                               <Button 
                                 variant="outline"
@@ -302,7 +302,7 @@ export default function AdminLeaveRequestsPage() {
                                 className="w-full sm:w-auto border-rose-100 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-2xl h-14 px-8 font-black italic uppercase text-xs tracking-widest transition-all"
                               >
                                  <ShieldAlert className="w-5 h-5 mr-3" />
-                                 Reject
+                                 Từ chối
                               </Button>
                            </div>
                          ) : req.status === 'APPROVED' ? (
@@ -320,7 +320,7 @@ export default function AdminLeaveRequestsPage() {
                         {/* Rejection Details Info */}
                         {req.status === 'REJECTED' && req.rejectionReason && (
                           <div className="p-4 bg-rose-50 rounded-2xl border border-rose-100 max-w-xs">
-                             <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Admin Note</p>
+                             <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest mb-1">Ghi chú Admin</p>
                              <p className="text-xs font-bold text-rose-600 italic">&quot;{req.rejectionReason}&quot;</p>
                           </div>
                         )}
@@ -337,7 +337,7 @@ export default function AdminLeaveRequestsPage() {
          <DialogContent className="sm:max-w-[450px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden bg-white">
             <DialogHeader className="p-8 pb-0">
                <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter text-rose-500">
-                  Reject <span className="text-slate-900 underline decoration-rose-500/30">Request</span>
+                  Từ chối <span className="text-slate-900 underline decoration-rose-500/30">yêu cầu</span>
                </DialogTitle>
                <DialogDescription className="font-medium text-slate-500 pt-2">
                   Vui lòng cung cấp lý do từ chối đơn nghỉ phép của <span className="font-black text-slate-900">{selectedRequest?.staff?.user?.name}</span>.

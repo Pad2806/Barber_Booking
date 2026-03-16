@@ -125,11 +125,11 @@ export default function ManagerSchedulePage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
         <div>
            <Badge className="bg-[#C8A97E]/10 text-[#C8A97E] border-none mb-4 px-3 py-1 font-bold text-[9px] uppercase tracking-[0.2em] rounded-lg">
-              Management Workspace
+              Trình quản lý chi nhánh
            </Badge>
-           <h1 className="text-5xl font-black text-slate-900 tracking-tighter italic uppercase leading-tight">
-              Salon <span className="text-[#C8A97E]">Staff</span><br/>
-              <span className="text-slate-300">Duty Roster</span>
+           <h1 className="text-2xl font-black text-slate-900 tracking-tighter italic uppercase leading-tight">
+              Quản lý <span className="text-[#C8A97E]">Lịch làm việc</span><br/>
+              <span className="text-slate-400">Chi nhánh</span>
            </h1>
         </div>
         
@@ -137,9 +137,9 @@ export default function ManagerSchedulePage() {
            <div className="flex items-center gap-3 bg-white border border-slate-100 rounded-2xl px-6 h-14 shadow-sm group hover:border-[#C8A97E]/30 transition-all">
               <MapPin className="w-5 h-5 text-[#C8A97E]" />
               <div className="flex flex-col">
-                 <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Active Branch</p>
+                 <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest leading-none mb-1">Chi nhánh hiện tại</p>
                  <span className="text-xs font-black uppercase text-slate-700 tracking-tighter italic">
-                    {me?.staff?.salon?.name || 'Loading branch...'}
+                    {me?.staff?.salon?.name || 'Đang tải...'}
                  </span>
               </div>
            </div>
@@ -150,10 +150,10 @@ export default function ManagerSchedulePage() {
                   <ChevronLeft className="w-5 h-5" />
                 </Button>
                 <div className="px-4 text-center min-w-[140px]">
-                   <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Week Period</p>
-                   <p className="text-[10px] font-black text-[#C8A97E] uppercase italic whitespace-nowrap">
-                      {format(weekStart, 'dd/MM')} - {format(weekEnd, 'dd/MM')}
-                   </p>
+                    <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest leading-none mb-1">Xem theo tuần</p>
+                    <p className="text-[10px] font-black text-[#C8A97E] uppercase italic whitespace-nowrap">
+                       {format(weekStart, 'dd/MM')} - {format(weekEnd, 'dd/MM')}
+                    </p>
                 </div>
                 <Button variant="ghost" size="icon" onClick={handleNextWeek} className="h-10 w-10 rounded-xl text-white hover:bg-white/10 hover:text-white">
                   <ChevronRight className="w-5 h-5" />
@@ -174,8 +174,8 @@ export default function ManagerSchedulePage() {
         <Card className="border-none shadow-premium bg-white min-w-[1200px] rounded-[3rem] overflow-hidden border border-slate-100">
           <div className="grid grid-cols-8 border-b bg-slate-50/30 sticky top-0 z-10 backdrop-blur-xl">
             <div className="p-8 border-r flex flex-col items-center justify-center bg-white shadow-[10px_0_30px_-15px_rgba(0,0,0,0.05)] z-20">
-              <p className="font-black text-slate-300 text-[10px] uppercase tracking-[0.2em] mb-1 italic">TEAM</p>
-              <p className="font-black text-slate-900 text-xs italic uppercase tracking-tighter">Personnel</p>
+              <p className="font-black text-slate-300 text-[10px] uppercase tracking-[0.2em] mb-1 italic">DANH MỤC</p>
+              <p className="font-black text-slate-900 text-xs italic uppercase tracking-tighter">Nhân sự</p>
             </div>
             {weekDays.map((day) => (
               <div 
@@ -205,7 +205,7 @@ export default function ManagerSchedulePage() {
             {isSchedulesLoading || isStaffLoading ? (
               <div className="py-40 flex flex-col items-center justify-center col-span-8 bg-white/50">
                 <div className="w-16 h-16 border-4 border-[#C8A97E]/20 border-t-[#C8A97E] rounded-full animate-spin mb-6" />
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">Syncing Team Roster...</p>
+                <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] animate-pulse">Đang đồng bộ lịch làm việc...</p>
               </div>
             ) : (
               staffList?.map((staff: any) => (
@@ -257,10 +257,10 @@ export default function ManagerSchedulePage() {
                                 "text-[8px] font-black uppercase tracking-[0.2em]",
                                 staffShift.type === ShiftType.FULL_DAY ? "text-[#C8A97E]" : "opacity-50"
                               )}>
-                                {staffShift.type === ShiftType.MORNING ? 'Morning' : 
-                                 staffShift.type === ShiftType.AFTERNOON ? 'Afternoon' : 
-                                 staffShift.type === ShiftType.EVENING ? 'Evening' : 
-                                 staffShift.type === ShiftType.OFF ? 'Day Off' : 'Full Day'}
+                                {staffShift.type === ShiftType.MORNING ? 'Ca sáng' : 
+                                 staffShift.type === ShiftType.AFTERNOON ? 'Ca chiều' : 
+                                 staffShift.type === ShiftType.EVENING ? 'Ca tối' : 
+                                 staffShift.type === ShiftType.OFF ? 'Ngày nghỉ' : 'Cả ngày'}
                               </span>
                               <div className="text-lg transform group-hover/shift:rotate-12 group-hover/shift:scale-125 transition-all duration-500">
                                  {staffShift.type === ShiftType.MORNING && <span>☀️</span>}
@@ -296,7 +296,7 @@ export default function ManagerSchedulePage() {
                              <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                                 <Plus className="w-5 h-5" />
                              </div>
-                             <span className="text-[8px] font-black uppercase tracking-[0.2em]">Assign Shift</span>
+                             <span className="text-[8px] font-black uppercase tracking-[0.2em]">Thêm ca làm</span>
                           </button>
                         )}
                       </div>
@@ -316,11 +316,11 @@ export default function ManagerSchedulePage() {
             <div className="p-4 bg-[#C8A97E]/10 rounded-[1.5rem] mb-6">
                <Clock className="w-8 h-8 text-[#C8A97E]" />
             </div>
-            <SheetTitle className="text-4xl font-black font-heading italic uppercase tracking-tighter text-slate-900 leading-none">
-              {selectedShiftForEdit ? 'Adjust' : 'Set'} <span className="text-[#C8A97E]">Work Hours</span>
+            <SheetTitle className="text-3xl font-black italic uppercase tracking-tighter text-slate-900 leading-none">
+              {selectedShiftForEdit ? 'Cập nhật' : 'Thêm mới'} <span className="text-[#C8A97E]">Ca làm</span>
             </SheetTitle>
             <SheetDescription className="font-bold text-slate-400 italic text-xs uppercase tracking-widest mt-2">
-               Configure personnel duties for your branch
+               Thiết lập thời gian làm việc cho nhân viên
             </SheetDescription>
           </SheetHeader>
 
@@ -328,7 +328,7 @@ export default function ManagerSchedulePage() {
             <div className="grid grid-cols-2 gap-4">
                <div className="p-6 bg-slate-50 rounded-[2rem] border border-slate-100 flex flex-col items-center text-center shadow-inner">
                   <CalendarIcon className="w-5 h-5 text-slate-300 mb-3" />
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Target Date</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Ngày làm việc</p>
                   <p className="text-sm font-black text-slate-900 italic">
                     {selectedDayForShift && format(selectedDayForShift, 'dd MMM yyyy')}
                   </p>
@@ -340,7 +340,7 @@ export default function ManagerSchedulePage() {
                         {selectedStaffForShift?.user?.name?.charAt(0)}
                      </AvatarFallback>
                   </Avatar>
-                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Stylist</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Nhân viên</p>
                   <p className="text-sm font-black text-slate-900 italic truncate w-full px-2">
                     {selectedStaffForShift?.user?.name || 'Loading...'}
                   </p>
@@ -348,14 +348,14 @@ export default function ManagerSchedulePage() {
             </div>
 
             <div className="space-y-4">
-              <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#C8A97E] px-4">Shift Classification</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.3em] text-[#C8A97E] px-4">Phân loại ca làm</label>
               <div className="grid grid-cols-1 gap-3">
                 {[
-                  { id: ShiftType.MORNING, label: 'Morning Shift (08:00 - 12:00)', icon: '☀️', color: 'bg-amber-50 text-amber-600 border-amber-200' },
-                  { id: ShiftType.AFTERNOON, label: 'Afternoon Shift (13:00 - 18:00)', icon: '⛅', color: 'bg-blue-50 text-blue-600 border-blue-200' },
-                  { id: ShiftType.EVENING, label: 'Evening Shift (17:00 - 21:00)', icon: '🌙', color: 'bg-purple-50 text-purple-600 border-purple-200' },
-                  { id: ShiftType.FULL_DAY, label: 'Full Day (08:00 - 18:00)', icon: '⏳', color: 'bg-slate-900 text-white border-slate-800 shadow-slate-900/20 shadow-xl' },
-                  { id: ShiftType.OFF, label: 'Day Off (Personal Time)', icon: '🏠', color: 'bg-rose-50 text-rose-600 border-rose-200' },
+                  { id: ShiftType.MORNING, label: 'Ca sáng (08:00 - 12:00)', icon: '☀️', color: 'bg-amber-50 text-amber-600 border-amber-200' },
+                  { id: ShiftType.AFTERNOON, label: 'Ca chiều (13:00 - 18:00)', icon: '⛅', color: 'bg-blue-50 text-blue-600 border-blue-200' },
+                  { id: ShiftType.EVENING, label: 'Ca tối (17:00 - 21:00)', icon: '🌙', color: 'bg-purple-50 text-purple-600 border-purple-200' },
+                  { id: ShiftType.FULL_DAY, label: 'Cả ngày (08:00 - 18:00)', icon: '⏳', color: 'bg-slate-900 text-white border-slate-800 shadow-slate-900/20 shadow-xl' },
+                  { id: ShiftType.OFF, label: 'Nghỉ (Thời gian cá nhân)', icon: '🏠', color: 'bg-rose-50 text-rose-600 border-rose-200' },
                 ].map((type) => (
                   <div 
                     key={type.id}
@@ -381,7 +381,7 @@ export default function ManagerSchedulePage() {
                   className="flex-1 h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest text-slate-300 hover:bg-slate-50" 
                   onClick={() => setIsShiftSheetOpen(false)}
                 >
-                  Discard
+                  Hủy
                 </Button>
                 <Button 
                   className="flex-[2] h-14 rounded-2xl font-black italic uppercase text-xs tracking-widest bg-slate-900 hover:bg-slate-800 text-white shadow-2xl shadow-slate-900/30 active:scale-[0.98] transition-all"
@@ -399,7 +399,7 @@ export default function ManagerSchedulePage() {
                   disabled={createShiftMutation.isPending || updateShiftMutation.isPending}
                 >
                   {(createShiftMutation.isPending || updateShiftMutation.isPending) && <Loader2 className="w-5 h-5 animate-spin mr-3 text-[#C8A97E]" />}
-                  {selectedShiftForEdit ? 'Update' : 'Confirm'}
+                  {selectedShiftForEdit ? 'Cập nhật' : 'Xác nhận'}
                 </Button>
               </div>
               
@@ -408,12 +408,12 @@ export default function ManagerSchedulePage() {
                   variant="ghost" 
                   className="w-full h-14 rounded-2xl text-rose-500 font-black italic uppercase text-[10px] tracking-widest hover:bg-rose-50/50 mt-2"
                   onClick={() => {
-                    if (confirm('Are you sure you want to remove this shift?')) deleteShiftMutation.mutate(selectedShiftForEdit.id);
+                    if (confirm('Bạn có chắc chắn muốn xóa ca làm này không?')) deleteShiftMutation.mutate(selectedShiftForEdit.id);
                   }}
                   disabled={deleteShiftMutation.isPending}
                 >
                   {deleteShiftMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-3" />}
-                  Remove Shift
+                  Xóa ca làm
                 </Button>
               )}
             </div>
