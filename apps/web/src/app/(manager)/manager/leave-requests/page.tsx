@@ -131,16 +131,16 @@ export default function ManagerLeaveRequestsPage() {
   }
 
   return (
-    <div className="space-y-8 pb-20">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
         <div>
            <Badge className="bg-[#C8A97E]/10 text-[#C8A97E] border-none mb-4 px-3 py-1 font-bold text-[9px] uppercase tracking-[0.2em] rounded-lg">
               Trình quản lý chi nhánh
            </Badge>
-           <h1 className="text-2xl font-black text-slate-900 tracking-tighter italic uppercase leading-tight">
-              Duyệt <span className="text-[#C8A97E]">Nghỉ phép</span><br/>
-              <span className="text-slate-400">Nhân viên</span>
+           <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-heading italic uppercase">
+              Duyệt <span className="text-[#C8A97E]">Nghỉ phép</span>
            </h1>
+           <p className="text-slate-500 mt-1">Quản lý và phê duyệt các yêu cầu nghỉ phép của nhân viên.</p>
         </div>
         <div className="flex flex-col items-end gap-2">
            <div className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm">
@@ -149,7 +149,6 @@ export default function ManagerLeaveRequestsPage() {
                  {requests?.filter((r: any) => r.status === 'PENDING').length || 0} Đơn đang chờ xử lý
               </span>
            </div>
-           <p className="text-[10px] font-bold text-slate-400 italic">Cập nhật lúc {dayjs().format('HH:mm DD/MM')}</p>
         </div>
       </div>
 

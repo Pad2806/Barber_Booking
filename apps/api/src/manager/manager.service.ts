@@ -30,38 +30,39 @@ export class ManagerService {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
             include: { 
-                staff: true,
-                ownedSalons: true 
+                staff: {
+                    select: {
+                        salonId: true,
+                        position: true
+                    }
+                },
+                ownedSalons: {
+                    select: { id: true }
+                } 
             },
         });
 
         if (!user) {
-            throw new ForbiddenException('User not found');
+            throw new ForbiddenException('Không tìm thấy tài khoản người dùng.');
         }
 
-        // Check if user has manager privileges
-        const isManager = 
-            user.role === Role.MANAGER || 
-            user.role === Role.SALON_OWNER || 
-            user.role === Role.SUPER_ADMIN ||
-            (user.role === Role.STAFF && user.staff?.position === StaffPosition.MANAGER);
-
-        if (!isManager) {
-            throw new ForbiddenException('User is not authorized as a manager');
-        }
-
-        // For individuals who belong to a specific salon via Staff record
-        if (user.staff?.salonId) {
-            return user.staff.salonId;
-        }
-
-        // For SALON_OWNER who might not be in the staff table, pick their first salon
+        // SALON_OWNER: Ưu tiên lấy salon họ sở hữu trước
         if (user.role === Role.SALON_OWNER && user.ownedSalons && user.ownedSalons.length > 0) {
             return user.ownedSalons[0].id;
         }
 
-        // Fallback for SUPER_ADMIN or MANAGER without assigned salon
-        throw new ForbiddenException('User is not assigned to any salon. Please ensure the user is added to the Staff table for a specific salon.');
+        // MANAGER/STAFF: Lấy từ bảng staff
+        if (user.staff?.salonId) {
+            return user.staff.salonId;
+        }
+
+        // SUPER_ADMIN: Lấy salon đầu tiên nếu không chỉ định (để tránh lỗi trắng trang)
+        if (user.role === Role.SUPER_ADMIN) {
+            const firstSalon = await this.prisma.salon.findFirst({ select: { id: true } });
+            if (firstSalon) return firstSalon.id;
+        }
+
+        throw new ForbiddenException(`Tài khoản ${user.name} chưa được chỉ định quản lý chi nhánh nào. Vui lòng kiểm tra lại bảng Nhân viên.`);
     }
 
     /**
@@ -442,9 +443,15 @@ export class ManagerService {
         const salonId = await this.getManagerSalonId(userId);
         const where: any = { salonId };
 
-        if (filters.date) where.date = dayjs.tz(filters.date, VIETNAM_TZ).startOf('day').toDate();
+        if (filters.date) {
+            where.date = dayjs.tz(filters.date, VIETNAM_TZ).startOf('day').toDate();
+        } else {
+            // Default to showing future bookings if no date filter is provided
+            // or just show all bookings for the salon
+        }
+        
         if (filters.staffId) where.staffId = filters.staffId;
-        if (filters.status) where.status = filters.status;
+        if (filters.status && filters.status !== ('ALL' as any)) where.status = filters.status;
         if (filters.search) {
             where.OR = [
                 { customer: { name: { contains: filters.search, mode: 'insensitive' } } },
@@ -456,7 +463,7 @@ export class ManagerService {
         return this.prisma.booking.findMany({
             where,
             include: {
-                customer: { select: { name: true, phone: true } },
+                customer: { select: { id: true, name: true, phone: true } },
                 staff: { include: { user: { select: { name: true } } } },
                 services: { include: { service: { select: { name: true } } } }
             },
@@ -682,10 +689,32 @@ export class ManagerService {
     async createShift(userId: string, dto: CreateShiftDto) {
         const salonId = await this.getManagerSalonId(userId);
         const staff = await this.prisma.staff.findUnique({ where: { id: dto.staffId } });
-        if (!staff || staff.salonId !== salonId) throw new ForbiddenException('Staff access denied');
+        if (!staff || staff.salonId !== salonId) {
+            throw new ForbiddenException('Bạn không có quyền quản lý nhân viên này hoặc nhân viên không thuộc chi nhánh của bạn.');
+        }
 
-        const type = (dto as any).type || ShiftType.FULL_DAY;
+        const type = dto.type || ShiftType.FULL_DAY;
         const shiftTimes = this.calculateShiftTimes(dto.date, type, dto.shiftStart, dto.shiftEnd);
+
+        // Prevent duplicate shifts for the same staff on the same day
+        const existingShift = await this.prisma.staffShift.findFirst({
+            where: {
+                staffId: dto.staffId,
+                date: dayjs.utc(dto.date).startOf('day').toDate()
+            }
+        });
+
+        if (existingShift) {
+            return this.prisma.staffShift.update({
+                where: { id: existingShift.id },
+                data: {
+                    shiftStart: shiftTimes.start.toDate(),
+                    shiftEnd: shiftTimes.end.toDate(),
+                    type,
+                    updatedAt: new Date()
+                }
+            });
+        }
 
         return this.prisma.staffShift.create({
             data: {

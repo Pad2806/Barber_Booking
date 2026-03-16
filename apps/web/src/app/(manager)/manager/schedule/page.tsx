@@ -127,10 +127,10 @@ export default function ManagerSchedulePage() {
            <Badge className="bg-[#C8A97E]/10 text-[#C8A97E] border-none mb-4 px-3 py-1 font-bold text-[9px] uppercase tracking-[0.2em] rounded-lg">
               Trình quản lý chi nhánh
            </Badge>
-           <h1 className="text-2xl font-black text-slate-900 tracking-tighter italic uppercase leading-tight">
-              Quản lý <span className="text-[#C8A97E]">Lịch làm việc</span><br/>
-              <span className="text-slate-400">Chi nhánh</span>
+           <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-heading italic uppercase">
+              Quản lý <span className="text-[#C8A97E]">Lịch làm việc</span>
            </h1>
+           <p className="text-slate-500 mt-1">Phân ca và theo dõi lịch làm việc của đội ngũ nhân viên.</p>
         </div>
         
         <div className="flex flex-col items-end gap-4">
