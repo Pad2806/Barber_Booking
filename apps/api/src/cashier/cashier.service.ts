@@ -24,8 +24,13 @@ export class CashierService {
         });
 
         const allowedRoles: Role[] = [Role.CASHIER, Role.MANAGER, Role.SALON_OWNER, Role.SUPER_ADMIN];
+        
+        const isAuthorized = user && (
+            allowedRoles.includes(user.role) || 
+            (user.role === Role.STAFF && user.staff?.position === StaffPosition.CASHIER)
+        );
 
-        if (!user || !allowedRoles.includes(user.role) || !user.staff) {
+        if (!user || !isAuthorized || !user.staff) {
             throw new ForbiddenException('User is not authorized or not assigned to a salon');
         }
 
