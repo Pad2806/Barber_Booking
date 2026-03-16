@@ -104,7 +104,7 @@ export default function CashierLayout({ children }: CashierLayoutProps) {
           {isCollapsed && !isMobileOpen ? (
             <span className="text-[#C8A97E] text-2xl font-black">R</span>
           ) : (
-            <span className="text-white">REETRO<span className="text-[#C8A97E] ml-1">THU NGÂN</span></span>
+            <span className="text-white">REETRO<span className="text-[#C8A97E] ml-1">CASHIER</span></span>
           )}
         </Link>
       </div>

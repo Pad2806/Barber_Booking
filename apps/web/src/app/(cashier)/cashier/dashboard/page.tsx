@@ -39,31 +39,48 @@ const Legend = dynamic(() => import('recharts').then(mod => mod.Legend), { ssr: 
 const COLORS = ['#C8A97E', '#1e293b', '#64748b', '#94a3b8', '#cbd5e1'];
 
 export default function CashierDashboard() {
-  const { data: me } = useQuery({
+  const { data: me, isLoading: isLoadingMe } = useQuery({
     queryKey: ['users', 'me'],
     queryFn: usersApi.getMe,
   });
 
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading: isLoadingStats, error: statsError } = useQuery({
     queryKey: ['cashier', 'stats', me?.staff?.salonId],
     queryFn: () => cashierApi.getDashboardStats(me?.staff?.salonId),
     enabled: !!me?.staff?.salonId,
     refetchInterval: 30000,
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 403) return false;
+      return failureCount < 3;
+    }
   });
 
-  const { data: queue } = useQuery({
+  const { data: queue, error: queueError } = useQuery({
     queryKey: ['cashier', 'queue', me?.staff?.salonId],
     queryFn: () => cashierApi.getQueue(me?.staff?.salonId),
     enabled: !!me?.staff?.salonId,
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 403) return false;
+      return failureCount < 3;
+    }
   });
 
-  const { data: revenueData } = useQuery({
+  const { data: revenueData, error: revenueError } = useQuery({
     queryKey: ['cashier', 'revenue-trends', me?.staff?.salonId],
     queryFn: () => cashierApi.getDetailedRevenue(me?.staff?.salonId),
     enabled: !!me?.staff?.salonId,
+    retry: (failureCount, error: any) => {
+      if (error?.response?.status === 403) return false;
+      return failureCount < 3;
+    }
   });
 
-  if (isLoading) {
+  const isForbidden = 
+    (statsError as any)?.response?.status === 403 || 
+    (queueError as any)?.response?.status === 403 || 
+    (revenueError as any)?.response?.status === 403;
+
+  if (isLoadingMe || isLoadingStats) {
     return (
       <div className="flex bg-white rounded-3xl border border-slate-100 items-center justify-center min-h-[600px] shadow-sm">
         <div className="flex flex-col items-center gap-4">
@@ -73,6 +90,27 @@ export default function CashierDashboard() {
            </div>
            <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.3em] animate-pulse">Đang đồng bộ dữ liệu...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (isForbidden) {
+    return (
+      <div className="flex flex-col bg-white rounded-3xl border border-slate-100 items-center justify-center min-h-[600px] shadow-sm p-10 text-center">
+        <div className="p-6 bg-rose-50 rounded-full mb-6">
+           <AlertCircle className="w-12 h-12 text-rose-500" />
+        </div>
+        <h2 className="text-2xl font-black text-slate-900 uppercase italic mb-2 tracking-tighter">Truy cập bị chặn (403)</h2>
+        <p className="text-slate-500 font-medium max-w-md mb-8">
+           Tài khoản của bạn không đủ quyền hạn để xem dữ liệu tại chi nhánh này hoặc vai trò của bạn chưa được cấp phép truy cập hệ thống Thu ngân.
+        </p>
+        <div className="flex gap-4">
+           <Button variant="outline" className="rounded-2xl h-12 px-8 font-bold" onClick={() => window.location.reload()}>Thử lại</Button>
+           <Button className="bg-[#0f172a] text-white hover:bg-slate-800 rounded-2xl h-12 px-8 font-bold" asChild>
+              <Link href="/">Quay về trang chủ</Link>
+           </Button>
+        </div>
+        <p className="mt-10 text-[10px] font-black text-slate-400 uppercase tracking-widest">Salon ID: {me?.staff?.salonId}</p>
       </div>
     );
   }
