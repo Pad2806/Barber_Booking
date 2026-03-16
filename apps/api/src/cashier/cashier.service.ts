@@ -23,8 +23,10 @@ export class CashierService {
             include: { staff: true },
         });
 
-        if (!user || user.role !== Role.CASHIER || !user.staff) {
-            throw new ForbiddenException('User is not a cashier or not assigned to a salon');
+        const allowedRoles: Role[] = [Role.CASHIER, Role.MANAGER, Role.SALON_OWNER, Role.SUPER_ADMIN];
+
+        if (!user || !allowedRoles.includes(user.role) || !user.staff) {
+            throw new ForbiddenException('User is not authorized or not assigned to a salon');
         }
 
         return user.staff.salonId;
