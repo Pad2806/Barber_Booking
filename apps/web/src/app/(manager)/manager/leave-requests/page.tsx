@@ -10,7 +10,9 @@ import {
   CalendarDays,
   ShieldCheck,
   ShieldAlert,
-  Loader2
+  Loader2,
+  Search,
+  Filter
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -20,7 +22,6 @@ import {
   Tabs, 
   TabsList, 
   TabsTrigger, 
-  TabsContent 
 } from '@/components/ui/tabs';
 import { 
   Dialog, 
@@ -37,7 +38,6 @@ import dayjs from 'dayjs';
 import isBetween from 'dayjs/plugin/isBetween';
 import { cn } from '@/lib/utils';
 import { DatePicker, Input, ConfigProvider } from 'antd';
-import { Search, Filter } from 'lucide-react';
 
 dayjs.extend(isBetween);
 
@@ -307,11 +307,11 @@ export default function ManagerLeaveRequestsPage() {
       {/* Reject Reason Modal */}
       <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
          <DialogContent className="sm:max-w-[450px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden bg-white">
-            <DialogHeader className="p-8 pb-0">
+            <DialogHeader className="p-8 pb-0 text-left">
                <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter text-rose-500">
                   Reject <span className="text-slate-900 underline decoration-rose-500/30">Request</span>
                </DialogTitle>
-               <DialogDescription className="font-medium text-slate-500">
+               <DialogDescription className="font-medium text-slate-500 pt-2">
                   Vui lòng cung cấp lý do từ chối đơn nghỉ phép của <span className="font-black text-slate-900">{selectedRequest?.staff?.user?.name}</span>.
                </DialogDescription>
             </DialogHeader>
