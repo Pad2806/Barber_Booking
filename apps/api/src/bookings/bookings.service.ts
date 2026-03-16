@@ -548,58 +548,59 @@ export class BookingsService extends BaseQueryService {
 
   private async checkStaffAvailability(
     staffId: string,
-    date: string | Date,
+    date: Date | string,
     timeSlot: string,
     duration: number,
   ): Promise<boolean> {
     const dateStr = typeof date === 'string' ? date : dayjs(date).format('YYYY-MM-DD');
-    const bookingDate = dayjs.utc(dateStr).toDate();
+    const searchDate = dayjs.utc(dateStr).toDate();
     const vDate = dayjs.tz(dateStr, VIETNAM_TZ).startOf('day');
-    const endTime = this.calculateEndTime(timeSlot, duration);
+    
+    const [startH, startM] = timeSlot.split(':').map(Number);
+    const requestStart = vDate.set('hour', startH).set('minute', startM).set('second', 0).set('millisecond', 0);
+    const requestEnd = requestStart.add(duration, 'minute');
+    const endTimeStr = requestEnd.format('HH:mm');
 
     // 1. Check if staff has a shift covering this time
-    const [startH, startM] = timeSlot.split(':').map(Number);
-    const [endH, endM] = endTime.split(':').map(Number);
-
-    const requestStart = vDate.set('hour', startH).set('minute', startM).set('second', 0).set('millisecond', 0);
-    const requestEnd = vDate.set('hour', endH).set('minute', endM).set('second', 0).set('millisecond', 0);
-
     const shift = await (this.prisma as any).staffShift.findFirst({
       where: {
         staffId,
-        date: bookingDate,
+        date: searchDate,
         shiftStart: { lte: requestStart.toDate() },
         shiftEnd: { gte: requestEnd.toDate() },
       },
     });
 
     if (!shift) {
-      return false; // No shift assigned for this time
+      // Fallback to weekly schedule if no specific shift
+      const dayOfWeek = vDate.day();
+      const weekly = await (this.prisma as any).staffWeeklySchedule.findFirst({
+        where: { staffId, dayOfWeek, isOff: false },
+      });
+
+      if (!weekly) return false;
+
+      const [wStartH, wStartM] = weekly.startTime.split(':').map(Number);
+      const [wEndH, wEndM] = weekly.endTime.split(':').map(Number);
+      const weeklyStart = vDate.set('hour', wStartH).set('minute', wStartM);
+      const weeklyEnd = vDate.set('hour', wEndH).set('minute', wEndM);
+
+      if (requestStart.isBefore(weeklyStart) || requestEnd.isAfter(weeklyEnd)) {
+        return false;
+      }
     }
 
     // 2. Check for conflicting bookings
     const conflictingBooking = await this.prisma.booking.findFirst({
       where: {
         staffId,
-        date: bookingDate,
+        date: searchDate,
         status: { notIn: [BookingStatus.CANCELLED, BookingStatus.NO_SHOW] },
         OR: [
           {
             AND: [
-              { timeSlot: { lte: timeSlot } },
+              { timeSlot: { lt: endTimeStr } },
               { endTime: { gt: timeSlot } },
-            ],
-          },
-          {
-            AND: [
-              { timeSlot: { lt: endTime } },
-              { endTime: { gte: endTime } },
-            ],
-          },
-          {
-            AND: [
-              { timeSlot: { gte: timeSlot } },
-              { endTime: { lte: endTime } },
             ],
           },
         ],

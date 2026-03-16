@@ -139,9 +139,10 @@ export class StaffController {
   getAvailableSlots(
     @Param('id') id: string, 
     @Query('date') dateStr: string,
-    @Query('salonId') salonId?: string
+    @Query('salonId') salonId?: string,
+    @Query('duration') duration?: string,
   ) {
-    return this.staffService.getAvailableSlots(id, dateStr, salonId);
+    return this.staffService.getAvailableSlots(id, dateStr, salonId, duration ? parseInt(duration) : 30);
   }
 
   @Get(':id')

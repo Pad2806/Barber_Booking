@@ -584,7 +584,7 @@ export class StaffService extends BaseQueryService {
     });
   }
 
-  async getAvailableSlots(staffId: string, date: Date | string, salonId?: string): Promise<string[]> {
+  async getAvailableSlots(staffId: string, date: Date | string, salonId?: string, duration: number = 30): Promise<string[]> {
     const staff = await this.prisma.staff.findUnique({
       where: { id: staffId },
     });
@@ -607,18 +607,15 @@ export class StaffService extends BaseQueryService {
     let activeSlots: { start: dayjs.Dayjs, end: dayjs.Dayjs }[] = [];
 
     if (shifts.length > 0) {
-      // If any shift is explicitly marked as OFF, return no slots
       if (shifts.some((s: any) => s.type === ShiftType.OFF)) {
         return [];
       }
 
-      // Use specific assigned shifts
       activeSlots = shifts.map((s: any) => ({
         start: dayjs.tz(s.shiftStart, VIETNAM_TZ),
         end: dayjs.tz(s.shiftEnd, VIETNAM_TZ),
       }));
     } else {
-      // Fallback to weekly schedule
       const vDate = dayjs.tz(dateStr, VIETNAM_TZ);
       const dayOfWeek = vDate.day();
       const weekly = await (this.prisma as any).staffWeeklySchedule.findFirst({
@@ -652,18 +649,28 @@ export class StaffService extends BaseQueryService {
       },
     });
 
-    // 3. Generate 30-min slots
+    // 3. Generate 30-min slots and check for continuous availability based on duration
     const finalSlots: string[] = [];
+    const slotStep = 30; // 30 minutes slots
+
     for (const slotRange of activeSlots) {
       let current = slotRange.start;
-      while (current.isBefore(slotRange.end)) {
+      // We check if current + duration is within the shift end
+      while (current.add(duration, 'minute').isBefore(slotRange.end) || current.add(duration, 'minute').isSame(slotRange.end)) {
         const timeStr = current.format('HH:mm');
-        const isOverlap = bookings.some(b => timeStr >= b.timeSlot && timeStr < b.endTime);
+        const endTimeStr = current.add(duration, 'minute').format('HH:mm');
+        
+        // Check if ANY booking overlaps with the requested duration
+        const isOverlap = bookings.some(b => {
+            // A booking overlaps if it starts before our requested end time 
+            // AND ends after our requested start time
+            return (timeStr < b.endTime && endTimeStr > b.timeSlot);
+        });
         
         if (!isOverlap) {
           finalSlots.push(timeStr);
         }
-        current = current.add(30, 'minute');
+        current = current.add(slotStep, 'minute');
       }
     }
 

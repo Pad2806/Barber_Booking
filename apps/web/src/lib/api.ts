@@ -121,7 +121,7 @@ export const staffApi = {
   getAvailableSlots: async (salonId: string, date: string, duration: number, staffId?: string) => {
     if (staffId) {
       const response = await apiClient.get<string[]>(`/staff/${staffId}/available-slots`, {
-        params: { date, salonId },
+        params: { date, salonId, duration },
       });
       return response.data.map(time => ({ time, available: true }));
     }
@@ -134,7 +134,7 @@ export const staffApi = {
 
     const promises = barbers.map(b =>
       apiClient
-        .get<string[]>(`/staff/${b.id}/available-slots`, { params: { date, salonId } })
+        .get<string[]>(`/staff/${b.id}/available-slots`, { params: { date, salonId, duration } })
         .then(res => res.data)
         .catch(() => [] as string[])
     );
