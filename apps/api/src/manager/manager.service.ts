@@ -145,7 +145,7 @@ export class ManagerService {
         sortOrder?: 'asc' | 'desc';
     }) {
         const salonId = await this.getManagerSalonId(userId);
-        const { page = 1, limit = 10, search, minRating, sortBy = 'user.name', sortOrder = 'asc' } = query;
+        const { page = 1, limit = 10, search, minRating, sortBy = 'createdAt', sortOrder = 'desc' } = query;
         const skip = (Number(page) - 1) * Number(limit);
 
         const where: any = { salonId };
@@ -176,70 +176,82 @@ export class ManagerService {
             orderBy = { createdAt: sortOrder };
         }
 
-        const [staffList, total] = await Promise.all([
-            this.prisma.staff.findMany({
-                where,
-                include: {
-                    user: { select: { id: true, name: true, avatar: true, email: true, phone: true } },
-                    _count: {
-                        select: {
-                            bookings: { where: { status: 'COMPLETED' } }
+        try {
+            const [staffList, total] = await Promise.all([
+                this.prisma.staff.findMany({
+                    where,
+                    include: {
+                        user: { select: { id: true, name: true, avatar: true, email: true, phone: true } },
+                        _count: {
+                            select: {
+                                bookings: true
+                            }
                         }
-                    }
-                },
-                orderBy,
-                skip,
-                take: Number(limit),
-            }),
-            this.prisma.staff.count({ where })
-        ]);
-
-        const today = dayjs().tz(VIETNAM_TZ).startOf('day').toDate();
-
-        // Get status (working/off) for today
-        const result = await Promise.all(staffList.map(async s => {
-            const [shift, leave] = await Promise.all([
-                this.prisma.staffShift.findFirst({ where: { staffId: s.id, date: today } }),
-                (this.prisma as any).staffLeave.findFirst({ 
-                    where: { 
-                        staffId: s.id,
-                        startDate: { lte: today }, 
-                        endDate: { gte: today },
-                        status: 'APPROVED'
-                    } 
-                })
+                    },
+                    orderBy,
+                    skip,
+                    take: Number(limit),
+                }),
+                this.prisma.staff.count({ where })
             ]);
 
-            return {
-                id: s.id,
-                user: {
-                    id: s.user?.id,
-                    name: s.user?.name,
-                    avatar: s.user?.avatar,
-                    email: s.user?.email,
-                    phone: s.user?.phone
-                },
-                position: s.position,
-                rating: s.rating,
-                totalReviews: (s as any).totalReviews || 0,
-                todayAppointments: s._count.bookings,
-                status: leave ? 'DAY_OFF' : (shift ? 'WORKING' : 'NOT_SCHEDULED'),
-                isActive: s.isActive,
-                createdAt: s.createdAt,
-                updatedAt: s.updatedAt,
-                salonId: s.salonId
-            };
-        }));
+            const today = dayjs().tz(VIETNAM_TZ).startOf('day').toDate();
 
-        return {
-            data: result,
-            meta: {
-                total,
-                page: Number(page),
-                limit: Number(limit),
-                lastPage: Math.ceil(total / Number(limit))
-            }
-        };
+            // Get status (working/off) for today
+            const result = await Promise.all(staffList.map(async s => {
+                let shift = null;
+                let leave = null;
+                try {
+                    [shift, leave] = await Promise.all([
+                        this.prisma.staffShift.findFirst({ where: { staffId: s.id, date: today } }),
+                        this.prisma.staffLeave.findFirst({ 
+                            where: { 
+                                staffId: s.id,
+                                startDate: { lte: today }, 
+                                endDate: { gte: today },
+                                status: 'APPROVED'
+                            } 
+                        })
+                    ]);
+                } catch (e) {
+                    // If StaffLeave or StaffShift query fails, continue with nulls
+                    console.warn('Staff status check failed:', e?.message);
+                }
+
+                return {
+                    id: s.id,
+                    user: {
+                        id: s.user?.id,
+                        name: s.user?.name,
+                        avatar: s.user?.avatar,
+                        email: s.user?.email,
+                        phone: s.user?.phone
+                    },
+                    position: s.position,
+                    rating: s.rating,
+                    totalReviews: s.totalReviews || 0,
+                    todayAppointments: s._count.bookings,
+                    status: leave ? 'DAY_OFF' : (shift ? 'WORKING' : 'NOT_SCHEDULED'),
+                    isActive: s.isActive,
+                    createdAt: s.createdAt,
+                    updatedAt: s.updatedAt,
+                    salonId: s.salonId
+                };
+            }));
+
+            return {
+                data: result,
+                meta: {
+                    total,
+                    page: Number(page),
+                    limit: Number(limit),
+                    lastPage: Math.ceil(total / Number(limit))
+                }
+            };
+        } catch (error) {
+            console.error('[Manager] getSalonStaff error:', error);
+            throw error;
+        }
     }
 
     async getStaffDetail(userId: string, staffId: string) {

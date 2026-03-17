@@ -97,10 +97,21 @@ export default function ManagerBookingsPage() {
   }, [search]);
 
   // Fetch Data
-  const { data: staffData } = useQuery({
+  const { data: staffData, error: staffError } = useQuery({
     queryKey: ['manager', 'staff', 'list-for-filter'],
     queryFn: () => managerApi.getStaff({ limit: 100 }),
+    retry: 2,
   });
+
+  // Debug: log staff fetch errors
+  useEffect(() => {
+    if (staffError) {
+      console.error('[Bookings] Staff fetch error:', staffError);
+    }
+    if (staffData) {
+      console.log('[Bookings] Staff data shape:', Array.isArray(staffData) ? 'array' : typeof staffData, staffData);
+    }
+  }, [staffData, staffError]);
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['manager', 'bookings', { status, staffId, dateFrom, dateTo, search: debouncedSearch }],
@@ -113,8 +124,13 @@ export default function ManagerBookingsPage() {
     }),
   });
 
-  // Staff list from paginated response
-  const staffList = staffData?.data || [];
+  // Staff list — handle both array and paginated response shapes
+  const staffList = useMemo(() => {
+    if (!staffData) return [];
+    if (Array.isArray(staffData)) return staffData;
+    if (Array.isArray(staffData.data)) return staffData.data;
+    return [];
+  }, [staffData]);
 
   // Mutations
   const updateStatusMutation = useMutation({
@@ -395,24 +411,15 @@ export default function ManagerBookingsPage() {
                 ))}
               </select>
             </div>
-
-            <select
-              title="Salon Filter"
-              disabled
-              className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-100 text-sm appearance-none cursor-not-allowed font-medium text-slate-500"
-            >
-              <option value="CURRENT">Chi nhánh của bạn</option>
-            </select>
-
             <select
               title="Staff Filter"
               className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer font-medium"
               value={staffId}
               onChange={(e) => setStaffId(e.target.value)}
             >
-              <option value="ALL">Tất cả nhân viên</option>
+              <option value="ALL">Tất cả nhân viên ({staffList.length})</option>
               {staffList.map((s: any) => (
-                <option key={s.id} value={s.id}>{s.user?.name}</option>
+                <option key={s.id} value={s.id}>{s.user?.name || s.name || `Staff ${s.id?.slice(0,6)}`}</option>
               ))}
             </select>
 
