@@ -316,9 +316,9 @@ export default function AdminSchedulePage() {
               <div className="grid grid-cols-1 gap-2">
                 {[
                   { id: ShiftType.MORNING, label: 'Ca sáng (08:00 - 12:00)', icon: '☀️', color: 'bg-amber-50 border-amber-200 text-amber-700' },
-                  { id: ShiftType.AFTERNOON, label: 'Ca chiều (13:00 - 18:00)', icon: '⛅', color: 'bg-blue-50 border-blue-200 text-blue-700' },
-                  { id: ShiftType.EVENING, label: 'Ca tối (17:00 - 21:00)', icon: '🌙', color: 'bg-purple-50 border-purple-200 text-purple-700' },
-                  { id: ShiftType.FULL_DAY, label: 'Cả ngày (08:00 - 18:00)', icon: '⌛', color: 'bg-slate-900 border-slate-800 text-white' },
+                  { id: ShiftType.AFTERNOON, label: 'Ca chiều (12:00 - 16:00)', icon: '⛅', color: 'bg-blue-50 border-blue-200 text-blue-700' },
+                  { id: ShiftType.EVENING, label: 'Ca tối (16:00 - 20:00)', icon: '🌙', color: 'bg-purple-50 border-purple-200 text-purple-700' },
+                  { id: ShiftType.FULL_DAY, label: 'Cả ngày (08:00 - 20:00)', icon: '⌛', color: 'bg-slate-900 border-slate-800 text-white' },
                   { id: ShiftType.OFF, label: 'Nghỉ (Day Off)', icon: '🏠', color: 'bg-slate-50 border-slate-200 text-slate-500' },
                 ].map((type) => (
                   <div

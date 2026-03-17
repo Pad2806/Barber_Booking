@@ -274,7 +274,7 @@ export default function ManagerReviewsPage() {
           <DataTable
             columns={columns}
             data={filteredData}
-            searchKey="comment"
+            // searchKey="comment"
             loading={isLoading}
           />
         </CardContent>

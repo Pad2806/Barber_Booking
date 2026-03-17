@@ -961,17 +961,17 @@ export class ManagerService {
                 startHours = 8; endHours = 12;
                 break;
             case ShiftType.AFTERNOON:
-                startHours = 13; endHours = 18;
+                startHours = 12; endHours = 16;
                 break;
             case ShiftType.EVENING:
-                startHours = 17; endHours = 21;
+                startHours = 16; endHours = 20;
                 break;
             case ShiftType.OFF:
                 startHours = 0; endHours = 0;
                 break;
             case ShiftType.FULL_DAY:
             default:
-                startHours = 8; endHours = 18;
+                startHours = 8; endHours = 20;
                 break;
         }
 

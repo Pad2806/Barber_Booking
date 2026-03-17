@@ -264,7 +264,7 @@ export default function OnlineBookingsPage() {
                               <SelectValue placeholder="Chọn giờ" />
                            </SelectTrigger>
                            <SelectContent className="rounded-2xl shadow-2xl border-slate-50">
-                              {['08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00'].map(t => (
+                               {['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'].map(t => (
                                  <SelectItem key={t} value={t} className="font-bold py-3 rounded-xl">{t}</SelectItem>
                               ))}
                            </SelectContent>
