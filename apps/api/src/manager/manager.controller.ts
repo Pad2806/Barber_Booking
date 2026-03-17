@@ -8,7 +8,9 @@ import {
     Delete,
     Query,
     UseGuards,
+    Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ManagerService } from './manager.service';
 import { CreateShiftDto } from './dto/create-shift.dto';
@@ -120,6 +122,27 @@ export class ManagerController {
         @Query('search') search?: string
     ) {
         return this.managerService.getSalonBookings(userId, { dateFrom, dateTo, staffId, status, search });
+    }
+
+    @Get('bookings/export')
+    @ApiOperation({ summary: 'Export bookings to Excel' })
+    async exportBookings(
+        @CurrentUser('id') userId: string,
+        @Res() res: Response,
+        @Query('dateFrom') dateFrom?: string,
+        @Query('dateTo') dateTo?: string,
+        @Query('staffId') staffId?: string,
+        @Query('status') status?: BookingStatus,
+        @Query('search') search?: string,
+    ) {
+        const workbook = await this.managerService.exportBookingsToExcel(userId, { dateFrom, dateTo, staffId, status, search });
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename=bookings-${Date.now()}.xlsx`);
+
+        return workbook.xlsx.write(res).then(() => {
+            res.status(200).end();
+        });
     }
 
     @Patch('bookings/:id/reschedule')

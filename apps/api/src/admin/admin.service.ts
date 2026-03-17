@@ -821,6 +821,8 @@ export class AdminService extends BaseQueryService {
     let orderBy: any = { createdAt: 'desc' };
     if (sortBy === 'rating') {
       orderBy = { rating: sortOrder };
+    } else if (sortBy === 'bookings') {
+      orderBy = { bookings: { _count: sortOrder } };
     } else if (sortBy === 'name') {
       orderBy = { user: { name: sortOrder } };
     } else if (sortBy === 'createdAt') {

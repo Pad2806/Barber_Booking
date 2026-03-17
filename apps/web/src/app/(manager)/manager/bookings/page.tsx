@@ -8,12 +8,17 @@ import {
   CheckCircle,
   XCircle,
   User,
-  MapPin,
   Filter,
   Search,
   Clock3,
   Award,
   ArrowRight,
+  Download,
+  FileSpreadsheet,
+  Loader2,
+  CheckCheck,
+  Ban,
+  X,
 } from 'lucide-react';
 import { formatPrice, formatDate } from '@/lib/utils';
 import { managerApi } from '@/lib/api';
@@ -83,6 +88,7 @@ export default function ManagerBookingsPage() {
 
   // Selection
   const [selectedBookings, setSelectedBookings] = useState<any[]>([]);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Debounce search
   useEffect(() => {
@@ -92,8 +98,8 @@ export default function ManagerBookingsPage() {
 
   // Fetch Data
   const { data: staffData } = useQuery({
-    queryKey: ['manager', 'staff', 'list'],
-    queryFn: managerApi.getStaff,
+    queryKey: ['manager', 'staff', 'list-for-filter'],
+    queryFn: () => managerApi.getStaff({ limit: 100 }),
   });
 
   const { data: bookings, isLoading } = useQuery({
@@ -106,6 +112,9 @@ export default function ManagerBookingsPage() {
         search: debouncedSearch || undefined
     }),
   });
+
+  // Staff list from paginated response
+  const staffList = staffData?.data || [];
 
   // Mutations
   const updateStatusMutation = useMutation({
@@ -135,25 +144,64 @@ export default function ManagerBookingsPage() {
     onError: () => toast.error('Không thể dời lịch. Vui lòng kiểm tra lại.')
   });
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      const blob = await managerApi.exportBookings({
+        status: status === 'ALL' ? undefined : status,
+        staffId: staffId === 'ALL' ? undefined : staffId,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        search: debouncedSearch || undefined,
+      });
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `bookings-${dayjs().format('YYYY-MM-DD')}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Xuất file Excel thành công!');
+    } catch {
+      toast.error('Không thể xuất file. Vui lòng thử lại.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const columns: ColumnDef<any>[] = useMemo(() => [
     {
       id: 'select',
-      header: ({ table }) => (
-        <Checkbox
-          checked={table.getIsAllPageRowsSelected()}
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all"
-          className="rounded border-slate-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-        />
-      ),
-      cell: ({ row }) => (
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-          className="rounded border-slate-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-        />
-      ),
+      header: ({ table }) => {
+        // Only allow "select all" for PENDING rows
+        const pendingRows = table.getRowModel().rows.filter(row => row.original.status === 'PENDING');
+        const allPendingSelected = pendingRows.length > 0 && pendingRows.every(row => row.getIsSelected());
+        const somePendingSelected = pendingRows.some(row => row.getIsSelected());
+        
+        return (
+          <Checkbox
+            checked={allPendingSelected ? true : somePendingSelected ? 'indeterminate' : false}
+            onCheckedChange={(value) => {
+              pendingRows.forEach(row => row.toggleSelected(!!value));
+            }}
+            aria-label="Select all pending"
+            className="rounded border-slate-300 data-[state=checked]:bg-[#C8A97E] data-[state=checked]:border-[#C8A97E]"
+          />
+        );
+      },
+      cell: ({ row }) => {
+        const isPending = row.original.status === 'PENDING';
+        return (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            disabled={!isPending}
+            aria-label="Select row"
+            className={`rounded border-slate-300 data-[state=checked]:bg-[#C8A97E] data-[state=checked]:border-[#C8A97E] ${!isPending ? 'opacity-30 cursor-not-allowed' : ''}`}
+          />
+        );
+      },
       enableSorting: false,
       enableHiding: false,
     },
@@ -187,19 +235,13 @@ export default function ManagerBookingsPage() {
     },
     {
       accessorKey: 'staff',
-      header: 'Chi nhánh / Stylist',
+      header: 'Stylist',
       cell: ({ row }) => {
         const staff = row.original.staff;
         return (
-          <div className="flex flex-col gap-1 text-left">
-            <div className="flex items-center gap-1 text-xs text-slate-600">
-              <MapPin className="w-3 h-3 text-slate-400" />
-              <span className="truncate max-w-[120px]">Chi nhánh của bạn</span>
-            </div>
-            <div className="flex items-center gap-1 text-xs text-slate-500">
-              <User className="w-3 h-3 text-slate-400" />
-              <span>{staff?.user?.name || 'Chưa chỉ định'}</span>
-            </div>
+          <div className="flex items-center gap-1 text-xs text-slate-600">
+            <User className="w-3 h-3 text-slate-400" />
+            <span className="font-medium">{staff?.user?.name || 'Chưa chỉ định'}</span>
           </div>
         );
       },
@@ -320,6 +362,19 @@ export default function ManagerBookingsPage() {
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-heading italic uppercase">QUẢN LÝ <span className="text-primary">LỊCH ĐẶT</span></h1>
           <p className="text-slate-500 text-sm">Giám sát và điều phối tất cả lịch đặt tại chi nhánh của bạn.</p>
         </div>
+        <Button
+          onClick={handleExport}
+          disabled={isExporting}
+          variant="outline"
+          className="gap-2 rounded-xl px-5 h-10 border-slate-200 hover:bg-slate-50 font-medium"
+        >
+          {isExporting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+          )}
+          Xuất Excel
+        </Button>
       </div>
 
       <Card className="border shadow-premium overflow-hidden bg-white rounded-2xl">
@@ -356,7 +411,7 @@ export default function ManagerBookingsPage() {
               onChange={(e) => setStaffId(e.target.value)}
             >
               <option value="ALL">Tất cả nhân viên</option>
-              {staffData?.map((s: any) => (
+              {staffList.map((s: any) => (
                 <option key={s.id} value={s.id}>{s.user?.name}</option>
               ))}
             </select>
@@ -393,37 +448,58 @@ export default function ManagerBookingsPage() {
           </div>
         </div>
 
+        {/* Bulk Action Bar - Redesigned */}
         {selectedBookings.length > 0 && (
-          <div className="p-3 bg-primary/5 border-y flex items-center justify-between animate-in slide-in-from-top-2 duration-300">
-            <span className="text-sm font-medium text-primary ml-3">
-               Đã chọn <strong>{selectedBookings.length}</strong> booking
-            </span>
-            <div className="flex items-center gap-2">
-              <Button 
-                size="sm" 
-                className="bg-emerald-600 hover:bg-emerald-700 h-8 font-bold rounded-lg"
-                onClick={() => bulkStatusMutation.mutate('CONFIRMED')}
-                disabled={bulkStatusMutation.isPending}
-              >
-                 <CheckCircle className="w-4 h-4 mr-1.5" /> Xác nhận
-              </Button>
-              <Button 
-                size="sm" 
-                variant="destructive"
-                className="h-8 font-bold rounded-lg"
-                onClick={() => bulkStatusMutation.mutate('CANCELLED')}
-                disabled={bulkStatusMutation.isPending}
-              >
-                 <XCircle className="w-4 h-4 mr-1.5" /> Hủy hàng loạt
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="h-8 hover:bg-transparent text-slate-500"
-                onClick={() => setSelectedBookings([])}
-              >
-                Hủy chọn
-              </Button>
+          <div className="px-4 py-3 bg-gradient-to-r from-amber-50 via-orange-50 to-amber-50 border-y border-amber-200/60 animate-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-amber-100 text-amber-700">
+                  <CheckCheck className="w-4 h-4" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-amber-900">
+                    Đã chọn {selectedBookings.length} đơn chờ xác nhận
+                  </span>
+                  <span className="text-xs text-amber-600">
+                    Chỉ các đơn &quot;Chờ xác nhận&quot; mới có thể thao tác hàng loạt
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  size="sm" 
+                  className="bg-emerald-600 hover:bg-emerald-700 h-9 px-4 font-bold rounded-lg gap-1.5 shadow-sm shadow-emerald-200 transition-all hover:shadow-md hover:shadow-emerald-200"
+                  onClick={() => bulkStatusMutation.mutate('CONFIRMED')}
+                  disabled={bulkStatusMutation.isPending}
+                >
+                  {bulkStatusMutation.isPending ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-3.5 h-3.5" />
+                  )}
+                  Xác nhận tất cả
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="h-9 px-4 font-bold rounded-lg gap-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-all"
+                  onClick={() => bulkStatusMutation.mutate('CANCELLED')}
+                  disabled={bulkStatusMutation.isPending}
+                >
+                  <Ban className="w-3.5 h-3.5" />
+                  Hủy tất cả
+                </Button>
+                <div className="w-px h-6 bg-amber-200 mx-1" />
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-9 w-9 p-0 rounded-lg text-amber-600 hover:bg-amber-100 hover:text-amber-700"
+                  onClick={() => setSelectedBookings([])}
+                  title="Bỏ chọn tất cả"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -488,7 +564,7 @@ export default function ManagerBookingsPage() {
                         <SelectValue placeholder="Chọn nhân viên" />
                      </SelectTrigger>
                      <SelectContent className="rounded-xl border-slate-100">
-                        {staffData?.map((s: any) => (
+                        {staffList.map((s: any) => (
                            <SelectItem key={s.id} value={s.id} className="font-bold">
                               {s.user?.name}
                            </SelectItem>

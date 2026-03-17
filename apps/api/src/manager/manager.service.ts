@@ -15,6 +15,7 @@ const VIETNAM_TZ = 'Asia/Ho_Chi_Minh';
 import { UsersService } from '../users/users.service';
 import { CreateStaffDto } from '../users/dto/create-staff.dto';
 import { UpdateStaffDto } from '../users/dto/update-staff.dto';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class ManagerService {
@@ -164,12 +165,15 @@ export class ManagerService {
         }
 
         // Handle sorting
-        let orderBy: any = {};
-        if (sortBy.includes('.')) {
-            const [relation, field] = sortBy.split('.');
-            orderBy[relation] = { [field]: sortOrder };
-        } else {
-            orderBy[sortBy] = sortOrder;
+        let orderBy: any = { createdAt: 'desc' };
+        if (sortBy === 'rating') {
+            orderBy = { rating: sortOrder };
+        } else if (sortBy === 'bookings') {
+            orderBy = { bookings: { _count: sortOrder } };
+        } else if (sortBy === 'name' || sortBy === 'user.name') {
+            orderBy = { user: { name: sortOrder } };
+        } else if (sortBy === 'createdAt') {
+            orderBy = { createdAt: sortOrder };
         }
 
         const [staffList, total] = await Promise.all([
@@ -535,6 +539,62 @@ export class ManagerService {
             },
             orderBy: [{ date: 'desc' }, { timeSlot: 'asc' }]
         });
+    }
+
+    async exportBookingsToExcel(userId: string, filters: {
+        dateFrom?: string;
+        dateTo?: string;
+        staffId?: string;
+        status?: BookingStatus;
+        search?: string;
+    }) {
+        const bookings = await this.getSalonBookings(userId, filters);
+
+        const workbook = new ExcelJS.Workbook();
+        const worksheet = workbook.addWorksheet('Bookings');
+
+        const STATUS_LABELS: Record<string, string> = {
+            PENDING: 'Chờ xác nhận',
+            CONFIRMED: 'Đã xác nhận',
+            IN_PROGRESS: 'Đang làm',
+            COMPLETED: 'Hoàn thành',
+            CANCELLED: 'Đã hủy',
+        };
+
+        worksheet.columns = [
+            { header: 'Mã đặt lịch', key: 'bookingCode', width: 20 },
+            { header: 'Tên khách hàng', key: 'customerName', width: 25 },
+            { header: 'Số điện thoại', key: 'customerPhone', width: 15 },
+            { header: 'Nhân viên', key: 'staffName', width: 20 },
+            { header: 'Dịch vụ', key: 'services', width: 35 },
+            { header: 'Ngày', key: 'date', width: 15 },
+            { header: 'Giờ', key: 'timeSlot', width: 10 },
+            { header: 'Tổng tiền', key: 'totalAmount', width: 15 },
+            { header: 'Trạng thái', key: 'status', width: 15 },
+        ];
+
+        bookings.forEach((booking: any) => {
+            worksheet.addRow({
+                bookingCode: booking.bookingCode,
+                customerName: booking.customer?.name || 'N/A',
+                customerPhone: booking.customer?.phone || 'N/A',
+                staffName: booking.staff?.user?.name || 'Chưa chỉ định',
+                services: booking.services?.map((s: any) => s.service?.name).join(', ') || '',
+                date: new Date(booking.date).toLocaleDateString('vi-VN'),
+                timeSlot: booking.timeSlot,
+                totalAmount: Number(booking.totalAmount),
+                status: STATUS_LABELS[booking.status] || booking.status,
+            });
+        });
+
+        worksheet.getRow(1).font = { bold: true };
+        worksheet.getRow(1).fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFE0E0E0' },
+        };
+
+        return workbook;
     }
 
     async rescheduleBooking(userId: string, bookingId: string, dto: {

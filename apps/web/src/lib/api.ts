@@ -291,6 +291,10 @@ export const managerApi = {
     const response = await apiClient.patch('/manager/bookings/bulk-status', { ids, status });
     return response.data;
   },
+  exportBookings: async (params: any) => {
+    const response = await apiClient.get('/manager/bookings/export', { params, responseType: 'blob' });
+    return response.data;
+  },
 };
 
 export const cashierApi = {

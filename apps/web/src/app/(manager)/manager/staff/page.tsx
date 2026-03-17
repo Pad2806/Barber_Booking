@@ -376,8 +376,9 @@ export default function ManagerStaffPage() {
               className="h-10 px-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer font-medium"
             >
               <option value="createdAt:desc">Mới nhất</option>
-              <option value="rating:desc">⭐ Phổ biến nhất</option>
-              <option value="rating:asc">⭐ Thấp nhất</option>
+              <option value="bookings:desc">🔥 Phổ biến nhất</option>
+              <option value="rating:desc">⭐ Rating cao nhất</option>
+              <option value="rating:asc">⭐ Rating thấp nhất</option>
             </select>
           </div>
         </CardHeader>
