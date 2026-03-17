@@ -14,6 +14,7 @@ import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { ManagerService } from './manager.service';
 import { CreateShiftDto } from './dto/create-shift.dto';
+import { BulkCreateShiftDto } from './dto/bulk-create-shift.dto';
 import { UpdateShiftDto } from './dto/update-shift.dto';
 import { CreateStaffDto } from '../users/dto/create-staff.dto';
 import { UpdateStaffDto } from '../users/dto/update-staff.dto';
@@ -223,6 +224,12 @@ export class ManagerController {
     @ApiOperation({ summary: 'Create a new staff shift' })
     createShift(@CurrentUser('id') userId: string, @Body() dto: CreateShiftDto) {
         return this.managerService.createShift(userId, dto);
+    }
+
+    @Post('schedules/bulk')
+    @ApiOperation({ summary: 'Bulk create shifts for multiple staff × multiple days' })
+    bulkCreateShifts(@CurrentUser('id') userId: string, @Body() dto: BulkCreateShiftDto) {
+        return this.managerService.bulkCreateShifts(userId, dto);
     }
 
     @Patch('schedules/:id')

@@ -267,6 +267,10 @@ export const managerApi = {
     const response = await apiClient.post('/manager/schedules', data);
     return response.data;
   },
+  bulkCreateShifts: async (data: { staffIds: string[]; dates: string[]; type: string }) => {
+    const response = await apiClient.post('/manager/schedules/bulk', data);
+    return response.data;
+  },
   updateShift: async (id: string, data: any) => {
     const response = await apiClient.patch(`/manager/schedules/${id}`, data);
     return response.data;

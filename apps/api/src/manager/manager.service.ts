@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { CreateShiftDto } from './dto/create-shift.dto';
+import { BulkCreateShiftDto } from './dto/bulk-create-shift.dto';
 import { UpdateShiftDto } from './dto/update-shift.dto';
 import { Role, BookingStatus, StaffPosition, ShiftType } from '@prisma/client';
 import dayjs from 'dayjs';
@@ -867,6 +868,61 @@ export class ManagerService {
                 type
             }
         });
+    }
+
+    async bulkCreateShifts(userId: string, dto: BulkCreateShiftDto) {
+        const salonId = await this.getManagerSalonId(userId);
+
+        // Verify all staff belong to this salon
+        const staffMembers = await this.prisma.staff.findMany({
+            where: { id: { in: dto.staffIds }, salonId },
+            select: { id: true },
+        });
+        const validStaffIds = staffMembers.map(s => s.id);
+        if (validStaffIds.length === 0) {
+            throw new ForbiddenException('Không tìm thấy nhân viên hợp lệ thuộc chi nhánh của bạn.');
+        }
+
+        let created = 0;
+        let updated = 0;
+
+        for (const staffId of validStaffIds) {
+            for (const dateStr of dto.dates) {
+                const shiftTimes = this.calculateShiftTimes(dateStr, dto.type);
+                const dateValue = dayjs.utc(dateStr).startOf('day').toDate();
+
+                const existing = await this.prisma.staffShift.findFirst({
+                    where: { staffId, date: dateValue },
+                });
+
+                if (existing) {
+                    await this.prisma.staffShift.update({
+                        where: { id: existing.id },
+                        data: {
+                            shiftStart: shiftTimes.start.toDate(),
+                            shiftEnd: shiftTimes.end.toDate(),
+                            type: dto.type,
+                            updatedAt: new Date(),
+                        },
+                    });
+                    updated++;
+                } else {
+                    await this.prisma.staffShift.create({
+                        data: {
+                            staffId,
+                            salonId,
+                            date: dateValue,
+                            shiftStart: shiftTimes.start.toDate(),
+                            shiftEnd: shiftTimes.end.toDate(),
+                            type: dto.type,
+                        },
+                    });
+                    created++;
+                }
+            }
+        }
+
+        return { created, updated, total: created + updated };
     }
 
     async updateShift(userId: string, id: string, dto: UpdateShiftDto) {

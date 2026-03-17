@@ -9,7 +9,9 @@ import {
   Clock, 
   Loader2,
   Calendar as CalendarIcon,
-  Trash2
+  Trash2,
+  Users,
+  CheckCheck
 } from 'lucide-react';
 import { format, addDays, startOfWeek, isSameDay, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -34,6 +36,7 @@ export default function ManagerSchedulePage() {
   
   // Sheet states
   const [isShiftSheetOpen, setIsShiftSheetOpen] = useState(false);
+  const [isBulkSheetOpen, setIsBulkSheetOpen] = useState(false);
   const [selectedStaffForShift, setSelectedStaffForShift] = useState<any>(null);
   const [selectedDayForShift, setSelectedDayForShift] = useState<Date | null>(null);
   const [selectedShiftForEdit, setSelectedShiftForEdit] = useState<StaffShift | null>(null);
@@ -42,6 +45,11 @@ export default function ManagerSchedulePage() {
   const [shiftData, setShiftData] = useState({
     type: ShiftType.FULL_DAY,
   });
+
+  // Bulk form states
+  const [bulkType, setBulkType] = useState<ShiftType>(ShiftType.FULL_DAY);
+  const [bulkSelectedDays, setBulkSelectedDays] = useState<string[]>([]);
+  const [bulkSelectedStaffIds, setBulkSelectedStaffIds] = useState<string[]>([]);
 
   // Dates
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
@@ -106,6 +114,20 @@ export default function ManagerSchedulePage() {
     }
   });
 
+  const bulkCreateMutation = useMutation({
+    mutationFn: (data: { staffIds: string[]; dates: string[]; type: string }) => managerApi.bulkCreateShifts(data),
+    onSuccess: (result: any) => {
+      toast.success(`Đã tạo ${result.created} ca, cập nhật ${result.updated} ca`);
+      setIsBulkSheetOpen(false);
+      setBulkSelectedDays([]);
+      setBulkSelectedStaffIds([]);
+      queryClient.invalidateQueries({ queryKey: ['manager', 'schedules'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.response?.data?.message || 'Không thể tạo lịch hàng loạt');
+    }
+  });
+
   const handlePrevWeek = () => setCurrentDate(addDays(currentDate, -7));
   const handleNextWeek = () => setCurrentDate(addDays(currentDate, 7));
   const handleToday = () => setCurrentDate(new Date());
@@ -133,27 +155,42 @@ export default function ManagerSchedulePage() {
            <p className="text-slate-500 text-sm mt-1">Sắp xếp ca làm việc cho đội ngũ nhân viên tại chi nhánh.</p>
         </div>
 
-        <div className="flex items-center gap-2 bg-white p-2 border rounded-xl shadow-sm">
-          <Button variant="ghost" size="icon" onClick={handlePrevWeek} className="h-8 w-8 text-slate-400">
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <div className="px-2 text-center">
-            <p className="text-[11px] font-bold text-slate-700 whitespace-nowrap">
-              {format(weekStart, 'dd/MM')} - {format(weekEnd, 'dd/MM')}
-            </p>
+         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-white p-2 border rounded-xl shadow-sm">
+            <Button variant="ghost" size="icon" onClick={handlePrevWeek} className="h-8 w-8 text-slate-400">
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <div className="px-2 text-center">
+              <p className="text-[11px] font-bold text-slate-700 whitespace-nowrap">
+                {format(weekStart, 'dd/MM')} - {format(weekEnd, 'dd/MM')}
+              </p>
+            </div>
+            <Button variant="ghost" size="icon" onClick={handleNextWeek} className="h-8 w-8 text-slate-400">
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+            <div className="w-px h-4 bg-slate-100 mx-1" />
+            <Button
+              variant="ghost"
+              onClick={handleToday}
+              className="h-8 px-3 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/5"
+            >
+              Hôm nay
+            </Button>
           </div>
-          <Button variant="ghost" size="icon" onClick={handleNextWeek} className="h-8 w-8 text-slate-400">
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-          <div className="w-px h-4 bg-slate-100 mx-1" />
+
           <Button
-            variant="ghost"
-            onClick={handleToday}
-            className="h-8 px-3 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/5"
+            onClick={() => {
+              setBulkType(ShiftType.FULL_DAY);
+              setBulkSelectedDays([]);
+              setBulkSelectedStaffIds([]);
+              setIsBulkSheetOpen(true);
+            }}
+            className="h-9 px-4 gap-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold text-[10px] uppercase tracking-wider shadow-sm"
           >
-            Hôm nay
+            <Users className="w-4 h-4" />
+            Set lịch hàng loạt
           </Button>
-        </div>
+         </div>
       </div>
 
       <div className="overflow-x-auto rounded-2xl border bg-white shadow-sm">
@@ -359,6 +396,229 @@ export default function ManagerSchedulePage() {
                 Xóa ca làm
               </Button>
             )}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Bulk Schedule Sheet */}
+      <Sheet open={isBulkSheetOpen} onOpenChange={setIsBulkSheetOpen}>
+        <SheetContent className="bg-white border-none sm:max-w-[440px] p-0 overflow-hidden shadow-2xl flex flex-col rounded-l-2xl">
+          <SheetHeader className="p-6 pb-0 flex flex-col items-start">
+            <div className="p-2.5 bg-primary/10 rounded-xl mb-4">
+               <Users className="w-5 h-5 text-primary" />
+            </div>
+            <SheetTitle className="text-xl font-bold text-slate-900">
+              Set lịch hàng loạt
+            </SheetTitle>
+            <SheetDescription className="text-sm text-slate-500">
+              {format(weekStart, 'dd/MM')} - {format(weekEnd, 'dd/MM/yyyy')}
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="px-6 py-5 space-y-6 flex-1 overflow-y-auto no-scrollbar">
+            {/* Step 1: Shift type */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-black">1</span>
+                Chọn loại ca
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: ShiftType.FULL_DAY, label: 'Full Day', icon: '⌛', short: '08-18h' },
+                  { id: ShiftType.MORNING, label: 'Ca sáng', icon: '☀️', short: '08-12h' },
+                  { id: ShiftType.AFTERNOON, label: 'Ca chiều', icon: '⛅', short: '13-18h' },
+                  { id: ShiftType.EVENING, label: 'Ca tối', icon: '🌙', short: '17-21h' },
+                  { id: ShiftType.OFF, label: 'Nghỉ', icon: '🏠', short: 'Day off' },
+                ].map((type) => (
+                  <div
+                    key={type.id}
+                    onClick={() => setBulkType(type.id)}
+                    className={cn(
+                      "flex items-center gap-2.5 p-3 rounded-xl border-2 cursor-pointer transition-all text-xs font-bold",
+                      bulkType === type.id
+                        ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/20"
+                        : "border-slate-100 text-slate-400 hover:border-slate-200"
+                    )}
+                  >
+                    <span className="text-base">{type.icon}</span>
+                    <div>
+                      <p className="text-[11px] font-bold">{type.label}</p>
+                      <p className="text-[9px] opacity-60">{type.short}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Step 2: Select days */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-black">2</span>
+                Chọn ngày áp dụng
+              </label>
+              <div className="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (bulkSelectedDays.length === weekDays.length) {
+                      setBulkSelectedDays([]);
+                    } else {
+                      setBulkSelectedDays(weekDays.map(d => format(d, 'yyyy-MM-dd')));
+                    }
+                  }}
+                  className="text-[10px] font-bold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors"
+                >
+                  {bulkSelectedDays.length === weekDays.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const weekdays = weekDays.slice(0, 5).map(d => format(d, 'yyyy-MM-dd'));
+                    setBulkSelectedDays(weekdays);
+                  }}
+                  className="text-[10px] font-bold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors"
+                >
+                  T2 → T6
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {weekDays.map((day) => {
+                  const dayStr = format(day, 'yyyy-MM-dd');
+                  const isSelected = bulkSelectedDays.includes(dayStr);
+                  return (
+                    <div
+                      key={dayStr}
+                      onClick={() => {
+                        if (isSelected) {
+                          setBulkSelectedDays(prev => prev.filter(d => d !== dayStr));
+                        } else {
+                          setBulkSelectedDays(prev => [...prev, dayStr]);
+                        }
+                      }}
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all",
+                        isSelected
+                          ? "border-primary bg-primary/5"
+                          : "border-slate-100 hover:border-slate-200"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
+                        isSelected ? "bg-primary border-primary" : "border-slate-200"
+                      )}>
+                        {isSelected && <CheckCheck className="w-3 h-3 text-white" />}
+                      </div>
+                      <div>
+                        <p className={cn("text-xs font-bold", isSelected ? "text-primary" : "text-slate-500")}>
+                          {format(day, 'eee', { locale: vi })}
+                        </p>
+                        <p className="text-[10px] text-slate-400">{format(day, 'dd/MM')}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Step 3: Select staff */}
+            <div className="space-y-3">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-black">3</span>
+                Chọn nhân viên
+              </label>
+              <div className="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (bulkSelectedStaffIds.length === staffList.length) {
+                      setBulkSelectedStaffIds([]);
+                    } else {
+                      setBulkSelectedStaffIds(staffList.map((s: any) => s.id));
+                    }
+                  }}
+                  className="text-[10px] font-bold px-3 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors"
+                >
+                  {bulkSelectedStaffIds.length === staffList.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                </button>
+              </div>
+              <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                {staffList.map((staff: any) => {
+                  const isSelected = bulkSelectedStaffIds.includes(staff.id);
+                  return (
+                    <div
+                      key={staff.id}
+                      onClick={() => {
+                        if (isSelected) {
+                          setBulkSelectedStaffIds(prev => prev.filter(id => id !== staff.id));
+                        } else {
+                          setBulkSelectedStaffIds(prev => [...prev, staff.id]);
+                        }
+                      }}
+                      className={cn(
+                        "flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all",
+                        isSelected
+                          ? "border-primary bg-primary/5"
+                          : "border-slate-100 hover:border-slate-200"
+                      )}
+                    >
+                      <div className={cn(
+                        "w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all",
+                        isSelected ? "bg-primary border-primary" : "border-slate-200"
+                      )}>
+                        {isSelected && <CheckCheck className="w-3 h-3 text-white" />}
+                      </div>
+                      <Avatar className="h-7 w-7 border border-white shadow-sm shrink-0">
+                        <AvatarImage src={staff.user?.avatar} />
+                        <AvatarFallback className="bg-slate-100 text-slate-400 text-[9px] font-bold">
+                          {staff.user?.name?.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="min-w-0">
+                        <p className={cn("text-xs font-bold truncate", isSelected ? "text-primary" : "text-slate-600")}>
+                          {staff.user?.name}
+                        </p>
+                        <p className="text-[9px] text-slate-400 uppercase">{staff.position}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Summary + Actions */}
+          <div className="p-6 border-t bg-slate-50/50 space-y-3 shrink-0">
+            {bulkSelectedDays.length > 0 && bulkSelectedStaffIds.length > 0 && (
+              <div className="bg-primary/5 border border-primary/10 rounded-xl p-3 text-center">
+                <p className="text-xs font-bold text-primary">
+                  {bulkSelectedStaffIds.length} nhân viên × {bulkSelectedDays.length} ngày = {' '}
+                  <span className="text-base">{bulkSelectedStaffIds.length * bulkSelectedDays.length}</span> ca sẽ được tạo
+                </p>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                className="flex-1 h-11 rounded-xl font-bold uppercase text-[10px] tracking-widest text-slate-400"
+                onClick={() => setIsBulkSheetOpen(false)}
+              >
+                Hủy
+              </Button>
+              <Button
+                className="flex-[2] h-11 rounded-xl font-bold uppercase text-xs bg-slate-900 hover:bg-slate-800 text-white shadow-lg active:scale-95 transition-all disabled:opacity-50"
+                onClick={() => {
+                  bulkCreateMutation.mutate({
+                    staffIds: bulkSelectedStaffIds,
+                    dates: bulkSelectedDays,
+                    type: bulkType,
+                  });
+                }}
+                disabled={bulkSelectedDays.length === 0 || bulkSelectedStaffIds.length === 0 || bulkCreateMutation.isPending}
+              >
+                {bulkCreateMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                Áp dụng
+              </Button>
+            </div>
           </div>
         </SheetContent>
       </Sheet>
