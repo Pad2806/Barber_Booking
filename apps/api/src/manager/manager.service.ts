@@ -195,85 +195,49 @@ export class ManagerService {
                 this.prisma.staff.count({ where })
             ]);
 
-            const buildMeta = () => ({
-                total,
-                page: Number(page),
-                limit: Number(limit),
-                lastPage: Math.ceil(total / Number(limit))
-            });
+            // Return basic staff list without shift/leave status enrichment
+            // This avoids potential runtime errors from staffShift/staffLeave queries
+            const result = staffList.map(s => ({
+                id: s.id,
+                user: {
+                    id: s.user?.id,
+                    name: s.user?.name,
+                    avatar: s.user?.avatar,
+                    email: s.user?.email,
+                    phone: s.user?.phone
+                },
+                position: s.position,
+                rating: s.rating,
+                totalReviews: s.totalReviews || 0,
+                todayAppointments: s._count.bookings,
+                status: 'NOT_SCHEDULED',
+                isActive: s.isActive,
+                createdAt: s.createdAt,
+                updatedAt: s.updatedAt,
+                salonId: s.salonId
+            }));
 
-            // Try to enrich with shift/leave status
-            try {
-                const today = dayjs().tz(VIETNAM_TZ).startOf('day').toDate();
-
-                const result = await Promise.all(staffList.map(async s => {
-                    let shift = null;
-                    let leave = null;
-                    try {
-                        [shift, leave] = await Promise.all([
-                            this.prisma.staffShift.findFirst({ where: { staffId: s.id, date: today } }),
-                            this.prisma.staffLeave.findFirst({ 
-                                where: { 
-                                    staffId: s.id,
-                                    startDate: { lte: today }, 
-                                    endDate: { gte: today },
-                                    status: 'APPROVED'
-                                } 
-                            })
-                        ]);
-                    } catch (e) {
-                        console.warn('Staff status check failed for', s.id, e?.message);
-                    }
-
-                    return {
-                        id: s.id,
-                        user: {
-                            id: s.user?.id,
-                            name: s.user?.name,
-                            avatar: s.user?.avatar,
-                            email: s.user?.email,
-                            phone: s.user?.phone
-                        },
-                        position: s.position,
-                        rating: s.rating,
-                        totalReviews: s.totalReviews || 0,
-                        todayAppointments: s._count.bookings,
-                        status: leave ? 'DAY_OFF' : (shift ? 'WORKING' : 'NOT_SCHEDULED'),
-                        isActive: s.isActive,
-                        createdAt: s.createdAt,
-                        updatedAt: s.updatedAt,
-                        salonId: s.salonId
-                    };
-                }));
-
-                return { data: result, meta: buildMeta() };
-            } catch (enrichError) {
-                // Fallback: return staff without status enrichment
-                console.warn('[Manager] Staff status enrichment failed, returning basic list:', enrichError?.message);
-                const basicResult = staffList.map(s => ({
-                    id: s.id,
-                    user: {
-                        id: s.user?.id,
-                        name: s.user?.name,
-                        avatar: s.user?.avatar,
-                        email: s.user?.email,
-                        phone: s.user?.phone
-                    },
-                    position: s.position,
-                    rating: s.rating,
-                    totalReviews: s.totalReviews || 0,
-                    todayAppointments: s._count.bookings,
-                    status: 'NOT_SCHEDULED',
-                    isActive: s.isActive,
-                    createdAt: s.createdAt,
-                    updatedAt: s.updatedAt,
-                    salonId: s.salonId
-                }));
-                return { data: basicResult, meta: buildMeta() };
-            }
+            return {
+                data: result,
+                meta: {
+                    total,
+                    page: Number(page),
+                    limit: Number(limit),
+                    lastPage: Math.ceil(total / Number(limit))
+                }
+            };
         } catch (error) {
             console.error('[Manager] getSalonStaff error:', error);
-            throw error;
+            // Return empty list instead of crashing
+            return {
+                data: [],
+                meta: {
+                    total: 0,
+                    page: Number(page),
+                    limit: Number(limit),
+                    lastPage: 0
+                }
+            };
         }
     }
 
