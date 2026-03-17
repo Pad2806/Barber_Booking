@@ -72,6 +72,7 @@ export default function ManagerBookingsPage() {
   // Filters
   const [status, setStatus] = useState<string>('ALL');
   const [staffId, setStaffId] = useState<string>('ALL');
+  const [serviceId, setServiceId] = useState<string>('ALL');
   const [dateFrom, setDateFrom] = useState<string>(dayjs().format('YYYY-MM-DD'));
   const [dateTo, setDateTo] = useState<string>(dayjs().format('YYYY-MM-DD'));
   const [search, setSearch] = useState<string>('');
@@ -103,6 +104,12 @@ export default function ManagerBookingsPage() {
     retry: 2,
   });
 
+  const { data: servicesData } = useQuery({
+    queryKey: ['manager', 'services', 'list-for-filter'],
+    queryFn: () => managerApi.getServices(),
+    retry: 2,
+  });
+
   // Debug: log staff fetch errors
   useEffect(() => {
     if (staffError) {
@@ -114,15 +121,24 @@ export default function ManagerBookingsPage() {
   }, [staffData, staffError]);
 
   const { data: bookings, isLoading } = useQuery({
-    queryKey: ['manager', 'bookings', { status, staffId, dateFrom, dateTo, search: debouncedSearch }],
+    queryKey: ['manager', 'bookings', { status, staffId, serviceId, dateFrom, dateTo, search: debouncedSearch }],
     queryFn: () => managerApi.getBookings({ 
         status: status === 'ALL' ? undefined : status as any, 
         staffId: staffId === 'ALL' ? undefined : staffId,
+        serviceId: serviceId === 'ALL' ? undefined : serviceId,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
         search: debouncedSearch || undefined
     }),
   });
+
+  // Services list
+  const servicesList = useMemo(() => {
+    if (!servicesData) return [];
+    if (Array.isArray(servicesData)) return servicesData;
+    if (Array.isArray(servicesData.data)) return servicesData.data;
+    return [];
+  }, [servicesData]);
 
   // Staff list — handle both array and paginated response shapes
   const staffList = useMemo(() => {
@@ -396,7 +412,7 @@ export default function ManagerBookingsPage() {
       <Card className="border shadow-premium overflow-hidden bg-white rounded-2xl">
         <div className="p-4 bg-slate-50/50 space-y-4">
           {/* Row 1: Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <select
@@ -420,6 +436,18 @@ export default function ManagerBookingsPage() {
               <option value="ALL">Tất cả nhân viên ({staffList.length})</option>
               {staffList.map((s: any) => (
                 <option key={s.id} value={s.id}>{s.user?.name || s.name || `Staff ${s.id?.slice(0,6)}`}</option>
+              ))}
+            </select>
+
+            <select
+              title="Service Filter"
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer font-medium"
+              value={serviceId}
+              onChange={(e) => setServiceId(e.target.value)}
+            >
+              <option value="ALL">Tất cả dịch vụ ({servicesList.length})</option>
+              {servicesList.map((s: any) => (
+                <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
 

@@ -239,6 +239,10 @@ export const managerApi = {
     const response = await apiClient.get('/manager/bookings', { params });
     return response.data;
   },
+  getServices: async () => {
+    const response = await apiClient.get('/manager/services');
+    return response.data;
+  },
   rescheduleBooking: async (id: string, data: any) => {
     const response = await apiClient.patch(`/manager/bookings/${id}/reschedule`, data);
     return response.data;
@@ -490,6 +494,7 @@ export const adminApi = {
     status?: string;
     salonId?: string;
     staffId?: string;
+    serviceId?: string;
     search?: string;
     dateFrom?: string;
     dateTo?: string;

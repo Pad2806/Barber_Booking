@@ -119,9 +119,16 @@ export class ManagerController {
         @Query('dateTo') dateTo?: string,
         @Query('staffId') staffId?: string,
         @Query('status') status?: BookingStatus,
-        @Query('search') search?: string
+        @Query('search') search?: string,
+        @Query('serviceId') serviceId?: string
     ) {
-        return this.managerService.getSalonBookings(userId, { dateFrom, dateTo, staffId, status, search });
+        return this.managerService.getSalonBookings(userId, { dateFrom, dateTo, staffId, status, search, serviceId });
+    }
+
+    @Get('services')
+    @ApiOperation({ summary: 'Get all services for the branch' })
+    getSalonServices(@CurrentUser('id') userId: string) {
+        return this.managerService.getSalonServices(userId);
     }
 
     @Get('bookings/export')
@@ -134,8 +141,9 @@ export class ManagerController {
         @Query('staffId') staffId?: string,
         @Query('status') status?: BookingStatus,
         @Query('search') search?: string,
+        @Query('serviceId') serviceId?: string,
     ) {
-        const workbook = await this.managerService.exportBookingsToExcel(userId, { dateFrom, dateTo, staffId, status, search });
+        const workbook = await this.managerService.exportBookingsToExcel(userId, { dateFrom, dateTo, staffId, status, search, serviceId });
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         res.setHeader('Content-Disposition', `attachment; filename=bookings-${Date.now()}.xlsx`);

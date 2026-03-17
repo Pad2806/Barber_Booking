@@ -26,4 +26,8 @@ export class BookingQueryDto extends PaginationQueryDto {
     @IsOptional()
     @IsDateString()
     dateTo?: string;
+
+    @IsOptional()
+    @IsString()
+    serviceId?: string;
 }

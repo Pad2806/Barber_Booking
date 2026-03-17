@@ -505,6 +505,7 @@ export class ManagerService {
         staffId?: string;
         status?: BookingStatus;
         search?: string;
+        serviceId?: string;
     }) {
         const salonId = await this.getManagerSalonId(userId);
         const where: any = { salonId };
@@ -521,6 +522,7 @@ export class ManagerService {
         
         if (filters.staffId) where.staffId = filters.staffId;
         if (filters.status && filters.status !== ('ALL' as any)) where.status = filters.status;
+        if (filters.serviceId) where.services = { some: { serviceId: filters.serviceId } };
         if (filters.search) {
             where.OR = [
                 { customer: { name: { contains: filters.search, mode: 'insensitive' } } },
@@ -540,12 +542,22 @@ export class ManagerService {
         });
     }
 
+    async getSalonServices(userId: string) {
+        const salonId = await this.getManagerSalonId(userId);
+        return this.prisma.service.findMany({
+            where: { salonId },
+            select: { id: true, name: true, price: true, category: true },
+            orderBy: { name: 'asc' },
+        });
+    }
+
     async exportBookingsToExcel(userId: string, filters: {
         dateFrom?: string;
         dateTo?: string;
         staffId?: string;
         status?: BookingStatus;
         search?: string;
+        serviceId?: string;
     }) {
         const bookings = await this.getSalonBookings(userId, filters);
 

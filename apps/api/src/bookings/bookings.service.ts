@@ -140,6 +140,7 @@ export class BookingsService extends BaseQueryService {
       dateFrom,
       dateTo,
       search,
+      serviceId,
       sortBy,
       sortOrder = 'desc',
     } = query;
@@ -150,6 +151,7 @@ export class BookingsService extends BaseQueryService {
     if (customerId) where.customerId = customerId;
     if (staffId) where.staffId = staffId;
     if (status) where.status = status;
+    if (serviceId) where.services = { some: { serviceId } };
 
     if (dateFrom || dateTo) {
       where.date = {};
