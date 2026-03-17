@@ -60,6 +60,9 @@ export class UsersService extends BaseQueryService {
     }
 
     // Verify salon exists
+    if (!dto.salonId) {
+      throw new NotFoundException('salonId is required');
+    }
     const salon = await this.prisma.salon.findUnique({
       where: { id: dto.salonId },
     });
@@ -91,7 +94,7 @@ export class UsersService extends BaseQueryService {
         data: {
           userId: user.id,
           position: dto.position,
-          salonId: dto.salonId,
+          salonId: dto.salonId!,
           bio: dto.bio,
           isActive: dto.isActive !== undefined ? dto.isActive : true,
         },

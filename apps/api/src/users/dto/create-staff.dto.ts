@@ -39,10 +39,10 @@ export class CreateStaffDto {
   @IsEnum(StaffPosition)
   position: StaffPosition;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  @IsNotEmpty()
-  salonId: string;
+  salonId?: string;
 
   @ApiPropertyOptional({ default: true })
   @IsOptional()
