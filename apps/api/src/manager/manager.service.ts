@@ -145,8 +145,12 @@ export class ManagerService {
         sortOrder?: 'asc' | 'desc';
     }) {
         const salonId = await this.getManagerSalonId(userId);
-        const { page = 1, limit = 10, search, minRating, sortBy = 'createdAt', sortOrder = 'desc' } = query;
-        const skip = (Number(page) - 1) * Number(limit);
+        const { search, minRating, sortBy = 'createdAt', sortOrder = 'desc' } = query;
+        
+        // Safe number parsing — NestJS @Query returns strings or undefined
+        const pageNum = Math.max(1, parseInt(String(query.page), 10) || 1);
+        const limitNum = Math.max(1, parseInt(String(query.limit), 10) || 10);
+        const skip = (pageNum - 1) * limitNum;
 
         const where: any = { salonId };
 
@@ -190,7 +194,7 @@ export class ManagerService {
                     },
                     orderBy,
                     skip,
-                    take: Number(limit),
+                    take: limitNum,
                 }),
                 this.prisma.staff.count({ where })
             ]);
@@ -221,9 +225,9 @@ export class ManagerService {
                 data: result,
                 meta: {
                     total,
-                    page: Number(page),
-                    limit: Number(limit),
-                    lastPage: Math.ceil(total / Number(limit))
+                    page: pageNum,
+                    limit: limitNum,
+                    lastPage: Math.ceil(total / limitNum)
                 }
             };
         } catch (error) {
@@ -233,8 +237,8 @@ export class ManagerService {
                 data: [],
                 meta: {
                     total: 0,
-                    page: Number(page),
-                    limit: Number(limit),
+                    page: pageNum,
+                    limit: limitNum,
                     lastPage: 0
                 }
             };
