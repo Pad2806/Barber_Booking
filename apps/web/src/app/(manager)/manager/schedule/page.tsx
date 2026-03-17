@@ -51,7 +51,7 @@ export default function ManagerSchedulePage() {
   // Queries
   const { data: schedules, isLoading: isSchedulesLoading } = useQuery({
     queryKey: ['manager', 'schedules', format(weekStart, 'yyyy-MM-dd')],
-    queryFn: () => managerApi.getSchedules(format(weekStart, 'yyyy-MM-dd'), format(weekEnd, 'yyyy-MM-dd')),
+    queryFn: () => managerApi.getSchedules(undefined, format(weekStart, 'yyyy-MM-dd'), format(weekEnd, 'yyyy-MM-dd')),
   });
 
   const { data: staffData, isLoading: isStaffLoading } = useQuery({
@@ -61,10 +61,12 @@ export default function ManagerSchedulePage() {
 
   // Handle both array and paginated response
   const staffList = useMemo(() => {
-    if (!staffData) return [];
-    if (Array.isArray(staffData)) return staffData;
-    if (Array.isArray(staffData.data)) return staffData.data;
-    return [];
+    let list: any[] = [];
+    if (!staffData) list = [];
+    else if (Array.isArray(staffData)) list = staffData;
+    else if (Array.isArray(staffData.data)) list = staffData.data;
+    // Exclude managers — they shouldn't set schedules for themselves
+    return list.filter((s: any) => s.position !== 'MANAGER' && s.position !== 'BRANCH_MANAGER');
   }, [staffData]);
 
   // Mutations
@@ -109,8 +111,13 @@ export default function ManagerSchedulePage() {
   const handleToday = () => setCurrentDate(new Date());
 
   const getShiftsForDay = (day: Date) => {
-    if (!schedules) return [];
-    return (schedules as StaffShift[]).filter((shift) => isSameDay(parseISO(shift.date), day));
+    if (!schedules || !Array.isArray(schedules)) return [];
+    const dayStr = format(day, 'yyyy-MM-dd');
+    return (schedules as StaffShift[]).filter((shift) => {
+      // Compare date strings to avoid timezone issues
+      const shiftDateStr = shift.date?.substring(0, 10) || format(parseISO(shift.date), 'yyyy-MM-dd');
+      return shiftDateStr === dayStr;
+    });
   };
 
   return (
