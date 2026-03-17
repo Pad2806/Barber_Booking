@@ -171,9 +171,9 @@ export default function ManagerSchedulePage() {
       </div>
 
       <div className="overflow-x-auto relative no-scrollbar group -mx-4 lg:mx-0">
-        <Card className="border-none shadow-premium bg-white min-w-[1000px] rounded-[2rem] overflow-hidden border border-slate-100">
-          <div className="grid grid-cols-8 border-b bg-slate-50/30 sticky top-0 z-10 backdrop-blur-xl">
-            <div className="p-6 border-r flex flex-col items-center justify-center bg-white shadow-[10px_0_30px_-15px_rgba(0,0,0,0.05)] z-20">
+        <Card className="border-none shadow-premium bg-white min-w-[1100px] rounded-[2rem] overflow-hidden border border-slate-100">
+          <div className="grid grid-cols-[200px_repeat(7,1fr)] border-b bg-slate-50/30 sticky top-0 z-30 backdrop-blur-xl">
+            <div className="p-6 border-r flex flex-col items-center justify-center bg-white shadow-[10px_0_30px_-15px_rgba(0,0,0,0.05)] z-40 sticky left-0">
               <p className="font-black text-slate-300 text-[9px] uppercase tracking-[0.2em] mb-1 italic">DANH MỤC</p>
               <p className="font-black text-slate-900 text-[10px] italic uppercase tracking-tighter">Nhân sự</p>
             </div>
@@ -209,8 +209,8 @@ export default function ManagerSchedulePage() {
               </div>
             ) : (
               staffList?.map((staff: any) => (
-                <div key={staff.id} className="grid grid-cols-8 group/row hover:bg-slate-50/30 transition-colors">
-                  <div className="p-4 border-r bg-white sticky left-0 shadow-[10px_0_30px_-15px_rgba(0,0,0,0.05)] z-10 flex items-center gap-4 min-w-[200px]">
+                <div key={staff.id} className="grid grid-cols-[200px_repeat(7,1fr)] group/row hover:bg-slate-50/30 transition-colors">
+                  <div className="p-4 border-r bg-white sticky left-0 shadow-[10px_0_30px_-15px_rgba(0,0,0,0.05)] z-20 flex items-center gap-3">
                     <div className="relative">
                        <Avatar className="h-12 w-12 border-4 border-white shadow-xl group-hover/row:border-[#C8A97E]/20 transition-all duration-500">
                          <AvatarImage src={staff.user?.avatar} />
