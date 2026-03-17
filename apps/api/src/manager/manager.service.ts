@@ -444,10 +444,14 @@ export class ManagerService {
         const where: any = { salonId };
 
         if (filters.date) {
-            where.date = dayjs.tz(filters.date, VIETNAM_TZ).startOf('day').toDate();
-        } else {
-            // Default to showing future bookings if no date filter is provided
-            // or just show all bookings for the salon
+            // Use dayjs.tz to get the start and end of the day in Vietnam timezone
+            const startOfDay = dayjs.tz(filters.date, VIETNAM_TZ).startOf('day').toDate();
+            const endOfDay = dayjs.tz(filters.date, VIETNAM_TZ).endOf('day').toDate();
+            
+            where.date = {
+                gte: startOfDay,
+                lte: endOfDay
+            };
         }
         
         if (filters.staffId) where.staffId = filters.staffId;

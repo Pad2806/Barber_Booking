@@ -233,7 +233,7 @@ export default function ManagerSchedulePage() {
                     const staffShift = dayShifts.find((s) => s.staffId === staff.id);
                     
                     return (
-                      <div key={day.toString()} className="border-r last:border-r-0 p-4 min-h-[140px] relative flex items-center justify-center transition-all">
+                      <div key={day.toString()} className="border-r last:border-r-0 p-3 min-h-[120px] relative flex items-center justify-center transition-all bg-white/40">
                         {staffShift ? (
                           <div 
                             onClick={() => {
@@ -244,25 +244,22 @@ export default function ManagerSchedulePage() {
                               setIsShiftSheetOpen(true);
                             }}
                             className={cn(
-                              "w-full h-full p-4 rounded-[1.8rem] border transition-all duration-500 cursor-pointer shadow-sm hover:shadow-2xl hover:scale-[1.05] active:scale-[0.98] group/shift flex flex-col justify-between items-start gap-1 relative overflow-hidden",
-                              staffShift.type === ShiftType.MORNING ? "bg-amber-50/40 border-amber-200/30 text-amber-700" :
-                              staffShift.type === ShiftType.AFTERNOON ? "bg-blue-50/40 border-blue-200/30 text-blue-700" :
-                              staffShift.type === ShiftType.EVENING ? "bg-purple-50/40 border-purple-200/30 text-purple-700" :
-                              staffShift.type === ShiftType.OFF ? "bg-rose-50 border-rose-200/50 text-rose-600" :
+                              "w-full h-full p-4 rounded-[1.5rem] border transition-all duration-300 cursor-pointer shadow-sm hover:shadow-xl hover:-translate-y-1 active:scale-[0.98] group/shift flex flex-col justify-between items-start gap-1 relative overflow-hidden",
+                              staffShift.type === ShiftType.MORNING ? "bg-amber-50 border-amber-200 text-amber-700" :
+                              staffShift.type === ShiftType.AFTERNOON ? "bg-blue-50 border-blue-200 text-blue-700" :
+                              staffShift.type === ShiftType.EVENING ? "bg-purple-50 border-purple-200 text-purple-700" :
+                              staffShift.type === ShiftType.OFF ? "bg-rose-50 border-rose-200 text-rose-600" :
                               "bg-slate-900 border-slate-800 text-white shadow-slate-900/10"
                             )}
                           >
                             <div className="flex items-center justify-between w-full">
-                              <span className={cn(
-                                "text-[8px] font-black uppercase tracking-[0.2em]",
-                                staffShift.type === ShiftType.FULL_DAY ? "text-[#C8A97E]" : "opacity-50"
-                              )}>
+                               <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-70">
                                 {staffShift.type === ShiftType.MORNING ? 'Ca sáng' : 
                                  staffShift.type === ShiftType.AFTERNOON ? 'Ca chiều' : 
                                  staffShift.type === ShiftType.EVENING ? 'Ca tối' : 
                                  staffShift.type === ShiftType.OFF ? 'Ngày nghỉ' : 'Cả ngày'}
                               </span>
-                              <div className="text-lg transform group-hover/shift:rotate-12 group-hover/shift:scale-125 transition-all duration-500">
+                              <div className="text-base group-hover/shift:scale-110 transition-transform">
                                  {staffShift.type === ShiftType.MORNING && <span>☀️</span>}
                                  {staffShift.type === ShiftType.AFTERNOON && <span>⛅</span>}
                                  {staffShift.type === ShiftType.EVENING && <span>🌙</span>}
@@ -271,15 +268,10 @@ export default function ManagerSchedulePage() {
                               </div>
                             </div>
                             <div className="flex items-center gap-2 mt-auto">
-                              <div className={cn(
-                                 "p-1.5 rounded-lg",
-                                 staffShift.type === ShiftType.FULL_DAY ? "bg-white/10" : "bg-black/5"
-                              )}>
-                                 <Clock className={cn("w-3 h-3", staffShift.type === ShiftType.FULL_DAY ? "text-[#C8A97E]" : "opacity-40")} />
-                              </div>
-                              <span className="text-[10px] font-black italic tracking-tighter tabular-nums">
-                                 {format(new Date(staffShift.shiftStart), 'HH:mm')} - {format(new Date(staffShift.shiftEnd), 'HH:mm')}
-                              </span>
+                               <Clock className="w-3 h-3 opacity-40" />
+                               <span className="text-[10px] font-bold tracking-tighter">
+                                  {format(new Date(staffShift.shiftStart), 'HH:mm')} - {format(new Date(staffShift.shiftEnd), 'HH:mm')}
+                               </span>
                             </div>
                           </div>
                         ) : (
@@ -291,12 +283,12 @@ export default function ManagerSchedulePage() {
                               setShiftData({ type: ShiftType.FULL_DAY, note: '' });
                               setIsShiftSheetOpen(true);
                             }}
-                            className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-50 rounded-[1.8rem] opacity-0 group-hover/row:opacity-100 hover:border-[#C8A97E]/30 hover:bg-[#C8A97E]/5 transition-all duration-500 text-slate-200"
+                            className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-slate-100 rounded-[1.5rem] bg-slate-50/30 hover:bg-[#C8A97E]/5 hover:border-[#C8A97E]/30 transition-all duration-300 group/add"
                           >
-                             <div className="w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
-                                <Plus className="w-5 h-5" />
+                             <div className="w-8 h-8 rounded-full bg-white border border-slate-100 flex items-center justify-center mb-1 group-hover/add:scale-110 group-hover/add:border-[#C8A97E]/30 transition-all shadow-sm">
+                                <Plus className="w-4 h-4 text-slate-300 group-hover/add:text-[#C8A97E]" />
                              </div>
-                             <span className="text-[8px] font-black uppercase tracking-[0.2em]">Thêm ca làm</span>
+                             <span className="text-[7px] font-bold uppercase tracking-widest text-slate-300 group-hover/add:text-[#C8A97E]">Thêm ca</span>
                           </button>
                         )}
                       </div>
