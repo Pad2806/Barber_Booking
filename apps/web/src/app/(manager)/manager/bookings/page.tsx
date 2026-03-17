@@ -1,33 +1,39 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { managerApi } from '@/lib/api';
-  import { 
-  Search, 
-  Calendar, 
-  Clock, 
-  MoreVertical, 
+import { useMemo, useState, useEffect } from 'react';
+import {
+  Calendar,
+  Clock,
+  MoreVertical,
   CheckCircle,
   XCircle,
-  Clock3,
+  User,
+  MapPin,
   Filter,
+  Search,
+  Clock3,
   Award,
-  ArrowRight
+  ArrowRight,
 } from 'lucide-react';
+import { formatPrice, formatDate } from '@/lib/utils';
+import { managerApi } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge } from '@/components/admin/status-badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { Card, CardContent } from '@/components/ui/card';
+import { ColumnDef } from '@tanstack/react-table';
+import { toast } from 'react-hot-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
   Dialog, 
   DialogContent, 
@@ -37,19 +43,13 @@ import {
   DialogFooter 
 } from '@/components/ui/dialog';
 import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger,
-  DropdownMenuSeparator
-} from '@/components/ui/dropdown-menu';
-import { formatPrice, formatDate } from '@/lib/utils';
-import React, { useState, useMemo } from 'react';
-import toast from 'react-hot-toast';
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
 import dayjs from 'dayjs';
-import { ColumnDef } from '@tanstack/react-table';
-
-type BookingStatus = 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
 
 const STATUS_CONFIG: Record<string, { label: string, variant: 'warning' | 'info' | 'secondary' | 'success' | 'destructive' | 'outline' }> = {
   PENDING: { label: 'Chờ xác nhận', variant: 'warning' },
@@ -61,53 +61,68 @@ const STATUS_CONFIG: Record<string, { label: string, variant: 'warning' | 'info'
 
 export default function ManagerBookingsPage() {
   const queryClient = useQueryClient();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
-  const [dateFilter, setDateFilter] = useState(dayjs().format('YYYY-MM-DD'));
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  
+  // Filters
+  const [status, setStatus] = useState<string>('ALL');
+  const [staffId, setStaffId] = useState<string>('ALL');
+  const [dateFrom, setDateFrom] = useState<string>(dayjs().format('YYYY-MM-DD'));
+  const [dateTo, setDateTo] = useState<string>(dayjs().format('YYYY-MM-DD'));
+  const [search, setSearch] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  // Modals
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [isRescheduleOpen, setIsRescheduleOpen] = useState(false);
-  const [selectedBookings, setSelectedBookings] = useState<any[]>([]);
-
-  // Reschedule state
   const [rescheduleData, setRescheduleData] = useState({
     date: dayjs().format('YYYY-MM-DD'),
     timeSlot: '',
     staffId: ''
   });
 
-  const { data: bookings, isLoading } = useQuery({
-    queryKey: ['manager', 'bookings', { status: statusFilter, date: dateFilter, search: searchTerm }],
-    queryFn: () => managerApi.getBookings({ 
-        status: statusFilter === 'ALL' ? undefined : statusFilter as any, 
-        date: dateFilter,
-        search: searchTerm
-    }),
-  });
+  // Selection
+  const [selectedBookings, setSelectedBookings] = useState<any[]>([]);
 
-  const { data: staff } = useQuery({
-    queryKey: ['manager', 'staff'],
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Fetch Data
+  const { data: staffData } = useQuery({
+    queryKey: ['manager', 'staff', 'list'],
     queryFn: managerApi.getStaff,
   });
 
-  const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string; status: BookingStatus }) => 
-      managerApi.updateBookingStatus(id, status),
-    onSuccess: () => {
-      toast.success('Đã cập nhật trạng thái');
-      queryClient.invalidateQueries({ queryKey: ['manager', 'bookings'] });
-    },
-    onError: () => toast.error('Không thể cập nhật trạng thái')
+  const { data: bookings, isLoading } = useQuery({
+    queryKey: ['manager', 'bookings', { status, staffId, dateFrom, dateTo, search: debouncedSearch }],
+    queryFn: () => managerApi.getBookings({ 
+        status: status === 'ALL' ? undefined : status as any, 
+        staffId: staffId === 'ALL' ? undefined : staffId,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+        search: debouncedSearch || undefined
+    }),
   });
 
-  const bulkUpdateStatusMutation = useMutation({
-    mutationFn: (status: BookingStatus) => 
-      managerApi.bulkUpdateBookingStatus(selectedBookings.map(b => b.id), status),
+  // Mutations
+  const updateStatusMutation = useMutation({
+    mutationFn: ({ id, status }: { id: string, status: string }) => managerApi.updateBookingStatus(id, status),
     onSuccess: () => {
-      toast.success(`Đã cập nhật ${selectedBookings.length} lịch đặt`);
-      setSelectedBookings([]);
+      toast.success('Cập nhật trạng thái thành công');
       queryClient.invalidateQueries({ queryKey: ['manager', 'bookings'] });
     },
-    onError: () => toast.error('Lỗi khi cập nhật hàng loạt')
+  });
+
+  const bulkStatusMutation = useMutation({
+    mutationFn: (status: string) => managerApi.bulkUpdateBookingStatus(selectedBookings.map(b => b.id), status),
+    onSuccess: () => {
+      toast.success(`Đã cập nhật ${selectedBookings.length} đặt lịch`);
+      queryClient.invalidateQueries({ queryKey: ['manager', 'bookings'] });
+      setSelectedBookings([]);
+    },
   });
 
   const rescheduleMutation = useMutation({
@@ -117,95 +132,122 @@ export default function ManagerBookingsPage() {
       setIsRescheduleOpen(false);
       queryClient.invalidateQueries({ queryKey: ['manager', 'bookings'] });
     },
-    onError: () => {
-      toast.error('Không thể dời lịch. Vui lòng kiểm tra lại.');
-    }
+    onError: () => toast.error('Không thể dời lịch. Vui lòng kiểm tra lại.')
   });
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     {
+      id: 'select',
+      header: ({ table }) => (
+        <Checkbox
+          checked={table.getIsAllPageRowsSelected()}
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+          className="rounded border-slate-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+          className="rounded border-slate-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
       accessorKey: 'bookingCode',
       header: 'Mã booking',
       cell: ({ row }) => (
-        <span className="font-mono font-bold text-primary">{row.original.bookingCode || 'N/A'}</span>
+        <span className="font-mono font-bold text-primary">{row.getValue('bookingCode')}</span>
       ),
     },
     {
-      accessorKey: 'customerName',
+      accessorKey: 'customer',
       header: 'Khách hàng',
       cell: ({ row }) => {
-        const booking = row.original;
+        const customer = row.original.customer;
         return (
           <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8">
+              <AvatarImage src={customer?.avatar} />
               <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
-                {booking.customerName?.charAt(0) || 'C'}
+                {customer?.name?.charAt(0) || 'C'}
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col text-left">
-              <span className="font-semibold text-slate-900 leading-none">{booking.customerName}</span>
-              <span className="text-xs text-slate-500 mt-1">{booking.customerPhone}</span>
+              <span className="font-semibold text-slate-900 leading-none">{customer?.name}</span>
+              <span className="text-xs text-slate-500 mt-1">{customer?.phone}</span>
             </div>
           </div>
         );
       },
     },
     {
-      accessorKey: 'services',
-      header: 'Dịch vụ',
+      accessorKey: 'staff',
+      header: 'Chi nhánh / Stylist',
       cell: ({ row }) => {
-        const services = row.original.services || [];
+        const staff = row.original.staff;
         return (
-          <div className="text-xs text-slate-600 max-w-[200px] truncate text-left">
-            {services.map((s: any) => s.name).join(', ') || 'N/A'}
+          <div className="flex flex-col gap-1 text-left">
+            <div className="flex items-center gap-1 text-xs text-slate-600">
+              <MapPin className="w-3 h-3 text-slate-400" />
+              <span className="truncate max-w-[120px]">Chi nhánh của bạn</span>
+            </div>
+            <div className="flex items-center gap-1 text-xs text-slate-500">
+              <User className="w-3 h-3 text-slate-400" />
+              <span>{staff?.user?.name || 'Chưa chỉ định'}</span>
+            </div>
           </div>
         );
       },
     },
     {
-      accessorKey: 'staff',
-      header: 'Barber',
+      id: 'service_info',
+      header: 'Dịch vụ',
       cell: ({ row }) => {
-        const staffMember = row.original.staff;
+        const services = row.original.services || [];
         return (
-          <div className="flex items-center gap-2 text-left">
-             <Avatar className="h-6 w-6 border">
-                <AvatarImage src={staffMember?.user?.avatar} />
-                <AvatarFallback className="text-[10px]">{staffMember?.user?.name?.charAt(0)}</AvatarFallback>
-             </Avatar>
-             <span className="text-xs font-medium text-slate-700">{staffMember?.user?.name || 'Chưa chỉ định'}</span>
+          <div className="text-xs text-slate-600 max-w-[200px] truncate text-left">
+            {services.map((s: any) => s.service?.name).join(', ') || 'N/A'}
           </div>
         );
-      }
+      },
     },
     {
-      accessorKey: 'timeSlot',
+      accessorKey: 'date',
       header: 'Thời gian',
-      cell: ({ row }) => (
-        <div className="flex flex-col gap-1 text-left">
-          <div className="flex items-center gap-1 text-xs text-slate-500">
-            <Calendar className="w-3.5 h-3.5" />
-            <span>{formatDate(row.original.date)}</span>
+      cell: ({ row }) => {
+        const date = row.original.date;
+        const timeSlot = row.original.timeSlot;
+        return (
+          <div className="flex flex-col gap-1 text-left">
+            <div className="flex items-center gap-1 text-xs text-slate-500">
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <span>{formatDate(date)}</span>
+            </div>
+            <div className="flex items-center gap-1 text-xs">
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <span className="font-medium text-slate-700">{timeSlot}</span>
+            </div>
           </div>
-          <div className="flex items-center gap-1 text-xs">
-            <Clock className="w-3.5 h-3.5 text-slate-400" />
-            <span className="font-medium text-slate-700">{row.original.timeSlot}</span>
-          </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       accessorKey: 'totalAmount',
       header: 'Tổng tiền',
       cell: ({ row }) => (
-        <span className="font-bold text-slate-900">{formatPrice(row.original.totalAmount || 0)}</span>
+        <span className="font-bold text-slate-900">{formatPrice(row.getValue('totalAmount'))}</span>
       ),
     },
     {
       accessorKey: 'status',
       header: 'Trạng thái',
       cell: ({ row }) => (
-        <StatusBadge status={row.original.status} config={STATUS_CONFIG} />
+        <StatusBadge status={row.getValue('status')} config={STATUS_CONFIG} />
       ),
     },
     {
@@ -238,20 +280,21 @@ export default function ManagerBookingsPage() {
               <DropdownMenuItem 
                 className="font-medium text-xs uppercase"
                 onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'CONFIRMED' })}
-                disabled={booking.status === 'CONFIRMED'}
+                disabled={booking.status === 'CONFIRMED' || booking.status === 'COMPLETED' || booking.status === 'CANCELLED'}
               >
                 <CheckCircle className="w-4 h-4 mr-3 text-emerald-500" /> Xác nhận
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="font-medium text-xs uppercase"
                 onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'IN_PROGRESS' })}
-                disabled={booking.status === 'IN_PROGRESS'}
+                disabled={booking.status === 'IN_PROGRESS' || booking.status === 'COMPLETED' || booking.status === 'CANCELLED'}
               >
                 <Clock3 className="w-4 h-4 mr-3 text-indigo-500" /> Bắt đầu làm
               </DropdownMenuItem>
               <DropdownMenuItem 
                 className="font-medium text-xs uppercase"
                 onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'COMPLETED' })}
+                disabled={booking.status === 'COMPLETED' || booking.status === 'CANCELLED'}
               >
                 <Award className="w-4 h-4 mr-3 text-blue-500" /> Hoàn thành
               </DropdownMenuItem>
@@ -259,6 +302,7 @@ export default function ManagerBookingsPage() {
               <DropdownMenuItem 
                 className="font-medium text-xs uppercase text-rose-500 hover:bg-rose-50 hover:text-rose-600"
                 onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'CANCELLED' })}
+                disabled={booking.status === 'CANCELLED' || booking.status === 'COMPLETED'}
               >
                 <XCircle className="w-4 h-4 mr-3" /> Hủy đặt lịch
               </DropdownMenuItem>
@@ -270,35 +314,25 @@ export default function ManagerBookingsPage() {
   ], [updateStatusMutation]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-heading italic uppercase">QUẢN LÝ <span className="text-[#C8A97E]">LỊCH ĐẶT</span></h1>
-          <p className="text-slate-500 mt-1">Giám sát và điều phối tất cả lịch đặt tại chi nhánh của bạn.</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 font-heading italic uppercase">QUẢN LÝ <span className="text-primary">LỊCH ĐẶT</span></h1>
+          <p className="text-slate-500 text-sm">Giám sát và điều phối tất cả lịch đặt tại chi nhánh của bạn.</p>
         </div>
       </div>
 
-      <Card className="border-none shadow-premium bg-white/50 backdrop-blur-sm">
-        <div className="p-4 border-b bg-slate-50/50">
+      <Card className="border shadow-premium overflow-hidden bg-white rounded-2xl">
+        <div className="p-4 bg-slate-50/50 space-y-4">
+          {/* Row 1: Filters */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="relative group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#C8A97E] transition-colors" />
-              <input
-                type="text"
-                placeholder="Tìm khách hàng / Mã booking..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full h-10 pl-9 pr-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#C8A97E]/20 transition-all font-medium"
-              />
-            </div>
-
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <select
                 title="Status Filter"
-                className="w-full h-10 pl-9 pr-4 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-[#C8A97E]/20 appearance-none cursor-pointer font-medium"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full h-10 pl-9 pr-4 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer font-medium"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
               >
                 <option value="ALL">Tất cả trạng thái</option>
                 {Object.entries(STATUS_CONFIG).map(([key, value]) => (
@@ -307,49 +341,85 @@ export default function ManagerBookingsPage() {
               </select>
             </div>
 
-            <Input
-              type="date"
-              title="Date Filter"
-              className="h-10 rounded-xl"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-            />
+            <select
+              title="Salon Filter"
+              disabled
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-slate-100 text-sm appearance-none cursor-not-allowed font-medium text-slate-500"
+            >
+              <option value="CURRENT">Chi nhánh của bạn</option>
+            </select>
+
+            <select
+              title="Staff Filter"
+              className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer font-medium"
+              value={staffId}
+              onChange={(e) => setStaffId(e.target.value)}
+            >
+              <option value="ALL">Tất cả nhân viên</option>
+              {staffData?.map((s: any) => (
+                <option key={s.id} value={s.id}>{s.user?.name}</option>
+              ))}
+            </select>
 
             <div className="flex items-center gap-2">
-               <Badge variant="outline" className="h-10 px-4 border-slate-200 bg-white font-bold text-slate-600 w-full justify-center rounded-xl">
-                 {bookings?.length || 0} lịch đặt
-               </Badge>
+              <Input
+                type="date"
+                title="From date"
+                className="h-10 rounded-xl"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+              />
+              <span className="text-slate-400">→</span>
+              <Input
+                type="date"
+                title="To date"
+                className="h-10 rounded-xl"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+              />
             </div>
+          </div>
+
+          {/* Row 2: Search */}
+          <div className="relative group max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-primary transition-colors" />
+            <input
+              type="text"
+              placeholder="Tìm kiếm..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full h-10 pl-9 pr-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all font-medium"
+            />
           </div>
         </div>
 
         {selectedBookings.length > 0 && (
-          <div className="p-3 bg-[#C8A97E]/5 border-b flex items-center justify-between animate-in slide-in-from-top-2 duration-300">
-            <span className="text-sm font-medium text-[#C8A97E] ml-3 font-bold">
-               Đã chọn {selectedBookings.length} booking
+          <div className="p-3 bg-primary/5 border-y flex items-center justify-between animate-in slide-in-from-top-2 duration-300">
+            <span className="text-sm font-medium text-primary ml-3">
+               Đã chọn <strong>{selectedBookings.length}</strong> booking
             </span>
             <div className="flex items-center gap-2">
               <Button 
                 size="sm" 
-                className="bg-emerald-600 hover:bg-emerald-700 h-8 rounded-lg"
-                onClick={() => bulkUpdateStatusMutation.mutate('CONFIRMED')}
-                disabled={bulkUpdateStatusMutation.isPending}
+                className="bg-emerald-600 hover:bg-emerald-700 h-8 font-bold rounded-lg"
+                onClick={() => bulkStatusMutation.mutate('CONFIRMED')}
+                disabled={bulkStatusMutation.isPending}
               >
                  <CheckCircle className="w-4 h-4 mr-1.5" /> Xác nhận
               </Button>
               <Button 
                 size="sm" 
                 variant="destructive"
-                className="h-8 rounded-lg"
-                onClick={() => bulkUpdateStatusMutation.mutate('CANCELLED')}
-                disabled={bulkUpdateStatusMutation.isPending}
+                className="h-8 font-bold rounded-lg"
+                onClick={() => bulkStatusMutation.mutate('CANCELLED')}
+                disabled={bulkStatusMutation.isPending}
               >
                  <XCircle className="w-4 h-4 mr-1.5" /> Hủy hàng loạt
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
-                className="h-8"
+                className="h-8 hover:bg-transparent text-slate-500"
                 onClick={() => setSelectedBookings([])}
               >
                 Hủy chọn
@@ -358,11 +428,10 @@ export default function ManagerBookingsPage() {
           </div>
         )}
 
-        <CardContent className="px-0 sm:px-6 py-6">
+        <CardContent className="p-0">
           <DataTable
             columns={columns}
             data={bookings || []}
-            searchKey="customerName"
             loading={isLoading}
             onRowSelectionChange={setSelectedBookings}
           />
@@ -374,7 +443,7 @@ export default function ManagerBookingsPage() {
          <DialogContent className="sm:max-w-[450px] rounded-3xl border-none shadow-premium p-0 overflow-hidden bg-white">
             <DialogHeader className="p-8 pb-0">
                <DialogTitle className="text-2xl font-bold font-heading italic uppercase tracking-tighter">
-                  Dời lịch <span className="text-[#C8A97E]">Hẹn</span>
+                  Dời lịch <span className="text-primary">Hẹn</span>
                </DialogTitle>
                <DialogDescription className="font-medium text-slate-500">
                   Thay đổi ngày hoặc khung giờ phục vụ cho khách hàng.
@@ -388,7 +457,7 @@ export default function ManagerBookingsPage() {
                     type="date"
                     value={rescheduleData.date}
                     onChange={(e) => setRescheduleData({ ...rescheduleData, date: e.target.value })}
-                    className="border-slate-100 bg-slate-50 h-10 rounded-xl font-bold focus-visible:ring-[#C8A97E]/20"
+                    className="border-slate-100 bg-slate-50 h-10 rounded-xl font-bold focus-visible:ring-primary/20"
                   />
                </div>
 
@@ -398,7 +467,7 @@ export default function ManagerBookingsPage() {
                     value={rescheduleData.timeSlot} 
                     onValueChange={(val) => setRescheduleData({ ...rescheduleData, timeSlot: val })}
                   >
-                     <SelectTrigger className="h-10 border-slate-100 bg-slate-50 rounded-xl font-bold focus:ring-[#C8A97E]/20">
+                     <SelectTrigger className="h-10 border-slate-100 bg-slate-50 rounded-xl font-bold focus:ring-primary/20">
                         <SelectValue placeholder="Chọn giờ phục vụ" />
                      </SelectTrigger>
                      <SelectContent className="rounded-xl border-slate-100">
@@ -415,13 +484,13 @@ export default function ManagerBookingsPage() {
                     value={rescheduleData.staffId} 
                     onValueChange={(val) => setRescheduleData({ ...rescheduleData, staffId: val })}
                   >
-                     <SelectTrigger className="h-10 border-slate-100 bg-slate-50 rounded-xl font-bold focus:ring-[#C8A97E]/20">
+                     <SelectTrigger className="h-10 border-slate-100 bg-slate-50 rounded-xl font-bold focus:ring-primary/20">
                         <SelectValue placeholder="Chọn nhân viên" />
                      </SelectTrigger>
                      <SelectContent className="rounded-xl border-slate-100">
-                        {staff?.map((s: any) => (
+                        {staffData?.map((s: any) => (
                            <SelectItem key={s.id} value={s.id} className="font-bold">
-                              {s.name}
+                              {s.user?.name}
                            </SelectItem>
                         ))}
                      </SelectContent>

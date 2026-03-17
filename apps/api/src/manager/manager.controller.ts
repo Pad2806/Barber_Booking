@@ -37,8 +37,16 @@ export class ManagerController {
 
     @Get('staff')
     @ApiOperation({ summary: 'Get staff belonging to manager salon' })
-    getSalonStaff(@CurrentUser('id') userId: string) {
-        return this.managerService.getSalonStaff(userId);
+    getSalonStaff(
+        @CurrentUser('id') userId: string,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
+        @Query('search') search?: string,
+        @Query('minRating') minRating?: number,
+        @Query('sortBy') sortBy?: string,
+        @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+    ) {
+        return this.managerService.getSalonStaff(userId, { page, limit, search, minRating, sortBy, sortOrder });
     }
 
     @Get('staff/:id/performance')
@@ -105,12 +113,13 @@ export class ManagerController {
     @ApiOperation({ summary: 'Get all bookings for the branch with filters' })
     getSalonBookings(
         @CurrentUser('id') userId: string,
-        @Query('date') date?: string,
+        @Query('dateFrom') dateFrom?: string,
+        @Query('dateTo') dateTo?: string,
         @Query('staffId') staffId?: string,
         @Query('status') status?: BookingStatus,
         @Query('search') search?: string
     ) {
-        return this.managerService.getSalonBookings(userId, { date, staffId, status, search });
+        return this.managerService.getSalonBookings(userId, { dateFrom, dateTo, staffId, status, search });
     }
 
     @Patch('bookings/:id/reschedule')

@@ -211,8 +211,8 @@ export const managerApi = {
     const response = await apiClient.get('/manager/dashboard');
     return response.data;
   },
-  getStaff: async () => {
-    const response = await apiClient.get('/manager/staff');
+  getStaff: async (params?: any) => {
+    const response = await apiClient.get('/manager/staff', { params });
     return response.data;
   },
   getStaffById: async (staffId: string) => {

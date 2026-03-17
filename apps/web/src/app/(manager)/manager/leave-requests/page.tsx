@@ -4,11 +4,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { managerApi } from '@/lib/api';
 import { 
   ShieldCheck,
+  ShieldAlert,
   Loader2,
   Search,
   CalendarDays,
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -116,15 +116,15 @@ export default function ManagerLeaveRequestsPage() {
       header: 'Nhân viên',
       cell: ({ row }) => (
         <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10 border-2 border-white shadow-md">
+          <Avatar className="h-9 w-9 border-2 border-white shadow-sm">
             <AvatarImage src={row.original.staff?.user?.avatar} />
-            <AvatarFallback className="bg-slate-100 text-slate-300 font-black italic">{row.original.staff?.user?.name?.charAt(0)}</AvatarFallback>
+            <AvatarFallback className="bg-slate-100 text-slate-400 text-xs font-bold">{row.original.staff?.user?.name?.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="flex flex-col text-left">
-            <span className="font-black text-slate-900 leading-none uppercase italic text-xs tracking-tight">{row.original.staff?.user?.name}</span>
-            <Badge className="bg-[#C8A97E]/10 text-[#C8A97E] border-none text-[8px] px-2 py-0 h-4 font-black tracking-widest uppercase mt-1 w-fit">
+            <span className="font-bold text-slate-900 text-sm leading-tight">{row.original.staff?.user?.name}</span>
+            <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tight">
                {row.original.staff?.position}
-            </Badge>
+            </span>
           </div>
         </div>
       )
@@ -136,12 +136,12 @@ export default function ManagerLeaveRequestsPage() {
         const start = dayjs(row.original.startDate);
         const end = dayjs(row.original.endDate);
         return (
-          <div className="flex flex-col gap-1 text-left">
-            <div className="flex items-center gap-2 text-xs font-black text-slate-700 italic">
-               <CalendarDays className="w-3.5 h-3.5 text-[#C8A97E]" />
+          <div className="flex flex-col gap-0.5 text-left">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+               <CalendarDays className="w-3.5 h-3.5 text-[#7C3AED]" />
                {start.isSame(end, 'day') ? start.format('DD/MM/YYYY') : `${start.format('DD/MM')} - ${end.format('DD/MM/YYYY')}`}
             </div>
-            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{dayjs(row.original.createdAt).format('[Gửi lúc:] HH:mm DD/MM')}</span>
+            <span className="text-[10px] text-slate-400 font-medium">Gửi: {dayjs(row.original.createdAt).format('HH:mm DD/MM')}</span>
           </div>
         );
       }
@@ -150,7 +150,7 @@ export default function ManagerLeaveRequestsPage() {
       accessorKey: 'reason',
       header: 'Lý do',
       cell: ({ row }) => (
-        <div className="max-w-[250px] truncate text-xs font-bold text-slate-500 italic text-left">
+        <div className="max-w-[200px] truncate text-xs text-slate-500 italic text-left">
           &quot;{row.original.reason || "Không có lý do"}&quot;
         </div>
       )
@@ -172,7 +172,7 @@ export default function ManagerLeaveRequestsPage() {
                    size="sm" 
                    onClick={() => approveMutation.mutate(req.id)}
                    disabled={approveMutation.isPending}
-                   className="bg-slate-900 hover:bg-slate-800 text-white rounded-xl h-9 px-4 font-black italic uppercase text-[10px] tracking-widest shadow-lg active:scale-95 transition-all text-center"
+                   className="bg-[#7C3AED] hover:bg-[#6D28D9] text-white rounded-lg h-8 px-3 text-xs font-semibold shadow-sm transition-all"
                 >
                    {approveMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Duyệt'}
                 </Button>
@@ -180,7 +180,7 @@ export default function ManagerLeaveRequestsPage() {
                    variant="outline" 
                    size="sm" 
                    onClick={() => { setSelectedRequest(req); setIsRejectOpen(true); }}
-                   className="border-rose-100 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-xl h-9 px-4 font-black italic uppercase text-[10px] tracking-widest active:scale-95 transition-all"
+                   className="border-rose-100 bg-rose-50 text-rose-500 hover:bg-rose-500 hover:text-white rounded-lg h-8 px-3 text-xs font-semibold transition-all"
                 >
                    Từ chối
                 </Button>
@@ -193,7 +193,7 @@ export default function ManagerLeaveRequestsPage() {
                      if(confirm('Bạn có chắc muốn hủy duyệt đơn này?')) rejectMutation.mutate(req.id);
                    }}
                    disabled={rejectMutation.isPending}
-                   className="hover:bg-rose-50 text-slate-400 hover:text-rose-500 rounded-xl h-9 px-4 font-black italic uppercase text-[10px] tracking-widest transition-all"
+                   className="hover:bg-rose-50 text-slate-400 hover:text-rose-500 rounded-lg h-8 px-3 text-xs font-semibold transition-all"
                 >
                    Hủy duyệt
                 </Button>
@@ -206,64 +206,62 @@ export default function ManagerLeaveRequestsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex bg-white/50 backdrop-blur-md rounded-3xl border border-slate-100 items-center justify-center min-h-[600px] shadow-2xl">
-        <div className="flex flex-col items-center gap-4">
-           <div className="w-12 h-12 border-4 border-[#C8A97E] border-t-transparent rounded-full animate-spin" />
-           <p className="text-slate-400 font-black text-[10px] uppercase tracking-widest">Đang kiểm tra yêu cầu nghỉ phép...</p>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+           <Loader2 className="w-8 h-8 text-[#7C3AED] animate-spin" />
+           <p className="text-slate-400 text-xs font-medium uppercase tracking-wider">Đang tải yêu cầu...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-20">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-100">
+    <div className="space-y-6 pb-10">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-           <Badge className="bg-[#C8A97E]/10 text-[#C8A97E] border-none mb-4 px-3 py-1 font-bold text-[9px] uppercase tracking-[0.2em] rounded-lg">
-              Trình quản lý chi nhánh
+           <Badge className="bg-[#7C3AED]/10 text-[#7C3AED] border-none mb-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+              Chi nhánh
            </Badge>
-           <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-heading italic uppercase">
-              DUYỆT <span className="text-[#C8A97E]">NGHỈ PHÉP</span>
+           <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+              Duyệt <span className="text-[#7C3AED]">Nghỉ phép</span>
            </h1>
-           <p className="text-slate-500 mt-1">Quản lý và phê duyệt các yêu cầu nghỉ phép của nhân viên.</p>
+           <p className="text-slate-500 text-sm mt-1">Phê duyệt yêu cầu nghỉ phép của nhân viên tại chi nhánh.</p>
         </div>
-        <div className="flex flex-col items-end gap-2 text-right">
-           <div className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm">
-              <ShieldCheck className="w-5 h-5 text-[#C8A97E]" />
-              <span className="text-xs font-black uppercase tracking-widest text-slate-600">
-                 {requests?.filter((r: any) => r.status === 'PENDING').length || 0} Đơn đang chờ
-              </span>
-           </div>
+        <div className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-100 rounded-xl shadow-sm">
+           <ShieldCheck className="w-4 h-4 text-[#7C3AED]" />
+           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+              {requests?.filter((r: any) => r.status === 'PENDING').length || 0} Đơn chưa xử lý
+           </span>
         </div>
       </div>
 
-      <Card className="border-none shadow-premium bg-white/50 backdrop-blur-sm rounded-[2.5rem] overflow-hidden">
+      <div className="bg-white border rounded-2xl shadow-sm overflow-hidden">
         <div className="p-4 border-b bg-slate-50/50">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {/* Search */}
             <div className="relative group">
-               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#C8A97E] transition-colors" />
+               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#7C3AED] transition-colors" />
                <input
                  type="text"
                  placeholder="Tìm nhân viên..."
                  value={searchStaff}
                  onChange={(e) => setSearchStaff(e.target.value)}
-                 className="w-full h-11 pl-9 pr-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#C8A97E]/20 transition-all font-medium"
+                 className="w-full h-10 pl-9 pr-4 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#7C3AED]/10 transition-all font-medium"
                />
             </div>
 
             {/* Date Filter */}
-            <div className="lg:col-span-2">
+            <div className="md:col-span-2">
               <ConfigProvider
                 theme={{
                   token: {
-                    colorPrimary: '#C8A97E',
-                    borderRadius: 12,
+                    colorPrimary: '#7C3AED',
+                    borderRadius: 8,
                   },
                 }}
               >
                 <RangePicker 
-                  className="w-full h-11 border-slate-200 bg-white rounded-xl shadow-none font-bold text-slate-600" 
+                  className="w-full h-10 border-slate-200 bg-white rounded-lg shadow-none text-sm" 
                   placeholder={['Từ ngày', 'Đến ngày']}
                   format="DD/MM/YYYY"
                   onChange={(dates: any) => setDateRange(dates)}
@@ -272,54 +270,55 @@ export default function ManagerLeaveRequestsPage() {
             </div>
 
             {/* Status Filter */}
-            <Tabs defaultValue="PENDING" onValueChange={setActiveTab} className="h-11">
-              <TabsList className="bg-slate-900/5 p-1 rounded-xl h-full border-none w-full">
-                 <TabsTrigger value="ALL" className="flex-1 rounded-lg px-3 font-black italic uppercase text-[8px] tracking-widest data-[state=active]:bg-slate-900 data-[state=active]:text-white h-full transition-all">TẤT CẢ</TabsTrigger>
-                 <TabsTrigger value="PENDING" className="flex-1 rounded-lg px-3 font-black italic uppercase text-[8px] tracking-widest data-[state=active]:bg-amber-400 data-[state=active]:text-white h-full transition-all">CHỜ</TabsTrigger>
-                 <TabsTrigger value="APPROVED" className="flex-1 rounded-lg px-3 font-black italic uppercase text-[8px] tracking-widest data-[state=active]:bg-emerald-500 data-[state=active]:text-white h-full transition-all">XONG</TabsTrigger>
+            <Tabs defaultValue="PENDING" onValueChange={setActiveTab} className="h-10">
+              <TabsList className="bg-slate-100 p-1 rounded-lg h-full w-full">
+                 <TabsTrigger value="ALL" className="flex-1 rounded-md px-3 text-[10px] font-bold uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:text-[#7C3AED] shadow-none">TẤT CẢ</TabsTrigger>
+                 <TabsTrigger value="PENDING" className="flex-1 rounded-md px-3 text-[10px] font-bold uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:text-amber-500 shadow-none">CHỜ</TabsTrigger>
+                 <TabsTrigger value="APPROVED" className="flex-1 rounded-md px-3 text-[10px] font-bold uppercase tracking-wider data-[state=active]:bg-white data-[state=active]:text-emerald-500 shadow-none">XONG</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
         </div>
 
-        <CardContent className="p-0 sm:p-6 sm:pt-4">
+        <div className="p-0">
           <DataTable
             columns={columns}
             data={filteredRequests}
             loading={isLoading}
           />
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Reject Reason Modal */}
       <Dialog open={isRejectOpen} onOpenChange={setIsRejectOpen}>
-         <DialogContent className="sm:max-w-[450px] rounded-[2rem] border-none shadow-premium p-0 overflow-hidden bg-white">
-            <DialogHeader className="p-8 pb-0 text-left">
-               <DialogTitle className="text-2xl font-black italic uppercase tracking-tighter text-rose-500">
-                  Từ chối <span className="text-slate-900">yêu cầu</span>
+         <DialogContent className="sm:max-w-[400px] border-none shadow-2xl p-0 overflow-hidden bg-white rounded-2xl">
+            <DialogHeader className="p-6 pb-0 text-left">
+               <DialogTitle className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                  <ShieldAlert className="w-5 h-5 text-rose-500" />
+                  Từ chối yêu cầu
                </DialogTitle>
-               <DialogDescription className="font-medium text-slate-500 pt-2 text-sm leading-relaxed">
-                  Vui lòng nhập lý do từ chối cho nhân viên <span className="font-black text-slate-900">{selectedRequest?.staff?.user?.name}</span>?
+               <DialogDescription className="text-sm text-slate-500 pt-1">
+                  Nhập lý do từ chối cho <span className="font-bold text-slate-900">{selectedRequest?.staff?.user?.name}</span>?
                </DialogDescription>
             </DialogHeader>
 
-            <div className="p-8 space-y-4">
+            <div className="p-6 space-y-4">
                <Textarea 
                  placeholder="Lý do từ chối..."
                  value={rejectReason}
                  onChange={(e) => setRejectReason(e.target.value)}
-                 className="min-h-[120px] rounded-2xl bg-rose-50/50 border-none focus-visible:ring-rose-200 font-medium p-4 text-slate-600 placeholder:text-rose-200"
+                 className="min-h-[100px] rounded-xl bg-slate-50 border-none focus-visible:ring-[#7C3AED]/20 font-medium p-3 text-sm"
                />
             </div>
 
-            <DialogFooter className="p-8 pt-0 flex gap-3">
-               <Button variant="ghost" onClick={() => setIsRejectOpen(false)} className="flex-1 rounded-xl font-bold uppercase text-[10px] tracking-widest">Hủy</Button>
+            <DialogFooter className="p-6 pt-0 flex gap-2">
+               <Button variant="ghost" onClick={() => setIsRejectOpen(false)} className="flex-1 rounded-xl text-xs font-bold uppercase text-slate-400">Hủy</Button>
                <Button 
                 onClick={() => rejectMutation.mutate(selectedRequest.id)}
                 disabled={rejectMutation.isPending || !rejectReason}
-                className="flex-1 bg-rose-500 hover:bg-rose-600 text-white rounded-xl h-11 font-black italic uppercase text-xs shadow-xl transition-all"
+                className="flex-1 bg-rose-500 hover:bg-rose-600 text-white rounded-xl h-10 text-xs font-bold shadow-sm"
                >
-                  Xác nhận từ chối
+                  Xác nhận
                </Button>
             </DialogFooter>
          </DialogContent>

@@ -135,45 +135,107 @@ export class ManagerService {
     /**
      * 2. STAFF MANAGEMENT
      */
-    async getSalonStaff(userId: string) {
+    async getSalonStaff(userId: string, query: {
+        page?: number;
+        limit?: number;
+        search?: string;
+        minRating?: number;
+        sortBy?: string;
+        sortOrder?: 'asc' | 'desc';
+    }) {
         const salonId = await this.getManagerSalonId(userId);
+        const { page = 1, limit = 10, search, minRating, sortBy = 'user.name', sortOrder = 'asc' } = query;
+        const skip = (Number(page) - 1) * Number(limit);
+
+        const where: any = { salonId };
+
+        if (search) {
+            where.user = {
+                OR: [
+                    { name: { contains: search, mode: 'insensitive' } },
+                    { email: { contains: search, mode: 'insensitive' } },
+                    { phone: { contains: search } }
+                ]
+            };
+        }
+
+        if (minRating) {
+            where.rating = { gte: Number(minRating) };
+        }
+
+        // Handle sorting
+        let orderBy: any = {};
+        if (sortBy.includes('.')) {
+            const [relation, field] = sortBy.split('.');
+            orderBy[relation] = { [field]: sortOrder };
+        } else {
+            orderBy[sortBy] = sortOrder;
+        }
+
+        const [staffList, total] = await Promise.all([
+            this.prisma.staff.findMany({
+                where,
+                include: {
+                    user: { select: { id: true, name: true, avatar: true, email: true, phone: true } },
+                    _count: {
+                        select: {
+                            bookings: { where: { status: 'COMPLETED' } }
+                        }
+                    }
+                },
+                orderBy,
+                skip,
+                take: Number(limit),
+            }),
+            this.prisma.staff.count({ where })
+        ]);
+
         const today = dayjs().tz(VIETNAM_TZ).startOf('day').toDate();
 
-        const staffList = await this.prisma.staff.findMany({
-            where: { salonId },
-            include: {
-                user: { select: { id: true, name: true, avatar: true, email: true, phone: true } },
-                shifts: { where: { date: today } },
-                leaves: { 
+        // Get status (working/off) for today
+        const result = await Promise.all(staffList.map(async s => {
+            const [shift, leave] = await Promise.all([
+                this.prisma.staffShift.findFirst({ where: { staffId: s.id, date: today } }),
+                (this.prisma as any).staffLeave.findFirst({ 
                     where: { 
+                        staffId: s.id,
                         startDate: { lte: today }, 
                         endDate: { gte: today },
                         status: 'APPROVED'
                     } 
-                },
-                _count: {
-                    select: { 
-                        bookings: { where: { date: today } }
-                    }
-                }
-            }
-        });
+                })
+            ]);
 
-        return staffList.map(s => ({
-            id: s.id,
-            user: {
-                id: s.user?.id,
-                name: s.user?.name,
-                avatar: s.user?.avatar,
-                email: s.user?.email,
-                phone: s.user?.phone
-            },
-            position: s.position,
-            rating: s.rating,
-            todayAppointments: s._count.bookings,
-            status: s.leaves.length > 0 ? 'DAY_OFF' : (s.shifts.length > 0 ? 'WORKING' : 'NOT_SCHEDULED'),
-            performance: null
+            return {
+                id: s.id,
+                user: {
+                    id: s.user?.id,
+                    name: s.user?.name,
+                    avatar: s.user?.avatar,
+                    email: s.user?.email,
+                    phone: s.user?.phone
+                },
+                position: s.position,
+                rating: s.rating,
+                totalReviews: (s as any).totalReviews || 0,
+                todayAppointments: s._count.bookings,
+                status: leave ? 'DAY_OFF' : (shift ? 'WORKING' : 'NOT_SCHEDULED'),
+                isActive: s.isActive,
+                createdAt: s.createdAt,
+                updatedAt: s.updatedAt,
+                salonId: s.salonId
+            };
         }));
+
+        return {
+            data: result,
+            meta: {
+                total,
+                page: Number(page),
+                limit: Number(limit),
+                lastPage: Math.ceil(total / Number(limit))
+            }
+        };
     }
 
     async getStaffDetail(userId: string, staffId: string) {
@@ -435,7 +497,8 @@ export class ManagerService {
      * 4. APPOINTMENT MANAGEMENT
      */
     async getSalonBookings(userId: string, filters: {
-        date?: string;
+        dateFrom?: string;
+        dateTo?: string;
         staffId?: string;
         status?: BookingStatus;
         search?: string;
@@ -443,15 +506,14 @@ export class ManagerService {
         const salonId = await this.getManagerSalonId(userId);
         const where: any = { salonId };
 
-        if (filters.date) {
-            // Use dayjs.tz to get the start and end of the day in Vietnam timezone
-            const startOfDay = dayjs.tz(filters.date, VIETNAM_TZ).startOf('day').toDate();
-            const endOfDay = dayjs.tz(filters.date, VIETNAM_TZ).endOf('day').toDate();
-            
-            where.date = {
-                gte: startOfDay,
-                lte: endOfDay
-            };
+        if (filters.dateFrom || filters.dateTo) {
+            where.date = {};
+            if (filters.dateFrom) {
+                where.date.gte = dayjs.tz(filters.dateFrom, VIETNAM_TZ).startOf('day').toDate();
+            }
+            if (filters.dateTo) {
+                where.date.lte = dayjs.tz(filters.dateTo, VIETNAM_TZ).endOf('day').toDate();
+            }
         }
         
         if (filters.staffId) where.staffId = filters.staffId;

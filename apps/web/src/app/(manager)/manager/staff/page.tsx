@@ -11,11 +11,13 @@ import {
   Users,
   Award,
   Activity,
+  Calendar,
   Loader2,
   Search,
+  ChevronDown,
 } from 'lucide-react';
 import { STAFF_POSITIONS } from '@/lib/utils';
-import { managerApi, usersApi } from '@/lib/api';
+import { managerApi } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge } from '@/components/admin/status-badge';
@@ -50,7 +52,13 @@ const STATUS_CONFIG: any = {
 export default function ManagerStaffPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [minRating, setMinRating] = useState<number | undefined>(undefined);
+  const [sortBy, setSortBy] = useState<string>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // Sheet states
   const [panelOpen, setPanelOpen] = useState(false);
@@ -67,17 +75,16 @@ export default function ManagerStaffPage() {
     isActive: true,
   });
 
-  const { data: staff, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['manager', 'staff'],
-    queryFn: managerApi.getStaff,
-  });
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timer);
+  }, [search]);
 
-  const { data: me } = useQuery({
-    queryKey: ['users', 'me'],
-    queryFn: usersApi.getMe,
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['manager', 'staff', { page, limit, search: debouncedSearch, minRating, sortBy, sortOrder }],
+    queryFn: () => managerApi.getStaff({ page, limit, search: debouncedSearch, minRating, sortBy, sortOrder }),
   });
-
-  const currentSalonId = me?.staff?.salonId;
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => managerApi.deleteStaff(id),
@@ -126,59 +133,50 @@ export default function ManagerStaffPage() {
         isActive: true,
       });
     } else if (selectedStaffId && (panelMode === 'edit' || panelMode === 'view')) {
-      const member = staff?.find((s: any) => s.id === selectedStaffId);
-      if (member) {
+      const staff = data?.data?.find((s: any) => s.id === selectedStaffId);
+      if (staff) {
         setFormData({
-          name: member.name || '',
-          email: member.user?.email || member.email || '',
-          phone: member.user?.phone || member.phone || '',
-          avatar: member.avatar || '',
-          position: member.role || member.position || 'STYLIST',
+          name: staff.user?.name || '',
+          email: staff.user?.email || '',
+          phone: staff.user?.phone || '',
+          avatar: staff.user?.avatar || '',
+          position: staff.position || 'STYLIST',
           password: '',
-          isActive: member.isActive !== false,
+          isActive: staff.isActive,
         });
       }
     }
-  }, [panelMode, selectedStaffId, staff]);
+  }, [panelMode, selectedStaffId, data]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (panelMode === 'create') {
-      if (!currentSalonId) {
-        toast.error('Thiếu thông tin chi nhánh. Vui lòng thử lại sau.');
-        return;
-      }
-      createMutation.mutate({ ...formData, salonId: currentSalonId });
+      createMutation.mutate(formData);
     } else if (panelMode === 'edit' && selectedStaffId) {
-      updateMutation.mutate({ id: selectedStaffId, updateData: formData });
+      const staff = data?.data?.find((s: any) => s.id === selectedStaffId);
+      if (staff?.user?.id) {
+        updateMutation.mutate({ id: staff.user.id, updateData: formData });
+      }
     }
   };
 
-  const filteredData = useMemo(() => {
-    if (!staff) return [];
-    return staff.filter((s: any) => 
-      s.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [staff, searchTerm]);
-
   const columns: ColumnDef<any>[] = useMemo(() => [
     {
-      accessorKey: 'name',
+      accessorKey: 'user.name',
       header: 'Nhân viên',
       cell: ({ row }) => {
-        const member = row.original;
-        const user = member.user;
+        const staff = row.original;
+        const user = staff.user;
         return (
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 border border-slate-200">
-              <AvatarImage src={member.avatar || ''} alt={member.name} />
+              <AvatarImage src={user?.avatar || ''} alt={user?.name} />
               <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold font-heading italic">
-                {member.name?.charAt(0) || 'S'}
+                {user?.name?.charAt(0) || 'S'}
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col text-left">
-              <span className="font-semibold text-slate-900 line-clamp-1">{member.name}</span>
+              <span className="font-semibold text-slate-900 line-clamp-1">{user?.name}</span>
               <span className="text-xs text-slate-500 line-clamp-1">{user?.email || user?.phone}</span>
             </div>
           </div>
@@ -186,16 +184,26 @@ export default function ManagerStaffPage() {
       },
     },
     {
-      accessorKey: 'role',
+      accessorKey: 'position',
       header: 'Vị trí',
       cell: ({ row }) => {
-        const pos = row.getValue('role') as string;
+        const pos = row.getValue('position') as string;
         return (
           <Badge variant="secondary" className="font-medium bg-slate-100 text-slate-700 border-none whitespace-nowrap">
             {STAFF_POSITIONS[pos as keyof typeof STAFF_POSITIONS] || pos}
           </Badge>
         );
       },
+    },
+    {
+      id: 'salon',
+      header: 'Chi nhánh',
+      cell: ({ row }) => (
+        <div className="flex items-center gap-1.5 text-slate-600">
+          <Calendar className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-sm font-medium">Chi nhánh của bạn</span>
+        </div>
+      ),
     },
     {
       id: 'stats',
@@ -208,9 +216,10 @@ export default function ManagerStaffPage() {
             <div className="flex items-center gap-1 text-xs text-amber-600 font-bold">
               <Star className="w-3 h-3 fill-amber-500" />
               <span>{rating.toFixed(1)}</span>
+              <span className="text-slate-400 font-normal">({row.original.totalReviews || 0})</span>
             </div>
             <div className="text-xs text-slate-500">
-              <span className="font-medium text-slate-700">{bookings}</span> lịch hôm nay
+              <span className="font-medium text-slate-700">{bookings}</span> lượt đặt
             </div>
           </div>
         );
@@ -220,13 +229,13 @@ export default function ManagerStaffPage() {
       accessorKey: 'isActive',
       header: 'Trạng thái',
       cell: ({ row }) => (
-        <StatusBadge status={String(row.original.isActive !== false)} config={STATUS_CONFIG} />
+        <StatusBadge status={String(row.getValue('isActive'))} config={STATUS_CONFIG} />
       ),
     },
     {
       id: 'actions',
       cell: ({ row }) => {
-        const member = row.original;
+        const staff = row.original;
         return (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -236,13 +245,13 @@ export default function ManagerStaffPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[180px] p-1 shadow-xl border-slate-200">
               <DropdownMenuItem 
-                onClick={() => router.push(`/manager/staff/${member.id}`)}
+                onClick={() => router.push(`/manager/staff/${staff.id}`)}
                 className="rounded-md focus:bg-slate-50 cursor-pointer flex items-center"
               >
                 <Eye className="w-4 h-4 mr-2 text-slate-400" /> Xem chi tiết
               </DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={() => { setSelectedStaffId(member.id); setPanelMode('edit'); setPanelOpen(true); }}
+                onClick={() => { setSelectedStaffId(staff.id); setPanelMode('edit'); setPanelOpen(true); }}
                 className="rounded-md focus:bg-slate-50 cursor-pointer flex items-center"
               >
                 <Edit className="w-4 h-4 mr-2 text-slate-400" /> Chỉnh sửa
@@ -250,8 +259,8 @@ export default function ManagerStaffPage() {
               <DropdownMenuItem 
                 className="text-destructive focus:bg-destructive/5 focus:text-destructive rounded-md cursor-pointer flex items-center"
                 onClick={() => {
-                  if (confirm(`Bạn có chắc muốn xóa nhân viên ${member.name}?`)) {
-                    deleteMutation.mutate(member.id);
+                  if (confirm(`Bạn có chắc muốn xóa nhân viên ${staff.user?.name}?`)) {
+                    deleteMutation.mutate(staff.id);
                   }
                 }}
               >
@@ -291,38 +300,38 @@ export default function ManagerStaffPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="bg-[#C8A97E]/5 border-none shadow-none ring-1 ring-[#C8A97E]/10 transition-all hover:ring-[#C8A97E]/20">
-          <CardContent className="p-6 flex items-center gap-5">
+          <CardContent className="p-6 flex items-center gap-5 text-left">
             <div className="p-4 bg-[#C8A97E]/10 rounded-2xl text-[#C8A97E] shadow-inner">
                <Users className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Tổng nhân sự</p>
-              <p className="text-3xl font-bold text-slate-900 tracking-tight">{staff?.length || 0}</p>
+              <p className="text-3xl font-bold text-slate-900 tracking-tight">{data?.meta?.total || 0}</p>
             </div>
           </CardContent>
         </Card>
         <Card className="bg-amber-50/50 border-none shadow-none ring-1 ring-amber-200/50 transition-all hover:ring-amber-300">
-          <CardContent className="p-6 flex items-center gap-5">
+          <CardContent className="p-6 flex items-center gap-5 text-left">
             <div className="p-4 bg-amber-100 rounded-2xl text-amber-600 shadow-inner">
                <Award className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Stylist nổi bật</p>
               <p className="text-3xl font-bold text-slate-900 tracking-tight">
-                {staff?.filter((s: any) => s.rating >= 4.5).length || 0}
+                {data?.data?.filter((s: any) => s.rating >= 4.5).length || 0}
               </p>
             </div>
           </CardContent>
         </Card>
         <Card className="bg-emerald-50/50 border-none shadow-none ring-1 ring-emerald-200/50 transition-all hover:ring-emerald-300">
-          <CardContent className="p-6 flex items-center gap-5">
+          <CardContent className="p-6 flex items-center gap-5 text-left">
             <div className="p-4 bg-emerald-100 rounded-2xl text-emerald-600 shadow-inner">
                <Activity className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Đang hoạt động</p>
               <p className="text-3xl font-bold text-slate-900 tracking-tight">
-                {staff?.filter((s: any) => s.isActive !== false).length || 0}
+                {data?.data?.filter((s: any) => s.isActive).length || 0}
               </p>
             </div>
           </CardContent>
@@ -333,27 +342,56 @@ export default function ManagerStaffPage() {
         <CardHeader className="px-6 flex flex-row items-center justify-between space-y-0 pb-6 border-b border-slate-100 text-left">
           <CardTitle className="text-xl font-bold text-slate-800">Danh sách nhân sự</CardTitle>
           <div className="flex items-center gap-3">
-            <div className="relative group">
+             <div className="relative group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-[#C8A97E] transition-colors" />
               <input
                 type="text"
                 placeholder="Tìm nhân viên..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="h-9 pl-9 pr-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#C8A97E]/20 transition-all w-64 font-medium"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-10 pl-9 pr-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#C8A97E]/20 transition-all w-64 font-medium"
               />
             </div>
-            <Badge variant="outline" className="h-9 px-3 border-slate-200 bg-white font-medium text-slate-600 hidden lg:flex">
-              {filteredData.length} nhân viên
-            </Badge>
+
+            <select
+              title="Rating Filter"
+              value={minRating || 'ALL'}
+              onChange={e => setMinRating(e.target.value === 'ALL' ? undefined : Number(e.target.value))}
+              className="h-10 px-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer font-medium"
+            >
+              <option value="ALL">⭐ Mọi điểm số</option>
+              <option value="4.5">⭐ 4.5+ (Xuất sắc)</option>
+              <option value="4.0">⭐ 4.0+ (Tốt)</option>
+              <option value="3.0">⭐ 3.0+ (Trung bình)</option>
+            </select>
+
+            <select
+              title="Sort By"
+              value={`${sortBy}:${sortOrder}`}
+              onChange={e => {
+                const [field, order] = e.target.value.split(':');
+                setSortBy(field);
+                setSortOrder(order as 'asc' | 'desc');
+              }}
+              className="h-10 px-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer font-medium"
+            >
+              <option value="createdAt:desc">Mới nhất</option>
+              <option value="rating:desc">⭐ Phổ biến nhất</option>
+              <option value="rating:asc">⭐ Thấp nhất</option>
+            </select>
           </div>
         </CardHeader>
-        <CardContent className="px-0 sm:px-6 py-6">
+        <CardContent className="px-0 sm:px-6 py-6 font-primary">
           <DataTable
             columns={columns}
-            data={filteredData}
-            searchKey="name"
+            data={data?.data || []}
             loading={isLoading}
+            pagination={{
+              pageCount: data?.meta?.lastPage || 1,
+              onPageChange: (p) => setPage(p),
+              pageIndex: page,
+              pageSize: limit,
+            }}
           />
         </CardContent>
       </Card>
@@ -399,7 +437,7 @@ export default function ManagerStaffPage() {
                       disabled={panelMode === 'view'}
                       value={formData.name}
                       onChange={e => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C8A97E]/20 transition-all bg-white disabled:bg-slate-50"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C8A97E]/20 transition-all bg-white disabled:bg-slate-50 font-medium"
                       placeholder="vd: Nguyễn Văn A"
                     />
                   </div>
@@ -411,7 +449,7 @@ export default function ManagerStaffPage() {
                       disabled={panelMode === 'view'}
                       value={formData.phone}
                       onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C8A97E]/20 transition-all bg-white disabled:bg-slate-50"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C8A97E]/20 transition-all bg-white disabled:bg-slate-50 font-medium"
                       placeholder="vd: 0912..."
                     />
                   </div>
@@ -424,7 +462,7 @@ export default function ManagerStaffPage() {
                       disabled={panelMode === 'view'}
                       value={formData.email}
                       onChange={e => setFormData({ ...formData, email: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C8A97E]/20 transition-all bg-white disabled:bg-slate-50"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C8A97E]/20 transition-all bg-white disabled:bg-slate-50 font-medium"
                       placeholder="vd: nhanvien@barber.vn"
                     />
                   </div>
@@ -436,13 +474,13 @@ export default function ManagerStaffPage() {
                       disabled={panelMode === 'view'}
                       value={formData.position}
                       onChange={e => setFormData({ ...formData, position: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C8A97E]/20 transition-all bg-white disabled:bg-slate-50 cursor-pointer"
+                      className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C8A97E]/20 transition-all bg-white disabled:bg-slate-50 cursor-pointer font-medium"
                     >
                       {Object.entries(STAFF_POSITIONS)
-                        .filter(([key]) => key !== 'MANAGER')
+                        .filter(([key]) => !['SUPER_ADMIN', 'SALON_OWNER'].includes(key))
                         .map(([key, value]) => (
-                          <option key={key} value={key}>{value as string}</option>
-                        ))}
+                        <option key={key} value={key}>{value as string}</option>
+                      ))}
                     </select>
                   </div>
                   {panelMode === 'create' && (
@@ -454,7 +492,7 @@ export default function ManagerStaffPage() {
                         type="password"
                         value={formData.password}
                         onChange={e => setFormData({ ...formData, password: e.target.value })}
-                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C8A97E]/20 transition-all bg-white"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-[#C8A97E]/20 transition-all bg-white font-medium"
                         placeholder="Tối thiểu 6 ký tự"
                       />
                     </div>
