@@ -763,6 +763,60 @@ export class StaffService extends BaseQueryService {
     });
   }
 
+  async bulkAssignShifts(dto: { salonId: string; staffIds: string[]; dates: string[]; type: ShiftType }, user: User) {
+    await this.verifySalonOwnership(dto.salonId, user);
+
+    const staffMembers = await this.prisma.staff.findMany({
+      where: { id: { in: dto.staffIds }, salonId: dto.salonId },
+      select: { id: true },
+    });
+    const validStaffIds = staffMembers.map(s => s.id);
+    if (validStaffIds.length === 0) {
+      throw new ForbiddenException('Không tìm thấy nhân viên hợp lệ thuộc chi nhánh này.');
+    }
+
+    let created = 0;
+    let updated = 0;
+
+    for (const staffId of validStaffIds) {
+      for (const dateStr of dto.dates) {
+        const shiftTimes = this.calculateShiftTimes(dateStr, dto.type);
+        const dateValue = dayjs.utc(dateStr).startOf('day').toDate();
+
+        const existing = await (this.prisma as any).staffShift.findFirst({
+          where: { staffId, date: dateValue },
+        });
+
+        if (existing) {
+          await (this.prisma as any).staffShift.update({
+            where: { id: existing.id },
+            data: {
+              shiftStart: shiftTimes.start.toDate(),
+              shiftEnd: shiftTimes.end.toDate(),
+              type: dto.type,
+              updatedAt: new Date(),
+            },
+          });
+          updated++;
+        } else {
+          await (this.prisma as any).staffShift.create({
+            data: {
+              staffId,
+              salonId: dto.salonId,
+              date: dateValue,
+              shiftStart: shiftTimes.start.toDate(),
+              shiftEnd: shiftTimes.end.toDate(),
+              type: dto.type,
+            },
+          });
+          created++;
+        }
+      }
+    }
+
+    return { created, updated, total: created + updated };
+  }
+
   async updateShift(shiftId: string, dto: any, user: User) {
     const shift = await (this.prisma as any).staffShift.findUnique({
       where: { id: shiftId },

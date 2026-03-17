@@ -400,6 +400,13 @@ export class AdminController {
     return this.staffService.assignShift(dto, user);
   }
 
+  @Post('schedules/bulk')
+  @RequirePermissions(Permission.MANAGE_STAFF)
+  @ApiOperation({ summary: 'Bulk create shifts for multiple staff × multiple days' })
+  bulkCreateSchedules(@Body() dto: any, @CurrentUser() user: User) {
+    return this.staffService.bulkAssignShifts(dto, user);
+  }
+
   @Patch('schedules/:id')
   @RequirePermissions(Permission.MANAGE_STAFF)
   @ApiOperation({ summary: 'Update staff shift' })

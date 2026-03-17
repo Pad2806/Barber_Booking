@@ -583,6 +583,10 @@ export const adminApi = {
     const response = await apiClient.delete(`/admin/schedules/${id}`);
     return response.data;
   },
+  bulkCreateSchedules: async (data: { salonId: string; staffIds: string[]; dates: string[]; type: string }) => {
+    const response = await apiClient.post('/admin/schedules/bulk', data);
+    return response.data;
+  },
   getBookingById: async (bookingId: string) => {
     const response = await apiClient.get<AdminBookingDetail>(`/bookings/${bookingId}`);
     return response.data;
