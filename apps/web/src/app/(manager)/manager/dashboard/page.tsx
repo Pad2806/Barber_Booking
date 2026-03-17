@@ -45,12 +45,17 @@ export default function ManagerDashboard() {
   const overview = stats?.today || { total: 0, completed: 0, cancelled: 0, revenue: 0 };
   const performance = stats?.performance || { averageRating: 5.0, activeStaff: 0, totalCustomers: 0 };
 
+  // Safe staff list extraction — API returns { data: [...], meta: {...} } or plain array
+  const staffList = Array.isArray(staff) ? staff 
+    : Array.isArray(staff?.data) ? staff.data 
+    : [];
+
   const statCards = [
     { label: 'Doanh thu hôm nay', value: overview.revenue, isCurrency: true, icon: DollarSign, trend: '+12%', color: 'emerald' },
     { label: 'Booking hoàn tất', value: overview.completed, icon: CalendarCheck, trend: '+5%', color: 'blue' },
     { label: 'Đánh giá trung bình', value: performance.averageRating.toFixed(1), icon: Star, trend: 'Premium', color: 'amber' },
     { label: 'Tổng khách hàng', value: performance.totalCustomers, icon: Users, trend: '+18%', color: 'indigo' },
-    { label: 'Nhân viên trực', value: staff?.filter((s:any) => s.isActive).length || 0, icon: UserCheck, color: 'orange' },
+    { label: 'Nhân viên trực', value: staffList.filter((s:any) => s.isActive).length || 0, icon: UserCheck, color: 'orange' },
     { label: 'Công suất', value: '78%', icon: Activity, color: 'purple' },
   ];
 
@@ -151,14 +156,14 @@ export default function ManagerDashboard() {
           </CardHeader>
           <CardContent className="p-0 overflow-y-auto flex-1 max-h-[500px]">
             <div className="divide-y divide-gray-100">
-              {staff?.slice(0, 5).map((member: any, idx: number) => (
+              {staffList.slice(0, 5).map((member: any, idx: number) => (
                 <div key={member.id} className="p-4 hover:bg-gray-50/50 transition-colors flex items-center justify-between text-left group">
                   <div className="flex items-center gap-3">
                     <div className="relative">
                       <Avatar className="h-10 w-10 border-2 border-white shadow-sm group-hover:border-[#C8A97E] transition-colors">
-                        <AvatarImage src={member.avatar} />
+                        <AvatarImage src={member.user?.avatar || member.avatar} />
                         <AvatarFallback className="bg-slate-100 text-slate-400 font-bold">
-                          {member.name?.charAt(0)}
+                          {(member.user?.name || member.name)?.charAt(0)}
                         </AvatarFallback>
                       </Avatar>
                       <div className="absolute -bottom-1 -right-1 bg-amber-400 text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border-2 border-white shadow">
@@ -166,16 +171,16 @@ export default function ManagerDashboard() {
                       </div>
                     </div>
                     <div>
-                      <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#C8A97E] transition-colors uppercase">{member.name}</h4>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{member.role}</p>
+                      <h4 className="text-sm font-bold text-gray-900 group-hover:text-[#C8A97E] transition-colors uppercase">{member.user?.name || member.name}</h4>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{member.position || member.role}</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="flex items-center gap-1 text-amber-500">
                       <Star className="w-3 h-3 fill-amber-500" />
-                      <span className="text-xs font-black">{member.rating.toFixed(1)}</span>
+                      <span className="text-xs font-black">{(member.rating || 5).toFixed(1)}</span>
                     </div>
-                    <p className="text-[10px] text-gray-400 font-medium mt-0.5">{member.todayAppointments} bookings</p>
+                    <p className="text-[10px] text-gray-400 font-medium mt-0.5">{member.todayAppointments || 0} bookings</p>
                   </div>
                 </div>
               ))}
