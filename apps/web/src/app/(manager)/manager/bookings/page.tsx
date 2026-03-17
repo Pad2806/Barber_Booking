@@ -273,7 +273,7 @@ export default function ManagerBookingsPage() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-heading italic uppercase">BRANCH <span className="text-[#C8A97E]">AGENDA</span></h1>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-heading italic uppercase">QUẢN LÝ <span className="text-[#C8A97E]">LỊCH ĐẶT</span></h1>
           <p className="text-slate-500 mt-1">Giám sát và điều phối tất cả lịch đặt tại chi nhánh của bạn.</p>
         </div>
       </div>
