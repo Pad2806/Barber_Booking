@@ -929,7 +929,7 @@ export class AdminService extends BaseQueryService {
       Object.assign(where, this.buildSearchWhere(search, ['comment', 'customer.name']));
     }
 
-    const [reviews, total] = await Promise.all([
+    const [reviews, total, avgRating, distribution] = await Promise.all([
       this.prisma.review.findMany({
         where,
         ...this.getPaginationOptions(params),
@@ -955,6 +955,15 @@ export class AdminService extends BaseQueryService {
         },
       }),
       this.prisma.review.count({ where }),
+      this.prisma.review.aggregate({
+        where,
+        _avg: { rating: true },
+      }),
+      this.prisma.review.groupBy({
+        by: ['rating'],
+        where,
+        _count: { _all: true },
+      }),
     ]);
 
     return {
@@ -973,7 +982,17 @@ export class AdminService extends BaseQueryService {
           ? { id: r.booking.staff.id, name: r.booking.staff.user.name }
           : null,
       })),
-      meta: this.getPaginationMeta(total, params),
+      meta: {
+        ...this.getPaginationMeta(total, params),
+        averageRating: Number(avgRating._avg.rating || 0),
+        distribution: (distribution as any[]).reduce(
+          (acc, d) => {
+            acc[d.rating] = d._count._all;
+            return acc;
+          },
+          {} as Record<number, number>,
+        ),
+      },
     };
   }
 
