@@ -1081,24 +1081,27 @@ export class StaffService extends BaseQueryService {
     }
 
     let startHours = 8, startMins = 0;
-    let endHours = 18, endMins = 0;
+    let endHours = 20, endMins = 0;
 
     switch (type) {
       case ShiftType.MORNING:
         startHours = 8; endHours = 12;
         break;
       case ShiftType.AFTERNOON:
-        startHours = 13; endHours = 18;
+        startHours = 12; endHours = 16;
+        break;
+      case ShiftType.EVENING:
+        startHours = 16; endHours = 20;
         break;
       case ShiftType.FULL_DAY:
-        startHours = 8; endHours = 18;
+        startHours = 8; endHours = 20;
         break;
       case ShiftType.OFF:
         startHours = 0; startMins = 0;
         endHours = 23; endMins = 59;
         break;
       default:
-        startHours = 8; endHours = 18;
+        startHours = 8; endHours = 20;
         break;
     }
 

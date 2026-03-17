@@ -954,7 +954,7 @@ export class ManagerService {
         }
 
         let startHours = 8, startMins = 0;
-        let endHours = 18, endMins = 0;
+        let endHours = 20, endMins = 0;
 
         switch (type) {
             case ShiftType.MORNING:

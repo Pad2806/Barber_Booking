@@ -194,8 +194,8 @@ export default function BookingPage() {
   // Time sections
   const timeSections = useMemo(() => {
     const morning = timeSlots.filter(s => s.available && parseInt(s.time.split(':')[0]) < 12);
-    const afternoon = timeSlots.filter(s => s.available && parseInt(s.time.split(':')[0]) >= 12 && parseInt(s.time.split(':')[0]) < 17);
-    const evening = timeSlots.filter(s => s.available && parseInt(s.time.split(':')[0]) >= 17);
+    const afternoon = timeSlots.filter(s => s.available && parseInt(s.time.split(':')[0]) >= 12 && parseInt(s.time.split(':')[0]) < 16);
+    const evening = timeSlots.filter(s => s.available && parseInt(s.time.split(':')[0]) >= 16);
     return [
       { label: 'Sáng', slots: morning, icon: '🌅' },
       { label: 'Chiều', slots: afternoon, icon: '☀️' },
