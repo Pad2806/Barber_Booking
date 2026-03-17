@@ -159,11 +159,11 @@ export default function AdminSchedulePage() {
     <div className="space-y-6 pb-10 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-           <Badge className="bg-[#7C3AED]/10 text-[#7C3AED] border-none mb-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+           <Badge className="bg-primary/10 text-primary border-none mb-2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
               Bảng công hệ thống
            </Badge>
            <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-heading italic uppercase">
-              Phân lịch <span className="text-[#7C3AED]">Làm việc</span>
+              Phân lịch <span className="text-primary">Làm việc</span>
            </h1>
            <p className="text-slate-500 text-sm mt-1">Sắp xếp ca làm việc cho đội ngũ nhân viên toàn hệ thống.</p>
         </div>
@@ -202,7 +202,7 @@ export default function AdminSchedulePage() {
             <Button
               variant="ghost"
               onClick={handleToday}
-              className="h-8 px-3 text-[10px] font-bold uppercase tracking-wider text-[#7C3AED] hover:bg-[#7C3AED]/5"
+              className="h-8 px-3 text-[10px] font-bold uppercase tracking-wider text-primary hover:bg-primary/5"
             >
               Hôm nay
             </Button>
@@ -242,7 +242,7 @@ export default function AdminSchedulePage() {
                   key={day.toString()}
                   className={cn(
                     "py-3 flex flex-col items-center gap-0.5 border-r last:border-r-0",
-                    isSameDay(day, new Date()) ? "bg-[#7C3AED]/5" : ""
+                    isSameDay(day, new Date()) ? "bg-primary/5" : ""
                   )}
                 >
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
@@ -250,7 +250,7 @@ export default function AdminSchedulePage() {
                   </span>
                   <span className={cn(
                     "text-lg font-bold tabular-nums",
-                    isSameDay(day, new Date()) ? "text-[#7C3AED]" : "text-slate-900"
+                    isSameDay(day, new Date()) ? "text-primary" : "text-slate-900"
                   )}>
                     {format(day, 'dd')}
                   </span>
@@ -261,7 +261,7 @@ export default function AdminSchedulePage() {
             <div className="divide-y">
               {isSchedulesLoading || isStaffLoading ? (
                 <div className="py-20 flex flex-col items-center justify-center col-span-8">
-                  <Loader2 className="w-8 h-8 text-[#7C3AED] animate-spin mb-3" />
+                  <Loader2 className="w-8 h-8 text-primary animate-spin mb-3" />
                   <p className="text-slate-400 text-xs font-medium">Đang tải lịch...</p>
                 </div>
               ) : staffList.length === 0 ? (
@@ -333,7 +333,7 @@ export default function AdminSchedulePage() {
                                 setShiftData({ type: ShiftType.FULL_DAY });
                                 setIsShiftSheetOpen(true);
                               }}
-                              className="w-full h-full flex items-center justify-center rounded-lg border-2 border-dashed border-slate-50 bg-slate-50/10 hover:border-[#7C3AED]/20 hover:bg-[#7C3AED]/5 opacity-0 group-hover:opacity-100 transition-all"
+                              className="w-full h-full flex items-center justify-center rounded-lg border-2 border-dashed border-slate-50 bg-slate-50/10 hover:border-primary/20 hover:bg-primary/5 opacity-0 group-hover:opacity-100 transition-all"
                             >
                                <Plus className="w-4 h-4 text-slate-300" />
                             </button>
@@ -353,8 +353,8 @@ export default function AdminSchedulePage() {
       <Sheet open={isShiftSheetOpen} onOpenChange={setIsShiftSheetOpen}>
         <SheetContent className="bg-white border-none sm:max-w-[400px] p-0 overflow-hidden shadow-2xl flex flex-col rounded-l-2xl">
           <SheetHeader className="p-6 pb-0 flex flex-col items-start">
-            <div className="p-2.5 bg-[#7C3AED]/10 rounded-xl mb-4">
-               <CalendarIcon className="w-5 h-5 text-[#7C3AED]" />
+            <div className="p-2.5 bg-primary/10 rounded-xl mb-4">
+               <CalendarIcon className="w-5 h-5 text-primary" />
             </div>
             <SheetTitle className="text-xl font-bold text-slate-900">
               {selectedShiftForEdit ? 'Cập nhật' : 'Thêm'} ca làm việc
@@ -381,7 +381,7 @@ export default function AdminSchedulePage() {
                     className={cn(
                       "flex items-center gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all font-bold text-xs",
                       shiftData.type === type.id
-                        ? cn(type.color, "ring-2 ring-[#7C3AED]/20 shadow-sm")
+                        ? cn(type.color, "ring-2 ring-primary/20 shadow-sm")
                         : "border-slate-50 bg-white text-slate-400 hover:bg-slate-50 hover:border-slate-100"
                     )}
                   >
@@ -403,7 +403,7 @@ export default function AdminSchedulePage() {
                 Hủy
               </Button>
               <Button
-                className="flex-[2] h-11 rounded-xl font-bold uppercase text-xs bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-lg active:scale-95 transition-all"
+                className="flex-[2] h-11 rounded-xl font-bold uppercase text-xs bg-primary hover:bg-primary/80 text-white shadow-lg active:scale-95 transition-all"
                 onClick={() => {
                   if (selectedShiftForEdit) {
                     updateShiftMutation.mutate({ id: selectedShiftForEdit.id, data: { type: shiftData.type } });
@@ -444,8 +444,8 @@ export default function AdminSchedulePage() {
       <Sheet open={isBulkSheetOpen} onOpenChange={setIsBulkSheetOpen}>
         <SheetContent className="bg-white border-none sm:max-w-[440px] p-0 overflow-hidden shadow-2xl flex flex-col rounded-l-2xl">
           <SheetHeader className="p-6 pb-0 flex flex-col items-start">
-            <div className="p-2.5 bg-[#7C3AED]/10 rounded-xl mb-4">
-               <Users className="w-5 h-5 text-[#7C3AED]" />
+            <div className="p-2.5 bg-primary/10 rounded-xl mb-4">
+               <Users className="w-5 h-5 text-primary" />
             </div>
             <SheetTitle className="text-xl font-bold text-slate-900">
               Set lịch hàng loạt
@@ -459,7 +459,7 @@ export default function AdminSchedulePage() {
             {/* Step 1: Shift type */}
             <div className="space-y-3">
               <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-[#7C3AED] text-white text-[10px] flex items-center justify-center font-black">1</span>
+                <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-black">1</span>
                 Chọn loại ca
               </label>
               <div className="grid grid-cols-2 gap-2">
@@ -476,7 +476,7 @@ export default function AdminSchedulePage() {
                     className={cn(
                       "flex items-center gap-2.5 p-3 rounded-xl border-2 cursor-pointer transition-all text-xs font-bold",
                       bulkType === type.id
-                        ? "border-[#7C3AED] bg-[#7C3AED]/5 text-[#7C3AED] ring-1 ring-[#7C3AED]/20"
+                        ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/20"
                         : "border-slate-100 text-slate-400 hover:border-slate-200"
                     )}
                   >
@@ -493,7 +493,7 @@ export default function AdminSchedulePage() {
             {/* Step 2: Select days */}
             <div className="space-y-3">
               <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-[#7C3AED] text-white text-[10px] flex items-center justify-center font-black">2</span>
+                <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-black">2</span>
                 Chọn ngày áp dụng
               </label>
               <div className="flex gap-2 mb-2">
@@ -538,18 +538,18 @@ export default function AdminSchedulePage() {
                       className={cn(
                         "flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all",
                         isSelected
-                          ? "border-[#7C3AED] bg-[#7C3AED]/5"
+                          ? "border-primary bg-primary/5"
                           : "border-slate-100 hover:border-slate-200"
                       )}
                     >
                       <div className={cn(
                         "w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all",
-                        isSelected ? "bg-[#7C3AED] border-[#7C3AED]" : "border-slate-200"
+                        isSelected ? "bg-primary border-primary" : "border-slate-200"
                       )}>
                         {isSelected && <CheckCheck className="w-3 h-3 text-white" />}
                       </div>
                       <div>
-                        <p className={cn("text-xs font-bold", isSelected ? "text-[#7C3AED]" : "text-slate-500")}>
+                        <p className={cn("text-xs font-bold", isSelected ? "text-primary" : "text-slate-500")}>
                           {format(day, 'eee', { locale: vi })}
                         </p>
                         <p className="text-[10px] text-slate-400">{format(day, 'dd/MM')}</p>
@@ -563,7 +563,7 @@ export default function AdminSchedulePage() {
             {/* Step 3: Select staff */}
             <div className="space-y-3">
               <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                <span className="w-5 h-5 rounded-full bg-[#7C3AED] text-white text-[10px] flex items-center justify-center font-black">3</span>
+                <span className="w-5 h-5 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-black">3</span>
                 Chọn nhân viên
               </label>
               <div className="flex gap-2 mb-2">
@@ -597,13 +597,13 @@ export default function AdminSchedulePage() {
                       className={cn(
                         "flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all",
                         isSelected
-                          ? "border-[#7C3AED] bg-[#7C3AED]/5"
+                          ? "border-primary bg-primary/5"
                           : "border-slate-100 hover:border-slate-200"
                       )}
                     >
                       <div className={cn(
                         "w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-all",
-                        isSelected ? "bg-[#7C3AED] border-[#7C3AED]" : "border-slate-200"
+                        isSelected ? "bg-primary border-primary" : "border-slate-200"
                       )}>
                         {isSelected && <CheckCheck className="w-3 h-3 text-white" />}
                       </div>
@@ -614,7 +614,7 @@ export default function AdminSchedulePage() {
                         </AvatarFallback>
                       </Avatar>
                       <div className="min-w-0">
-                        <p className={cn("text-xs font-bold truncate", isSelected ? "text-[#7C3AED]" : "text-slate-600")}>
+                        <p className={cn("text-xs font-bold truncate", isSelected ? "text-primary" : "text-slate-600")}>
                           {staff.user?.name}
                         </p>
                         <p className="text-[9px] text-slate-400 uppercase">{staff.position}</p>
@@ -629,8 +629,8 @@ export default function AdminSchedulePage() {
           {/* Summary + Actions */}
           <div className="p-6 border-t bg-slate-50/50 space-y-3 shrink-0">
             {bulkSelectedDays.length > 0 && bulkSelectedStaffIds.length > 0 && (
-              <div className="bg-[#7C3AED]/5 border border-[#7C3AED]/10 rounded-xl p-3 text-center">
-                <p className="text-xs font-bold text-[#7C3AED]">
+              <div className="bg-primary/5 border border-primary/10 rounded-xl p-3 text-center">
+                <p className="text-xs font-bold text-primary">
                   {bulkSelectedStaffIds.length} nhân viên × {bulkSelectedDays.length} ngày = {' '}
                   <span className="text-base">{bulkSelectedStaffIds.length * bulkSelectedDays.length}</span> ca sẽ được tạo
                 </p>
