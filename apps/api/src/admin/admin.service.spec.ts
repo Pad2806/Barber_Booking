@@ -46,6 +46,8 @@ describe('AdminService', () => {
     review: {
       count: jest.fn(),
       findMany: jest.fn(),
+      aggregate: jest.fn(),
+      groupBy: jest.fn(),
     },
   };
 
@@ -256,6 +258,8 @@ describe('AdminService', () => {
       ];
       mockPrismaService.review.findMany.mockResolvedValue(mockReviews);
       mockPrismaService.review.count.mockResolvedValue(1);
+      mockPrismaService.review.aggregate.mockResolvedValue({ _avg: { rating: 5 } });
+      mockPrismaService.review.groupBy.mockResolvedValue([{ rating: 5, _count: { _all: 1 } }]);
 
       const result = await service.getAllReviews({ page: 1, limit: 10 });
 
@@ -267,6 +271,8 @@ describe('AdminService', () => {
     it('should filter by rating', async () => {
       mockPrismaService.review.findMany.mockResolvedValue([]);
       mockPrismaService.review.count.mockResolvedValue(0);
+      mockPrismaService.review.aggregate.mockResolvedValue({ _avg: { rating: null } });
+      mockPrismaService.review.groupBy.mockResolvedValue([]);
 
       await service.getAllReviews({ rating: 5 });
 
