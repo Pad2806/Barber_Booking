@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Check, Scissors, Star, CalendarDays, Sparkles, X, MessageSquare } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Scissors, Star, CalendarDays, Sparkles, X, MessageSquare, Eye } from 'lucide-react';
 import { staffApi, serviceApi, Staff } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
 import { formatPrice, STAFF_POSITIONS, cn } from '@/lib/utils';
 import Avatar from '@/components/Avatar';
+import BarberProfileSheet from '@/components/booking/BarberProfileSheet';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
@@ -44,6 +45,7 @@ export default function BookingPage() {
   const [timeSlots, setTimeSlots] = useState<{ time: string; available: boolean }[]>([]);
   const [loading, setLoading] = useState(false);
   const [showNoteInput, setShowNoteInput] = useState(false);
+  const [profileStaffId, setProfileStaffId] = useState<string | null>(null);
 
   // This page uses 2 internal steps mapped to store's currentStep:
   // Internal step 1 → store step 1 (Choose barber)
@@ -340,6 +342,12 @@ export default function BookingPage() {
                         <span className="text-xs font-bold text-[#2C1E12]">{member.rating.toFixed(1)}</span>
                       </div>
                     </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setProfileStaffId(member.id); }}
+                      className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-[#C8A97E] hover:text-[#B8975E] transition-colors"
+                    >
+                      <Eye className="w-3 h-3" /> Xem hồ sơ
+                    </button>
                     {selected && (
                       <div className="absolute top-3 right-3 w-5 h-5 bg-[#C8A97E] rounded-full flex items-center justify-center">
                         <Check className="w-3 h-3 text-white stroke-[3]" />
@@ -518,6 +526,19 @@ export default function BookingPage() {
           </button>
         </div>
       </div>
+
+      {/* Barber Profile Sheet */}
+      {profileStaffId && (
+        <BarberProfileSheet
+          staffId={profileStaffId}
+          onClose={() => setProfileStaffId(null)}
+          onSelect={() => {
+            const member = staff.find(s => s.id === profileStaffId);
+            if (member) setStaff(member);
+            setProfileStaffId(null);
+          }}
+        />
+      )}
     </div>
   );
 }
