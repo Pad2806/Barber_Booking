@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
-import { MapPin, Star, Clock, Phone, Check, Play, ChevronRight, Filter, Calendar } from 'lucide-react';
+import { MapPin, Star, Clock, Phone, Check, Play, ChevronRight, Filter, Calendar, Eye } from 'lucide-react';
 import { salonApi, serviceApi, staffApi, reviewApi, Salon, Service, Staff, Review } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
 import { formatPrice, STAFF_POSITIONS, cn, formatDate } from '@/lib/utils';
@@ -13,6 +13,7 @@ import ServiceDetailModal from '@/components/ServiceDetailModal';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import Avatar from '@/components/Avatar';
+import BarberProfileSheet from '@/components/booking/BarberProfileSheet';
 
 export default function SalonDetailPage() {
   const params = useParams();
@@ -31,6 +32,7 @@ export default function SalonDetailPage() {
 
   const [selectedDetailService, setSelectedDetailService] = useState<Service | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [profileStaffId, setProfileStaffId] = useState<string | null>(null);
 
   // Review filters state
   const [ratingFilter, setRatingFilter] = useState<number | undefined>(undefined);
@@ -317,6 +319,12 @@ export default function SalonDetailPage() {
                   {member.bio && (
                     <p className="text-[11px] text-[#8B7355] line-clamp-2 border-t border-[#E8E0D4] pt-3 w-full">{member.bio}</p>
                   )}
+                  <button
+                    onClick={() => setProfileStaffId(member.id)}
+                    className="flex items-center gap-1 text-[11px] font-semibold text-[#C8A97E] hover:text-[#B8975E] transition-colors cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" /> Xem hồ sơ
+                  </button>
                 </div>
               ))}
             </div>
@@ -599,6 +607,20 @@ export default function SalonDetailPage() {
           onClose={() => setIsModalOpen(false)}
           onSelect={() => toggleService(selectedDetailService)}
           isSelected={isServiceSelected(selectedDetailService.id)}
+        />
+      )}
+      {/* Barber Profile Sheet */}
+      {profileStaffId && (
+        <BarberProfileSheet
+          staffId={profileStaffId}
+          onClose={() => setProfileStaffId(null)}
+          onSelect={() => {
+            setProfileStaffId(null);
+            if (salon) {
+              setSalon(salon);
+              router.push('/booking');
+            }
+          }}
         />
       )}
       <Footer />
