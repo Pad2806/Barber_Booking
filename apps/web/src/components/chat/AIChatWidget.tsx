@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageCircle, X, Send, User, Bot, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, User, Bot, Loader2, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,15 +13,23 @@ interface Message {
   createdAt: Date;
 }
 
+const SUGGESTED_QUESTIONS = [
+  { emoji: '✂️', text: 'Xem dịch vụ & giá' },
+  { emoji: '🕐', text: 'Giờ mở cửa' },
+  { emoji: '📅', text: 'Đặt lịch cắt tóc' },
+  { emoji: '📍', text: 'Địa chỉ salon' },
+];
+
 export function AIChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionId, setSessionId] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+  const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Khởi tạo sessionId duy nhất
   useEffect(() => {
     const savedSession = localStorage.getItem('ai_chat_session');
     if (savedSession) {
@@ -33,32 +41,32 @@ export function AIChatWidget() {
     }
   }, []);
 
-  // Cuộn xuống cuối khi có tin mới
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || isLoading) return;
 
     const userMsg: Message = {
       id: uuidv4(),
       role: 'user',
-      content: input,
+      content: text,
       createdAt: new Date(),
     };
 
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsLoading(true);
+    setLastFailedMessage(null);
 
     try {
       const response = await axios.post('/api/ai/chat', {
-        message: input,
+        message: text,
         session_id: sessionId,
-      });
+      }, { timeout: 20000 });
 
       const assistantMsg: Message = {
         id: uuidv4(),
@@ -67,23 +75,50 @@ export function AIChatWidget() {
         createdAt: new Date(),
       };
       setMessages(prev => [...prev, assistantMsg]);
-    } catch (error) {
-      console.error('Chat error:', error);
+      setRetryCount(0);
+    } catch (error: any) {
+      const status = error?.response?.status;
+      let errorText: string;
+
+      if (status === 429) {
+        errorText = '⏳ Hệ thống đang bận, vui lòng đợi 30 giây rồi thử lại nhé!';
+        setLastFailedMessage(text);
+      } else if (error.code === 'ECONNABORTED') {
+        errorText = '⏱️ Phản hồi bị timeout. Anh thử lại nhé!';
+        setLastFailedMessage(text);
+      } else {
+        errorText = 'Xin lỗi, em đang gặp sự cố kết nối. Anh vui lòng thử lại sau nhé! 🙏';
+        setLastFailedMessage(text);
+      }
+
       const errorMsg: Message = {
         id: uuidv4(),
         role: 'assistant',
-        content: 'Xin lỗi, em đang gặp sự cố kết nối. Anh vui lòng thử lại sau nhé! 🙏',
+        content: errorText,
         createdAt: new Date(),
       };
       setMessages(prev => [...prev, errorMsg]);
+      setRetryCount(prev => prev + 1);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleSend = () => sendMessage(input);
+
+  const handleRetry = () => {
+    if (lastFailedMessage) {
+      sendMessage(lastFailedMessage);
+    }
+  };
+
+  const handleSuggestion = (text: string) => {
+    sendMessage(text);
+  };
+
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
-      {/* Nút Floating Button */}
+      {/* Floating Button */}
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
@@ -93,7 +128,7 @@ export function AIChatWidget() {
         </button>
       )}
 
-      {/* Cửa sổ Chat */}
+      {/* Chat Window */}
       {isOpen && (
         <div className="w-[380px] h-[550px] bg-white rounded-2xl shadow-[-10px_10px_30px_rgba(0,0,0,0.1)] border border-[#E8E0D4] flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
           {/* Header */}
@@ -124,11 +159,27 @@ export function AIChatWidget() {
             className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#FAF8F5] scroll-smooth"
           >
             {messages.length === 0 && (
-              <div className="text-center py-10 space-y-3">
-                <Bot className="w-12 h-12 text-[#C8A97E]/30 mx-auto" />
-                <p className="text-sm text-gray-500 max-w-[200px] mx-auto">
-                  Chào anh! Em là trợ lý AI của Reetro Barber. Anh cần đặt lịch hay tư vấn gì không ạ?
-                </p>
+              <div className="space-y-4">
+                <div className="text-center py-6 space-y-3">
+                  <Bot className="w-12 h-12 text-[#C8A97E]/30 mx-auto" />
+                  <p className="text-sm text-gray-500 max-w-[220px] mx-auto">
+                    Chào anh! Em là trợ lý AI của Reetro Barber. Anh cần hỗ trợ gì ạ?
+                  </p>
+                </div>
+
+                {/* Suggested Questions */}
+                <div className="grid grid-cols-2 gap-2">
+                  {SUGGESTED_QUESTIONS.map((q, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSuggestion(q.text)}
+                      className="flex items-center gap-2 px-3 py-2.5 bg-white rounded-xl border border-[#E8E0D4] text-xs font-medium text-[#5C4A32] hover:border-[#C8A97E] hover:bg-[#C8A97E]/5 transition-all text-left"
+                    >
+                      <span>{q.emoji}</span>
+                      <span>{q.text}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             )}
             
@@ -153,7 +204,6 @@ export function AIChatWidget() {
                     : "bg-white text-gray-800 border border-[#E8E0D4] rounded-tl-none max-w-[80%]"
                 )}>
                   {msg.content.split('\n').map((line, i) => {
-                    // Xử lý Bold (**text**)
                     const parts = line.split(/(\*\*.*?\*\*)/g);
                     const formattedLine = parts.map((part, index) => {
                       if (part.startsWith('**') && part.endsWith('**')) {
@@ -162,7 +212,6 @@ export function AIChatWidget() {
                       return part;
                     });
 
-                    // Xử lý danh sách (• hoặc -)
                     if (line.trim().startsWith('•') || line.trim().startsWith('-')) {
                       return (
                         <div key={i} className="flex gap-2 my-1 pl-1">
@@ -179,6 +228,19 @@ export function AIChatWidget() {
                 </div>
               </div>
             ))}
+
+            {/* Retry Button */}
+            {lastFailedMessage && !isLoading && (
+              <div className="flex justify-center">
+                <button
+                  onClick={handleRetry}
+                  className="flex items-center gap-2 px-4 py-2 bg-[#C8A97E]/10 text-[#C8A97E] rounded-full text-xs font-semibold hover:bg-[#C8A97E]/20 transition-colors"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Thử lại
+                </button>
+              </div>
+            )}
 
             {isLoading && (
               <div className="flex items-start gap-2 max-w-[85%]">
