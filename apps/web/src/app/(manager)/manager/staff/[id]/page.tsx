@@ -105,9 +105,14 @@ export default function StaffDetailPage() {
             <p className="text-sm text-slate-500 font-medium">Theo dõi hiệu suất và lịch làm việc của {staff?.user?.name}</p>
           </div>
         </div>
-        <Button onClick={() => setRateModalOpen(true)} className="gap-2 rounded-xl h-10 bg-[#C8A97E] hover:bg-[#B5966A] shadow-lg shadow-[#C8A97E]/20">
-          <Star className="w-4 h-4" /> Đánh giá hiệu suất
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => router.push(`/manager/staff/${id}/profile`)} className="gap-2 rounded-xl h-10 border-slate-200">
+            <Briefcase className="w-4 h-4" /> Hồ sơ giới thiệu
+          </Button>
+          <Button onClick={() => setRateModalOpen(true)} className="gap-2 rounded-xl h-10 bg-[#C8A97E] hover:bg-[#B5966A] shadow-lg shadow-[#C8A97E]/20">
+            <Star className="w-4 h-4" /> Đánh giá hiệu suất
+          </Button>
+        </div>
       </div>
 
       {/* Profile Overview */}

@@ -204,6 +204,34 @@ export const staffApi = {
     const response = await apiClient.post('/staff/me/day-off', { date, reason });
     return response.data;
   },
+
+  // --- STAFF PROFILE & ACHIEVEMENTS ---
+  getProfile: async (staffId: string) => {
+    const response = await apiClient.get(`/staff/${staffId}/profile`);
+    return response.data;
+  },
+  updateProfile: async (staffId: string, data: {
+    bio?: string;
+    longDescription?: string;
+    specialties?: string[];
+    experience?: number;
+    gallery?: string[];
+  }) => {
+    const response = await apiClient.patch(`/staff/${staffId}`, data);
+    return response.data;
+  },
+  addAchievement: async (staffId: string, data: { title: string; year?: number; description?: string; icon?: string }) => {
+    const response = await apiClient.post(`/staff/${staffId}/achievements`, data);
+    return response.data;
+  },
+  updateAchievement: async (achievementId: string, data: { title?: string; year?: number; description?: string; icon?: string }) => {
+    const response = await apiClient.patch(`/staff/achievements/${achievementId}`, data);
+    return response.data;
+  },
+  deleteAchievement: async (achievementId: string) => {
+    const response = await apiClient.delete(`/staff/achievements/${achievementId}`);
+    return response.data;
+  },
 };
 
 export const managerApi = {

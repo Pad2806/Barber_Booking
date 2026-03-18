@@ -257,4 +257,4 @@ export interface RevenueStats {
     }>;
 }
 
-export type UploadFolder = 'avatars' | 'salons' | 'services' | 'reviews';
+export type UploadFolder = 'avatars' | 'salons' | 'services' | 'reviews' | 'gallery' | 'staff';

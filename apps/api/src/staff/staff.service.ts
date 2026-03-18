@@ -381,9 +381,21 @@ export class StaffService extends BaseQueryService {
         weeklySchedules: {
           orderBy: { dayOfWeek: 'asc' },
         },
+        achievements: {
+          orderBy: { year: 'desc' },
+        },
+        reviews: {
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          where: { isVisible: true },
+          include: {
+            customer: { select: { name: true, avatar: true } },
+          },
+        },
         _count: {
           select: {
-            bookings: true,
+            bookings: { where: { status: 'COMPLETED' } },
+            reviews: true,
           },
         },
       } as any,
@@ -1164,5 +1176,90 @@ export class StaffService extends BaseQueryService {
     const end = baseDate.set('hour', endHours).set('minute', endMins).set('second', 0).set('millisecond', 0);
 
     return { start, end };
+  }
+
+  // ─── STAFF PROFILE & ACHIEVEMENTS ────────────────────────
+
+  async getStaffProfile(staffId: string) {
+    const staff = await this.prisma.staff.findUnique({
+      where: { id: staffId },
+      include: {
+        user: { select: { id: true, name: true, avatar: true } },
+        salon: { select: { id: true, name: true, slug: true } },
+        achievements: { orderBy: { year: 'desc' } },
+        reviews: {
+          take: 6,
+          orderBy: { createdAt: 'desc' },
+          where: { isVisible: true },
+          include: {
+            customer: { select: { name: true, avatar: true } },
+          },
+        },
+        _count: {
+          select: {
+            bookings: { where: { status: 'COMPLETED' } },
+            reviews: true,
+          },
+        },
+      } as any,
+    });
+
+    if (!staff) {
+      throw new NotFoundException(`Staff with ID ${staffId} not found`);
+    }
+
+    return staff;
+  }
+
+  async addAchievement(
+    staffId: string,
+    data: { title: string; year?: number; description?: string; icon?: string },
+    currentUser: User,
+  ) {
+    const staff = await this.findOne(staffId);
+    await this.verifySalonOwnership(staff.salonId, currentUser);
+
+    return (this.prisma as any).staffAchievement.create({
+      data: { ...data, staffId },
+    });
+  }
+
+  async updateAchievement(
+    achievementId: string,
+    data: { title?: string; year?: number; description?: string; icon?: string },
+    currentUser: User,
+  ) {
+    const achievement = await (this.prisma as any).staffAchievement.findUnique({
+      where: { id: achievementId },
+      include: { staff: true },
+    });
+
+    if (!achievement) {
+      throw new NotFoundException('Achievement not found');
+    }
+
+    await this.verifySalonOwnership(achievement.staff.salonId, currentUser);
+
+    return (this.prisma as any).staffAchievement.update({
+      where: { id: achievementId },
+      data,
+    });
+  }
+
+  async deleteAchievement(achievementId: string, currentUser: User) {
+    const achievement = await (this.prisma as any).staffAchievement.findUnique({
+      where: { id: achievementId },
+      include: { staff: true },
+    });
+
+    if (!achievement) {
+      throw new NotFoundException('Achievement not found');
+    }
+
+    await this.verifySalonOwnership(achievement.staff.salonId, currentUser);
+
+    return (this.prisma as any).staffAchievement.delete({
+      where: { id: achievementId },
+    });
   }
 }

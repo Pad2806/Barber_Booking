@@ -145,6 +145,51 @@ export class StaffController {
     return this.staffService.getAvailableSlots(id, dateStr, salonId, duration ? parseInt(duration) : 30);
   }
 
+  @Get(':id/profile')
+  @Public()
+  @ApiOperation({ summary: 'Get staff public profile with achievements and reviews' })
+  getProfile(@Param('id') id: string) {
+    return this.staffService.getStaffProfile(id);
+  }
+
+  @Post(':id/achievements')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MANAGER, Role.SALON_OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Add achievement to staff' })
+  addAchievement(
+    @Param('id') staffId: string,
+    @Body() body: { title: string; year?: number; description?: string; icon?: string },
+    @CurrentUser() user: User,
+  ) {
+    return this.staffService.addAchievement(staffId, body, user);
+  }
+
+  @Patch('achievements/:achievementId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MANAGER, Role.SALON_OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update an achievement' })
+  updateAchievement(
+    @Param('achievementId') achievementId: string,
+    @Body() body: { title?: string; year?: number; description?: string; icon?: string },
+    @CurrentUser() user: User,
+  ) {
+    return this.staffService.updateAchievement(achievementId, body, user);
+  }
+
+  @Delete('achievements/:achievementId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SUPER_ADMIN, Role.MANAGER, Role.SALON_OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete an achievement' })
+  deleteAchievement(
+    @Param('achievementId') achievementId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.staffService.deleteAchievement(achievementId, user);
+  }
+
   @Get(':id')
   @Public()
   @ApiOperation({ summary: 'Get staff by ID' })

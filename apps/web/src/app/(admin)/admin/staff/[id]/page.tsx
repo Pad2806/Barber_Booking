@@ -101,9 +101,14 @@ export default function StaffDetailPage() {
             <p className="text-sm text-slate-500 font-medium">Chi tiết kinh doanh và lịch biểu của {staff?.user?.name}</p>
           </div>
         </div>
-        <Button onClick={() => setLeaveModalOpen(true)} className="gap-2 rounded-xl h-10 shadow-lg shadow-primary/20">
-          <CalendarDays className="w-4 h-4" /> Đăng ký ngày nghỉ
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => router.push(`/admin/staff/${id}/profile`)} className="gap-2 rounded-xl h-10 border-slate-200">
+            <Briefcase className="w-4 h-4" /> Hồ sơ giới thiệu
+          </Button>
+          <Button onClick={() => setLeaveModalOpen(true)} className="gap-2 rounded-xl h-10 shadow-lg shadow-primary/20">
+            <CalendarDays className="w-4 h-4" /> Đăng ký ngày nghỉ
+          </Button>
+        </div>
       </div>
 
       {/* Profile Overview */}

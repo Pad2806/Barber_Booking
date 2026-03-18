@@ -240,6 +240,10 @@ model Staff {
   id           String         @id @default(uuid())
   position     StaffPosition
   bio          String?
+  longDescription String?    @db.Text
+  specialties  String[]       @default([])
+  experience   Int?
+  gallery      String[]       @default([])
   rating       Float          @default(5.0)
   totalReviews Int            @default(0)
   isActive     Boolean        @default(true)
@@ -260,10 +264,24 @@ model Staff {
   reviews         Review[]
   customerNotes   CustomerNote[] @relation("StaffNotes")
   performanceLogs StaffPerformance[]
+  achievements    StaffAchievement[]
 
   waitingQueue WaitingQueue[]
 
   @@map("staff")
+}
+
+model StaffAchievement {
+  id          String   @id @default(uuid())
+  title       String
+  year        Int?
+  description String?
+  icon        String?  // emoji or icon key
+  staffId     String
+  staff       Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@map("staff_achievements")
 }
 
 model StaffPerformance {
