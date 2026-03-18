@@ -10,7 +10,6 @@ import {
   Smartphone,
   UserPlus,
   ClipboardList,
-  ListOrdered,
   CreditCard,
   BarChart3,
   Menu,
@@ -29,7 +28,6 @@ const NAV_ITEMS = [
   { key: 'online', href: '/cashier/online-bookings', label: 'Duyệt Online', icon: Smartphone },
   { key: 'walkin', href: '/cashier/walk-in', label: 'Khách vãng lai', icon: UserPlus },
   { key: 'appointments', href: '/cashier/appointments', label: 'Lịch hẹn', icon: ClipboardList },
-  { key: 'queue', href: '/cashier/queue', label: 'Hàng chờ', icon: ListOrdered },
   { key: 'checkout', href: '/cashier/checkout', label: 'Thanh toán', icon: CreditCard },
   { key: 'revenue', href: '/cashier/revenue', label: 'Doanh thu', icon: BarChart3 },
 ];
@@ -66,7 +64,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
   const activeKey = NAV_ITEMS.find((item) => pathname?.startsWith(item.href))?.key || 'dashboard';
 
   return (
-    <div className="min-h-screen bg-slate-50/50 flex">
+    <div className="h-screen bg-slate-50/50 flex overflow-hidden">
       {/* Mobile Overlay */}
       {isMobileOpen && (
         <div
@@ -78,9 +76,9 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed top-0 left-0 h-full bg-white border-r border-slate-100 z-50 flex flex-col transition-all duration-300',
+          'fixed top-0 left-0 h-screen bg-white border-r border-slate-100 z-50 flex flex-col transition-all duration-300',
           isCollapsed && !isMobileOpen ? 'w-20' : 'w-64',
-          'lg:relative',
+          'lg:relative lg:h-screen',
           isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         )}
       >
@@ -181,7 +179,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 h-screen">
         {/* Top Bar */}
         <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-6 shrink-0 sticky top-0 z-30">
           <div className="flex items-center gap-4">
@@ -218,7 +216,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6 lg:p-8 bg-slate-50/80">{children}</main>
       </div>
     </div>
   );

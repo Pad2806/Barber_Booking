@@ -5,7 +5,6 @@ import { cashierApi } from '@/lib/api';
 import {
   CalendarCheck,
   DollarSign,
-  ListOrdered,
   CheckCircle2,
   Smartphone,
   UserPlus,
@@ -47,7 +46,6 @@ export default function CashierDashboard() {
     { label: 'Lịch hôm nay', value: stats?.todayBookings || 0, icon: CalendarCheck, color: 'blue' },
     { label: 'Doanh thu hôm nay', value: stats?.todayRevenue || 0, icon: DollarSign, color: 'emerald', isCurrency: true },
     { label: 'Chờ duyệt online', value: stats?.pendingOnline || 0, icon: Smartphone, color: 'amber' },
-    { label: 'Hàng chờ', value: stats?.waitingQueue || 0, icon: ListOrdered, color: 'orange' },
     { label: 'Đã hoàn thành', value: stats?.completedToday || 0, icon: CheckCircle2, color: 'emerald' },
   ];
 
@@ -65,7 +63,7 @@ export default function CashierDashboard() {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {statCards.map((s, i) => (
           <Card key={i} className="border-none shadow-sm hover:shadow-md transition-shadow bg-white">
             <CardContent className="p-5">
@@ -183,8 +181,8 @@ function DashboardSkeleton() {
         <Skeleton className="h-9 w-48" />
         <Skeleton className="h-5 w-80" />
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {Array.from({ length: 5 }).map((_, i) => (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
           <Skeleton key={i} className="h-28 rounded-xl" />
         ))}
       </div>
