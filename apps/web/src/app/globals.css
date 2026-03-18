@@ -147,3 +147,60 @@
 .animate-slide-in {
   animation: slideIn 0.3s ease-out forwards;
 }
+
+/* Driver.js Tour Custom Styles */
+.reetro-tour-popover {
+  background: white !important;
+  border-radius: 16px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  border: 1px solid #E8E0D4 !important;
+  max-width: 360px !important;
+}
+
+.reetro-tour-popover .driver-popover-title {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #2C1E12 !important;
+}
+
+.reetro-tour-popover .driver-popover-description {
+  font-size: 13px !important;
+  color: #5C4A32 !important;
+  line-height: 1.6 !important;
+}
+
+.reetro-tour-popover .driver-popover-progress-text {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #8B7355 !important;
+}
+
+.reetro-tour-popover .driver-popover-next-btn,
+.reetro-tour-popover .driver-popover-prev-btn,
+.reetro-tour-popover .driver-popover-close-btn {
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  padding: 6px 16px !important;
+}
+
+.reetro-tour-popover .driver-popover-next-btn {
+  background: #C8A97E !important;
+  color: white !important;
+  border: none !important;
+  box-shadow: 0 4px 6px -1px rgba(200, 169, 126, 0.3) !important;
+}
+
+.reetro-tour-popover .driver-popover-next-btn:hover {
+  background: #B5966A !important;
+}
+
+.reetro-tour-popover .driver-popover-prev-btn {
+  background: transparent !important;
+  color: #8B7355 !important;
+  border: 1px solid #E8E0D4 !important;
+}
+
+.driver-active-element {
+  border-radius: 12px !important;
+}

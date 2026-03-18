@@ -22,6 +22,8 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useOnboarding } from '@/hooks/use-onboarding';
+import { WelcomeModal, TourButton } from '@/components/onboarding/OnboardingComponents';
 
 const NAV_ITEMS = [
   { key: 'dashboard', href: '/cashier/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
@@ -37,6 +39,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { showWelcome, startTour, resetTour, dismissWelcome, config: onboardingConfig } = useOnboarding('cashier');
 
   const { data: me, isLoading } = useQuery({
     queryKey: ['users', 'me'],
@@ -64,6 +67,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
   const activeKey = NAV_ITEMS.find((item) => pathname?.startsWith(item.href))?.key || 'dashboard';
 
   return (
+    <>
     <div className="h-screen bg-slate-50/50 flex overflow-hidden">
       {/* Mobile Overlay */}
       {isMobileOpen && (
@@ -198,6 +202,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
             </div>
           </div>
           <div className="flex items-center gap-3">
+            <TourButton onClick={resetTour} />
             <Button variant="ghost" size="icon" className="h-9 w-9 relative">
               <Bell className="w-5 h-5 text-slate-400" />
             </Button>
@@ -219,5 +224,15 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
         <main className="flex-1 overflow-y-auto p-6 lg:p-8 bg-slate-50/80">{children}</main>
       </div>
     </div>
+
+    {showWelcome && (
+      <WelcomeModal
+        title={onboardingConfig.title}
+        description={onboardingConfig.description}
+        onStart={startTour}
+        onDismiss={dismissWelcome}
+      />
+    )}
+    </>
   );
 }

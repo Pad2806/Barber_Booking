@@ -283,6 +283,9 @@ importers:
       dayjs:
         specifier: ^1.11.10
         version: 1.11.19
+      driver.js:
+        specifier: ^1.4.0
+        version: 1.4.0
       lucide-react:
         specifier: ^0.312.0
         version: 0.312.0(react@18.3.1)
@@ -8368,6 +8371,10 @@ packages:
       p-event: 2.3.1
       pify: 3.0.0
     dev: true
+
+  /driver.js@1.4.0:
+    resolution: {integrity: sha512-Gm64jm6PmcU+si21sQhBrTAM1JvUrR0QhNmjkprNLxohOBzul9+pNHXgQaT9lW84gwg9GMLB3NZGuGolsz5uew==}
+    dev: false
 
   /dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}

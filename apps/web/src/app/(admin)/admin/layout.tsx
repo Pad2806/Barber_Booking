@@ -42,6 +42,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useOnboarding } from '@/hooks/use-onboarding';
+import { WelcomeModal, TourButton } from '@/components/onboarding/OnboardingComponents';
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -64,6 +66,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const pathname = usePathname() || '';
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { showWelcome, startTour, resetTour, dismissWelcome, config: onboardingConfig } = useOnboarding('admin');
 
   const { data: me, isLoading: isLoadingMe } = useQuery({
     queryKey: ['users', 'me'],
@@ -198,6 +201,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   );
 
   return (
+    <>
     <div className="min-h-screen bg-slate-50 flex">
       {/* Desktop Sidebar */}
       <aside 
@@ -236,6 +240,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
 
             <div className="flex items-center gap-2 lg:gap-4">
+              <TourButton onClick={resetTour} />
               <Button variant="ghost" size="icon" className="text-slate-500 rounded-full">
                 <Bell className="w-5 h-5" />
               </Button>
@@ -286,5 +291,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </main>
       </div>
     </div>
+
+    {/* Onboarding */}
+    {showWelcome && (
+      <WelcomeModal
+        title={onboardingConfig.title}
+        description={onboardingConfig.description}
+        onStart={startTour}
+        onDismiss={dismissWelcome}
+      />
+    )}
+    </>
   );
 }
