@@ -1,283 +1,305 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { cashierApi, serviceApi, usersApi } from '@/lib/api';
-import { 
-  UserPlus, 
-  Scissors, 
-  Search, 
-  Phone, 
-  Clock, 
-  User, 
-  CheckCircle2, 
+import {
+  UserPlus,
+  Search,
+  Check,
   Loader2,
-  ArrowRight,
-  PlusCircle,
-  X,
-  ListOrdered
+  Scissors,
+  Phone,
+  User,
+  StickyNote,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from '@/components/ui/select';
-import { cn, formatPrice } from '@/lib/utils';
-import React, { useState } from 'react';
+import { Textarea } from '@/components/ui/textarea';
+import { cn, formatPrice, SERVICE_CATEGORIES } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
 
-export default function WalkinPage() {
+export default function WalkInPage() {
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState({
-    customerName: '',
-    phone: '',
-    serviceIds: [] as string[],
-    staffId: '',
-    note: ''
-  });
+
+  const [customerName, setCustomerName] = useState('');
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+  const [selectedStaffId, setSelectedStaffId] = useState<string>('');
+  const [note, setNote] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('ALL');
 
   const { data: me } = useQuery({
     queryKey: ['users', 'me'],
     queryFn: usersApi.getMe,
   });
 
+  const salonId = me?.staff?.salonId;
+
   const { data: services } = useQuery({
-    queryKey: ['services', 'all'],
-    queryFn: () => serviceApi.getAll({ limit: 100 }),
+    queryKey: ['cashier', 'services', salonId],
+    queryFn: () => serviceApi.getBySalon(salonId!),
+    enabled: !!salonId,
   });
 
-  const { data: branchStaff } = useQuery({
-    queryKey: ['cashier', 'staff-list', me?.staff?.salonId],
-    queryFn: () => cashierApi.getAvailableBarbers(dayjs().format('YYYY-MM-DD'), dayjs().format('HH:mm'), me?.staff?.salonId),
-    enabled: !!me?.staff?.salonId,
+  const { data: barbers } = useQuery({
+    queryKey: ['cashier', 'barbers-today'],
+    queryFn: () => cashierApi.getAvailableBarbers(dayjs().format('YYYY-MM-DD'), dayjs().format('HH:mm')),
   });
 
-  const walkinMutation = useMutation({
-    mutationFn: (data: any) => cashierApi.createWalkinBooking({ ...data, salonId: me?.staff?.salonId }),
+  const createMutation = useMutation({
+    mutationFn: () => cashierApi.createWalkinBooking({
+      customerName,
+      phone: customerPhone || undefined,
+      serviceIds: selectedServiceIds,
+      staffId: selectedStaffId || undefined,
+      note: note || undefined,
+    }),
     onSuccess: () => {
-      toast.success('Đã bắt đầu phục vụ khách hàng!');
-      setFormData({ customerName: '', phone: '', serviceIds: [], staffId: '', note: '' });
-      queryClient.invalidateQueries({ queryKey: ['cashier', 'stats'] });
-      queryClient.invalidateQueries({ queryKey: ['cashier', 'bookings'] });
-      queryClient.invalidateQueries({ queryKey: ['cashier', 'queue'] });
+      toast.success('Đã tạo booking thành công!');
+      resetForm();
+      queryClient.invalidateQueries({ queryKey: ['cashier'] });
     },
-    onError: () => toast.error('Lỗi khi tiếp nhận khách.')
+    onError: (err: any) => toast.error(err.response?.data?.message || 'Không thể tạo booking'),
   });
 
-  const queueMutation = useMutation({
-    mutationFn: (data: any) => cashierApi.addToQueue({ ...data, salonId: me?.staff?.salonId }),
-    onSuccess: () => {
-      toast.success('Đã thêm khách vào hàng chờ thành công!');
-      setFormData({ customerName: '', phone: '', serviceIds: [], staffId: '', note: '' });
-      queryClient.invalidateQueries({ queryKey: ['cashier', 'queue'] });
-      queryClient.invalidateQueries({ queryKey: ['cashier', 'stats'] });
-    },
-    onError: () => toast.error('Lỗi khi thêm vào hàng chờ.')
-  });
-
-  const toggleService = (id: string) => {
-    setFormData(prev => ({
-        ...prev,
-        serviceIds: prev.serviceIds.includes(id) 
-            ? prev.serviceIds.filter(s => s !== id) 
-            : [...prev.serviceIds, id]
-    }));
+  const resetForm = () => {
+    setCustomerName('');
+    setCustomerPhone('');
+    setSelectedServiceIds([]);
+    setSelectedStaffId('');
+    setNote('');
   };
 
-  const totalPrice = services?.data
-    ?.filter((s: any) => formData.serviceIds.includes(s.id))
-    ?.reduce((acc: number, curr: any) => acc + Number(curr.price), 0) || 0;
+  const filteredServices = useMemo(() => {
+    if (!services) return [];
+    if (categoryFilter === 'ALL') return services;
+    return services.filter((s: any) => s.category === categoryFilter);
+  }, [services, categoryFilter]);
+
+  const selectedServices = useMemo(() => {
+    if (!services) return [];
+    return services.filter((s: any) => selectedServiceIds.includes(s.id));
+  }, [services, selectedServiceIds]);
+
+  const totalAmount = selectedServices.reduce((acc: number, s: any) => acc + Number(s.price), 0);
+  const totalDuration = selectedServices.reduce((acc: number, s: any) => acc + s.duration, 0);
+
+  const toggleService = (id: string) => {
+    setSelectedServiceIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const categories = useMemo(() => {
+    if (!services) return [];
+    const cats = new Set(services.map((s: any) => s.category));
+    return ['ALL', ...Array.from(cats)];
+  }, [services]);
+
+  const canSubmit = customerName.trim() && selectedServiceIds.length > 0;
 
   return (
-    <div className="space-y-8 pb-20">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div>
-           <h1 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">
-              Tiếp nhận <span className="text-[#C8A97E]">Khách vãng lai</span>
-           </h1>
-           <p className="text-slate-500 font-medium italic text-sm">Tạo lịch phục vụ nhanh hoặc thêm vào hàng chờ cho khách không đặt trước.</p>
-        </div>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-heading italic">Khách vãng lai</h1>
+        <p className="text-slate-500 mt-1">Tạo booking nhanh cho khách đến trực tiếp</p>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-         {/* Form Section */}
-         <div className="xl:col-span-2 space-y-8">
-            <Card className="border-none shadow-2xl rounded-[3rem] bg-white overflow-hidden group">
-               <CardHeader className="p-10 pb-0">
-                  <div className="flex items-center gap-4">
-                     <div className="p-4 rounded-[1.5rem] bg-slate-900 text-[#C8A97E] shadow-xl group-hover:scale-110 transition-transform">
-                        <UserPlus className="w-6 h-6" />
-                     </div>
-                     <div>
-                        <CardTitle className="text-2xl font-black italic uppercase tracking-tighter">Phiếu tiếp nhận</CardTitle>
-                        <CardDescription className="font-bold text-slate-400 uppercase text-[9px] tracking-widest">Thông tin khách hàng mới</CardDescription>
-                     </div>
-                  </div>
-               </CardHeader>
-               <CardContent className="p-10 space-y-8">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#C8A97E]">Họ và tên khách</label>
-                        <div className="relative">
-                           <User className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                           <Input 
-                             placeholder="VD: Anh Tuấn" 
-                             value={formData.customerName}
-                             onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
-                             className="pl-12 border-slate-100 bg-slate-50 h-14 rounded-2xl font-bold focus:ring-[#C8A97E]/20"
-                           />
-                        </div>
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#C8A97E]">Số điện thoại (Nếu có)</label>
-                        <div className="relative">
-                           <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                           <Input 
-                             placeholder="VD: 0912345678" 
-                             value={formData.phone}
-                             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                             className="pl-12 border-slate-100 bg-slate-50 h-14 rounded-2xl font-bold focus:ring-[#C8A97E]/20"
-                           />
-                        </div>
-                     </div>
-                  </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Form */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Customer Info */}
+          <Card className="border-none shadow-sm bg-white">
+            <CardHeader className="pb-4 border-b border-slate-50">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <User className="w-4 h-4 text-primary" /> Thông tin khách hàng
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Tên khách hàng *</label>
+                  <Input
+                    placeholder="Nhập tên khách..."
+                    value={customerName}
+                    onChange={(e) => setCustomerName(e.target.value)}
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Số điện thoại</label>
+                  <Input
+                    placeholder="VD: 0912345678"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    className="h-11 rounded-xl"
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-                  <div className="space-y-4">
-                     <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#C8A97E]">Chọn dịch vụ phục vụ</label>
-                        {totalPrice > 0 && (
-                            <Badge className="bg-[#C8A97E] text-white border-none font-black italic px-3 py-1">
-                                TỔNG: {formatPrice(totalPrice)}
-                            </Badge>
+          {/* Services */}
+          <Card className="border-none shadow-sm bg-white">
+            <CardHeader className="pb-4 border-b border-slate-50">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                  <Scissors className="w-4 h-4 text-primary" /> Chọn dịch vụ
+                </CardTitle>
+                {selectedServiceIds.length > 0 && (
+                  <Badge className="bg-primary/10 text-primary border-none">{selectedServiceIds.length} đã chọn</Badge>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="p-5">
+              <div className="flex flex-wrap gap-2 mb-4">
+                {categories.map((cat) => (
+                  <Button
+                    key={cat}
+                    variant={categoryFilter === cat ? 'default' : 'outline'}
+                    size="sm"
+                    className={cn('rounded-xl text-xs h-8', categoryFilter === cat && 'bg-primary hover:bg-primary/90')}
+                    onClick={() => setCategoryFilter(cat)}
+                  >
+                    {cat === 'ALL' ? 'Tất cả' : (SERVICE_CATEGORIES[cat]?.label || cat)}
+                  </Button>
+                ))}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {filteredServices.map((s: any) => {
+                  const isSelected = selectedServiceIds.includes(s.id);
+                  return (
+                    <div
+                      key={s.id}
+                      onClick={() => toggleService(s.id)}
+                      className={cn(
+                        'flex items-center justify-between p-4 rounded-xl border-2 transition-all cursor-pointer',
+                        isSelected ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-slate-200',
+                      )}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-sm text-slate-900 truncate">{s.name}</p>
+                        <p className="text-xs text-slate-400">{s.duration} phút</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-primary">{formatPrice(Number(s.price))}</span>
+                        {isSelected && (
+                          <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                            <Check className="w-3 h-3 text-white" />
+                          </div>
                         )}
-                     </div>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {services?.data?.map((svc: any) => (
-                           <div 
-                             key={svc.id}
-                             onClick={() => toggleService(svc.id)}
-                             className={cn(
-                                "p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col gap-2 relative overflow-hidden group",
-                                formData.serviceIds.includes(svc.id)
-                                 ? "border-[#C8A97E] bg-amber-50/50 shadow-md scale-[1.02]"
-                                 : "border-slate-50 bg-slate-50/50 hover:border-slate-200"
-                             )}
-                           >
-                              <div className="flex justify-between items-start">
-                                 <Scissors className={cn("w-4 h-4", formData.serviceIds.includes(svc.id) ? "text-[#C8A97E]" : "text-slate-300")} />
-                                 {formData.serviceIds.includes(svc.id) && <CheckCircle2 className="w-4 h-4 text-[#C8A97E] fill-amber-50" />}
-                              </div>
-                              <div className="mt-1">
-                                 <p className="font-black text-[11px] text-slate-900 uppercase tracking-tighter truncate">{svc.name}</p>
-                                 <p className="font-black text-[10px] text-[#C8A97E] tracking-tight">{formatPrice(svc.price)}</p>
-                              </div>
-                           </div>
-                        ))}
-                     </div>
-                  </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#C8A97E]">Phân công Barber</label>
-                        <Select value={formData.staffId} onValueChange={(v) => setFormData({ ...formData, staffId: v })}>
-                           <SelectTrigger className="h-14 border-slate-100 bg-slate-50 rounded-2xl font-bold">
-                              <SelectValue placeholder="Chọn thợ đang trống" />
-                           </SelectTrigger>
-                           <SelectContent className="rounded-2xl border-slate-100">
-                              {branchStaff?.map((s: any) => (
-                                 <SelectItem key={s.id} value={s.id} disabled={!s.isAvailable} className="font-bold py-3 rounded-xl">
-                                    <div className="flex items-center gap-2">
-                                       <Avatar className="h-6 w-6 border border-slate-100">
-                                          <AvatarImage src={s.avatar} />
-                                          <AvatarFallback>{s.name.charAt(0)}</AvatarFallback>
-                                       </Avatar>
-                                       <span>{s.name} {!s.isAvailable && <span className="text-[10px] text-rose-400 font-medium ml-1">({s.reason || 'Bận'})</span>}</span>
-                                    </div>
-                                 </SelectItem>
-                              ))}
-                           </SelectContent>
-                        </Select>
-                     </div>
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-[#C8A97E]">Ghi chú yêu cầu</label>
-                        <Input 
-                           placeholder="VD: Cắt kỹ 2 bên mai, dùng sáp xịn..." 
-                           value={formData.note}
-                           onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                           className="border-slate-100 bg-slate-50 h-14 rounded-2xl font-bold focus:ring-[#C8A97E]/20"
-                        />
-                     </div>
+          {/* Barber Selection */}
+          <Card className="border-none shadow-sm bg-white">
+            <CardHeader className="pb-4 border-b border-slate-50">
+              <CardTitle className="text-base font-bold">Chọn thợ cắt (tuỳ chọn)</CardTitle>
+            </CardHeader>
+            <CardContent className="p-5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                <div
+                  onClick={() => setSelectedStaffId('')}
+                  className={cn(
+                    'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer',
+                    !selectedStaffId ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-slate-200',
+                  )}
+                >
+                  <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center">
+                    <User className="w-5 h-5 text-slate-400" />
                   </div>
-
-                  <div className="flex gap-4 pt-6">
-                     <Button 
-                       onClick={() => queueMutation.mutate({ customerName: formData.customerName, serviceId: formData.serviceIds[0], staffId: formData.staffId })}
-                       disabled={queueMutation.isPending || walkinMutation.isPending || !formData.customerName}
-                       className="flex-1 bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-100 rounded-[1.5rem] h-14 font-black italic uppercase text-xs tracking-[0.2em] shadow-xl shadow-slate-200/50"
-                     >
-                        <ListOrdered className="w-4 h-4 mr-2" /> Thêm vào Hàng chờ
-                     </Button>
-                     <Button 
-                       onClick={() => walkinMutation.mutate(formData)}
-                       disabled={walkinMutation.isPending || queueMutation.isPending || !formData.customerName || formData.serviceIds.length === 0}
-                       className="flex-[2] bg-slate-900 hover:bg-slate-800 text-white rounded-[1.5rem] h-14 font-black italic uppercase text-xs tracking-[0.2em] shadow-2xl shadow-slate-900/40 group"
-                     >
-                        {walkinMutation.isPending ? 'Đang khởi tạo...' : 'Bắt đầu Phục vụ ngay'}
-                        <ArrowRight className="w-5 h-5 ml-3 text-[#C8A97E] group-hover:translate-x-2 transition-transform" />
-                     </Button>
+                  <p className="text-xs font-semibold text-slate-600">Bất kỳ</p>
+                </div>
+                {barbers?.filter((b: any) => b.isAvailable).map((barber: any) => (
+                  <div
+                    key={barber.id}
+                    onClick={() => setSelectedStaffId(barber.id)}
+                    className={cn(
+                      'flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer',
+                      selectedStaffId === barber.id ? 'border-primary bg-primary/5' : 'border-slate-100 hover:border-slate-200',
+                    )}
+                  >
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage src={barber.avatar} />
+                      <AvatarFallback className="bg-primary/10 text-primary text-sm font-bold">
+                        {barber.name?.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <p className="text-xs font-semibold text-slate-600 truncate w-full text-center">{barber.name}</p>
                   </div>
-               </CardContent>
-            </Card>
-         </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-         {/* Info Right Section */}
-         <div className="space-y-8">
-            <Card className="border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-[#0f172a] to-slate-900 text-white p-8">
-               <h3 className="text-xl font-black italic uppercase tracking-tighter mb-6 flex items-center gap-3">
-                  Tra cứu <span className="text-[#C8A97E]">Nhanh</span> <Search className="w-4 h-4 text-[#C8A97E]" />
-               </h3>
-               <div className="space-y-4">
-                  <div className="relative">
-                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
-                     <Input 
-                       placeholder="SĐT hoặc tên khách..." 
-                       className="pl-12 bg-white/10 border-white/10 h-14 rounded-2xl font-bold placeholder:text-slate-500"
-                     />
+          {/* Note */}
+          <Card className="border-none shadow-sm bg-white">
+            <CardHeader className="pb-4 border-b border-slate-50">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <StickyNote className="w-4 h-4 text-primary" /> Ghi chú
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-5">
+              <Textarea
+                placeholder="Ghi chú thêm cho booking..."
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                className="rounded-xl min-h-[80px]"
+              />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right: Summary */}
+        <div className="space-y-6">
+          <Card className="border-none shadow-sm bg-white sticky top-24">
+            <CardHeader className="pb-4 border-b border-slate-50">
+              <CardTitle className="text-base font-bold">Tóm tắt đơn hàng</CardTitle>
+            </CardHeader>
+            <CardContent className="p-5 space-y-4">
+              {selectedServices.length === 0 ? (
+                <p className="text-sm text-slate-400 text-center py-6">Chưa chọn dịch vụ nào</p>
+              ) : (
+                <>
+                  <div className="space-y-3">
+                    {selectedServices.map((s: any) => (
+                      <div key={s.id} className="flex items-center justify-between">
+                        <span className="text-sm text-slate-600">{s.name}</span>
+                        <span className="text-sm font-semibold text-slate-900">{formatPrice(Number(s.price))}</span>
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest text-center italic">Xem lịch sử để tư vấn dịch vụ phù hợp nhất</p>
-               </div>
-            </Card>
-
-            <Card className="border-none shadow-xl rounded-[2.5rem] bg-white p-8 space-y-6">
-               <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-black italic uppercase tracking-tighter">Gợi ý <span className="text-[#C8A97E]">Upsell</span></h3>
-                  <Badge className="bg-amber-50 text-amber-600 border-none font-bold text-[8px] uppercase tracking-widest">AI SUGGEST</Badge>
-               </div>
-               
-               <div className="p-5 bg-amber-50/50 rounded-3xl border border-amber-100 space-y-3">
-                  <p className="text-[10px] font-black text-amber-800 uppercase tracking-widest italic flex items-center gap-2">
-                     <PlusCircle className="w-3.5 h-3.5" /> Cơ hội tăng doanh thu
-                  </p>
-                  <p className="text-xs font-medium text-amber-900 leading-relaxed italic">&quot;Khách cắt tóc thường muốn được gội đầu thư giãn. Hãy gợi ý thêm **Combo Relax** để tăng sự hài lòng!&quot;</p>
-               </div>
-
-               <div className="space-y-3">
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dịch vụ đi kèm phổ biến:</p>
-                  <div className="flex flex-wrap gap-2">
-                     <Badge variant="outline" className="rounded-full border-slate-100 font-bold py-1 px-3 text-[10px] cursor-pointer hover:bg-[#C8A97E] hover:text-white transition-colors">Combo Shave</Badge>
-                     <Badge variant="outline" className="rounded-full border-slate-100 font-bold py-1 px-3 text-[10px] cursor-pointer hover:bg-[#C8A97E] hover:text-white transition-colors">Gội Massage</Badge>
-                     <Badge variant="outline" className="rounded-full border-slate-100 font-bold py-1 px-3 text-[10px] cursor-pointer hover:bg-[#C8A97E] hover:text-white transition-colors">Tẩy da chết</Badge>
+                  <div className="h-px bg-slate-100" />
+                  <div className="flex items-center justify-between text-xs text-slate-400">
+                    <span>Thời gian ước tính</span>
+                    <span>{totalDuration} phút</span>
                   </div>
-               </div>
-            </Card>
-         </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-slate-900">Tổng cộng</span>
+                    <span className="text-xl font-bold text-primary">{formatPrice(totalAmount)}</span>
+                  </div>
+                </>
+              )}
+
+              <Button
+                className="w-full rounded-xl h-12 font-bold"
+                disabled={!canSubmit || createMutation.isPending}
+                onClick={() => createMutation.mutate()}
+              >
+                {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                Tạo Booking
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </div>
   );

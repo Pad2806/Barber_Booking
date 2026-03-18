@@ -1,255 +1,315 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { cashierApi, usersApi } from '@/lib/api';
-import { 
-  ListOrdered, 
-  Clock, 
-  User, 
-  Scissors, 
-  PlayCircle, 
-  CheckCircle2, 
-  MoreHorizontal,
+import { cashierApi, serviceApi, usersApi } from '@/lib/api';
+import {
+  ListOrdered,
+  Plus,
+  User,
+  Clock,
+  Loader2,
+  Play,
+  CheckCircle,
   XCircle,
-  AlertCircle,
-  Users,
-  Timer
+  UserCheck,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel
-} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import React from 'react';
 import toast from 'react-hot-toast';
 import dayjs from 'dayjs';
+import relativeTime from 'dayjs/plugin/relativeTime';
+import 'dayjs/locale/vi';
+
+dayjs.extend(relativeTime);
+dayjs.locale('vi');
+
+const QUEUE_STATUS: Record<string, { label: string; style: string; icon: any }> = {
+  WAITING: { label: 'Đang chờ', style: 'bg-amber-50 text-amber-700 border-amber-200', icon: Clock },
+  SERVING: { label: 'Đang phục vụ', style: 'bg-blue-50 text-blue-700 border-blue-200', icon: Play },
+  COMPLETED: { label: 'Hoàn thành', style: 'bg-emerald-50 text-emerald-700', icon: CheckCircle },
+  CANCELLED: { label: 'Đã hủy', style: 'bg-rose-50 text-rose-600', icon: XCircle },
+};
 
 export default function QueuePage() {
   const queryClient = useQueryClient();
+  const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
+  const [newCustomerName, setNewCustomerName] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [newServiceId, setNewServiceId] = useState('');
+  const [newStaffId, setNewStaffId] = useState('');
 
-  const { data: me } = useQuery({
-    queryKey: ['users', 'me'],
-    queryFn: usersApi.getMe,
-  });
-  
+  const { data: me } = useQuery({ queryKey: ['users', 'me'], queryFn: usersApi.getMe });
+  const salonId = me?.staff?.salonId;
+
   const { data: queue, isLoading } = useQuery({
-    queryKey: ['cashier', 'queue', me?.staff?.salonId],
-    queryFn: () => cashierApi.getQueue(me?.staff?.salonId),
-    enabled: !!me?.staff?.salonId,
+    queryKey: ['cashier', 'queue'],
+    queryFn: cashierApi.getQueue,
     refetchInterval: 10000,
   });
 
-  const { data: branchStaff } = useQuery({
-    queryKey: ['cashier', 'staff-list', me?.staff?.salonId],
-    queryFn: () => cashierApi.getAvailableBarbers(dayjs().format('YYYY-MM-DD'), dayjs().format('HH:mm'), me?.staff?.salonId),
-    enabled: !!me?.staff?.salonId,
+  const { data: services } = useQuery({
+    queryKey: ['cashier', 'services', salonId],
+    queryFn: () => serviceApi.getBySalon(salonId!),
+    enabled: !!salonId && isAddSheetOpen,
   });
 
-  const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status, staffId }: { id: string, status: string, staffId?: string }) => 
-        cashierApi.updateQueueStatus(id, { status, staffId }),
+  const { data: barbers } = useQuery({
+    queryKey: ['cashier', 'barbers-queue'],
+    queryFn: () => cashierApi.getAvailableBarbers(dayjs().format('YYYY-MM-DD'), dayjs().format('HH:mm')),
+    enabled: isAddSheetOpen,
+  });
+
+  const addMutation = useMutation({
+    mutationFn: () => cashierApi.addToQueue({
+      customerName: newCustomerName,
+      phone: newPhone || undefined,
+      serviceId: newServiceId || undefined,
+      staffId: newStaffId || undefined,
+    }),
     onSuccess: () => {
-      toast.success('Đã cập nhật trạng thái hàng chờ!');
+      toast.success('Đã thêm vào hàng chờ');
+      resetForm();
       queryClient.invalidateQueries({ queryKey: ['cashier', 'queue'] });
-      queryClient.invalidateQueries({ queryKey: ['cashier', 'stats'] });
     },
-    onError: () => toast.error('Lỗi khi cập nhật trạng thái.')
+    onError: () => toast.error('Không thể thêm vào hàng chờ'),
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex bg-white rounded-[2rem] border border-slate-100 items-center justify-center min-h-[500px]">
-        <div className="flex flex-col items-center gap-4">
-           <div className="w-12 h-12 border-4 border-[#C8A97E] border-t-transparent rounded-full animate-spin" />
-           <p className="text-slate-400 font-bold text-[10px] uppercase tracking-widest">Đang đồng bộ hàng chờ...</p>
-        </div>
-      </div>
-    );
-  }
+  const statusMutation = useMutation({
+    mutationFn: ({ id, status, staffId }: { id: string; status: string; staffId?: string }) =>
+      cashierApi.updateQueueStatus(id, { status, staffId }),
+    onSuccess: () => {
+      toast.success('Đã cập nhật');
+      queryClient.invalidateQueries({ queryKey: ['cashier', 'queue'] });
+    },
+    onError: () => toast.error('Không thể cập nhật'),
+  });
 
-  const waitingList = queue?.filter((item: any) => item.status === 'WAITING') || [];
-  const servingList = queue?.filter((item: any) => item.status === 'SERVING') || [];
+  const resetForm = () => {
+    setIsAddSheetOpen(false);
+    setNewCustomerName('');
+    setNewPhone('');
+    setNewServiceId('');
+    setNewStaffId('');
+  };
+
+  const waitingCount = queue?.filter((q: any) => q.status === 'WAITING').length || 0;
+  const servingCount = queue?.filter((q: any) => q.status === 'SERVING').length || 0;
 
   return (
-    <div className="space-y-10 pb-20">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex items-center justify-between">
         <div>
-           <h1 className="text-3xl font-black text-slate-900 tracking-tighter italic uppercase">
-              Quản lý <span className="text-[#C8A97E]">Hàng chờ</span>
-           </h1>
-           <p className="text-slate-500 font-medium italic text-sm">Điều phối khách vãng lai và phân công Barber trực tiếp.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-heading italic">Hàng chờ</h1>
+          <p className="text-slate-500 mt-1">Quản lý khách đang chờ phục vụ</p>
         </div>
-        <div className="bg-white px-6 py-3 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-8">
-           <div className="text-center">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">Đang chờ</p>
-              <p className="text-xl font-black text-amber-500 italic leading-none mt-1">{waitingList.length}</p>
-           </div>
-           <div className="w-px h-8 bg-slate-100"></div>
-           <div className="text-center">
-              <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest italic">Đang phục vụ</p>
-              <p className="text-xl font-black text-emerald-500 italic leading-none mt-1">{servingList.length}</p>
-           </div>
-        </div>
+        <Button className="rounded-xl h-10" onClick={() => setIsAddSheetOpen(true)}>
+          <Plus className="w-4 h-4 mr-2" /> Thêm khách
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-         {/* Waiting Column */}
-         <div className="space-y-6">
-            <div className="flex items-center gap-3 px-2">
-               <div className="p-2 bg-amber-500 text-white rounded-xl shadow-lg shadow-amber-500/20">
-                  <Timer className="w-4 h-4" />
-               </div>
-               <h3 className="text-xl font-black italic uppercase tracking-tighter text-slate-900">Danh sách Chờ</h3>
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-4">
+        <Card className="border-none shadow-sm bg-white">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-amber-50 text-amber-600">
+              <Clock className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Đang chờ</p>
+              <p className="text-2xl font-bold text-slate-900">{waitingCount}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-none shadow-sm bg-white">
+          <CardContent className="p-5 flex items-center gap-4">
+            <div className="p-3 rounded-xl bg-blue-50 text-blue-600">
+              <Play className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Đang phục vụ</p>
+              <p className="text-2xl font-bold text-slate-900">{servingCount}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Queue List */}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
+        </div>
+      ) : !queue?.length ? (
+        <Card className="border-none shadow-sm bg-white">
+          <CardContent className="py-20 flex flex-col items-center gap-4">
+            <ListOrdered className="w-12 h-12 text-slate-200" />
+            <p className="text-slate-400 font-medium">Hàng chờ trống</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {queue.map((item: any, index: number) => {
+            const statusInfo = QUEUE_STATUS[item.status] || QUEUE_STATUS.WAITING;
+            return (
+              <Card key={item.id} className="border-none shadow-sm bg-white hover:shadow-md transition-shadow">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    {/* Position */}
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <span className="text-sm font-bold text-primary">{index + 1}</span>
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold text-slate-900">{item.customerName}</p>
+                        <Badge className={cn('text-[10px] border', statusInfo.style)}>{statusInfo.label}</Badge>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-xs text-slate-400">
+                        {item.phone && <span>{item.phone}</span>}
+                        {item.service && <span>• {item.service.name}</span>}
+                        <span>• Đến {dayjs(item.arrivalTime).fromNow()}</span>
+                      </div>
+                    </div>
+
+                    {/* Staff */}
+                    {item.staff && (
+                      <div className="hidden md:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-lg">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={item.staff.user?.avatar} />
+                          <AvatarFallback className="bg-slate-200 text-[10px]">{item.staff.user?.name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-xs font-medium text-slate-600">{item.staff.user?.name}</span>
+                      </div>
+                    )}
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-2">
+                      {item.status === 'WAITING' && (
+                        <Button
+                          size="sm"
+                          className="rounded-lg bg-blue-600 hover:bg-blue-700 h-8 text-xs"
+                          onClick={() => statusMutation.mutate({ id: item.id, status: 'SERVING' })}
+                          disabled={statusMutation.isPending}
+                        >
+                          <Play className="w-3 h-3 mr-1" /> Phục vụ
+                        </Button>
+                      )}
+                      {item.status === 'SERVING' && (
+                        <Button
+                          size="sm"
+                          className="rounded-lg bg-emerald-600 hover:bg-emerald-700 h-8 text-xs"
+                          onClick={() => statusMutation.mutate({ id: item.id, status: 'COMPLETED' })}
+                          disabled={statusMutation.isPending}
+                        >
+                          <CheckCircle className="w-3 h-3 mr-1" /> Xong
+                        </Button>
+                      )}
+                      {(item.status === 'WAITING' || item.status === 'SERVING') && (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="rounded-lg h-8 text-xs text-slate-400 hover:text-rose-600"
+                          onClick={() => statusMutation.mutate({ id: item.id, status: 'CANCELLED' })}
+                          disabled={statusMutation.isPending}
+                        >
+                          <XCircle className="w-3 h-3" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Add to Queue Sheet */}
+      <Sheet open={isAddSheetOpen} onOpenChange={() => resetForm()}>
+        <SheetContent className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle className="text-xl font-bold font-heading italic text-primary">
+              Thêm vào hàng chờ
+            </SheetTitle>
+            <SheetDescription>Nhập thông tin khách đến trực tiếp</SheetDescription>
+          </SheetHeader>
+
+          <div className="space-y-5 mt-6">
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Tên khách hàng *</label>
+              <Input
+                placeholder="Nhập tên khách..."
+                value={newCustomerName}
+                onChange={(e) => setNewCustomerName(e.target.value)}
+                className="h-11 rounded-xl"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Số điện thoại</label>
+              <Input
+                placeholder="VD: 0912345678"
+                value={newPhone}
+                onChange={(e) => setNewPhone(e.target.value)}
+                className="h-11 rounded-xl"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Dịch vụ</label>
+              <Select value={newServiceId} onValueChange={setNewServiceId}>
+                <SelectTrigger className="h-11 rounded-xl">
+                  <SelectValue placeholder="Chọn dịch vụ..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {services?.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-slate-600 mb-1.5 block">Chỉ định thợ</label>
+              <Select value={newStaffId} onValueChange={setNewStaffId}>
+                <SelectTrigger className="h-11 rounded-xl">
+                  <SelectValue placeholder="Bất kỳ..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {barbers?.filter((b: any) => b.isAvailable).map((b: any) => (
+                    <SelectItem key={b.id} value={b.id}>{b.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <div className="space-y-4">
-               {waitingList.length === 0 ? (
-                 <div className="bg-white rounded-[2rem] p-16 flex flex-col items-center justify-center border-2 border-dashed border-slate-100">
-                    <p className="text-slate-300 font-black italic uppercase text-xs tracking-widest">Hiện không có ai đang chờ</p>
-                 </div>
-               ) : (
-                 waitingList.map((item: any, idx: number) => (
-                   <Card key={item.id} className="group border-none shadow-lg hover:shadow-2xl transition-all duration-500 rounded-[2rem] bg-white overflow-hidden">
-                      <CardContent className="p-6">
-                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                               <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg font-black italic shadow-inner">
-                                  #{idx + 1}
-                               </div>
-                               <div>
-                                  <h4 className="font-black text-slate-900 uppercase tracking-tighter italic leading-tight">{item.customerName}</h4>
-                                  <p className="text-[10px] font-black text-[#C8A97E] uppercase tracking-widest mt-0.5">{item.service?.name || 'Dịch vụ Tiêu chuẩn'}</p>
-                               </div>
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                               <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                     <Button variant="outline" className="h-12 px-6 rounded-2xl border-slate-100 bg-slate-50 font-black italic uppercase text-[10px] tracking-widest hover:bg-[#C8A97E] hover:text-white transition-all">
-                                        Bắt đầu phục vụ
-                                     </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2 border-slate-100 shadow-2xl bg-white">
-                                     <DropdownMenuLabel className="text-[9px] font-black uppercase text-slate-400 p-3 italic">Chọn Barber khả dụng</DropdownMenuLabel>
-                                     <DropdownMenuSeparator />
-                                     {branchStaff?.map((s: any) => (
-                                        <DropdownMenuItem 
-                                          key={s.id} 
-                                          disabled={!s.isAvailable}
-                                          onClick={() => updateStatusMutation.mutate({ id: item.id, status: 'SERVING', staffId: s.id })}
-                                          className="rounded-xl p-3 mb-1 cursor-pointer flex items-center justify-between group focus:bg-amber-50"
-                                        >
-                                           <div className="flex items-center gap-3">
-                                              <Avatar className="h-8 w-8 border border-slate-100">
-                                                 <AvatarImage src={s.avatar} />
-                                                 <AvatarFallback className="bg-slate-100 text-slate-400 font-bold text-[10px]">{s.name.charAt(0)}</AvatarFallback>
-                                              </Avatar>
-                                              <span className="font-bold text-xs">{s.name}</span>
-                                           </div>
-                                           {!s.isAvailable ? (
-                                             <Badge className="bg-rose-50 text-rose-500 border-none text-[8px] font-black italic uppercase tracking-tighter">{s.reason || 'Bận'}</Badge>
-                                           ) : (
-                                             <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                           )}
-                                        </DropdownMenuItem>
-                                     ))}
-                                  </DropdownMenuContent>
-                               </DropdownMenu>
-                               
-                               <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-slate-50 text-slate-400 hover:text-rose-500 hover:bg-rose-50" onClick={() => updateStatusMutation.mutate({ id: item.id, status: 'CANCELLED' })}>
-                                  <XCircle className="w-5 h-5" />
-                                </Button>
-                            </div>
-                         </div>
-                         
-                         <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-slate-400">
-                               <Clock className="w-3.5 h-3.5" />
-                               <span className="text-[10px] font-black uppercase tracking-widest italic">Đã chờ: {dayjs().diff(dayjs(item.arrivalTime), 'minute')}phút</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                               <p className="text-[10px] font-black text-slate-300 uppercase italic">Ưu tiên:</p>
-                               <span className="text-[10px] font-black text-slate-900 uppercase italic">{item.staff?.name || 'Ai cũng được'}</span>
-                            </div>
-                         </div>
-                      </CardContent>
-                   </Card>
-                 ))
-               )}
-            </div>
-         </div>
-
-         {/* Serving Column */}
-         <div className="space-y-6">
-            <div className="flex items-center gap-3 px-2">
-               <div className="p-2 bg-emerald-500 text-white rounded-xl shadow-lg shadow-emerald-500/20">
-                  <PlayCircle className="w-4 h-4" />
-               </div>
-               <h3 className="text-xl font-black italic uppercase tracking-tighter text-slate-900">Đang phục vụ</h3>
-            </div>
-
-            <div className="space-y-4">
-               {servingList.length === 0 ? (
-                 <div className="bg-white rounded-[2rem] p-16 flex flex-col items-center justify-center border-2 border-dashed border-slate-100">
-                    <p className="text-slate-300 font-black italic uppercase text-xs tracking-widest">Không có ca phục vụ nào</p>
-                 </div>
-               ) : (
-                 servingList.map((item: any) => (
-                   <Card key={item.id} className="group border-none shadow-lg hover:shadow-2xl transition-all duration-500 rounded-[2rem] bg-white overflow-hidden relative">
-                      <div className="absolute top-0 right-0 h-full w-2 bg-emerald-500 opacity-50 transition-opacity group-hover:opacity-100"></div>
-                      <CardContent className="p-6">
-                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                               <div className="relative">
-                                  <Avatar className="h-14 w-14 border-4 border-slate-50 shadow-lg ring-2 ring-emerald-100">
-                                     <AvatarImage src={item.staff?.user?.avatar} />
-                                     <AvatarFallback className="bg-slate-900 text-white font-black italic text-lg">{item.staff?.name?.charAt(0)}</AvatarFallback>
-                                  </Avatar>
-                                  <div className="absolute -bottom-1 -right-1 bg-emerald-500 text-white p-1 rounded-full shadow-lg border-2 border-white">
-                                     <CheckCircle2 className="w-2.5 h-2.5" />
-                                  </div>
-                                </div>
-                                <div>
-                                   <h4 className="font-black text-slate-900 uppercase tracking-tighter italic leading-tight">{item.customerName}</h4>
-                                   <div className="flex items-center gap-2 mt-0.5">
-                                      <Scissors className="w-3 h-3 text-[#C8A97E]" />
-                                      <span className="text-[10px] font-black text-[#C8A97E] uppercase tracking-widest">{item.service?.name}</span>
-                                   </div>
-                                </div>
-                             </div>
-
-                             <div className="text-right">
-                                <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1 italic leading-none">Phục vụ bởi</p>
-                                <p className="text-xs font-black text-slate-900 uppercase italic tracking-tight">{item.staff?.name}</p>
-                             </div>
-                          </div>
-
-                          <div className="mt-6 flex items-center gap-3">
-                             <Button 
-                               onClick={() => updateStatusMutation.mutate({ id: item.id, status: 'COMPLETED' })}
-                               className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl h-12 font-black italic uppercase text-[10px] tracking-widest shadow-xl shadow-emerald-500/10"
-                             >
-                                Đã làm xong
-                             </Button>
-                             <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl bg-slate-50 text-slate-400 hover:bg-rose-50 hover:text-rose-500">
-                                <AlertCircle className="w-5 h-5" />
-                             </Button>
-                          </div>
-                       </CardContent>
-                    </Card>
-                  ))
-                )}
-             </div>
+            <Button
+              className="w-full rounded-xl h-11"
+              disabled={!newCustomerName.trim() || addMutation.isPending}
+              onClick={() => addMutation.mutate()}
+            >
+              {addMutation.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Thêm vào hàng chờ
+            </Button>
           </div>
-       </div>
-     </div>
-   );
- }
+        </SheetContent>
+      </Sheet>
+    </div>
+  );
+}

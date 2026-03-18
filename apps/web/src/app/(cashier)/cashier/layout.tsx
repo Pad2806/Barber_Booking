@@ -1,53 +1,32 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useEffect, ReactNode, useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import {
-  LayoutDashboard,
-  Calendar,
-  Users,
-  Scissors,
-  Smartphone,
-  CreditCard,
-  LogOut,
-  Menu,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  ClipboardList,
-  BarChart3,
-  UserPlus,
-  Search,
-  MapPin,
-  ListOrdered
-} from 'lucide-react';
-import { signOut } from 'next-auth/react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { usersApi } from '@/lib/api';
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  LayoutDashboard,
+  Smartphone,
+  UserPlus,
+  ClipboardList,
+  ListOrdered,
+  CreditCard,
+  BarChart3,
+  Menu,
+  X,
+  LogOut,
+  Bell,
+  ChevronLeft,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import toast from 'react-hot-toast';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
-interface CashierLayoutProps {
-  children: ReactNode;
-}
-
-const CASHIER_MENU_ITEMS = [
+const NAV_ITEMS = [
   { key: 'dashboard', href: '/cashier/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
-  { key: 'online', href: '/cashier/online-bookings', label: 'Duyệt lịch Online', icon: Smartphone },
+  { key: 'online', href: '/cashier/online-bookings', label: 'Duyệt Online', icon: Smartphone },
   { key: 'walkin', href: '/cashier/walk-in', label: 'Khách vãng lai', icon: UserPlus },
   { key: 'appointments', href: '/cashier/appointments', label: 'Lịch hẹn', icon: ClipboardList },
   { key: 'queue', href: '/cashier/queue', label: 'Hàng chờ', icon: ListOrdered },
@@ -55,181 +34,191 @@ const CASHIER_MENU_ITEMS = [
   { key: 'revenue', href: '/cashier/revenue', label: 'Doanh thu', icon: BarChart3 },
 ];
 
-export default function CashierLayout({ children }: CashierLayoutProps) {
-  const { data: session, status } = useSession();
-  const router = useRouter();
+export default function CashierLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const { data: me, isLoading: isLoadingMe } = useQuery({
+  const { data: me, isLoading } = useQuery({
     queryKey: ['users', 'me'],
     queryFn: usersApi.getMe,
-    enabled: status === 'authenticated',
+    retry: false,
   });
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
+    if (!isLoading && !me) {
       router.push('/login?callbackUrl=/cashier/dashboard');
-    } else if (status === 'authenticated') {
-      const userRole = session?.user?.role;
-      const staffPosition = me?.staff?.position;
-
-      const isCashier = 
-        userRole === 'CASHIER' || 
-        userRole === 'MANAGER' || 
-        userRole === 'SALON_OWNER' || 
-        userRole === 'SUPER_ADMIN' ||
-        (userRole === 'STAFF' && staffPosition === 'CASHIER');
-
-      if (!isCashier && !isLoadingMe && me) {
-        toast.error('Bạn không có quyền truy cập khu vực Thu ngân');
-        router.push('/');
-      }
     }
-  }, [status, router, session, me, isLoadingMe]);
+  }, [me, isLoading, router]);
 
-  if (status === 'loading' || (status === 'authenticated' && isLoadingMe)) {
+  if (isLoading || !me) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-[#C8A97E] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-slate-500 font-medium">Đang tải...</p>
+        </div>
       </div>
     );
   }
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full py-4 overflow-y-auto no-scrollbar">
-      <div className={cn("px-6 mb-8 flex items-center", isCollapsed && !isMobileOpen ? "justify-center px-2" : "justify-between")}>
-        <Link href="/cashier/dashboard" className={cn("font-heading font-black italic tracking-tighter transition-all hover:scale-105", isCollapsed && !isMobileOpen ? "text-xl" : "text-2xl")}>
-          {isCollapsed && !isMobileOpen ? (
-            <span className="text-[#C8A97E] text-2xl font-black">R</span>
-          ) : (
-            <span className="text-white">REETRO<span className="text-[#C8A97E] ml-1">CASHIER</span></span>
-          )}
-        </Link>
-      </div>
-
-      <nav className="flex-1 px-3 space-y-1">
-        {CASHIER_MENU_ITEMS.map(item => {
-          const Icon = item.icon;
-          const isActive = pathname === item.href || (item.key !== 'dashboard' && pathname?.startsWith(item.href));
-          
-          return (
-            <Link
-              key={item.key}
-              href={item.href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all font-bold text-[10px] uppercase tracking-[0.15em] group',
-                isActive
-                  ? 'bg-gradient-to-r from-[#C8A97E] to-amber-600 text-white shadow-lg shadow-[#C8A97E]/20'
-                  : 'text-slate-400 hover:bg-slate-800/50 hover:text-white',
-                isCollapsed && !isMobileOpen && "justify-center"
-              )}
-              title={isCollapsed ? item.label : undefined}
-            >
-              <Icon className={cn("w-5 h-5 flex-shrink-0 transition-transform group-hover:scale-110", isActive ? "text-white" : "text-slate-400 group-hover:text-white")} />
-              {(!isCollapsed || isMobileOpen) && <span>{item.label}</span>}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="px-3 pt-4 border-t border-slate-800 mt-4">
-        <button
-          onClick={() => signOut({ callbackUrl: '/' })}
-          className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 w-full transition-all font-bold text-[10px] uppercase tracking-wider",
-            isCollapsed && !isMobileOpen && "justify-center"
-          )}
-        >
-          <LogOut className="w-5 h-5 flex-shrink-0" />
-          {(!isCollapsed || isMobileOpen) && <span>Đăng xuất</span>}
-        </button>
-      </div>
-    </div>
-  );
+  const activeKey = NAV_ITEMS.find((item) => pathname?.startsWith(item.href))?.key || 'dashboard';
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex font-sans">
-      {/* Sidebar Desktop */}
-      <aside 
+    <div className="min-h-screen bg-slate-50/50 flex">
+      {/* Mobile Overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
         className={cn(
-          "bg-[#0f172a] text-slate-300 fixed inset-y-0 left-0 z-50 hidden lg:block border-r border-slate-800 transition-all duration-500 cubic-bezier(0.4, 0, 0.2, 1)",
-          isCollapsed ? "w-20" : "w-72"
+          'fixed top-0 left-0 h-full bg-white border-r border-slate-100 z-50 flex flex-col transition-all duration-300',
+          isCollapsed && !isMobileOpen ? 'w-20' : 'w-64',
+          'lg:relative',
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
         )}
       >
-        <SidebarContent />
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-3 top-20 bg-[#C8A97E] text-white rounded-full p-1.5 shadow-xl border border-[#C8A97E]/20 hover:scale-110 transition-transform z-50"
-        >
-          {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
-        </button>
+        {/* Logo */}
+        <div className="h-16 flex items-center justify-between px-5 border-b border-slate-100 shrink-0">
+          <Link
+            href="/cashier/dashboard"
+            className={cn(
+              'font-heading font-black italic tracking-tighter transition-all hover:scale-105',
+              isCollapsed && !isMobileOpen ? 'text-lg' : 'text-xl',
+            )}
+          >
+            {isCollapsed && !isMobileOpen ? (
+              <span className="text-primary">R</span>
+            ) : (
+              <>
+                <span className="text-slate-900">RETRO</span>
+                <span className="text-primary"> BARBER</span>
+              </>
+            )}
+          </Link>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:flex h-8 w-8 text-slate-400 hover:text-slate-900"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+          >
+            <ChevronLeft
+              className={cn('w-4 h-4 transition-transform', isCollapsed && 'rotate-180')}
+            />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden h-8 w-8"
+            onClick={() => setIsMobileOpen(false)}
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
+
+        {/* Nav */}
+        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+          {NAV_ITEMS.map((item) => {
+            const isActive = activeKey === item.key;
+            return (
+              <Link
+                key={item.key}
+                href={item.href}
+                onClick={() => setIsMobileOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all group',
+                  isActive
+                    ? 'bg-primary/10 text-primary font-semibold'
+                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900',
+                )}
+              >
+                <item.icon
+                  className={cn(
+                    'w-5 h-5 shrink-0',
+                    isActive ? 'text-primary' : 'text-slate-400 group-hover:text-slate-600',
+                  )}
+                />
+                {(!isCollapsed || isMobileOpen) && <span>{item.label}</span>}
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* User */}
+        {(!isCollapsed || isMobileOpen) && (
+          <div className="p-4 border-t border-slate-100 shrink-0">
+            <div className="flex items-center gap-3 px-2 py-2">
+              <Avatar className="h-9 w-9 border-2 border-primary/20">
+                <AvatarImage src={me.avatar} />
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                  {me.name?.charAt(0) || 'C'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-900 truncate">{me.name}</p>
+                <p className="text-[11px] text-slate-400 font-medium">Thu ngân</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-slate-400 hover:text-rose-500"
+                onClick={() => {
+                  localStorage.removeItem('accessToken');
+                  router.push('/login');
+                }}
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </aside>
 
-      <div className={cn("flex-1 flex flex-col min-w-0 transition-all duration-500", isCollapsed ? "lg:ml-20" : "lg:ml-72")}>
-        <header className="bg-white/80 backdrop-blur-md border-b sticky top-0 z-40">
-          <div className="px-4 lg:px-10 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden hover:bg-slate-100 rounded-xl">
-                    <Menu className="w-6 h-6 text-slate-600" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="p-0 bg-[#0f172a] border-slate-800 w-72">
-                  <SidebarContent />
-                </SheetContent>
-              </Sheet>
-              
-              <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-slate-900 rounded-2xl shadow-inner group">
-                <MapPin className="w-4 h-4 text-[#C8A97E] group-hover:animate-bounce" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#C8A97E]">
-                  {me?.staff?.salon?.name || 'REETRO BARBER SHOP'}
-                </span>
-              </div>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Bar */}
+        <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-6 shrink-0 sticky top-0 z-30">
+          <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden h-9 w-9"
+              onClick={() => setIsMobileOpen(true)}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            <div>
+              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                QUẦY THU NGÂN
+              </p>
             </div>
-
-            <div className="flex items-center gap-3 lg:gap-6">
-                <div className="hidden lg:flex flex-col text-right">
-                   <span className="text-sm font-black text-slate-900 uppercase tracking-tighter italic">
-                      {session?.user?.name}
-                   </span>
-                   <span className="text-[8px] font-black text-[#C8A97E] uppercase tracking-[0.3em] mt-0.5">
-                      Thu ngân chính thức
-                   </span>
-                </div>
-
-               <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="relative group outline-none">
-                       <div className="absolute -inset-1 bg-gradient-to-r from-[#C8A97E] to-orange-400 rounded-full blur opacity-25 group-hover:opacity-60 transition duration-1000 group-hover:duration-200"></div>
-                       <Avatar className="h-10 w-10 border-2 border-white shadow-2xl relative ring-2 ring-slate-50">
-                          <AvatarImage src={session?.user?.image || undefined} />
-                          <AvatarFallback className="bg-slate-900 text-white font-black italic text-xs">
-                            {session?.user?.name?.charAt(0) || 'C'}
-                          </AvatarFallback>
-                       </Avatar>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2 border-slate-100 shadow-[0_20px_50px_rgba(0,0,0,0.15)] bg-white">
-                    <DropdownMenuLabel className="font-black italic uppercase text-[10px] text-slate-400 tracking-widest px-3 py-2">Hệ quản trị Thu ngân</DropdownMenuLabel>
-                    <DropdownMenuSeparator className="bg-slate-50 my-1" />
-                    <DropdownMenuItem 
-                      className="rounded-xl h-12 px-4 font-bold text-slate-600 hover:text-rose-500 hover:bg-rose-50 cursor-pointer transition-all flex items-center"
-                      onClick={() => signOut({ callbackUrl: '/' })}
-                    >
-                      <LogOut className="w-4 h-4 mr-3" /> Đăng xuất hệ thống
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-               </DropdownMenu>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" className="h-9 w-9 relative">
+              <Bell className="w-5 h-5 text-slate-400" />
+            </Button>
+            <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-slate-100">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={me.avatar} />
+                <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+                  {me.name?.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-sm font-semibold text-slate-900">{me.name}</p>
+              </div>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-8 animate-in slide-in-from-bottom-2 duration-1000 ease-out">
-          {children}
-        </main>
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );
