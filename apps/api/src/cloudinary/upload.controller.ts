@@ -63,6 +63,28 @@ export class UploadController {
         return results;
     }
 
+    @Post('video')
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 50 * 1024 * 1024 } }))
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({
+        schema: {
+            type: 'object',
+            properties: {
+                file: { type: 'string', format: 'binary' },
+                folder: { type: 'string', enum: ['services'] },
+            },
+        },
+    })
+    async uploadVideo(
+        @UploadedFile() file: Express.Multer.File,
+        @Query('folder') folder: UploadFolder = 'services',
+    ) {
+        const result = await this.cloudinaryService.uploadVideo(file, folder);
+        return result;
+    }
+
     @Delete(':publicId')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()

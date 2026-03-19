@@ -802,6 +802,17 @@ export const uploadApi = {
     );
     return response.data;
   },
+
+  uploadVideo: async (file: File, folder: UploadFolder = 'services') => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post<{ url: string; publicId: string }>(
+      `/upload/video?folder=${folder}`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' }, timeout: 120000 }
+    );
+    return response.data;
+  },
 };
 
 // Users APIs

@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Save, ArrowLeft, Loader2, Video, Image as ImageIcon, Check, Store } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, Image as ImageIcon, Check, Store } from 'lucide-react';
 import { adminApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { SERVICE_CATEGORIES, cn } from '@/lib/utils';
 import ImageUpload from '@/components/ImageUpload';
 import MultiImageUpload from '@/components/MultiImageUpload';
+import VideoUpload from '@/components/VideoUpload';
 import { useQueryClient } from '@tanstack/react-query';
 
 export default function NewServicePage(): React.JSX.Element {
@@ -304,21 +305,18 @@ export default function NewServicePage(): React.JSX.Element {
                 />
               </div>
 
-              {/* Video URL */}
+              {/* Video */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                  <Video className="w-4 h-4" />
-                  Link Video (Youtube/Cloudinary)
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Video giới thiệu
                 </label>
-                <input
-                  type="url"
+                <VideoUpload
                   value={formData.videoUrl}
-                  onChange={e => setFormData({ ...formData, videoUrl: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                  placeholder="https://www.youtube.com/watch?v=..."
+                  onChange={url => setFormData({ ...formData, videoUrl: url })}
+                  folder="services"
                 />
                 <p className="text-xs text-gray-500 mt-2">
-                  Hiển thị video giới thiệu kỹ thuật hớt tóc hoặc kết quả.
+                  Tải video lên hoặc dán link Youtube/Cloudinary.
                 </p>
               </div>
             </div>
