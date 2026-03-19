@@ -3,10 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Save, ArrowLeft, Loader2, Video, Image as ImageIcon } from 'lucide-react';
+import { Save, ArrowLeft, Loader2, Video, Image as ImageIcon, Check, Store } from 'lucide-react';
 import { adminApi } from '@/lib/api';
 import toast from 'react-hot-toast';
-import { SERVICE_CATEGORIES } from '@/lib/utils';
+import { SERVICE_CATEGORIES, cn } from '@/lib/utils';
 import ImageUpload from '@/components/ImageUpload';
 import MultiImageUpload from '@/components/MultiImageUpload';
 import { useQueryClient } from '@tanstack/react-query';
@@ -25,7 +25,7 @@ export default function NewServicePage(): React.JSX.Element {
     duration: '',
     category: 'HAIRCUT',
     isActive: true,
-    salonId: '',
+    selectedSalonIds: [] as string[],
     image: '',
     videoUrl: '',
     gallery: [] as string[],
@@ -39,9 +39,6 @@ export default function NewServicePage(): React.JSX.Element {
     try {
       const data = await adminApi.getAllSalons({ limit: 100 });
       setSalons(data.data || []);
-      if (data.data?.length > 0) {
-        setFormData(prev => ({ ...prev, salonId: data.data[0].id }));
-      }
     } catch (err) {
       toast.error('Không thể tải danh sách chi nhánh');
     } finally {
@@ -49,29 +46,68 @@ export default function NewServicePage(): React.JSX.Element {
     }
   };
 
+  const toggleSalon = (salonId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      selectedSalonIds: prev.selectedSalonIds.includes(salonId)
+        ? prev.selectedSalonIds.filter(id => id !== salonId)
+        : [...prev.selectedSalonIds, salonId],
+    }));
+  };
+
+  const selectAllSalons = () => {
+    setFormData(prev => ({
+      ...prev,
+      selectedSalonIds: prev.selectedSalonIds.length === salons.length
+        ? []
+        : salons.map(s => s.id),
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.name || !formData.price || !formData.duration || !formData.salonId) {
+    if (!formData.name || !formData.price || !formData.duration) {
       toast.error('Vui lòng điền đầy đủ thông tin bắt buộc');
+      return;
+    }
+
+    if (formData.selectedSalonIds.length === 0) {
+      toast.error('Vui lòng chọn ít nhất 1 chi nhánh');
       return;
     }
 
     try {
       setSubmitting(true);
-      await adminApi.createService({
+
+      const payload = {
         name: formData.name,
-        description: formData.description || null,
+        description: formData.description || undefined,
         price: parseFloat(formData.price),
         duration: parseInt(formData.duration),
         category: formData.category,
         isActive: formData.isActive,
-        salonId: formData.salonId,
         image: formData.image || undefined,
         videoUrl: formData.videoUrl || undefined,
         gallery: formData.gallery,
-      });
-      toast.success('Tạo dịch vụ thành công!');
+      };
+
+      if (formData.selectedSalonIds.length === 1) {
+        // Single salon — use original endpoint
+        await adminApi.createService({
+          ...payload,
+          salonId: formData.selectedSalonIds[0],
+        });
+        toast.success('Tạo dịch vụ thành công!');
+      } else {
+        // Multiple salons — use bulk endpoint
+        const result = await adminApi.bulkCreateService({
+          ...payload,
+          salonIds: formData.selectedSalonIds,
+        });
+        toast.success(`Đã tạo dịch vụ cho ${result.count} chi nhánh!`);
+      }
+
       queryClient.invalidateQueries({ queryKey: ['admin', 'services'] });
       router.push('/admin/services');
     } catch (error: any) {
@@ -90,7 +126,7 @@ export default function NewServicePage(): React.JSX.Element {
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-gray-800">Thêm dịch vụ mới</h1>
-          <p className="text-gray-500">Tạo dịch vụ mới cho salon</p>
+          <p className="text-gray-500">Tạo dịch vụ mới cho một hoặc nhiều chi nhánh</p>
         </div>
       </div>
 
@@ -177,30 +213,6 @@ export default function NewServicePage(): React.JSX.Element {
               </select>
             </div>
 
-            {/* Salon Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Chi nhánh <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={formData.salonId}
-                onChange={e => setFormData({ ...formData, salonId: e.target.value })}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
-                required
-                disabled={loadingSalons}
-              >
-                {loadingSalons ? (
-                  <option>Đang tải chi nhánh...</option>
-                ) : (
-                  salons.map(salon => (
-                    <option key={salon.id} value={salon.id}>
-                      {salon.name}
-                    </option>
-                  ))
-                )}
-              </select>
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
               <label className="flex items-center gap-2 cursor-pointer mt-3">
@@ -213,6 +225,64 @@ export default function NewServicePage(): React.JSX.Element {
                 <span className="text-sm text-gray-700">Đang hoạt động</span>
               </label>
             </div>
+          </div>
+
+          {/* ═══ Multi-Salon Selection ═══ */}
+          <div className="pt-2">
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-sm font-medium text-gray-700">
+                <Store className="w-4 h-4 inline mr-1.5 -mt-0.5" />
+                Chi nhánh áp dụng <span className="text-red-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={selectAllSalons}
+                className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                {formData.selectedSalonIds.length === salons.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+              </button>
+            </div>
+
+            {loadingSalons ? (
+              <div className="flex items-center gap-2 text-sm text-gray-400 py-4">
+                <Loader2 className="w-4 h-4 animate-spin" /> Đang tải chi nhánh...
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[200px] overflow-y-auto pr-1">
+                {salons.map(salon => {
+                  const isSelected = formData.selectedSalonIds.includes(salon.id);
+                  return (
+                    <button
+                      key={salon.id}
+                      type="button"
+                      onClick={() => toggleSalon(salon.id)}
+                      className={cn(
+                        'flex items-center gap-3 px-4 py-3 rounded-xl border text-sm font-medium transition-all text-left',
+                        isSelected
+                          ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary/20'
+                          : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
+                      )}
+                    >
+                      <div className={cn(
+                        'w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all shrink-0',
+                        isSelected
+                          ? 'bg-primary border-primary'
+                          : 'border-gray-300'
+                      )}>
+                        {isSelected && <Check className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className="truncate">{salon.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+
+            {formData.selectedSalonIds.length > 0 && (
+              <p className="text-xs text-primary font-semibold mt-2">
+                Đã chọn {formData.selectedSalonIds.length}/{salons.length} chi nhánh
+              </p>
+            )}
           </div>
 
           <div className="space-y-6 pt-6 border-t">
@@ -284,7 +354,10 @@ export default function NewServicePage(): React.JSX.Element {
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  Tạo dịch vụ
+                  {formData.selectedSalonIds.length > 1
+                    ? `Tạo cho ${formData.selectedSalonIds.length} chi nhánh`
+                    : 'Tạo dịch vụ'
+                  }
                 </>
               )}
             </button>

@@ -729,6 +729,10 @@ export const adminApi = {
     const response = await apiClient.post<Service>('/services', data);
     return response.data;
   },
+  bulkCreateService: async (data: any) => {
+    const response = await apiClient.post('/services/bulk', data);
+    return response.data;
+  },
   updateService: async (id: string, data: any) => {
     const response = await apiClient.patch<Service>(`/services/${id}`, data);
     return response.data;

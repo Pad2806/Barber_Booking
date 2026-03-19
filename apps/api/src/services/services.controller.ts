@@ -14,6 +14,7 @@ import { Role, User, ServiceCategory } from '@prisma/client';
 
 import { ServicesService } from './services.service';
 import { CreateServiceDto } from './dto/create-service.dto';
+import { BulkCreateServiceDto } from './dto/bulk-create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -34,6 +35,15 @@ export class ServicesController {
   @ApiOperation({ summary: 'Create a new service' })
   create(@Body() dto: CreateServiceDto, @CurrentUser() user: User) {
     return this.servicesService.create(dto, user);
+  }
+
+  @Post('bulk')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.SALON_OWNER)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Create a service across multiple salons' })
+  bulkCreate(@Body() dto: BulkCreateServiceDto, @CurrentUser() user: User) {
+    return this.servicesService.bulkCreate(dto, user);
   }
 
   @Get('analytics')

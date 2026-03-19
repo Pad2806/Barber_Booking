@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { CreateServiceDto } from './dto/create-service.dto';
+import { BulkCreateServiceDto } from './dto/bulk-create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { Service, Role, User, ServiceCategory } from '@prisma/client';
 
@@ -35,6 +36,31 @@ export class ServicesService extends BaseQueryService {
     });
 
     return this.formatService(service);
+  }
+
+  async bulkCreate(dto: BulkCreateServiceDto, user: User) {
+    const { salonIds, ...serviceData } = dto;
+
+    // Verify ownership for all salons
+    await Promise.all(salonIds.map(id => this.verifySalonOwnership(id, user)));
+
+    // Create service in each salon within a transaction
+    const results = await this.prisma.$transaction(
+      salonIds.map(salonId =>
+        this.prisma.service.create({
+          data: {
+            ...serviceData,
+            salonId,
+            order: serviceData.order ?? 999,
+          },
+        }),
+      ),
+    );
+
+    return {
+      count: results.length,
+      services: results.map(s => this.formatService(s)),
+    };
   }
 
   async findAll(query: ServiceQueryDto) {
