@@ -41,5 +41,10 @@
       "mime": "1.6.0",
       "eslint-plugin-react-hooks": "4.6.0"
     }
+  },
+  "dependencies": {
+    "@nestjs/throttler": "^6.5.0",
+    "@types/compression": "^1.8.1",
+    "compression": "^1.8.1"
   }
 }

@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { resolve } from 'node:path';
 import { PrismaModule } from './database/prisma.module';
 import { AuthModule } from './auth/auth.module';
@@ -31,6 +33,11 @@ import { AIAssistantModule } from './ai-assistant/ai-assistant.module';
       ],
       load: [configuration],
     }),
+    // Global rate limiting: 100 requests per 60 seconds per IP
+    ThrottlerModule.forRoot([{
+      ttl: 60000,
+      limit: 100,
+    }]),
     PrismaModule,
     AuthModule,
     UsersModule,
@@ -48,6 +55,12 @@ import { AIAssistantModule } from './ai-assistant/ai-assistant.module';
     HealthModule,
     CloudinaryModule,
     AIAssistantModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
   ],
 })
 export class AppModule { }
