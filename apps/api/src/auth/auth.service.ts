@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException, InternalServerErrorException, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
@@ -27,6 +27,7 @@ export interface TokenResponse {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
   private resend: Resend;
 
   constructor(
@@ -335,16 +336,16 @@ export class AuthService {
       });
 
       if (error) {
-        console.error('Resend API error:', error);
+        this.logger.error('Resend API error:', error);
         throw new InternalServerErrorException(
           `Không thể gửi email: ${error.message}`
         );
       }
 
-      console.log(`Password reset email sent to ${email} via Resend (ID: ${data?.id})`);
+      this.logger.log(`Password reset email sent to ${email} via Resend (ID: ${data?.id})`);
     } catch (error: any) {
       if (error instanceof InternalServerErrorException) throw error;
-      console.error('Failed to send password reset email:', error);
+      this.logger.error('Failed to send password reset email:', error);
       throw new InternalServerErrorException(
         `Không thể gửi email: ${error.message || 'Lỗi không xác định'}`
       );

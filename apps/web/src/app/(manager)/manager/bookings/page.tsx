@@ -110,15 +110,7 @@ export default function ManagerBookingsPage() {
     retry: 2,
   });
 
-  // Debug: log staff fetch errors
-  useEffect(() => {
-    if (staffError) {
-      console.error('[Bookings] Staff fetch error:', staffError);
-    }
-    if (staffData) {
-      console.log('[Bookings] Staff data shape:', Array.isArray(staffData) ? 'array' : typeof staffData, staffData);
-    }
-  }, [staffData, staffError]);
+
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['manager', 'bookings', { status, staffId, serviceId, dateFrom, dateTo, search: debouncedSearch }],

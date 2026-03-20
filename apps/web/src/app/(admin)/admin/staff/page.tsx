@@ -154,7 +154,9 @@ export default function AdminStaffPage() {
     } else if (panelMode === 'edit' && selectedStaffId) {
       const staff = data?.data?.find((s: any) => s.id === selectedStaffId);
       if (staff?.user?.id) {
-        updateMutation.mutate({ id: staff.user.id, updateData: formData });
+        const { password, ...rest } = formData;
+        const updateData = password ? formData : rest;
+        updateMutation.mutate({ id: staff.user.id, updateData });
       }
     }
   };
@@ -432,7 +434,7 @@ export default function AdminStaffPage() {
                   />
                   <p className="text-xs text-slate-400 mt-4 text-center font-medium">
                     Tải lên ảnh chân dung chuyên nghiệp.<br/>
-                    Định dạng JPG, PNG tối đa 5MB.
+                    Định dạng JPG, PNG tối đa 10MB.
                   </p>
                 </div>
 

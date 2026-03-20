@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { Role, BookingStatus, PaymentStatus, User, ShiftType } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -18,6 +18,7 @@ import { BaseQueryService } from '../common/services/base-query.service';
 
 @Injectable()
 export class AdminService extends BaseQueryService {
+  private readonly logger = new Logger(AdminService.name);
   constructor(
     private readonly prisma: PrismaService,
     private readonly bookingsService: BookingsService,
@@ -1032,7 +1033,7 @@ export class AdminService extends BaseQueryService {
       data: { password: hashedPassword },
     });
 
-    console.log(`[AUDIT] Admin ${admin.id} reset password for user ${userId} at ${new Date().toISOString()}`);
+    this.logger.log(`Admin ${admin.id} reset password for user ${userId}`);
 
     return { message: 'Password updated successfully' };
   }

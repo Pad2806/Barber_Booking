@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, useMemo } from 'react';
-import Image from 'next/image';
+import OptimizedImage from '@/components/OptimizedImage';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Check, Scissors, Star, CalendarDays, Sparkles, X, MessageSquare, Eye } from 'lucide-react';
 import { staffApi, serviceApi, Staff } from '@/lib/api';
@@ -253,11 +253,12 @@ export default function BookingPage() {
               <div key={service.id} className="flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-lg overflow-hidden relative bg-[#F0EBE3] shrink-0">
-                    <Image
+                    <OptimizedImage
                       src={service.image || 'https://images.unsplash.com/photo-1599351431202-1e0f0137899a?q=80&w=200&auto=format'}
                       alt={service.name}
                       fill
                       className="object-cover"
+                      enableBlur
                     />
                   </div>
                   <div className="text-left">

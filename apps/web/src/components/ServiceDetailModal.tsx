@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
+import OptimizedImage from '@/components/OptimizedImage';
 import { X, Play, Image as ImageIcon, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { Service } from '@/lib/api';
 import { formatPrice, cn } from '@/lib/utils';
@@ -57,12 +57,13 @@ export default function ServiceDetailModal({
             <div className="relative w-full h-full group">
               {allImages.length > 0 ? (
                 <>
-                  <Image
+                  <OptimizedImage
                     src={allImages[currentImageIndex]}
                     alt={service.name}
                     fill
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
                     priority
+                    enableBlur
                   />
                   <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-black/60 to-transparent" />
                   

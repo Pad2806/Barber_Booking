@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import OptimizedImage from '@/components/OptimizedImage';
 import {
   Plus,
   MoreVertical,
@@ -74,11 +74,12 @@ export default function AdminServicesPage() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 relative">
               {service.image ? (
-                <Image 
+                <OptimizedImage 
                   src={service.image} 
                   alt={service.name} 
                   fill 
-                  className="object-cover" 
+                  className="object-cover"
+                  enableBlur
                 />
               ) : (
                 <Scissors className="w-5 h-5 text-slate-400" />

@@ -128,7 +128,6 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Zalo data deletion webhook (GDPR compliance)' })
   async zaloDeletion(@Body() body: any) {
-    console.log('Received Zalo data deletion request:', body);
     // In a real implementation, we would process the deletion request here.
     // For now, we acknowledge receipt to satisfy Zalo's requirements.
     return {

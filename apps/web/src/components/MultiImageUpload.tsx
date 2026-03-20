@@ -4,6 +4,7 @@ import { useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { X, Loader2, Plus } from 'lucide-react';
 import { uploadApi, type UploadFolder } from '@/lib/api';
+import { compressImage, getBlurPlaceholder } from '@/lib/image-utils';
 import toast from 'react-hot-toast';
 import { cn } from '@/lib/utils';
 
@@ -56,7 +57,8 @@ export default function MultiImageUpload({
     try {
       for (const file of filesToUpload) {
         if (validateFile(file)) {
-          const result = await uploadApi.uploadImage(file, folder);
+          const compressed = await compressImage(file);
+          const result = await uploadApi.uploadImage(compressed, folder);
           newUrls.push(result.url);
         }
       }
@@ -91,6 +93,8 @@ export default function MultiImageUpload({
               alt={`Gallery ${index}`}
               fill
               className="object-cover"
+              placeholder={getBlurPlaceholder(url) ? 'blur' : 'empty'}
+              blurDataURL={getBlurPlaceholder(url) || undefined}
             />
             <button
               type="button"

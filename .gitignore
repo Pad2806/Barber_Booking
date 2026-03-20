@@ -44,3 +44,6 @@ prisma/*.db-journal
 
 # Misc
 *.tsbuildinfo
+
+# AWF Brain (AI session files)
+.brain/

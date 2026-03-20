@@ -35,7 +35,6 @@ export class ZaloStrategy extends PassportStrategy(Strategy, 'zalo') {
       // Allow authentication using zaloId + user info for these cases
       if (req?.body?.zaloId) {
         const { zaloId, name, avatar } = req.body;
-        console.log('[Zalo Auth] Using fallback authentication with zaloId:', zaloId);
         return this.authService.validateOAuthUser(
           AuthProvider.ZALO,
           String(zaloId),

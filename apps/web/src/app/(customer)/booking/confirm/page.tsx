@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import OptimizedImage from '@/components/OptimizedImage';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
@@ -137,7 +137,7 @@ export default function BookingConfirmPage() {
                 <div className="flex items-center gap-4">
                    <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white ring-2 ring-[#E8E0D4] flex-shrink-0 bg-[#F0EBE3]">
                       {selectedStaff?.user.avatar ? (
-                        <Image src={selectedStaff.user.avatar} alt="Staff" width={48} height={48} className="object-cover" />
+                        <OptimizedImage src={selectedStaff.user.avatar} alt="Staff" width={48} height={48} className="object-cover" enableBlur />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[#C8A97E]/50">
                           <User className="w-6 h-6" />
