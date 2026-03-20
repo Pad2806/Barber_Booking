@@ -823,4 +823,12 @@ export const usersApi = {
   },
 };
 
+// Public Settings API (no auth required)
+export const settingsApi = {
+  getPublic: async () => {
+    const response = await apiClient.get<Record<string, any>>('/settings/public');
+    return response.data;
+  },
+};
+
 export default apiClient;

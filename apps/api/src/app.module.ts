@@ -21,6 +21,7 @@ import configuration from './config/configuration';
 import { HealthModule } from './health/health.module';
 import { CloudinaryModule } from './cloudinary/cloudinary.module';
 import { AIAssistantModule } from './ai-assistant/ai-assistant.module';
+import { SettingsModule } from './settings/settings.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { AIAssistantModule } from './ai-assistant/ai-assistant.module';
     HealthModule,
     CloudinaryModule,
     AIAssistantModule,
+    SettingsModule,
   ],
   providers: [
     {

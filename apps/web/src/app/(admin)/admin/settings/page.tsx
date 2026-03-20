@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ImageUpload from '@/components/ImageUpload';
 
 export default function AdminSettingsPage(): JSX.Element {
   const { settings, isLoading, isSaving, updateField, saveSettings } = useSettings();
@@ -214,6 +215,40 @@ export default function AdminSettingsPage(): JSX.Element {
                         </div>
                      </div>
                   </div>
+
+                  {/* Shift Configuration - New Section */}
+                  <Card className="border border-slate-100 shadow-none bg-slate-50/50">
+                     <CardHeader className="pb-2">
+                        <CardTitle className="text-base font-bold">Cấu hình ca làm việc</CardTitle>
+                        <CardDescription>Thiết lập giờ cho từng ca. Giá trị này sẽ áp dụng khi xếp ca cho nhân viên.</CardDescription>
+                     </CardHeader>
+                     <CardContent className="space-y-4">
+                        {[
+                           { label: 'Ca sáng', startKey: 'shiftMorningStart', endKey: 'shiftMorningEnd', defaultStart: '08:00', defaultEnd: '12:00' },
+                           { label: 'Ca chiều', startKey: 'shiftAfternoonStart', endKey: 'shiftAfternoonEnd', defaultStart: '12:00', defaultEnd: '16:00' },
+                           { label: 'Ca tối', startKey: 'shiftEveningStart', endKey: 'shiftEveningEnd', defaultStart: '16:00', defaultEnd: '20:00' },
+                        ].map(shift => (
+                           <div key={shift.label} className="flex items-center gap-4 p-3 bg-white rounded-xl border border-slate-100">
+                              <span className="text-sm font-bold text-slate-700 w-20 shrink-0">{shift.label}</span>
+                              <input
+                                 type="time"
+                                 title={`${shift.label} start`}
+                                 value={settings[shift.startKey] || shift.defaultStart}
+                                 onChange={e => updateField(shift.startKey, e.target.value)}
+                                 className="rounded-lg h-10 border-slate-200 px-3 flex-1 border focus:ring-2 focus:ring-primary/20 outline-none text-sm"
+                              />
+                              <span className="text-slate-400 font-bold text-xs">đến</span>
+                              <input
+                                 type="time"
+                                 title={`${shift.label} end`}
+                                 value={settings[shift.endKey] || shift.defaultEnd}
+                                 onChange={e => updateField(shift.endKey, e.target.value)}
+                                 className="rounded-lg h-10 border-slate-200 px-3 flex-1 border focus:ring-2 focus:ring-primary/20 outline-none text-sm"
+                              />
+                           </div>
+                        ))}
+                     </CardContent>
+                  </Card>
                </CardContent>
             </Card>
           </TabsContent>
@@ -247,6 +282,15 @@ export default function AdminSettingsPage(): JSX.Element {
                          />
                       </div>
                       <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Mã ngân hàng (BIN)</label>
+                         <Input 
+                           value={settings.bankCode || ''} 
+                           onChange={e => updateField('bankCode', e.target.value)}
+                           placeholder="VD: MB, VCB, TCB..."
+                           className="rounded-xl h-12"
+                         />
+                      </div>
+                      <div className="space-y-2">
                          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Số tài khoản</label>
                          <Input 
                            value={settings.bankAccount || ''} 
@@ -262,7 +306,7 @@ export default function AdminSettingsPage(): JSX.Element {
                            className="rounded-xl h-12 uppercase"
                          />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2 md:col-span-2">
                          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1">Sepay API Key</label>
                          <Input 
                            type="password"
@@ -282,6 +326,7 @@ export default function AdminSettingsPage(): JSX.Element {
              <Card className="border-none shadow-premium bg-white">
                 <CardHeader>
                   <CardTitle className="text-lg font-bold">Kênh thông báo</CardTitle>
+                  <CardDescription>Thông báo sẽ gửi đến tất cả nhân viên liên quan trong salon (Manager, Barber, Cashier...).</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                    {[
@@ -324,10 +369,10 @@ export default function AdminSettingsPage(): JSX.Element {
                    <div className="grid md:grid-cols-2 gap-8">
                       <div className="space-y-3">
                          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1 block">Logo chính thức</label>
-                         <div className="border-2 border-dashed border-slate-200 rounded-3xl p-8 text-center bg-slate-50 hover:bg-slate-100 transition-all cursor-pointer">
-                            <Building className="w-12 h-12 text-slate-300 mx-auto mb-2" />
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tải ảnh lên</p>
-                         </div>
+                         <ImageUpload
+                            value={settings.logo || ''}
+                            onChange={(url) => updateField('logo', url)}
+                         />
                       </div>
                       <div className="space-y-3">
                          <label className="text-[10px] font-black uppercase text-slate-500 tracking-widest ml-1 block">Màu sắc chủ đạo</label>

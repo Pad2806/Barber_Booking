@@ -7,6 +7,7 @@ import { PrismaService } from '../database/prisma.service';
 import { VietQRService } from './vietqr.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { Payment, PaymentStatus, PaymentMethod, PaymentType, BookingStatus } from '@prisma/client';
+import { SettingsService } from '../settings/settings.service';
 
 export interface PaymentWithQR extends Payment {
   qrCodeUrl?: string | null;
@@ -18,6 +19,7 @@ export class PaymentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly vietQRService: VietQRService,
+    private readonly settingsService: SettingsService,
   ) { }
 
   /**
@@ -47,9 +49,15 @@ export class PaymentsService {
 
     const salon = booking.salon;
 
+    // Use system-wide bank config from Settings
+    const bankConfig = await this.settingsService.getBankConfig();
+    const bankCode = bankConfig.bankCode;
+    const bankAccount = bankConfig.bankAccount;
+    const bankAccountName = bankConfig.bankAccountName || salon.name;
+
     if (dto.method === PaymentMethod.VIETQR || dto.method === PaymentMethod.BANK_TRANSFER) {
-      if (!salon.bankCode || !salon.bankAccount) {
-        throw new BadRequestException('Salon does not have bank information configured');
+      if (!bankCode || !bankAccount) {
+        throw new BadRequestException('Chưa cấu hình thông tin ngân hàng trong Cài đặt hệ thống');
       }
     }
 
@@ -59,24 +67,24 @@ export class PaymentsService {
     // Calculate deposit amount (50%)
     const depositAmount = Math.round(Number(booking.totalAmount) * 0.5);
 
-    if (dto.method === PaymentMethod.VIETQR && salon.bankCode && salon.bankAccount) {
+    if (dto.method === PaymentMethod.VIETQR && bankCode && bankAccount) {
       const prefix = 'RB';
       const description = booking.bookingCode.startsWith(prefix)
         ? booking.bookingCode
         : `${prefix}${booking.bookingCode}`;
 
       qrCode = this.vietQRService.generateQRCodeUrl({
-        bankCode: salon.bankCode,
-        accountNumber: salon.bankAccount,
-        accountName: salon.bankName || salon.name,
+        bankCode,
+        accountNumber: bankAccount,
+        accountName: bankAccountName,
         amount: depositAmount,
         description,
       });
 
       qrContent = this.vietQRService.generateQRContent({
-        bankCode: salon.bankCode,
-        accountNumber: salon.bankAccount,
-        accountName: salon.bankName || salon.name,
+        bankCode,
+        accountNumber: bankAccount,
+        accountName: bankAccountName,
         amount: depositAmount,
         description,
       });
@@ -91,8 +99,8 @@ export class PaymentsService {
         status: PaymentStatus.PENDING,
         qrCode,
         qrContent,
-        bankCode: salon.bankCode,
-        bankAccount: salon.bankAccount,
+        bankCode,
+        bankAccount,
       },
     });
 
@@ -104,7 +112,7 @@ export class PaymentsService {
     return {
       ...payment,
       qrCodeUrl: qrCode,
-      bankName: salon.bankName || salon.name,
+      bankName: bankConfig.bankName || salon.name,
     };
   }
 
@@ -262,19 +270,25 @@ export class PaymentsService {
     let qrCode: string | undefined;
     let qrContent: string | undefined;
 
-    if (method === PaymentMethod.VIETQR && salon.bankCode && salon.bankAccount) {
+    // Use system-wide bank config
+    const bankConfig = await this.settingsService.getBankConfig();
+    const bankCode = bankConfig.bankCode;
+    const bankAccount = bankConfig.bankAccount;
+    const bankAccountName = bankConfig.bankAccountName || salon.name;
+
+    if (method === PaymentMethod.VIETQR && bankCode && bankAccount) {
       const description = `${booking.bookingCode}F`;
       qrCode = this.vietQRService.generateQRCodeUrl({
-        bankCode: salon.bankCode,
-        accountNumber: salon.bankAccount,
-        accountName: salon.bankName || salon.name,
+        bankCode,
+        accountNumber: bankAccount,
+        accountName: bankAccountName,
         amount: remainingAmount,
         description,
       });
       qrContent = this.vietQRService.generateQRContent({
-        bankCode: salon.bankCode,
-        accountNumber: salon.bankAccount,
-        accountName: salon.bankName || salon.name,
+        bankCode,
+        accountNumber: bankAccount,
+        accountName: bankAccountName,
         amount: remainingAmount,
         description,
       });
@@ -291,8 +305,8 @@ export class PaymentsService {
         paidAt: method === PaymentMethod.CASH ? new Date() : undefined,
         qrCode,
         qrContent,
-        bankCode: salon.bankCode,
-        bankAccount: salon.bankAccount,
+        bankCode,
+        bankAccount,
       },
     });
 
@@ -310,7 +324,7 @@ export class PaymentsService {
     return {
       ...finalPayment,
       qrCodeUrl: qrCode,
-      bankName: salon.bankName || salon.name,
+      bankName: bankConfig.bankName || salon.name,
     };
   }
 

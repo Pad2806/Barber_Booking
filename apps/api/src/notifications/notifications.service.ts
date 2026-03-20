@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
-import { NotificationType, Notification } from '@prisma/client';
+import { NotificationType, Notification, StaffPosition } from '@prisma/client';
 import { BaseQueryService } from '../common/services/base-query.service';
+import { SettingsService, SettingKey } from '../settings/settings.service';
 
 export interface CreateNotificationParams {
   userId: string;
@@ -13,7 +14,10 @@ export interface CreateNotificationParams {
 
 @Injectable()
 export class NotificationsService extends BaseQueryService {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+  ) {
     super();
   }
 
@@ -196,5 +200,72 @@ export class NotificationsService extends BaseQueryService {
       message: `${customerName} đã đánh giá ${rating} sao cho ${salonName}`,
       data: { customerName, rating, salonName },
     });
+  }
+
+  /**
+   * Send notifications to all relevant staff in a salon based on event type.
+   * Checks the settings toggles before sending.
+   */
+  async notifyStaffBySalon(
+    salonId: string,
+    event: 'new_booking' | 'payment' | 'review' | 'cancel',
+    params: { title: string; message: string; type: NotificationType; data?: Record<string, any>; specificStaffId?: string },
+  ): Promise<number> {
+    // Map event to settings toggle key
+    const toggleMap: Record<string, SettingKey> = {
+      new_booking: 'notify_new_booking',
+      payment: 'notify_payment',
+      review: 'notify_review',
+      cancel: 'notify_new_booking',
+    };
+
+    const toggleKey = toggleMap[event];
+    const isEnabled = await this.settingsService.get<boolean>(toggleKey, true);
+    if (!isEnabled) return 0;
+
+    // Determine which roles should receive this notification
+    const roleMap: Record<string, StaffPosition[]> = {
+      new_booking: [StaffPosition.MANAGER],
+      payment: [StaffPosition.MANAGER, StaffPosition.CASHIER],
+      review: [StaffPosition.MANAGER],
+      cancel: [StaffPosition.MANAGER],
+    };
+
+    const targetPositions = roleMap[event] || [StaffPosition.MANAGER];
+
+    // Find all staff with matching positions in this salon
+    const staffMembers = await this.prisma.staff.findMany({
+      where: {
+        salonId,
+        position: { in: targetPositions },
+        isActive: true,
+      },
+      select: { userId: true },
+    });
+
+    const userIds = staffMembers.map(s => s.userId);
+
+    // Also add the specifically assigned staff (e.g., barber for their booking)
+    if (params.specificStaffId) {
+      const specificStaff = await this.prisma.staff.findUnique({
+        where: { id: params.specificStaffId },
+        select: { userId: true },
+      });
+      if (specificStaff && !userIds.includes(specificStaff.userId)) {
+        userIds.push(specificStaff.userId);
+      }
+    }
+
+    if (userIds.length === 0) return 0;
+
+    const notifications = userIds.map(userId => ({
+      userId,
+      type: params.type,
+      title: params.title,
+      message: params.message,
+      data: params.data || undefined,
+    }));
+
+    return this.createMany(notifications);
   }
 }

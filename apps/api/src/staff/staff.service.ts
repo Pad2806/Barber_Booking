@@ -20,10 +20,14 @@ const VIETNAM_TZ = 'Asia/Ho_Chi_Minh';
 
 import { BaseQueryService } from '../common/services/base-query.service';
 import { StaffQueryDto } from './dto/staff-query.dto';
+import { SettingsService } from '../settings/settings.service';
 
 @Injectable()
 export class StaffService extends BaseQueryService {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly settingsService: SettingsService,
+  ) {
     super();
   }
 
@@ -744,7 +748,7 @@ export class StaffService extends BaseQueryService {
     await this.verifySalonOwnership(dto.salonId, user);
 
     const searchDate = dayjs.utc(dto.date).toDate();
-    const shiftTimes = this.calculateShiftTimes(dto.date, dto.type, dto.shiftStart, dto.shiftEnd);
+    const shiftTimes = await this.calculateShiftTimes(dto.date, dto.type, dto.shiftStart, dto.shiftEnd);
 
     const existingShifts = await (this.prisma as any).staffShift.findMany({
       where: {
@@ -792,7 +796,7 @@ export class StaffService extends BaseQueryService {
 
     for (const staffId of validStaffIds) {
       for (const dateStr of dto.dates) {
-        const shiftTimes = this.calculateShiftTimes(dateStr, dto.type);
+        const shiftTimes = await this.calculateShiftTimes(dateStr, dto.type);
         const dateValue = dayjs.utc(dateStr).startOf('day').toDate();
 
         const existing = await (this.prisma as any).staffShift.findFirst({
@@ -841,7 +845,7 @@ export class StaffService extends BaseQueryService {
     await this.verifySalonOwnership(shift.salonId, user);
 
     const dateToUse = dto.date || dayjs(shift.date).format('YYYY-MM-DD');
-    const shiftTimes = this.calculateShiftTimes(
+    const shiftTimes = await this.calculateShiftTimes(
       dateToUse, 
       dto.type || shift.type, 
       dto.shiftStart, 
@@ -1141,39 +1145,48 @@ export class StaffService extends BaseQueryService {
     }
   }
 
-  private calculateShiftTimes(dateStr: string, type?: ShiftType, customStart?: string, customEnd?: string) {
+  private async calculateShiftTimes(dateStr: string, type?: ShiftType, customStart?: string, customEnd?: string) {
     if (customStart && customEnd) {
       return { start: dayjs.tz(customStart, VIETNAM_TZ), end: dayjs.tz(customEnd, VIETNAM_TZ) };
     }
 
-    let startHours = 8, startMins = 0;
-    let endHours = 20, endMins = 0;
+    const shiftConfig = await this.settingsService.getShiftConfig();
+    let startTime = shiftConfig.fullDay.start;
+    let endTime = shiftConfig.fullDay.end;
 
     switch (type) {
       case ShiftType.MORNING:
-        startHours = 8; endHours = 12;
+        startTime = shiftConfig.morning.start;
+        endTime = shiftConfig.morning.end;
         break;
       case ShiftType.AFTERNOON:
-        startHours = 12; endHours = 16;
+        startTime = shiftConfig.afternoon.start;
+        endTime = shiftConfig.afternoon.end;
         break;
       case ShiftType.EVENING:
-        startHours = 16; endHours = 20;
+        startTime = shiftConfig.evening.start;
+        endTime = shiftConfig.evening.end;
         break;
       case ShiftType.FULL_DAY:
-        startHours = 8; endHours = 20;
+        startTime = shiftConfig.fullDay.start;
+        endTime = shiftConfig.fullDay.end;
         break;
       case ShiftType.OFF:
-        startHours = 0; startMins = 0;
-        endHours = 23; endMins = 59;
+        startTime = '00:00';
+        endTime = '23:59';
         break;
       default:
-        startHours = 8; endHours = 20;
+        startTime = shiftConfig.fullDay.start;
+        endTime = shiftConfig.fullDay.end;
         break;
     }
 
+    const [startH, startM] = startTime.split(':').map(Number);
+    const [endH, endM] = endTime.split(':').map(Number);
+
     const baseDate = dayjs.tz(dateStr, VIETNAM_TZ).startOf('day');
-    const start = baseDate.set('hour', startHours).set('minute', startMins).set('second', 0).set('millisecond', 0);
-    const end = baseDate.set('hour', endHours).set('minute', endMins).set('second', 0).set('millisecond', 0);
+    const start = baseDate.set('hour', startH).set('minute', startM).set('second', 0).set('millisecond', 0);
+    const end = baseDate.set('hour', endH).set('minute', endM).set('second', 0).set('millisecond', 0);
 
     return { start, end };
   }
