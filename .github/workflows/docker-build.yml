@@ -20,7 +20,6 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME_API: ${{ github.repository }}/api
   IMAGE_NAME_WEB: ${{ github.repository }}/web
-  IMAGE_NAME_DB: ${{ github.repository }}/db
 
 jobs:
   # ===========================================
@@ -174,64 +173,11 @@ jobs:
 
 
   # ===========================================
-  # Build & Push DB Docker Image
-  # ===========================================
-  build-db:
-    runs-on: ubuntu-latest
-    needs: validate
-    permissions:
-      contents: read
-      packages: write
-    outputs:
-      image_tag: ${{ steps.meta.outputs.tags }}
-      image_digest: ${{ steps.build.outputs.digest }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata for DB
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_DB }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix=sha-,format=long
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push DB image
-        id: build
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./apps/db/Dockerfile
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          platforms: linux/amd64
-
-
-
-  # ===========================================
   # Notify Dokploy to Deploy (Webhook)
   # ===========================================
   deploy-dokploy:
     runs-on: ubuntu-latest
-    needs: [build-api, build-web, build-db]
+    needs: [build-api, build-web]
     if: github.ref == 'refs/heads/main'
     steps:
       - name: Trigger Dokploy API Deployment
@@ -252,14 +198,7 @@ jobs:
           fi
         continue-on-error: true
 
-      - name: Trigger Dokploy DB Deployment
-        run: |
-          if [ -n "${{ secrets.DOKPLOY_WEBHOOK_DB }}" ]; then
-            curl -fsS -X POST "${{ secrets.DOKPLOY_WEBHOOK_DB }}" -H "Content-Type: application/json" -d '{}'
-          else
-            echo "DOKPLOY_WEBHOOK_DB is not set; skipping."
-          fi
-        continue-on-error: true
+
 
       - name: Deployment Summary
         run: |
@@ -270,15 +209,11 @@ jobs:
           echo "  - sha: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME_API }}:sha-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **Web**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}:latest\`" >> $GITHUB_STEP_SUMMARY
           echo "  - sha: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME_WEB }}:sha-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- **DB**: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME_DB }}:latest\`" >> $GITHUB_STEP_SUMMARY
-          echo "  - sha: \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME_DB }}:sha-${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Dokploy Webhooks Triggered:" >> $GITHUB_STEP_SUMMARY
           echo "- API Service: ✅" >> $GITHUB_STEP_SUMMARY
           echo "- Web Service: ✅" >> $GITHUB_STEP_SUMMARY
-          echo "- DB Service: ✅" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Image Digests:" >> $GITHUB_STEP_SUMMARY
           echo "- API: \`${{ needs.build-api.outputs.image_digest }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- Web: \`${{ needs.build-web.outputs.image_digest }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "- DB: \`${{ needs.build-db.outputs.image_digest }}\`" >> $GITHUB_STEP_SUMMARY
