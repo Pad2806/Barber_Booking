@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useOnboarding } from '@/hooks/use-onboarding';
 import { WelcomeModal, TourButton } from '@/components/onboarding/OnboardingComponents';
+import { NotificationBell } from '@/components/admin/NotificationBell';
 
 const NAV_ITEMS = [
   { key: 'dashboard', href: '/cashier/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
@@ -203,9 +204,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
           </div>
           <div className="flex items-center gap-3">
             <TourButton onClick={resetTour} />
-            <Button variant="ghost" size="icon" className="h-9 w-9 relative">
-              <Bell className="w-5 h-5 text-slate-400" />
-            </Button>
+            <NotificationBell />
             <div className="hidden sm:flex items-center gap-2 pl-3 border-l border-slate-100">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={me.avatar} />

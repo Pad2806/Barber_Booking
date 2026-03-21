@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import toast from 'react-hot-toast';
+import { NotificationBell } from '@/components/admin/NotificationBell';
 
 interface BarberLayoutProps {
   children: ReactNode;
@@ -180,6 +181,7 @@ export default function BarberLayout({ children }: BarberLayoutProps) {
                 <span className="text-sm font-black italic">{me?.staff?.rating || '5.0'}</span>
               </div>
               
+              <NotificationBell />
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-3 pl-2 pr-1 rounded-full hover:bg-slate-100 h-auto py-1">

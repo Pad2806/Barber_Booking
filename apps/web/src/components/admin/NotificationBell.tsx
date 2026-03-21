@@ -100,11 +100,20 @@ export function NotificationBell() {
         className="text-slate-500 rounded-full relative"
         onClick={() => setIsOpen(o => !o)}
       >
-        <Bell className={cn("w-5 h-5 transition-transform", isOpen && "scale-110")} />
+        <Bell className={cn(
+          "w-5 h-5 transition-all duration-300",
+          isOpen && "scale-110 text-primary",
+          unreadCount > 0 && !isOpen && "text-slate-700"
+        )} />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 animate-in zoom-in duration-200 shadow-sm">
-            {unreadCount > 99 ? '99+' : unreadCount}
-          </span>
+          <>
+            {/* Pulse ring */}
+            <span className="absolute -top-0.5 -right-0.5 w-[18px] h-[18px] bg-red-400 rounded-full animate-ping opacity-40" />
+            {/* Badge */}
+            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-gradient-to-br from-red-500 to-rose-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-lg shadow-red-500/30">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          </>
         )}
       </Button>
 

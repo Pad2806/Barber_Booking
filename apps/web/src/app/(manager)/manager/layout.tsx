@@ -38,6 +38,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import toast from 'react-hot-toast';
 import { useOnboarding } from '@/hooks/use-onboarding';
 import { WelcomeModal, TourButton } from '@/components/onboarding/OnboardingComponents';
+import { NotificationBell } from '@/components/admin/NotificationBell';
 
 interface ManagerLayoutProps {
   children: ReactNode;
@@ -195,9 +196,7 @@ export default function ManagerLayout({ children }: ManagerLayoutProps): React.J
 
             <div className="flex items-center gap-2 lg:gap-4">
                <TourButton onClick={resetTour} />
-               <Button variant="ghost" size="icon" className="text-slate-500 rounded-full">
-                  <Bell className="w-5 h-5" />
-               </Button>
+               <NotificationBell />
                
                <DropdownMenu>
                   <DropdownMenuTrigger asChild>
