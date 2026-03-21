@@ -70,11 +70,24 @@ function LoginForm() {
         toast.error('Email hoặc mật khẩu không đúng');
       } else {
         toast.success('Đăng nhập thành công!');
-        const session = await getSession();
+
+        // Retry getSession to handle race condition where session cookie
+        // is set but getSession returns stale/cached data
+        let session = null;
+        for (let i = 0; i < 3; i++) {
+          session = await getSession();
+          if (session?.user) break;
+          await new Promise(resolve => setTimeout(resolve, 300));
+        }
+
         const role = (session?.user as any)?.role || 'CUSTOMER';
         const position = (session?.user as any)?.position;
         const redirectUrl = getRedirectUrl(role, position);
-        router.push(redirectUrl);
+
+        // Use window.location for full page reload so SessionProvider
+        // re-initializes with the new session — router.push only does
+        // a client-side navigation that keeps the old session state
+        window.location.href = redirectUrl;
       }
     } catch (error) {
       toast.error('Đã có lỗi xảy ra');
@@ -82,6 +95,7 @@ function LoginForm() {
       setIsLoading(false);
     }
   };
+
 
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {
     setIsLoading(true);
