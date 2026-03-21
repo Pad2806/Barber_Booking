@@ -50,17 +50,17 @@ export class PaymentsService {
       return {
         ...existingDeposit,
         qrCodeUrl: existingDeposit.qrCode,
-        bankName: bankConfig.bankName || booking.salon.name,
+        bankName: bankConfig.bankName || booking.salon.bankName || booking.salon.name,
       };
     }
 
     const salon = booking.salon;
 
-    // Use system-wide bank config from Settings
+    // Use system-wide bank config from Settings, fallback to Salon-level config
     const bankConfig = await this.settingsService.getBankConfig();
-    const bankCode = bankConfig.bankCode;
-    const bankAccount = bankConfig.bankAccount;
-    const bankAccountName = bankConfig.bankAccountName || salon.name;
+    const bankCode = bankConfig.bankCode || salon.bankCode;
+    const bankAccount = bankConfig.bankAccount || salon.bankAccount;
+    const bankAccountName = bankConfig.bankAccountName || salon.bankName || salon.name;
 
     if (dto.method === PaymentMethod.VIETQR || dto.method === PaymentMethod.BANK_TRANSFER) {
       if (!bankCode || !bankAccount) {
@@ -119,7 +119,7 @@ export class PaymentsService {
     return {
       ...payment,
       qrCodeUrl: qrCode,
-      bankName: bankConfig.bankName || salon.name,
+      bankName: bankConfig.bankName || salon.bankName || salon.name,
     };
   }
 
@@ -296,11 +296,11 @@ export class PaymentsService {
     let qrCode: string | undefined;
     let qrContent: string | undefined;
 
-    // Use system-wide bank config
+    // Use system-wide bank config, fallback to Salon-level config
     const bankConfig = await this.settingsService.getBankConfig();
-    const bankCode = bankConfig.bankCode;
-    const bankAccount = bankConfig.bankAccount;
-    const bankAccountName = bankConfig.bankAccountName || salon.name;
+    const bankCode = bankConfig.bankCode || salon.bankCode;
+    const bankAccount = bankConfig.bankAccount || salon.bankAccount;
+    const bankAccountName = bankConfig.bankAccountName || salon.bankName || salon.name;
 
     if (method === PaymentMethod.VIETQR && bankCode && bankAccount) {
       const description = `${booking.bookingCode}F`;
@@ -363,7 +363,7 @@ export class PaymentsService {
     return {
       ...finalPayment,
       qrCodeUrl: qrCode,
-      bankName: bankConfig.bankName || salon.name,
+      bankName: bankConfig.bankName || salon.bankName || salon.name,
     };
   }
 
