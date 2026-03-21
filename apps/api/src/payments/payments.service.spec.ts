@@ -5,6 +5,7 @@ import { PaymentsService } from './payments.service';
 import { PrismaService } from '../database/prisma.service';
 import { VietQRService } from './vietqr.service';
 import { SettingsService } from '../settings/settings.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentMethod, PaymentStatus, PaymentType, BookingStatus } from '@prisma/client';
 
 describe('PaymentsService', () => {
@@ -82,6 +83,13 @@ describe('PaymentsService', () => {
     }),
   };
 
+  const mockNotificationsService = {
+    create: jest.fn().mockResolvedValue({}),
+    createMany: jest.fn().mockResolvedValue(0),
+    notifyStaffBySalon: jest.fn().mockResolvedValue(0),
+    notifyPaymentReceived: jest.fn().mockResolvedValue({}),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -89,6 +97,7 @@ describe('PaymentsService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: VietQRService, useValue: mockVietQRService },
         { provide: SettingsService, useValue: mockSettingsService },
+        { provide: NotificationsService, useValue: mockNotificationsService },
       ],
     }).compile();
 

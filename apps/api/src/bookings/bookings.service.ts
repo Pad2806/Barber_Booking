@@ -5,9 +5,10 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
-import { Booking, BookingStatus, PaymentStatus, Role, User } from '@prisma/client';
+import { Booking, BookingStatus, NotificationType, PaymentStatus, Role, User } from '@prisma/client';
 import * as crypto from 'crypto';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -25,7 +26,10 @@ import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class BookingsService extends BaseQueryService {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {
     super();
   }
 
@@ -127,6 +131,19 @@ export class BookingsService extends BaseQueryService {
         },
       },
     });
+
+    // Notify staff about new booking (fire-and-forget)
+    this.notificationsService.notifyStaffBySalon(
+      dto.salonId,
+      'new_booking',
+      {
+        title: 'Đặt lịch mới',
+        message: `Đơn mới ${booking.bookingCode} - ${booking.salon?.name || 'Salon'} lúc ${dto.timeSlot}`,
+        type: NotificationType.BOOKING_CREATED,
+        data: { bookingId: booking.id, bookingCode: booking.bookingCode },
+        specificStaffId: dto.staffId,
+      },
+    ).catch(err => console.error('Failed to notify staff about new booking:', err));
 
     return booking;
   }
@@ -326,6 +343,19 @@ export class BookingsService extends BaseQueryService {
       updateData.cancelReason = dto.cancelReason;
       updateData.cancelledAt = new Date();
       updateData.cancelledBy = user.id;
+
+      // Notify staff about cancellation
+      this.notificationsService.notifyStaffBySalon(
+        booking.salonId,
+        'cancel',
+        {
+          title: 'Đơn bị hủy',
+          message: `Đơn ${(booking as any).bookingCode} đã bị hủy${dto.cancelReason ? '. Lý do: ' + dto.cancelReason : ''}`,
+          type: NotificationType.BOOKING_CANCELLED,
+          data: { bookingId: id, bookingCode: (booking as any).bookingCode },
+          specificStaffId: booking.staffId || undefined,
+        },
+      ).catch(err => console.error('Failed to notify staff about cancellation:', err));
     }
 
     if (dto.status === BookingStatus.COMPLETED) {

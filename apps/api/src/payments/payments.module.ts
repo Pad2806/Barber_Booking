@@ -3,8 +3,10 @@ import { PaymentsService } from './payments.service';
 import { PaymentsController } from './payments.controller';
 import { VietQRService } from './vietqr.service';
 import { SepayWebhookController } from './sepay-webhook.controller';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
+  imports: [NotificationsModule],
   controllers: [PaymentsController, SepayWebhookController],
   providers: [PaymentsService, VietQRService],
   exports: [PaymentsService, VietQRService],

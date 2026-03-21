@@ -5,16 +5,20 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { ReplyReviewDto } from './dto/reply-review.dto';
-import { Review, BookingStatus, Role, User } from '@prisma/client';
+import { Review, BookingStatus, NotificationType, Role, User } from '@prisma/client';
 
 import { BaseQueryService } from '../common/services/base-query.service';
 import { ReviewQueryDto } from './dto/review-query.dto';
 
 @Injectable()
 export class ReviewsService extends BaseQueryService {
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsService: NotificationsService,
+  ) {
     super();
   }
 
@@ -74,6 +78,19 @@ export class ReviewsService extends BaseQueryService {
     if (booking.staffId) {
       await this.updateStaffRating(booking.staffId);
     }
+
+    // Notify salon staff about new review
+    this.notificationsService.notifyStaffBySalon(
+      booking.salonId,
+      'review',
+      {
+        title: 'Đánh giá mới',
+        message: `Khách hàng đã đánh giá ${dto.rating} sao${dto.comment ? ': "' + dto.comment.substring(0, 50) + '..."' : ''}`,
+        type: NotificationType.REVIEW_RECEIVED,
+        data: { reviewId: review.id, rating: dto.rating, bookingId: dto.bookingId },
+        specificStaffId: booking.staffId || undefined,
+      },
+    ).catch(err => console.error('Failed to notify staff about review:', err));
 
     return review;
   }

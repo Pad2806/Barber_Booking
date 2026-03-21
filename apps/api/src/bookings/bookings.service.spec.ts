@@ -3,6 +3,7 @@ import { BadRequestException, NotFoundException, ForbiddenException } from '@nes
 
 import { BookingsService } from './bookings.service';
 import { PrismaService } from '../database/prisma.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 import * as crypto from 'crypto';
 
@@ -90,11 +91,20 @@ describe('BookingsService', () => {
     },
   };
 
+  const mockNotificationsService = {
+    create: jest.fn().mockResolvedValue({}),
+    createMany: jest.fn().mockResolvedValue(0),
+    notifyStaffBySalon: jest.fn().mockResolvedValue(0),
+    notifyBookingCreated: jest.fn().mockResolvedValue({}),
+    notifyBookingCancelled: jest.fn().mockResolvedValue({}),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BookingsService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: NotificationsService, useValue: mockNotificationsService },
       ],
     }).compile();
 

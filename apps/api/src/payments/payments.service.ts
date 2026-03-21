@@ -6,8 +6,9 @@ import {
 import { PrismaService } from '../database/prisma.service';
 import { VietQRService } from './vietqr.service';
 import { CreatePaymentDto } from './dto/create-payment.dto';
-import { Payment, PaymentStatus, PaymentMethod, PaymentType, BookingStatus } from '@prisma/client';
+import { Payment, PaymentStatus, PaymentMethod, PaymentType, BookingStatus, NotificationType } from '@prisma/client';
 import { SettingsService } from '../settings/settings.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 export interface PaymentWithQR extends Payment {
   qrCodeUrl?: string | null;
@@ -20,6 +21,7 @@ export class PaymentsService {
     private readonly prisma: PrismaService,
     private readonly vietQRService: VietQRService,
     private readonly settingsService: SettingsService,
+    private readonly notificationsService: NotificationsService,
   ) { }
 
   /**
@@ -213,6 +215,25 @@ export class PaymentsService {
       });
     }
 
+    // Notify staff about payment received
+    const paidBooking = await this.prisma.booking.findUnique({
+      where: { id: payment.bookingId },
+      select: { salonId: true, bookingCode: true, staffId: true },
+    });
+    if (paidBooking) {
+      this.notificationsService.notifyStaffBySalon(
+        paidBooking.salonId,
+        'payment',
+        {
+          title: 'Thanh toán đặt cọc',
+          message: `Đơn ${paidBooking.bookingCode} đã thanh toán ${payment.type === PaymentType.DEPOSIT ? 'đặt cọc' : ''} ${Number(payment.amount).toLocaleString('vi-VN')}đ`,
+          type: NotificationType.PAYMENT_RECEIVED,
+          data: { bookingCode: paidBooking.bookingCode, amount: Number(payment.amount) },
+          specificStaffId: paidBooking.staffId || undefined,
+        },
+      ).catch(err => console.error('Failed to notify staff about payment:', err));
+    }
+
     return updatedPayment;
   }
 
@@ -319,6 +340,19 @@ export class PaymentsService {
           status: BookingStatus.COMPLETED,
         },
       });
+
+      // Notify staff about cash checkout
+      this.notificationsService.notifyStaffBySalon(
+        booking.salonId,
+        'payment',
+        {
+          title: 'Thanh toán hoàn tất',
+          message: `Đơn ${booking.bookingCode} đã thanh toán ${remainingAmount.toLocaleString('vi-VN')}đ tiền mặt`,
+          type: NotificationType.PAYMENT_RECEIVED,
+          data: { bookingCode: booking.bookingCode, amount: remainingAmount },
+          specificStaffId: booking.staffId || undefined,
+        },
+      ).catch(err => console.error('Failed to notify staff about checkout:', err));
     }
 
     return {

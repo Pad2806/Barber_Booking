@@ -225,10 +225,10 @@ export class NotificationsService extends BaseQueryService {
 
     // Determine which roles should receive this notification
     const roleMap: Record<string, StaffPosition[]> = {
-      new_booking: [StaffPosition.MANAGER],
+      new_booking: [StaffPosition.MANAGER, StaffPosition.BARBER, StaffPosition.STYLIST, StaffPosition.SENIOR_STYLIST, StaffPosition.MASTER_STYLIST, StaffPosition.SKINNER, StaffPosition.CASHIER],
       payment: [StaffPosition.MANAGER, StaffPosition.CASHIER],
-      review: [StaffPosition.MANAGER],
-      cancel: [StaffPosition.MANAGER],
+      review: [StaffPosition.MANAGER, StaffPosition.BARBER, StaffPosition.STYLIST, StaffPosition.SENIOR_STYLIST, StaffPosition.MASTER_STYLIST, StaffPosition.SKINNER],
+      cancel: [StaffPosition.MANAGER, StaffPosition.BARBER, StaffPosition.STYLIST, StaffPosition.SENIOR_STYLIST, StaffPosition.MASTER_STYLIST, StaffPosition.SKINNER, StaffPosition.CASHIER],
     };
 
     const targetPositions = roleMap[event] || [StaffPosition.MANAGER];
