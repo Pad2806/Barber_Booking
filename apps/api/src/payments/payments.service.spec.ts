@@ -4,6 +4,7 @@ import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { PrismaService } from '../database/prisma.service';
 import { VietQRService } from './vietqr.service';
+import { SettingsService } from '../settings/settings.service';
 import { PaymentMethod, PaymentStatus, PaymentType, BookingStatus } from '@prisma/client';
 
 describe('PaymentsService', () => {
@@ -62,12 +63,32 @@ describe('PaymentsService', () => {
     generateQRContent: jest.fn().mockReturnValue('test-qr-content'),
   };
 
+  const mockSettingsService = {
+    getAll: jest.fn().mockResolvedValue({}),
+    get: jest.fn().mockResolvedValue(null),
+    getPublic: jest.fn().mockResolvedValue({}),
+    updateAll: jest.fn().mockResolvedValue({}),
+    getShiftConfig: jest.fn().mockResolvedValue({
+      morning: { start: '08:00', end: '12:00' },
+      afternoon: { start: '12:00', end: '16:00' },
+      evening: { start: '16:00', end: '20:00' },
+      fullDay: { start: '08:00', end: '20:00' },
+    }),
+    getBankConfig: jest.fn().mockResolvedValue({
+      bankName: 'Vietcombank',
+      bankCode: 'VCB',
+      bankAccount: '1234567890',
+      bankAccountName: 'NGUYEN VAN A',
+    }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PaymentsService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: VietQRService, useValue: mockVietQRService },
+        { provide: SettingsService, useValue: mockSettingsService },
       ],
     }).compile();
 

@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AdminService } from './admin.service';
 import { PrismaService } from '../database/prisma.service';
 import { BookingsService } from '../bookings/bookings.service';
+import { SettingsService } from '../settings/settings.service';
 
 describe('AdminService', () => {
   let service: AdminService;
@@ -59,12 +60,32 @@ describe('AdminService', () => {
     exportToExcel: jest.fn(),
   };
 
+  const mockSettingsService = {
+    getAll: jest.fn().mockResolvedValue({}),
+    get: jest.fn().mockResolvedValue(null),
+    getPublic: jest.fn().mockResolvedValue({}),
+    updateAll: jest.fn().mockResolvedValue({}),
+    getShiftConfig: jest.fn().mockResolvedValue({
+      morning: { start: '08:00', end: '12:00' },
+      afternoon: { start: '12:00', end: '16:00' },
+      evening: { start: '16:00', end: '20:00' },
+      fullDay: { start: '08:00', end: '20:00' },
+    }),
+    getBankConfig: jest.fn().mockResolvedValue({
+      bankName: 'Vietcombank',
+      bankCode: 'VCB',
+      bankAccount: '1234567890',
+      bankAccountName: 'NGUYEN VAN A',
+    }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AdminService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: BookingsService, useValue: mockBookingsService },
+        { provide: SettingsService, useValue: mockSettingsService },
       ],
     }).compile();
 
