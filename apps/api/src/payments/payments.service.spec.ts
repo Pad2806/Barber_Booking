@@ -139,15 +139,18 @@ describe('PaymentsService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw if deposit already exists', async () => {
+    it('should return existing deposit if one already exists', async () => {
+      const existingPayment = { ...mockDepositPayment, status: PaymentStatus.PENDING, type: PaymentType.DEPOSIT, qrCode: 'https://qr-existing' };
       mockPrismaService.booking.findUnique.mockResolvedValue({
         ...mockBooking,
-        payments: [{ ...mockDepositPayment, status: PaymentStatus.PENDING, type: PaymentType.DEPOSIT }],
+        payments: [existingPayment],
+        salon: { name: 'Test Salon' },
       });
 
-      await expect(
-        service.createPayment({ bookingId: 'booking-1', method: PaymentMethod.VIETQR }),
-      ).rejects.toThrow(BadRequestException);
+      const result = await service.createPayment({ bookingId: 'booking-1', method: PaymentMethod.VIETQR });
+
+      expect(result).toHaveProperty('qrCodeUrl', 'https://qr-existing');
+      expect(mockPrismaService.payment.create).not.toHaveBeenCalled();
     });
   });
 

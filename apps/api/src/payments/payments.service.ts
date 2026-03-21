@@ -41,12 +41,17 @@ export class PaymentsService {
       throw new NotFoundException('Booking not found');
     }
 
-    // Check if a deposit already exists
+    // If a deposit already exists, return it instead of error
     const existingDeposit = booking.payments.find(
       p => p.type === PaymentType.DEPOSIT && p.status !== PaymentStatus.REFUNDED,
     );
     if (existingDeposit) {
-      throw new BadRequestException('Deposit payment already exists for this booking');
+      const bankConfig = await this.settingsService.getBankConfig();
+      return {
+        ...existingDeposit,
+        qrCodeUrl: existingDeposit.qrCode,
+        bankName: bankConfig.bankName || booking.salon.name,
+      };
     }
 
     const salon = booking.salon;
