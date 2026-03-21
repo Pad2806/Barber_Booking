@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
-import { NotificationType, Notification, StaffPosition } from '@prisma/client';
+import { NotificationType, Notification, StaffPosition, Role } from '@prisma/client';
 import { BaseQueryService } from '../common/services/base-query.service';
 import { SettingsService, SettingKey } from '../settings/settings.service';
 
@@ -253,6 +253,17 @@ export class NotificationsService extends BaseQueryService {
       });
       if (specificStaff && !userIds.includes(specificStaff.userId)) {
         userIds.push(specificStaff.userId);
+      }
+    }
+
+    // Also notify all ADMIN users (they don't have Staff records)
+    const admins = await this.prisma.user.findMany({
+      where: { role: { in: [Role.SUPER_ADMIN, Role.SALON_OWNER] }, isActive: true },
+      select: { id: true },
+    });
+    for (const admin of admins) {
+      if (!userIds.includes(admin.id)) {
+        userIds.push(admin.id);
       }
     }
 

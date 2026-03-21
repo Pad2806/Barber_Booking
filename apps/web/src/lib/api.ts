@@ -831,4 +831,39 @@ export const settingsApi = {
   },
 };
 
+// Notification API
+export interface NotificationItem {
+  id: string;
+  userId: string;
+  type: string;
+  title: string;
+  message: string;
+  data?: Record<string, any>;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export const notificationApi = {
+  getAll: async (params?: { page?: number; limit?: number; unreadOnly?: boolean }) => {
+    const response = await apiClient.get<{ data: NotificationItem[]; meta: any }>('/notifications', { params });
+    return response.data;
+  },
+  getUnreadCount: async () => {
+    const response = await apiClient.get<{ count: number }>('/notifications/unread-count');
+    return response.data;
+  },
+  markAsRead: async (id: string) => {
+    const response = await apiClient.patch(`/notifications/${id}/read`);
+    return response.data;
+  },
+  markAllAsRead: async () => {
+    const response = await apiClient.patch('/notifications/read-all');
+    return response.data;
+  },
+  delete: async (id: string) => {
+    const response = await apiClient.delete(`/notifications/${id}`);
+    return response.data;
+  },
+};
+
 export default apiClient;
