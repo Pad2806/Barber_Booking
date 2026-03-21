@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiExcludeEndpoint } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
@@ -25,6 +26,8 @@ import { PaymentsService } from './payments.service';
 @ApiTags('Webhooks')
 @Controller('payments/webhook')
 export class SepayWebhookController {
+  private readonly logger = new Logger(SepayWebhookController.name);
+
   constructor(
     private readonly paymentsService: PaymentsService,
     private readonly configService: ConfigService,
@@ -38,6 +41,8 @@ export class SepayWebhookController {
     @Body() body: SepayWebhookPayload,
     @Headers('authorization') authHeader: string,
   ) {
+    this.logger.log(`[SEPAY WEBHOOK] Received: content="${body.content}", amount=${body.transferAmount}, gateway=${body.gateway}`);
+
     // Verify webhook secret (SePay sends: "Apikey <key>" or "Bearer <key>")
     const webhookSecret = this.configService.get<string>('payment.sepay.webhookSecret');
 
@@ -48,12 +53,18 @@ export class SepayWebhookController {
         : '';
 
       if (token !== webhookSecret) {
+        this.logger.warn(`[SEPAY WEBHOOK] Auth FAILED. Expected: ${webhookSecret.substring(0, 8)}..., Got: ${token.substring(0, 8)}...`);
         throw new UnauthorizedException('Invalid webhook signature');
       }
+      this.logger.log('[SEPAY WEBHOOK] Auth OK');
+    } else {
+      this.logger.log('[SEPAY WEBHOOK] No webhookSecret configured, skipping auth check');
     }
 
     // Process the webhook
     const result = await this.paymentsService.processSepayWebhook(body);
+
+    this.logger.log(`[SEPAY WEBHOOK] Result: success=${result.success}, message=${result.message}`);
 
     // Sepay expects a response with success status
     return {
@@ -63,25 +74,6 @@ export class SepayWebhookController {
   }
 }
 
-/**
- * Sepay Webhook Payload Structure
- * 
- * Example payload:
- * {
- *   "id": 93860,
- *   "gateway": "MBBank",
- *   "transactionDate": "2024-03-12 13:14:21",
- *   "accountNumber": "0359123456789",
- *   "subAccount": null,
- *   "transferType": "in",
- *   "transferAmount": 150000,
- *   "accumulated": 150000,
- *   "code": null,
- *   "content": "RB7ABC1234XY thanh toan",
- *   "referenceCode": "FT24072123456",
- *   "description": "MBVCB.1234567890.RB7ABC1234XY thanh toan.CT tu 0901234567 toi 0359123456789"
- * }
- */
 interface SepayWebhookPayload {
   id: string;
   gateway: string;
