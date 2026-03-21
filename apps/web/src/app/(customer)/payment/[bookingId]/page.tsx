@@ -70,7 +70,7 @@ export default function PaymentPage() {
     return () => clearInterval(pollInterval);
   }, [bookingId, paymentStatus, reset]);
 
-  // Countdown timer
+  // Countdown timer — auto-cancel booking when expired to release the slot
   useEffect(() => {
     if (paymentStatus !== 'PENDING' || countdown <= 0) return;
 
@@ -78,6 +78,10 @@ export default function PaymentPage() {
       setCountdown(prev => {
         if (prev <= 1) {
           setPaymentStatus('FAILED');
+          // Auto-cancel booking to release the time slot
+          bookingApi.cancel(bookingId, 'Hết thời gian thanh toán cọc').catch(err =>
+            console.error('Failed to auto-cancel booking on timeout:', err)
+          );
           return 0;
         }
         return prev - 1;
@@ -85,7 +89,7 @@ export default function PaymentPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [paymentStatus, countdown]);
+  }, [paymentStatus, countdown, bookingId]);
 
   const copyToClipboard = useCallback((text: string) => {
     navigator.clipboard.writeText(text);
@@ -212,7 +216,7 @@ export default function PaymentPage() {
             <div className="relative flex flex-col items-center">
               {/* Amount Pill */}
               <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20 px-6 py-2 bg-white text-[#C8A97E] border border-[#E8E0D4] rounded-full font-bold text-lg shadow-sm whitespace-nowrap">
-                {formatPrice(qrData?.amount || (booking?.totalAmount ? booking.totalAmount * 0.5 : 0))}
+                {formatPrice(qrData?.amount || (booking?.totalAmount ? booking.totalAmount * 0.25 : 0))}
               </div>
 
               {/* QR Image Frame */}
@@ -294,7 +298,7 @@ export default function PaymentPage() {
                <div className="p-4 rounded-xl bg-[#FFF8E1] border border-[#FFE082] flex gap-3 items-start mb-4">
                   <span className="text-[#F57F17] font-bold mt-0.5">!</span>
                   <p className="text-sm text-[#F57F17] leading-relaxed">
-                    Số tiền cọc 50% sẽ được khấu trừ trực tiếp khi bạn thanh toán hóa đơn tại cửa hàng.
+                    Số tiền cọc 25% sẽ được khấu trừ trực tiếp khi bạn thanh toán hóa đơn tại cửa hàng.
                   </p>
                </div>
                <button 

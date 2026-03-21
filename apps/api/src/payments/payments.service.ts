@@ -71,8 +71,8 @@ export class PaymentsService {
     let qrCode: string | undefined;
     let qrContent: string | undefined;
 
-    // Calculate deposit amount (50%)
-    const depositAmount = Math.round(Number(booking.totalAmount) * 0.5);
+    // Calculate deposit amount (25%)
+    const depositAmount = Math.round(Number(booking.totalAmount) * 0.25);
 
     if (dto.method === PaymentMethod.VIETQR && bankCode && bankAccount) {
       const prefix = 'RB';

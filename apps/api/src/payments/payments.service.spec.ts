@@ -110,7 +110,7 @@ describe('PaymentsService', () => {
   });
 
   describe('createPayment', () => {
-    it('should create a DEPOSIT payment (50%) with VietQR', async () => {
+    it('should create a DEPOSIT payment (25%) with VietQR', async () => {
       mockPrismaService.booking.findUnique.mockResolvedValue(mockBooking);
       mockPrismaService.payment.create.mockResolvedValue(mockDepositPayment);
       mockPrismaService.booking.update.mockResolvedValue({});
@@ -125,7 +125,7 @@ describe('PaymentsService', () => {
         expect.objectContaining({
           data: expect.objectContaining({
             type: PaymentType.DEPOSIT,
-            amount: 75000, // 50% of 150000
+            amount: 37500, // 25% of 150000
           }),
         }),
       );

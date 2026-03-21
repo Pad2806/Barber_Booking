@@ -821,6 +821,53 @@ export class BookingsService extends BaseQueryService {
 
     return workbook;
   }
+
+  /**
+   * Auto-cancel PENDING bookings that exceeded the payment window (15 min).
+   * Called by cron job to release reserved time slots.
+   */
+  async cancelExpiredBookings(): Promise<number> {
+    const cutoff = new Date(Date.now() - 15 * 60 * 1000); // 15 min ago
+
+    const expired = await this.prisma.booking.findMany({
+      where: {
+        status: BookingStatus.PENDING,
+        paymentStatus: PaymentStatus.UNPAID,
+        createdAt: { lt: cutoff },
+      },
+      select: { id: true, bookingCode: true, salonId: true, staffId: true },
+    });
+
+    if (expired.length === 0) return 0;
+
+    await this.prisma.booking.updateMany({
+      where: {
+        id: { in: expired.map(b => b.id) },
+      },
+      data: {
+        status: BookingStatus.CANCELLED,
+        cancelReason: 'Hết thời gian thanh toán cọc (tự động hủy)',
+        cancelledAt: new Date(),
+      },
+    });
+
+    // Notify staff about each auto-cancelled booking
+    for (const b of expired) {
+      this.notificationsService.notifyStaffBySalon(
+        b.salonId,
+        'cancel',
+        {
+          title: 'Đơn tự động hủy',
+          message: `Đơn ${b.bookingCode} đã tự động hủy do hết thời gian thanh toán cọc`,
+          type: NotificationType.BOOKING_CANCELLED,
+          data: { bookingId: b.id, bookingCode: b.bookingCode },
+          specificStaffId: b.staffId || undefined,
+        },
+      ).catch(err => console.error('Failed to notify expired booking:', err));
+    }
+
+    return expired.length;
+  }
 }
 
 function formatDate(date: Date) {
