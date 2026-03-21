@@ -39,9 +39,9 @@ export function useOnboarding(actorType: ActorType) {
         stageRadius: 12,
         popoverClass: 'reetro-tour-popover',
         progressText: '{{current}} / {{total}}',
-        nextBtnText: 'Tiếp tục →',
-        prevBtnText: '← Quay lại',
-        doneBtnText: 'Hoàn thành ✓',
+        nextBtnText: 'Tiep tuc',
+        prevBtnText: 'Quay lai',
+        doneBtnText: 'Hoan thanh',
         steps: config.steps,
         onDestroyStarted: () => {
           driverObj.destroy();

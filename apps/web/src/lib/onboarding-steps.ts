@@ -10,13 +10,13 @@ export interface OnboardingConfig {
 
 export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
   admin: {
-    title: 'Chào mừng đến REETRO BARBER Admin!',
-    description: 'Hãy để mình hướng dẫn bạn sử dụng hệ thống quản trị.',
+    title: 'Chao mung den REETRO BARBER Admin!',
+    description: 'Hay de minh huong dan ban su dung he thong quan tri.',
     steps: [
       {
         popover: {
-          title: '🏠 Tổng quan',
-          description: 'Đây là Dashboard tổng quan — nơi bạn thấy số liệu doanh thu, lịch hẹn, và đánh giá.',
+          title: 'Tong quan',
+          description: 'Day la Dashboard tong quan — noi ban thay so lieu doanh thu, lich hen, va danh gia.',
           side: 'bottom',
           align: 'center',
         },
@@ -24,8 +24,8 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
       {
         element: 'nav a[href="/admin/salons"]',
         popover: {
-          title: '🏪 Quản lý Chi nhánh',
-          description: 'Quản lý tất cả các chi nhánh salon, thông tin, giờ hoạt động, và hình ảnh.',
+          title: 'Quan ly Chi nhanh',
+          description: 'Quan ly tat ca cac chi nhanh salon, thong tin, gio hoat dong, va hinh anh.',
           side: 'right',
           align: 'start',
         },
@@ -33,8 +33,8 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
       {
         element: 'nav a[href="/admin/staff"]',
         popover: {
-          title: '👥 Quản lý Nhân viên',
-          description: 'Thêm, sửa, xóa nhân viên. Xem hồ sơ chi tiết, thành tích, và hiệu suất.',
+          title: 'Quan ly Nhan vien',
+          description: 'Them, sua, xoa nhan vien. Xem ho so chi tiet, thanh tich, va hieu suat.',
           side: 'right',
           align: 'start',
         },
@@ -42,8 +42,8 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
       {
         element: 'nav a[href="/admin/services"]',
         popover: {
-          title: '✂️ Quản lý Dịch vụ',
-          description: 'Thiết lập menu dịch vụ, giá cả, và thời gian thực hiện cho từng salon.',
+          title: 'Quan ly Dich vu',
+          description: 'Thiet lap menu dich vu, gia ca, va thoi gian thuc hien cho tung salon.',
           side: 'right',
           align: 'start',
         },
@@ -51,8 +51,8 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
       {
         element: 'nav a[href="/admin/bookings"]',
         popover: {
-          title: '📅 Quản lý Lịch hẹn',
-          description: 'Theo dõi tất cả lịch hẹn từ mọi chi nhánh. Phê duyệt, hủy hoặc chỉnh sửa.',
+          title: 'Quan ly Lich hen',
+          description: 'Theo doi tat ca lich hen tu moi chi nhanh. Phe duyet, huy hoac chinh sua.',
           side: 'right',
           align: 'start',
         },
@@ -60,8 +60,8 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
       {
         element: 'nav a[href="/admin/reviews"]',
         popover: {
-          title: '⭐ Đánh giá',
-          description: 'Xem và phản hồi đánh giá từ khách hàng. Theo dõi mức độ hài lòng.',
+          title: 'Danh gia',
+          description: 'Xem va phan hoi danh gia tu khach hang. Theo doi muc do hai long.',
           side: 'right',
           align: 'start',
         },
@@ -70,13 +70,13 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
   },
 
   manager: {
-    title: 'Chào mừng Quản lý Chi nhánh!',
-    description: 'Đây là những công cụ giúp bạn quản lý chi nhánh hiệu quả.',
+    title: 'Chao mung Quan ly Chi nhanh!',
+    description: 'Day la nhung cong cu giup ban quan ly chi nhanh hieu qua.',
     steps: [
       {
         popover: {
-          title: '📊 Dashboard Chi nhánh',
-          description: 'Xem tổng quan hoạt động chi nhánh: doanh thu, lịch hẹn hôm nay, nhân viên.',
+          title: 'Dashboard Chi nhanh',
+          description: 'Xem tong quan hoat dong chi nhanh: doanh thu, lich hen hom nay, nhan vien.',
           side: 'bottom',
           align: 'center',
         },
@@ -84,8 +84,8 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
       {
         element: 'nav a[href="/manager/staff"]',
         popover: {
-          title: '👥 Nhân viên',
-          description: 'Quản lý đội ngũ: xem hồ sơ, đánh giá hiệu suất, sắp xếp ca.',
+          title: 'Nhan vien',
+          description: 'Quan ly doi ngu: xem ho so, danh gia hieu suat, sap xep ca.',
           side: 'right',
           align: 'start',
         },
@@ -93,8 +93,8 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
       {
         element: 'nav a[href="/manager/bookings"]',
         popover: {
-          title: '📅 Lịch hẹn',
-          description: 'Xem và quản lý lịch hẹn tại chi nhánh.',
+          title: 'Lich hen',
+          description: 'Xem va quan ly lich hen tai chi nhanh.',
           side: 'right',
           align: 'start',
         },
@@ -102,8 +102,8 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
       {
         element: 'nav a[href="/manager/schedule"]',
         popover: {
-          title: '🕐 Lịch làm việc',
-          description: 'Sắp xếp ca làm việc cho nhân viên theo tuần.',
+          title: 'Lich lam viec',
+          description: 'Sap xep ca lam viec cho nhan vien theo tuan.',
           side: 'right',
           align: 'start',
         },
@@ -112,13 +112,13 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
   },
 
   cashier: {
-    title: 'Chào mừng Thu ngân!',
-    description: 'Đây là quầy thanh toán và quản lý lịch hẹn.',
+    title: 'Chao mung Thu ngan!',
+    description: 'Day la quay thanh toan va quan ly lich hen.',
     steps: [
       {
         popover: {
-          title: '📊 Tổng quan',
-          description: 'Xem nhanh số liệu hôm nay: đơn hàng, doanh thu, lịch hẹn đang chờ.',
+          title: 'Tong quan',
+          description: 'Xem nhanh so lieu hom nay: don hang, doanh thu, lich hen dang cho.',
           side: 'bottom',
           align: 'center',
         },
@@ -126,8 +126,8 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
       {
         element: 'nav a[href="/cashier/online-bookings"]',
         popover: {
-          title: '📱 Đơn Online',
-          description: 'Duyệt lịch hẹn đặt online. Xác nhận hoặc từ chối đơn từ đây.',
+          title: 'Don Online',
+          description: 'Duyet lich hen dat online. Xac nhan hoac tu choi don tu day.',
           side: 'right',
           align: 'start',
         },
@@ -135,8 +135,8 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
       {
         element: 'nav a[href="/cashier/walk-in"]',
         popover: {
-          title: '🚶 Khách vãng lai',
-          description: 'Tạo đơn nhanh cho khách tới trực tiếp không đặt trước.',
+          title: 'Khach vang lai',
+          description: 'Tao don nhanh cho khach toi truc tiep khong dat truoc.',
           side: 'right',
           align: 'start',
         },
@@ -144,8 +144,8 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
       {
         element: 'nav a[href="/cashier/checkout"]',
         popover: {
-          title: '💳 Thanh toán',
-          description: 'Xử lý thanh toán cho các lịch hẹn đã hoàn thành.',
+          title: 'Thanh toan',
+          description: 'Xu ly thanh toan cho cac lich hen da hoan thanh.',
           side: 'right',
           align: 'start',
         },
@@ -153,8 +153,8 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
       {
         element: 'nav a[href="/cashier/revenue"]',
         popover: {
-          title: '📈 Doanh thu',
-          description: 'Theo dõi doanh thu ca làm việc và tổng doanh thu ngày.',
+          title: 'Doanh thu',
+          description: 'Theo doi doanh thu ca lam viec va tong doanh thu ngay.',
           side: 'right',
           align: 'start',
         },
@@ -163,29 +163,29 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
   },
 
   customer: {
-    title: 'Chào mừng đến REETRO BARBER!',
-    description: 'Đặt lịch cắt tóc chỉ trong 3 bước đơn giản.',
+    title: 'Chao mung den REETRO BARBER!',
+    description: 'Dat lich cat toc chi trong 3 buoc don gian.',
     steps: [
       {
         popover: {
-          title: '🔍 Tìm Salon',
-          description: 'Bước 1: Duyệt và chọn salon gần bạn nhất. Xem đánh giá, dịch vụ và đội ngũ.',
+          title: 'Tim Salon',
+          description: 'Buoc 1: Duyet va chon salon gan ban nhat. Xem danh gia, dich vu va doi ngu.',
           side: 'bottom',
           align: 'center',
         },
       },
       {
         popover: {
-          title: '✂️ Chọn Dịch vụ & Thợ',
-          description: 'Bước 2: Chọn dịch vụ bạn muốn, xem hồ sơ và chọn thợ yêu thích.',
+          title: 'Chon Dich vu & Tho',
+          description: 'Buoc 2: Chon dich vu ban muon, xem ho so va chon tho yeu thich.',
           side: 'bottom',
           align: 'center',
         },
       },
       {
         popover: {
-          title: '📅 Đặt lịch',
-          description: 'Bước 3: Chọn ngày giờ phù hợp và xác nhận. Bạn sẽ nhận thông báo khi salon xác nhận.',
+          title: 'Dat lich',
+          description: 'Buoc 3: Chon ngay gio phu hop va xac nhan. Ban se nhan thong bao khi salon xac nhan.',
           side: 'bottom',
           align: 'center',
         },

@@ -33,15 +33,9 @@ export function WelcomeModal({ title, description, onStart, onDismiss }: Welcome
 
         {/* Content */}
         <div className="px-8 py-6 space-y-4">
-          <div className="flex items-start gap-3 p-3 bg-primary/5 rounded-xl">
-            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0 mt-0.5">
-              <Play className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-slate-800">Tour tương tác</p>
-              <p className="text-xs text-slate-500 mt-0.5">Mình sẽ chỉ cho bạn từng chức năng ngay trên giao diện thật</p>
-            </div>
-          </div>
+          <p className="text-sm text-slate-500 text-center">
+            Tour tuong tac se chi cho ban tung chuc nang ngay tren giao dien that.
+          </p>
 
           <div className="flex gap-3">
             <Button
@@ -49,14 +43,13 @@ export function WelcomeModal({ title, description, onStart, onDismiss }: Welcome
               onClick={onDismiss}
               className="flex-1 rounded-xl h-11 border-slate-200 text-sm"
             >
-              Bỏ qua
+              Bo qua
             </Button>
             <Button
               onClick={onStart}
-              className="flex-[2] rounded-xl h-11 shadow-lg shadow-primary/20 text-sm gap-2"
+              className="flex-[2] rounded-xl h-11 shadow-lg shadow-primary/20 text-sm"
             >
-              <Sparkles className="w-4 h-4" />
-              Bắt đầu hướng dẫn
+              Bat dau huong dan
             </Button>
           </div>
         </div>
