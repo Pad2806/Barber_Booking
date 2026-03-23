@@ -232,11 +232,14 @@ export class BookingsService extends BaseQueryService {
           services: {
             select: {
               serviceId: true,
+              price: true,
+              duration: true,
               service: {
                 select: {
                   id: true,
                   name: true,
                   price: true,
+                  duration: true,
                 },
               },
             },
@@ -358,7 +361,9 @@ export class BookingsService extends BaseQueryService {
       ).catch(err => console.error('Failed to notify staff about cancellation:', err));
     }
 
-    if (dto.status === BookingStatus.COMPLETED) {
+    // Only auto-set paymentStatus=PAID for walk-in (UNPAID) bookings.
+    // Online bookings with DEPOSIT_PAID need cashier to handle final payment.
+    if (dto.status === BookingStatus.COMPLETED && (booking as any).paymentStatus === PaymentStatus.UNPAID) {
       updateData.paymentStatus = PaymentStatus.PAID;
     }
 
@@ -770,7 +775,9 @@ export class BookingsService extends BaseQueryService {
       },
       data: {
         status,
-        ...(status === BookingStatus.COMPLETED ? { paymentStatus: PaymentStatus.PAID } : {}),
+        // Note: bulkUpdateStatus cannot conditionally check each booking's paymentStatus
+        // with updateMany, so we skip auto-setting paymentStatus here.
+        // Cashier should handle final payment for each booking individually.
       },
     });
 

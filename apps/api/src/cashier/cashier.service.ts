@@ -387,12 +387,13 @@ export class CashierService {
 
   async getCheckoutEligibleBookings(userId: string) {
     const salonId = await this.getSalonId(userId);
-    const today = this.todayDate();
+    // Show bookings from today and recent days (up to 7 days) that still need payment
+    const sevenDaysAgo = dayjs().tz(VIETNAM_TZ).subtract(7, 'day').startOf('day').toDate();
 
     return this.prisma.booking.findMany({
       where: {
         salonId,
-        date: today,
+        date: { gte: sevenDaysAgo },
         OR: [
           // Walk-in or bookings in progress (not yet paid)
           {
@@ -412,7 +413,7 @@ export class CashierService {
         staff: { include: { user: { select: { name: true, avatar: true } } } },
         payments: { select: { id: true, amount: true, type: true, status: true } },
       },
-      orderBy: { timeSlot: 'asc' },
+      orderBy: [{ date: 'desc' }, { timeSlot: 'asc' }],
     });
   }
 

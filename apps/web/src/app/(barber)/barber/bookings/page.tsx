@@ -438,11 +438,11 @@ export default function BarberBookingsPage() {
                             {item.service?.name}
                           </p>
                           <p className="text-[10px] text-[#8B7355]">
-                            {item.service?.duration} phút
+                            {item.duration || item.service?.duration} phút
                           </p>
                         </div>
                       </div>
-                      <p className="font-bold text-[#2C1E12] text-sm">{formatPrice(item.price)}</p>
+                      <p className="font-bold text-[#2C1E12] text-sm">{formatPrice(Number(item.price || item.service?.price || 0))}</p>
                     </div>
                   ))}
                 </div>
