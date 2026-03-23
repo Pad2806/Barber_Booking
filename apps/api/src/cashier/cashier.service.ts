@@ -393,13 +393,24 @@ export class CashierService {
       where: {
         salonId,
         date: today,
-        status: { in: ['CONFIRMED', 'IN_PROGRESS'] },
-        paymentStatus: { in: ['UNPAID', 'PENDING'] },
+        OR: [
+          // Walk-in or bookings in progress (not yet paid)
+          {
+            status: { in: ['CONFIRMED', 'IN_PROGRESS'] },
+            paymentStatus: { in: ['UNPAID', 'PENDING'] },
+          },
+          // Online bookings: barber marked done but only deposit paid (75% remaining)
+          {
+            status: { in: ['CONFIRMED', 'IN_PROGRESS', 'COMPLETED'] },
+            paymentStatus: 'DEPOSIT_PAID',
+          },
+        ],
       },
       include: {
         customer: { select: { id: true, name: true, phone: true, avatar: true } },
         services: { include: { service: { select: { id: true, name: true, price: true, duration: true } } } },
         staff: { include: { user: { select: { name: true, avatar: true } } } },
+        payments: { select: { id: true, amount: true, type: true, status: true } },
       },
       orderBy: { timeSlot: 'asc' },
     });
@@ -413,19 +424,28 @@ export class CashierService {
     const salonId = await this.getSalonId(userId);
     const booking = await this.prisma.booking.findUnique({
       where: { id: bookingId },
+      include: { payments: true },
     });
 
     if (!booking || booking.salonId !== salonId) {
       throw new NotFoundException('Không tìm thấy lịch hẹn');
     }
 
-    if (booking.status === 'COMPLETED') {
-      throw new BadRequestException('Booking đã được thanh toán');
+    // Block only fully-paid COMPLETED or CANCELLED bookings
+    if (booking.status === 'COMPLETED' && booking.paymentStatus === 'PAID') {
+      throw new BadRequestException('Booking đã được thanh toán đầy đủ');
     }
 
     if (booking.status === 'CANCELLED') {
       throw new BadRequestException('Không thể thanh toán booking đã hủy');
     }
+
+    // Calculate how much has already been paid (deposits)
+    const totalPaid = booking.payments
+      .filter(p => p.status === 'PAID')
+      .reduce((sum, p) => sum + Number(p.amount), 0);
+    const totalAmount = Number(booking.totalAmount);
+    const remainingAmount = totalAmount - totalPaid;
 
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.booking.update({
@@ -442,12 +462,13 @@ export class CashierService {
         },
       });
 
+      // Create payment record for the remaining amount (or full if nothing was paid)
       await tx.payment.create({
         data: {
           bookingId,
-          amount: updated.totalAmount,
+          amount: remainingAmount > 0 ? remainingAmount : totalAmount,
           method: data.method,
-          type: 'FULL',
+          type: totalPaid > 0 ? 'FINAL' : 'FULL',
           status: 'PAID',
           paidAt: new Date(),
         },

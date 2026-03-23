@@ -1016,11 +1016,15 @@ export class StaffService extends BaseQueryService {
       throw new ForbiddenException('Bạn không có quyền cập nhật lịch hẹn này');
     }
 
+    // Only auto-set paymentStatus=PAID for walk-in bookings (UNPAID).
+    // Online bookings with DEPOSIT_PAID need cashier to handle final checkout.
+    const shouldAutoPay = status === 'COMPLETED' && booking.paymentStatus === 'UNPAID';
+
     return this.prisma.booking.update({
       where: { id: bookingId },
       data: { 
         status,
-        ...(status === 'COMPLETED' ? { paymentStatus: 'PAID' } : {}),
+        ...(shouldAutoPay ? { paymentStatus: 'PAID' } : {}),
       },
       include: { services: { include: { service: true } }, customer: true },
     });
@@ -1090,9 +1094,15 @@ export class StaffService extends BaseQueryService {
       const [h, m] = b.endTime.split(':').map(Number);
       const endDateTime = dayjs(b.date).hour(h).minute(m);
       if (now.isAfter(endDateTime.add(15, 'minute'))) {
+        // Only auto-set paymentStatus=PAID for walk-in (UNPAID) bookings.
+        // Online bookings with DEPOSIT_PAID need cashier checkout.
+        const shouldAutoPay = b.paymentStatus === 'UNPAID';
         await this.prisma.booking.update({
           where: { id: b.id },
-          data: { status: 'COMPLETED', paymentStatus: 'PAID' },
+          data: { 
+            status: 'COMPLETED',
+            ...(shouldAutoPay ? { paymentStatus: 'PAID' } : {}),
+          },
         });
       }
     }

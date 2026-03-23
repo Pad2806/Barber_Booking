@@ -13,14 +13,15 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-  Star
+  Star,
+  Scissors,
+  X,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
 import { usersApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,9 +39,9 @@ interface BarberLayoutProps {
 }
 
 const BARBER_MENU_ITEMS = [
-  { key: 'dashboard', href: '/barber/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { key: 'schedule', href: '/barber/schedule', label: 'Lịch của tôi', icon: Clock },
-  { key: 'bookings', href: '/barber/bookings', label: 'Booking phân công', icon: Calendar },
+  { key: 'dashboard', href: '/barber/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
+  { key: 'schedule', href: '/barber/schedule', label: 'Lịch làm việc', icon: Clock },
+  { key: 'bookings', href: '/barber/bookings', label: 'Lịch phân công', icon: Calendar },
 ];
 
 export default function BarberLayout({ children }: BarberLayoutProps) {
@@ -63,15 +64,15 @@ export default function BarberLayout({ children }: BarberLayoutProps) {
       const userRole = session?.user?.role;
       const staffPosition = me?.staff?.position;
 
-      const isBarber = 
-        userRole === 'BARBER' || 
-        userRole === 'SKINNER' || 
+      const isBarber =
+        userRole === 'BARBER' ||
+        userRole === 'SKINNER' ||
         userRole === 'SUPER_ADMIN' ||
-        (userRole === 'STAFF' && ['BARBER', 'STYLIST', 'SENIOR_STYLIST', 'MASTER_STYLIST', 'SKINNER'].includes(staffPosition || ''));
+        (userRole === 'STAFF' &&
+          ['BARBER', 'STYLIST', 'SENIOR_STYLIST', 'MASTER_STYLIST', 'SKINNER'].includes(
+            staffPosition || ''
+          ));
 
-      // The original instruction snippet seems to have a typo or was intended for a different layout.
-      // Assuming the intent is to keep the logic for 'isBarber' and the toast message relevant to 'BarberLayout'.
-      // The dependency array was already correct.
       if (!isBarber && !isLoadingMe && me) {
         toast.error('Bạn không có quyền truy cập trang này');
         router.push('/');
@@ -81,138 +82,237 @@ export default function BarberLayout({ children }: BarberLayoutProps) {
 
   if (status === 'loading' || (status === 'authenticated' && isLoadingMe)) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-[#C8A97E] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-[3px] border-[#C8A97E] border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-[#8B7355] font-medium">Đang tải...</p>
+        </div>
       </div>
     );
   }
 
   const SidebarContent = () => (
-    <div className="flex flex-col h-full py-4">
-      <div className={cn("px-6 mb-8 flex items-center", isCollapsed && !isMobileOpen ? "justify-center px-2" : "justify-between")}>
-        <Link href="/barber/dashboard" className={cn("font-heading font-black italic tracking-tighter transition-all hover:scale-105", isCollapsed && !isMobileOpen ? "text-xl" : "text-2xl")}>
+    <div className="flex flex-col h-full">
+      {/* Logo */}
+      <div
+        className={cn(
+          'h-16 flex items-center border-b border-white/[0.08] shrink-0',
+          isCollapsed && !isMobileOpen ? 'justify-center px-4' : 'justify-between px-5'
+        )}
+      >
+        <Link
+          href="/barber/dashboard"
+          className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+        >
           {isCollapsed && !isMobileOpen ? (
-            <span className="text-[#C8A97E] text-2xl">B</span>
+            <div className="w-9 h-9 rounded-xl bg-[#C8A97E] flex items-center justify-center">
+              <Scissors className="w-4 h-4 text-white" />
+            </div>
           ) : (
-            <span className="text-white">REETRO<span className="text-[#C8A97E] ml-1">BARBER</span></span>
+            <>
+              <div className="w-9 h-9 rounded-xl bg-[#C8A97E] flex items-center justify-center shrink-0">
+                <Scissors className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-white leading-none tracking-tight">REETRO</p>
+                <p className="text-[10px] text-[#C8A97E] font-semibold tracking-widest mt-0.5">
+                  BARBER
+                </p>
+              </div>
+            </>
           )}
         </Link>
+        {!isCollapsed && !isMobileOpen && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:flex h-8 w-8 text-white/30 hover:text-white hover:bg-white/10"
+            onClick={() => setIsCollapsed(true)}
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+        )}
+        {isMobileOpen && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-white/30 hover:text-white hover:bg-white/10 lg:hidden"
+            onClick={() => setIsMobileOpen(false)}
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        )}
       </div>
 
-      <nav className="flex-1 px-3 space-y-1">
-        {BARBER_MENU_ITEMS.map(item => {
+      {/* Navigation */}
+      <nav className="flex-1 py-4 px-3 space-y-1">
+        {BARBER_MENU_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = pathname?.startsWith(item.href);
-          
+
           return (
             <Link
               key={item.key}
               href={item.href}
+              onClick={() => setIsMobileOpen(false)}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-md transition-all font-medium text-sm group',
+                'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-sm group',
                 isActive
-                  ? 'bg-[#C8A97E] text-white'
-                  : 'text-slate-400 hover:bg-slate-800/50 hover:text-white',
-                isCollapsed && !isMobileOpen && "justify-center"
+                  ? 'bg-[#C8A97E]/15 text-[#C8A97E] font-semibold'
+                  : 'text-white/50 hover:bg-white/[0.06] hover:text-white/80',
+                isCollapsed && !isMobileOpen && 'justify-center'
               )}
               title={isCollapsed ? item.label : undefined}
             >
-              <Icon className={cn("w-5 h-5 flex-shrink-0", isActive ? "text-white" : "text-slate-400 group-hover:text-white")} />
+              <Icon
+                className={cn(
+                  'w-5 h-5 shrink-0 transition-colors',
+                  isActive ? 'text-[#C8A97E]' : 'text-white/35 group-hover:text-white/60'
+                )}
+              />
               {(!isCollapsed || isMobileOpen) && <span>{item.label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      <div className="px-3 pt-4 border-t border-slate-800">
-        <button
-          onClick={() => signOut({ callbackUrl: '/' })}
-          className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-md text-slate-400 hover:bg-destructive/10 hover:text-destructive w-full transition-colors font-medium text-sm",
-            isCollapsed && !isMobileOpen && "justify-center"
-          )}
-        >
-          <LogOut className="w-5 h-5 flex-shrink-0" />
-          {(!isCollapsed || isMobileOpen) && <span>Đăng xuất</span>}
-        </button>
-      </div>
+      {/* User info & Logout at bottom */}
+      {(!isCollapsed || isMobileOpen) && (
+        <div className="p-4 border-t border-white/[0.08] shrink-0">
+          <div className="flex items-center gap-3 px-1">
+            <Avatar className="h-9 w-9 border-2 border-[#C8A97E]/25">
+              <AvatarImage src={session?.user?.image || undefined} />
+              <AvatarFallback className="bg-[#C8A97E]/15 text-[#C8A97E] text-xs font-bold">
+                {session?.user?.name?.charAt(0) || 'B'}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white truncate">{session?.user?.name}</p>
+              <p className="text-[11px] text-[#C8A97E]/80 font-medium">
+                {me?.staff?.position || 'Barber'}
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-white/25 hover:text-rose-400 hover:bg-rose-500/10"
+              onClick={() => signOut({ callbackUrl: '/' })}
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+      {isCollapsed && !isMobileOpen && (
+        <div className="p-3 border-t border-white/[0.08] shrink-0 flex justify-center">
+          <button
+            onClick={() => signOut({ callbackUrl: '/' })}
+            className="p-2.5 rounded-xl text-white/25 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      <aside 
+    <div className="h-screen bg-[#FAF8F5] flex overflow-hidden">
+      {/* Mobile overlay */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+          onClick={() => setIsMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
         className={cn(
-          "bg-[#0f172a] text-slate-300 fixed inset-y-0 left-0 z-50 hidden lg:block border-r border-slate-800 transition-all duration-300 ease-in-out",
-          isCollapsed ? "w-20" : "w-64"
+          'fixed top-0 left-0 h-screen bg-[#1C1612] z-50 flex flex-col transition-all duration-300 ease-in-out',
+          isCollapsed && !isMobileOpen ? 'w-[72px]' : 'w-64',
+          'lg:relative',
+          isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
         )}
       >
         <SidebarContent />
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="absolute -right-3 top-20 bg-[#C8A97E] text-white rounded-full p-1 shadow-lg border border-[#C8A97E]/20 hover:scale-110 transition-transform"
-        >
-          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </button>
+        {isCollapsed && !isMobileOpen && (
+          <button
+            onClick={() => setIsCollapsed(false)}
+            className="absolute -right-3 top-20 bg-[#C8A97E] text-white rounded-full p-1 shadow-md hover:scale-110 transition-transform hidden lg:flex items-center justify-center"
+          >
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        )}
       </aside>
 
-      <div className={cn("flex-1 flex flex-col min-w-0 transition-all duration-300", isCollapsed ? "lg:ml-20" : "lg:ml-64")}>
-        <header className="bg-white/80 backdrop-blur-md border-b sticky top-0 z-40 transition-all">
-          <div className="px-4 lg:px-8 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Sheet open={isMobileOpen} onOpenChange={setIsMobileOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden">
-                    <Menu className="w-6 h-6" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="p-0 bg-[#0f172a] border-slate-800 w-64">
-                  <SidebarContent />
-                </SheetContent>
-              </Sheet>
-              <h2 className="text-sm font-semibold text-slate-500 hidden sm:block uppercase tracking-wider font-sans">
-                Barber Panel
-              </h2>
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen">
+        {/* Top header bar */}
+        <header className="h-16 bg-white border-b border-[#E8E0D4]/40 flex items-center justify-between px-4 lg:px-8 shrink-0 sticky top-0 z-30">
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden h-9 w-9 text-[#5C4A32]"
+              onClick={() => setIsMobileOpen(true)}
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            <p className="text-[11px] font-semibold text-[#8B7355] uppercase tracking-wider hidden sm:block">
+              Khu vực nhân viên
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 lg:gap-3">
+            {/* Rating */}
+            <div className="hidden sm:flex items-center gap-1.5 text-amber-600 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100">
+              <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
+              <span className="text-xs font-bold">{me?.staff?.rating || '5.0'}</span>
             </div>
 
-            <div className="flex items-center gap-2 lg:gap-4">
-              <div className="flex items-center gap-1.5 text-amber-500 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100 hidden sm:flex">
-                <Star className="w-4 h-4 fill-amber-500" />
-                <span className="text-sm font-black italic">{me?.staff?.rating || '5.0'}</span>
-              </div>
-              
-              <NotificationBell />
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-3 pl-2 pr-1 rounded-full hover:bg-slate-100 h-auto py-1">
-                    <div className="text-right hidden sm:block">
-                      <p className="text-xs font-bold text-slate-900 leading-none">{session?.user?.name}</p>
-                      <p className="text-[10px] text-[#C8A97E] mt-1 font-bold uppercase">{me?.staff?.position || 'Barber'}</p>
-                    </div>
-                    <Avatar className="h-8 w-8 border border-[#C8A97E]/20">
-                       <AvatarImage src={session?.user?.image || undefined} />
-                       <AvatarFallback className="bg-[#C8A97E]/10 text-[#C8A97E] text-xs font-bold font-sans">
-                         {session?.user?.name?.charAt(0) || 'B'}
-                       </AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 mt-2">
-                  <DropdownMenuLabel className="font-black italic uppercase text-[10px] text-slate-400 tracking-widest px-3 py-2">Tài khoản Barber</DropdownMenuLabel>
-                  <DropdownMenuSeparator className="my-2" />
-                  <DropdownMenuItem 
-                    className="rounded-xl h-10 px-3 font-bold text-slate-600 hover:text-rose-500 hover:bg-rose-50 cursor-pointer transition-colors"
-                    onClick={() => signOut({ callbackUrl: '/' })}
-                  >
-                    <LogOut className="w-4 h-4 mr-2" /> Đăng xuất
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <NotificationBell />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-3 pl-3 pr-1.5 rounded-full hover:bg-[#FAF8F5] h-auto py-1.5"
+                >
+                  <div className="text-right hidden sm:block">
+                    <p className="text-xs font-semibold text-[#2C1E12] leading-none">
+                      {session?.user?.name}
+                    </p>
+                    <p className="text-[10px] text-[#C8A97E] mt-0.5 font-medium">
+                      {me?.staff?.position || 'Barber'}
+                    </p>
+                  </div>
+                  <Avatar className="h-8 w-8 border border-[#C8A97E]/20">
+                    <AvatarImage src={session?.user?.image || undefined} />
+                    <AvatarFallback className="bg-[#C8A97E]/10 text-[#C8A97E] text-xs font-bold">
+                      {session?.user?.name?.charAt(0) || 'B'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 rounded-xl p-1.5 mt-1">
+                <DropdownMenuLabel className="text-[10px] text-[#8B7355] uppercase tracking-wider font-semibold px-3 py-1.5">
+                  Tài khoản
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="rounded-lg h-9 px-3 font-medium text-slate-600 hover:text-rose-500 hover:bg-rose-50 cursor-pointer"
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                >
+                  <LogOut className="w-4 h-4 mr-2" /> Đăng xuất
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </header>
 
-        <main className="flex-1 p-4 lg:p-8 animate-in fade-in duration-500">
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto p-4 lg:p-8 animate-in fade-in duration-500">
           {children}
         </main>
       </div>

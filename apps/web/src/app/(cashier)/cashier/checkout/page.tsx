@@ -11,9 +11,10 @@ import {
   Check,
   Printer,
   Scissors,
-  Plus,
   ArrowRight,
   Receipt,
+  AlertCircle,
+  CheckCircle2,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,7 +22,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn, formatPrice } from '@/lib/utils';
 import toast from 'react-hot-toast';
-import dayjs from 'dayjs';
 
 export default function CheckoutPage() {
   const queryClient = useQueryClient();
@@ -41,12 +41,40 @@ export default function CheckoutPage() {
       setSelectedBooking(null);
       queryClient.invalidateQueries({ queryKey: ['cashier'] });
     },
-    onError: () => toast.error('Lỗi khi thực hiện thanh toán'),
+    onError: (err: any) =>
+      toast.error(err?.response?.data?.message || 'Lỗi khi thực hiện thanh toán'),
   });
 
-  const total = selectedBooking?.services?.reduce(
-    (acc: number, s: any) => acc + Number(s.price || s.service?.price || 0), 0
-  ) || Number(selectedBooking?.totalAmount || 0);
+  // Calculate deposit already paid and remaining amount
+  const getPaymentInfo = (booking: any) => {
+    if (!booking) return { total: 0, depositPaid: 0, remaining: 0 };
+
+    const total = Number(booking.totalAmount || 0);
+    const depositPaid = (booking.payments || [])
+      .filter((p: any) => p.status === 'PAID')
+      .reduce((sum: number, p: any) => sum + Number(p.amount), 0);
+    const remaining = total - depositPaid;
+
+    return { total, depositPaid, remaining: remaining > 0 ? remaining : total };
+  };
+
+  const paymentInfo = getPaymentInfo(selectedBooking);
+
+  const getStatusBadge = (booking: any) => {
+    if (booking.status === 'COMPLETED' && booking.paymentStatus === 'DEPOSIT_PAID') {
+      return { label: 'Đã cắt xong — Chờ thanh toán', class: 'bg-amber-50 text-amber-700 border-amber-200' };
+    }
+    if (booking.paymentStatus === 'DEPOSIT_PAID') {
+      return { label: 'Đã cọc — Đang phục vụ', class: 'bg-blue-50 text-blue-700 border-blue-200' };
+    }
+    if (booking.status === 'CONFIRMED') {
+      return { label: 'Đã xác nhận', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+    }
+    if (booking.status === 'IN_PROGRESS') {
+      return { label: 'Đang phục vụ', class: 'bg-blue-50 text-blue-700 border-blue-200' };
+    }
+    return { label: booking.status, class: 'bg-slate-50 text-slate-600 border-slate-200' };
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -81,52 +109,74 @@ export default function CheckoutPage() {
                   <p className="text-slate-400 font-medium">Không có booking nào sẵn sàng thanh toán</p>
                 </div>
               ) : (
-                bookings.map((b: any) => (
-                  <div
-                    key={b.id}
-                    onClick={() => setSelectedBooking(b)}
-                    className={cn(
-                      'flex items-center gap-4 p-4 rounded-xl border-2 transition-all cursor-pointer',
-                      selectedBooking?.id === b.id
-                        ? 'border-primary bg-primary/5 shadow-sm'
-                        : 'border-slate-100 hover:border-slate-200',
-                    )}
-                  >
-                    <Avatar className="h-11 w-11 shrink-0">
-                      <AvatarImage src={b.customer?.avatar} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                        {b.customer?.name?.charAt(0) || 'K'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-slate-900">{b.customer?.name}</p>
-                      <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
-                        <span>{b.timeSlot}</span>
-                        <span>•</span>
-                        <span>{b.services?.length} dịch vụ</span>
-                        {b.staff && (
+                bookings.map((b: any) => {
+                  const badge = getStatusBadge(b);
+                  const info = getPaymentInfo(b);
+                  const isReady = b.status === 'COMPLETED' && b.paymentStatus === 'DEPOSIT_PAID';
+
+                  return (
+                    <div
+                      key={b.id}
+                      onClick={() => setSelectedBooking(b)}
+                      className={cn(
+                        'flex items-center gap-4 p-4 rounded-xl border-2 transition-all cursor-pointer',
+                        selectedBooking?.id === b.id
+                          ? 'border-primary bg-primary/5 shadow-sm'
+                          : isReady
+                            ? 'border-amber-200 bg-amber-50/30 hover:border-amber-300'
+                            : 'border-slate-100 hover:border-slate-200',
+                      )}
+                    >
+                      {/* Priority indicator for ready bookings */}
+                      {isReady && (
+                        <div className="w-2 h-full min-h-[40px] bg-amber-400 rounded-full shrink-0" />
+                      )}
+                      <Avatar className="h-11 w-11 shrink-0">
+                        <AvatarImage src={b.customer?.avatar} />
+                        <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                          {b.customer?.name?.charAt(0) || 'K'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-slate-900">{b.customer?.name}</p>
+                        <div className="flex items-center gap-2 mt-0.5 text-xs text-slate-400">
+                          <span>{b.timeSlot}</span>
+                          <span>•</span>
+                          <span>{b.services?.length} dịch vụ</span>
+                          {b.staff && (
+                            <>
+                              <span>•</span>
+                              <span>Thợ: {b.staff.user?.name}</span>
+                            </>
+                          )}
+                        </div>
+                        <Badge className={cn('text-[9px] border mt-1.5', badge.class)}>
+                          {badge.label}
+                        </Badge>
+                      </div>
+                      <div className="text-right shrink-0">
+                        {info.depositPaid > 0 ? (
                           <>
-                            <span>•</span>
-                            <span>Thợ: {b.staff.user?.name}</span>
+                            <p className="text-[10px] text-emerald-600 font-semibold">
+                              Đã cọc {formatPrice(info.depositPaid)}
+                            </p>
+                            <p className="font-bold text-primary text-lg">
+                              {formatPrice(info.remaining)}
+                            </p>
+                            <p className="text-[10px] text-slate-400">còn lại</p>
                           </>
+                        ) : (
+                          <p className="font-bold text-primary">{formatPrice(info.total)}</p>
                         )}
                       </div>
+                      {selectedBooking?.id === b.id && (
+                        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0">
+                          <Check className="w-3.5 h-3.5 text-white" />
+                        </div>
+                      )}
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-primary">{formatPrice(Number(b.totalAmount))}</p>
-                      <Badge className={cn('text-[9px] border mt-1',
-                        b.status === 'CONFIRMED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-blue-50 text-blue-700 border-blue-200'
-                      )}>
-                        {b.status === 'CONFIRMED' ? 'Đã xác nhận' : 'Đang phục vụ'}
-                      </Badge>
-                    </div>
-                    {selectedBooking?.id === b.id && (
-                      <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center shrink-0">
-                        <Check className="w-3.5 h-3.5 text-white" />
-                      </div>
-                    )}
-                  </div>
-                ))
+                  );
+                })
               )}
             </CardContent>
           </Card>
@@ -137,7 +187,7 @@ export default function CheckoutPage() {
               <CardHeader className="border-b border-slate-50 pb-4">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base font-bold">
-                    Hóa đơn <span className="text-slate-300 font-normal text-sm">#{selectedBooking.id?.slice(-6).toUpperCase()}</span>
+                    Hóa đơn <span className="text-slate-300 font-normal text-sm">#{selectedBooking.bookingCode || selectedBooking.id?.slice(-6).toUpperCase()}</span>
                   </CardTitle>
                   <Button variant="outline" size="sm" className="rounded-lg text-xs">
                     <Printer className="w-3.5 h-3.5 mr-1.5" /> In
@@ -153,7 +203,7 @@ export default function CheckoutPage() {
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{s.service?.name}</p>
-                        <p className="text-[11px] text-slate-400">{s.duration} phút</p>
+                        <p className="text-[11px] text-slate-400">{s.duration || s.service?.duration} phút</p>
                       </div>
                     </div>
                     <p className="font-semibold text-slate-900">{formatPrice(Number(s.price))}</p>
@@ -162,9 +212,31 @@ export default function CheckoutPage() {
 
                 <div className="h-px bg-slate-100" />
 
+                {/* Show deposit info if applicable */}
+                {paymentInfo.depositPaid > 0 && (
+                  <>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500">Tổng dịch vụ</span>
+                      <span className="font-semibold text-slate-900">{formatPrice(paymentInfo.total)}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                        <span className="text-emerald-600">Đã đặt cọc online</span>
+                      </div>
+                      <span className="font-semibold text-emerald-600">-{formatPrice(paymentInfo.depositPaid)}</span>
+                    </div>
+                    <div className="h-px bg-slate-100" />
+                  </>
+                )}
+
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-900">Tổng cộng</span>
-                  <span className="text-2xl font-bold text-primary">{formatPrice(total)}</span>
+                  <span className="font-bold text-slate-900">
+                    {paymentInfo.depositPaid > 0 ? 'Còn phải thanh toán' : 'Tổng cộng'}
+                  </span>
+                  <span className="text-2xl font-bold text-primary">
+                    {formatPrice(paymentInfo.remaining)}
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -230,11 +302,27 @@ export default function CheckoutPage() {
                     <span className="text-slate-400">Dịch vụ</span>
                     <span className="font-semibold">{selectedBooking.services?.length} item</span>
                   </div>
+                  {paymentInfo.depositPaid > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-emerald-400">Đã cọc</span>
+                      <span className="font-semibold text-emerald-400">{formatPrice(paymentInfo.depositPaid)}</span>
+                    </div>
+                  )}
                   <div className="h-px bg-white/10" />
                   <div className="flex justify-between">
                     <span className="text-slate-400 font-semibold">Thanh toán</span>
-                    <span className="text-xl font-bold text-primary">{formatPrice(total)}</span>
+                    <span className="text-xl font-bold text-primary">{formatPrice(paymentInfo.remaining)}</span>
                   </div>
+                </div>
+              )}
+
+              {/* Warning banner for completed bookings waiting for payment */}
+              {selectedBooking?.status === 'COMPLETED' && selectedBooking?.paymentStatus === 'DEPOSIT_PAID' && (
+                <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-200">
+                    Thợ đã hoàn tất phục vụ. Khách đã cọc trước {formatPrice(paymentInfo.depositPaid)}, cần thu thêm <strong>{formatPrice(paymentInfo.remaining)}</strong>.
+                  </p>
                 </div>
               )}
 
@@ -248,7 +336,7 @@ export default function CheckoutPage() {
                 ) : (
                   <ArrowRight className="w-5 h-5 mr-2" />
                 )}
-                Xác nhận Thanh toán
+                Xác nhận Thanh toán {selectedBooking ? formatPrice(paymentInfo.remaining) : ''}
               </Button>
 
               {!selectedBooking && (
