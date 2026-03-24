@@ -5,6 +5,7 @@ import { MessageCircle, X, Send, User, Bot, Loader2, RotateCcw } from 'lucide-re
 import { cn } from '@/lib/utils';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import { useSession } from 'next-auth/react';
 
 interface Message {
   id: string;
@@ -21,6 +22,7 @@ const SUGGESTED_QUESTIONS = [
 ];
 
 export function AIChatWidget() {
+  const { data: session } = useSession();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -29,6 +31,11 @@ export function AIChatWidget() {
   const [retryCount, setRetryCount] = useState(0);
   const [lastFailedMessage, setLastFailedMessage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Only show for customers or unauthenticated users (public visitors)
+  const userRole = (session?.user as any)?.role;
+  const STAFF_ROLES = ['BARBER', 'CASHIER', 'MANAGER', 'SALON_OWNER', 'SUPER_ADMIN'];
+  const isStaff = userRole && STAFF_ROLES.includes(userRole);
 
   useEffect(() => {
     const savedSession = localStorage.getItem('ai_chat_session');
@@ -115,6 +122,9 @@ export function AIChatWidget() {
   const handleSuggestion = (text: string) => {
     sendMessage(text);
   };
+
+  // Hide chatbot for staff users
+  if (isStaff) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
