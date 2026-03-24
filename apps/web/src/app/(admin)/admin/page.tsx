@@ -42,7 +42,7 @@ import Image from 'next/image';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 
-const COLORS = ['#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'];
+const COLORS = ['#0ea5e9', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#f43f5e', '#6366f1', '#14b8a6'];
 
 export default function AdminDashboardPage(): JSX.Element {
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -237,47 +237,89 @@ export default function AdminDashboardPage(): JSX.Element {
           </CardContent>
         </Card>
 
-        {/* Top Services Pie Chart */}
-        <Card className="border-none shadow-sm h-full">
+        {/* Top Services Donut Chart */}
+        <Card className="border-none shadow-sm h-full flex flex-col">
           <CardHeader className="border-b bg-gray-50/50 text-left">
-            <CardTitle className="text-lg font-bold">Dịch vụ thịnh hành</CardTitle>
-            <CardDescription>Tỉ lệ các dịch vụ được đặt nhiều nhất</CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg font-bold">Dịch vụ thịnh hành</CardTitle>
+                <CardDescription>Tỉ lệ các dịch vụ được đặt nhiều nhất</CardDescription>
+              </div>
+              <div className="p-2 bg-white rounded-lg shadow-sm">
+                <Scissors className="w-5 h-5 text-primary" />
+              </div>
+            </div>
           </CardHeader>
-          <CardContent className="p-6">
-            <div className="h-[300px] min-h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={stats?.topServices || []}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="count"
-                  >
-                    {stats?.topServices?.map((_: any, index: number) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Legend verticalAlign="bottom" height={36}/>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="mt-6 space-y-3">
-              {stats?.topServices?.map((service: any, index: number) => (
-                <div key={service.name} className="flex items-center justify-between group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                    <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">{service.name}</span>
+          <CardContent className="p-6 flex-1 flex flex-col">
+            {stats?.topServices && stats.topServices.length > 0 ? (
+              <>
+                <div className="h-[260px] w-full relative">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={stats.topServices}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={65}
+                        outerRadius={105}
+                        paddingAngle={3}
+                        dataKey="count"
+                        nameKey="name"
+                        strokeWidth={2}
+                        stroke="#fff"
+                      >
+                        {stats.topServices.map((_: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 25px -5px rgb(0 0 0 / 0.15)', padding: '10px 16px' }}
+                        formatter={(val: any, name: any) => [`${val} lượt`, name]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {/* Center label */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="text-center">
+                      <p className="text-2xl font-black text-gray-900 leading-none">
+                        {stats.topServices.reduce((sum: number, s: any) => sum + s.count, 0)}
+                      </p>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-1">Tổng lượt</p>
+                    </div>
                   </div>
-                  <span className="text-sm font-bold text-gray-900">{service.count} lượt</span>
                 </div>
-              ))}
-            </div>
+                <div className="mt-4 space-y-3 flex-1">
+                  {stats.topServices.map((service: any, index: number) => {
+                    const total = stats.topServices.reduce((sum: number, s: any) => sum + s.count, 0);
+                    const pct = total > 0 ? Math.round((service.count / total) * 100) : 0;
+                    return (
+                      <div key={service.name} className="group">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-3 h-3 rounded-full shrink-0 ring-2 ring-offset-1 ring-transparent group-hover:ring-current transition-all" style={{ backgroundColor: COLORS[index % COLORS.length], color: COLORS[index % COLORS.length] }} />
+                            <span className="text-sm font-semibold text-gray-700 group-hover:text-gray-900 transition-colors">{service.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-gray-400">{pct}%</span>
+                            <span className="text-sm font-black text-gray-900">{service.count}</span>
+                          </div>
+                        </div>
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all duration-500 ease-out"
+                            style={{ width: `${pct}%`, backgroundColor: COLORS[index % COLORS.length] }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-gray-400">
+                <p className="text-sm">Chưa có dữ liệu dịch vụ</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -505,47 +547,81 @@ export default function AdminDashboardPage(): JSX.Element {
           </CardContent>
         </Card>
 
-        {/* Rating Distribution Pie Chart */}
+        {/* Rating Distribution */}
         <Card className="border-none shadow-sm flex flex-col h-full">
           <CardHeader className="border-b bg-gray-50/50 text-left">
-            <CardTitle className="text-lg font-bold">Phân bổ đánh giá</CardTitle>
-            <CardDescription>Tỉ lệ sao từ khách hàng</CardDescription>
-          </CardHeader>
-          <CardContent className="p-6 flex-1 flex flex-col justify-center">
-            <div className="h-[250px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={ratingDist}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={2}
-                    dataKey="count"
-                    nameKey="star"
-                  >
-                    {[5, 4, 3, 2, 1].map((star, index) => (
-                      <Cell key={`cell-${star}`} fill={[
-                        '#10b981', // 5 star
-                        '#3b82f6', // 4 star
-                        '#f59e0b', // 3 star
-                        '#f97316', // 2 star
-                        '#ef4444'  // 1 star
-                      ][index]} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
-                    formatter={(val, name) => [val, `${name} sao`]}
-                  />
-                  <Legend 
-                     verticalAlign="bottom" 
-                     formatter={(value, entry: any) => `${entry.payload.star} sao`}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg font-bold">Phân bổ đánh giá</CardTitle>
+                <CardDescription>Tỉ lệ sao từ khách hàng</CardDescription>
+              </div>
+              <div className="p-2 bg-white rounded-lg shadow-sm">
+                <Star className="w-5 h-5 text-yellow-500" />
+              </div>
             </div>
+          </CardHeader>
+          <CardContent className="p-6 flex-1 flex flex-col">
+            {(() => {
+              const STAR_COLORS: Record<number, string> = {
+                5: '#10b981',
+                4: '#3b82f6',
+                3: '#f59e0b',
+                2: '#f97316',
+                1: '#ef4444',
+              };
+              const totalReviews = ratingDist?.reduce((sum: number, r: any) => sum + (r.count || 0), 0) || 0;
+              const avgRating = totalReviews > 0
+                ? (ratingDist?.reduce((sum: number, r: any) => sum + (r.star || 0) * (r.count || 0), 0) || 0) / totalReviews
+                : 0;
+
+              return (
+                <>
+                  {/* Average rating summary */}
+                  <div className="flex items-center gap-4 mb-6 p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl border border-yellow-100">
+                    <div className="text-center">
+                      <p className="text-3xl font-black text-gray-900 leading-none">{avgRating.toFixed(1)}</p>
+                      <div className="flex items-center gap-0.5 mt-1 justify-center">
+                        {[1, 2, 3, 4, 5].map(s => (
+                          <Star key={s} className={cn("w-3 h-3", s <= Math.round(avgRating) ? "text-yellow-400 fill-yellow-400" : "text-gray-200")} />
+                        ))}
+                      </div>
+                    </div>
+                    <div className="h-10 w-px bg-yellow-200" />
+                    <div>
+                      <p className="text-sm font-bold text-gray-700">{totalReviews} đánh giá</p>
+                      <p className="text-xs text-gray-400">Tổng số từ khách hàng</p>
+                    </div>
+                  </div>
+
+                  {/* Star bars */}
+                  <div className="space-y-3 flex-1">
+                    {[5, 4, 3, 2, 1].map(star => {
+                      const entry = ratingDist?.find((r: any) => r.star === star);
+                      const count = entry?.count || 0;
+                      const pct = totalReviews > 0 ? Math.round((count / totalReviews) * 100) : 0;
+                      return (
+                        <div key={star} className="flex items-center gap-3 group">
+                          <div className="flex items-center gap-1 w-14 shrink-0">
+                            <span className="text-sm font-bold text-gray-700">{star}</span>
+                            <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+                          </div>
+                          <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-700 ease-out group-hover:opacity-80"
+                              style={{ width: `${pct}%`, backgroundColor: STAR_COLORS[star], minWidth: count > 0 ? '4px' : '0' }}
+                            />
+                          </div>
+                          <div className="flex items-center gap-1.5 w-16 shrink-0 justify-end">
+                            <span className="text-xs font-bold text-gray-400">{pct}%</span>
+                            <span className="text-xs font-semibold text-gray-600">({count})</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              );
+            })()}
           </CardContent>
         </Card>
 
