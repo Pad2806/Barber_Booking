@@ -441,8 +441,9 @@ export class BookingsService extends BaseQueryService {
   }
 
   async getTodayBookings(salonId: string) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Use Vietnam timezone to get today's date, then create UTC midnight for @db.Date
+    const todayStr = dayjs().tz(VIETNAM_TZ).format('YYYY-MM-DD');
+    const today = new Date(todayStr + 'T00:00:00.000Z');
 
     return this.prisma.booking.findMany({
       where: {
@@ -481,8 +482,8 @@ export class BookingsService extends BaseQueryService {
   }
 
   async getUpcoming(customerId: string) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayStr = dayjs().tz(VIETNAM_TZ).format('YYYY-MM-DD');
+    const today = new Date(todayStr + 'T00:00:00.000Z');
 
     return this.prisma.booking.findMany({
       where: {

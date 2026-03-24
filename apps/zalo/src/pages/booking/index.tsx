@@ -102,7 +102,7 @@ const BookingPage: React.FC = () => {
     });
   }, [timeSlots, selectedDate]);
 
-  const depositAmount = Math.round(totalAmount * 0.5);
+  const depositAmount = Math.round(totalAmount * 0.25);
 
   const handleSubmit = async () => {
     if (!salon || !selectedDate || !selectedTimeSlot) return;
@@ -578,7 +578,7 @@ const BookingPage: React.FC = () => {
                   }}
                 >
                   <Box>
-                    <Text style={{ fontSize: 12, fontWeight: 900, color: 'var(--brand-primary)', textTransform: 'uppercase' }}>PHÍ ĐẶT CỌC (50%)</Text>
+                    <Text style={{ fontSize: 12, fontWeight: 900, color: 'var(--brand-primary)', textTransform: 'uppercase' }}>PHÍ ĐẶT CỌC (25%)</Text>
                     <Text style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', opacity: 0.5 }}>THANH TOÁN SAU KHI ĐẶT</Text>
                   </Box>
                   <Text style={{ fontSize: 18, fontWeight: 900, color: 'var(--brand-primary)' }}>

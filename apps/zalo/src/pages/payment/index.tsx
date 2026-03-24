@@ -211,9 +211,9 @@ const PaymentPage: React.FC = () => {
                 border: '1px solid var(--brand-primary)'
             }}
           >
-            <Text style={{ fontSize: 10, fontWeight: 800, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: 2 }}>SỐ TIỀN ĐẶT CỌC (50%)</Text>
+            <Text style={{ fontSize: 10, fontWeight: 800, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: 2 }}>SỐ TIỀN ĐẶT CỌC (25%)</Text>
             <Text style={{ fontSize: 32, fontWeight: 900, color: 'var(--brand-background)', marginTop: 4 }}>
-              {formatPrice(Math.round(booking.totalAmount * 0.5))}
+              {formatPrice(Math.round(booking.totalAmount * 0.25))}
             </Text>
           </Box>
 

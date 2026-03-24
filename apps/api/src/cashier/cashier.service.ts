@@ -52,8 +52,18 @@ export class CashierService {
     return user.staff.salonId;
   }
 
+  /**
+   * Convert a date string (YYYY-MM-DD) to a UTC midnight Date for @db.Date comparison.
+   * PostgreSQL DATE stores date-only. Prisma sends JS Date, so we must use UTC midnight
+   * to avoid timezone offset causing off-by-one day errors.
+   */
+  private toDateOnly(dateStr: string): Date {
+    return new Date(dateStr + 'T00:00:00.000Z');
+  }
+
   private todayDate() {
-    return dayjs().tz(VIETNAM_TZ).startOf('day').toDate();
+    const todayStr = dayjs().tz(VIETNAM_TZ).format('YYYY-MM-DD');
+    return this.toDateOnly(todayStr);
   }
 
   // ─── 1. DASHBOARD ──────────────────────────────────────────
@@ -116,6 +126,7 @@ export class CashierService {
         customer: { select: { id: true, name: true, phone: true, avatar: true } },
         services: { include: { service: { select: { id: true, name: true, price: true, duration: true } } } },
         staff: { include: { user: { select: { name: true, avatar: true } } } },
+        payments: { select: { id: true, amount: true, type: true, status: true } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -138,14 +149,27 @@ export class CashierService {
       throw new BadRequestException('Chỉ duyệt được lịch ở trạng thái chờ');
     }
 
+    const hasBarber = !!booking.staffId;
+    const hasDeposit = booking.paymentStatus === 'DEPOSIT_PAID';
+
+    // If customer hasn't chosen a barber, cashier MUST assign one
+    if (!hasBarber && !data.staffId) {
+      throw new BadRequestException(
+        'Khách hàng chưa chọn thợ, vui lòng chọn thợ trước khi duyệt',
+      );
+    }
+
     const updateData: any = { status: 'CONFIRMED' };
-    if (data.staffId) updateData.staffId = data.staffId;
+
+    // Only allow cashier to change staffId if customer hasn't chosen one yet
+    if (!hasBarber && data.staffId) {
+      updateData.staffId = data.staffId;
+    }
+    // If customer already chose barber, keep their choice (ignore data.staffId)
+
     if (data.timeSlot) updateData.timeSlot = data.timeSlot;
     if (data.date)
-      updateData.date = dayjs
-        .tz(data.date, VIETNAM_TZ)
-        .startOf('day')
-        .toDate();
+      updateData.date = this.toDateOnly(data.date);
 
     return this.prisma.booking.update({
       where: { id: bookingId },
@@ -192,7 +216,7 @@ export class CashierService {
 
     const where: any = { salonId };
     if (filters.date) {
-      where.date = dayjs.tz(filters.date, VIETNAM_TZ).startOf('day').toDate();
+      where.date = this.toDateOnly(filters.date);
     }
     if (filters.status) {
       where.status = filters.status;
@@ -307,7 +331,7 @@ export class CashierService {
         customerId: customer.id,
         salonId,
         staffId: data.staffId || null,
-        date: now.startOf('day').toDate(),
+        date: this.toDateOnly(now.format('YYYY-MM-DD')),
         timeSlot: now.format('HH:mm'),
         endTime: endTime.format('HH:mm'),
         status: 'CONFIRMED',
@@ -388,7 +412,7 @@ export class CashierService {
   async getCheckoutEligibleBookings(userId: string) {
     const salonId = await this.getSalonId(userId);
     // Show bookings from today and recent days (up to 7 days) that still need payment
-    const sevenDaysAgo = dayjs().tz(VIETNAM_TZ).subtract(7, 'day').startOf('day').toDate();
+    const sevenDaysAgo = this.toDateOnly(dayjs().tz(VIETNAM_TZ).subtract(7, 'day').format('YYYY-MM-DD'));
 
     return this.prisma.booking.findMany({
       where: {
@@ -484,9 +508,9 @@ export class CashierService {
   async getRevenue(userId: string) {
     const salonId = await this.getSalonId(userId);
     const now = dayjs().tz(VIETNAM_TZ);
-    const today = now.startOf('day').toDate();
-    const startOfWeek = now.startOf('week').toDate();
-    const startOfMonth = now.startOf('month').toDate();
+    const today = this.toDateOnly(now.format('YYYY-MM-DD'));
+    const startOfWeek = this.toDateOnly(now.startOf('week').format('YYYY-MM-DD'));
+    const startOfMonth = this.toDateOnly(now.startOf('month').format('YYYY-MM-DD'));
 
     const completedWhere = { salonId, status: BookingStatus.COMPLETED };
 
@@ -565,7 +589,7 @@ export class CashierService {
     // 7-day trend
     const trend: { date: string; amount: number }[] = [];
     for (let i = 6; i >= 0; i--) {
-      const d = now.subtract(i, 'day').startOf('day').toDate();
+      const d = this.toDateOnly(now.subtract(i, 'day').format('YYYY-MM-DD'));
       const rev = await this.prisma.booking.aggregate({
         where: { ...completedWhere, date: d },
         _sum: { totalAmount: true },
@@ -683,7 +707,7 @@ export class CashierService {
 
   async getAvailableBarbers(userId: string, date: string, timeSlot: string) {
     const salonId = await this.getSalonId(userId);
-    const targetDate = dayjs.tz(date, VIETNAM_TZ).startOf('day').toDate();
+    const targetDate = this.toDateOnly(date);
 
     const barberPositions = [
       StaffPosition.BARBER,

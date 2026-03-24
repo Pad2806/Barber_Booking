@@ -184,8 +184,8 @@ export default function BookingConfirmPage() {
              
              <div className="bg-white border border-[#E8E0D4] p-5 rounded-xl flex justify-between items-center">
                <div>
-                 <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">TIỀN CỌC GIỮ LỊCH (50%)</p>
-                 <p className="text-xl font-bold text-[#2C1E12]">{formatPrice(Math.round(totalAmount * 0.5))}</p>
+                 <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">TIỀN CỌC GIỮ LỊCH (25%)</p>
+                 <p className="text-xl font-bold text-[#2C1E12]">{formatPrice(Math.round(totalAmount * 0.25))}</p>
                </div>
                <div className="w-10 h-10 rounded-full bg-[#E8F5E9] text-[#2E7D32] flex items-center justify-center">
                  <Check className="w-5 h-5" />

@@ -25,7 +25,7 @@ export class PaymentsService {
   ) { }
 
   /**
-   * Create a DEPOSIT payment for an online booking (50% of totalAmount).
+   * Create a DEPOSIT payment for an online booking (25% of totalAmount).
    * This is called when a customer books online via Web or Zalo.
    */
   async createPayment(dto: CreatePaymentDto): Promise<PaymentWithQR> {
