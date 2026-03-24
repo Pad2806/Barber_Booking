@@ -404,6 +404,12 @@ export const cashierApi = {
     return response.data;
   },
 
+  // Payment History
+  getPaymentHistory: async (date?: string) => {
+    const response = await apiClient.get('/cashier/payment-history', { params: { date } });
+    return response.data;
+  },
+
   // Queue
   getQueue: async () => {
     const response = await apiClient.get('/cashier/queue');

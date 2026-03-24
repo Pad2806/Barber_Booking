@@ -150,6 +150,17 @@ export class CashierController {
     );
   }
 
+  // ─── PAYMENT HISTORY ─────────────────────────────────────
+
+  @Get('payment-history')
+  @ApiOperation({ summary: 'Get payment history for shift reconciliation' })
+  getPaymentHistory(
+    @CurrentUser('id') userId: string,
+    @Query('date') date?: string,
+  ) {
+    return this.cashierService.getPaymentHistory(userId, { date });
+  }
+
   // ─── REVENUE ────────────────────────────────────────────
 
   @Get('revenue')

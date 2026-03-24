@@ -503,6 +503,57 @@ export class CashierService {
     });
   }
 
+  // ─── 6B. PAYMENT HISTORY ────────────────────────────────────
+
+  async getPaymentHistory(
+    userId: string,
+    filters: { date?: string },
+  ) {
+    const salonId = await this.getSalonId(userId);
+    const targetDate = filters.date
+      ? this.toDateOnly(filters.date)
+      : this.todayDate();
+
+    const bookings = await this.prisma.booking.findMany({
+      where: {
+        salonId,
+        date: targetDate,
+        paymentStatus: { in: ['PAID', 'DEPOSIT_PAID'] },
+      },
+      include: {
+        customer: { select: { id: true, name: true, phone: true, avatar: true } },
+        staff: { include: { user: { select: { name: true } } } },
+        services: { include: { service: { select: { name: true, price: true } } } },
+        payments: {
+          where: { status: 'PAID' },
+          orderBy: { paidAt: 'desc' },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+
+    // Summary stats
+    const allPayments = bookings.flatMap(b => b.payments);
+    const totalCash = allPayments
+      .filter(p => p.method === 'CASH')
+      .reduce((sum, p) => sum + Number(p.amount), 0);
+    const totalTransfer = allPayments
+      .filter(p => p.method === 'VIETQR' || p.method === 'BANK_TRANSFER')
+      .reduce((sum, p) => sum + Number(p.amount), 0);
+    const totalAmount = allPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+
+    return {
+      bookings,
+      summary: {
+        totalTransactions: bookings.length,
+        totalAmount,
+        totalCash,
+        totalTransfer,
+        totalPayments: allPayments.length,
+      },
+    };
+  }
+
   // ─── 7. REVENUE ────────────────────────────────────────────
 
   async getRevenue(userId: string) {
