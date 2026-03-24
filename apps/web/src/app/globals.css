@@ -152,21 +152,33 @@
 .reetro-tour-popover {
   background: white !important;
   border-radius: 16px !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25),
+              0 0 0 1px rgba(200, 169, 126, 0.1) !important;
   border: 1px solid #E8E0D4 !important;
-  max-width: 360px !important;
+  max-width: 380px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
 }
 
 .reetro-tour-popover .driver-popover-title {
   font-size: 15px !important;
   font-weight: 700 !important;
   color: #2C1E12 !important;
+  padding: 20px 20px 0 !important;
+  margin: 0 !important;
 }
 
 .reetro-tour-popover .driver-popover-description {
   font-size: 13px !important;
   color: #5C4A32 !important;
-  line-height: 1.6 !important;
+  line-height: 1.7 !important;
+  padding: 8px 20px 0 !important;
+  margin: 0 !important;
+}
+
+.reetro-tour-popover .driver-popover-footer {
+  padding: 16px 20px 20px !important;
+  margin: 0 !important;
 }
 
 .reetro-tour-popover .driver-popover-progress-text {
@@ -181,24 +193,48 @@
   border-radius: 10px !important;
   font-weight: 600 !important;
   font-size: 12px !important;
-  padding: 6px 16px !important;
+  padding: 8px 18px !important;
+  transition: all 0.2s ease !important;
 }
 
 .reetro-tour-popover .driver-popover-next-btn {
-  background: #C8A97E !important;
+  background: linear-gradient(135deg, #C8A97E 0%, #B5966A 100%) !important;
   color: white !important;
   border: none !important;
-  box-shadow: 0 4px 6px -1px rgba(200, 169, 126, 0.3) !important;
+  box-shadow: 0 4px 12px -2px rgba(200, 169, 126, 0.4) !important;
 }
 
 .reetro-tour-popover .driver-popover-next-btn:hover {
-  background: #B5966A !important;
+  background: linear-gradient(135deg, #B5966A 0%, #A38558 100%) !important;
+  box-shadow: 0 6px 16px -2px rgba(200, 169, 126, 0.5) !important;
+  transform: translateY(-1px) !important;
 }
 
 .reetro-tour-popover .driver-popover-prev-btn {
   background: transparent !important;
   color: #8B7355 !important;
   border: 1px solid #E8E0D4 !important;
+}
+
+.reetro-tour-popover .driver-popover-prev-btn:hover {
+  background: #FAF8F5 !important;
+  border-color: #C8A97E !important;
+  color: #5C4A32 !important;
+}
+
+.reetro-tour-popover .driver-popover-close-btn {
+  color: #8B7355 !important;
+}
+
+.reetro-tour-popover .driver-popover-close-btn:hover {
+  color: #2C1E12 !important;
+}
+
+.reetro-tour-popover .driver-popover-arrow-side-left.driver-popover-arrow,
+.reetro-tour-popover .driver-popover-arrow-side-right.driver-popover-arrow,
+.reetro-tour-popover .driver-popover-arrow-side-top.driver-popover-arrow,
+.reetro-tour-popover .driver-popover-arrow-side-bottom.driver-popover-arrow {
+  border-color: white !important;
 }
 
 .driver-active-element {
