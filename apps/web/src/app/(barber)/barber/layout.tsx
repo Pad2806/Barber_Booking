@@ -196,7 +196,7 @@ export default function BarberLayout({ children }: BarberLayoutProps) {
               variant="ghost"
               size="icon"
               className="h-8 w-8 text-white/25 hover:text-rose-400 hover:bg-rose-500/10"
-              onClick={() => signOut({ callbackUrl: '/' })}
+              onClick={() => signOut({ callbackUrl: '/login' })}
             >
               <LogOut className="w-4 h-4" />
             </Button>
@@ -206,7 +206,7 @@ export default function BarberLayout({ children }: BarberLayoutProps) {
       {isCollapsed && !isMobileOpen && (
         <div className="p-3 border-t border-white/[0.08] shrink-0 flex justify-center">
           <button
-            onClick={() => signOut({ callbackUrl: '/' })}
+            onClick={() => signOut({ callbackUrl: '/login' })}
             className="p-2.5 rounded-xl text-white/25 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
           >
             <LogOut className="w-4 h-4" />
@@ -302,7 +302,7 @@ export default function BarberLayout({ children }: BarberLayoutProps) {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   className="rounded-lg h-9 px-3 font-medium text-slate-600 hover:text-rose-500 hover:bg-rose-50 cursor-pointer"
-                  onClick={() => signOut({ callbackUrl: '/' })}
+                  onClick={() => signOut({ callbackUrl: '/login' })}
                 >
                   <LogOut className="w-4 h-4 mr-2" /> Đăng xuất
                 </DropdownMenuItem>

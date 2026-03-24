@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { usersApi } from '@/lib/api';
+import { signOut } from 'next-auth/react';
 import {
   LayoutDashboard,
   Smartphone,
@@ -171,10 +172,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-slate-400 hover:text-rose-500"
-                onClick={() => {
-                  localStorage.removeItem('accessToken');
-                  router.push('/login');
-                }}
+                onClick={() => signOut({ callbackUrl: '/login' })}
               >
                 <LogOut className="w-4 h-4" />
               </Button>

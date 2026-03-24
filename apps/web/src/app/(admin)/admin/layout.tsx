@@ -188,7 +188,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
       <div className="px-3 pt-4 border-t border-slate-800">
         <button
-          onClick={() => signOut({ callbackUrl: '/' })}
+          onClick={() => signOut({ callbackUrl: '/login' })}
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-md text-slate-400 hover:bg-destructive/10 hover:text-destructive w-full transition-colors font-medium text-sm",
             isCollapsed && !isMobileOpen && "justify-center"
@@ -275,7 +275,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     className="text-destructive focus:text-destructive cursor-pointer"
-                    onClick={() => signOut({ callbackUrl: '/' })}
+                    onClick={() => signOut({ callbackUrl: '/login' })}
                   >
                     <LogOut className="w-4 h-4 mr-2" /> Đăng xuất
                   </DropdownMenuItem>

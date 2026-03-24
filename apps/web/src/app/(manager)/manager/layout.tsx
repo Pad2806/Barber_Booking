@@ -135,7 +135,7 @@ export default function ManagerLayout({ children }: ManagerLayoutProps): React.J
 
       <div className="px-3 pt-4 border-t border-slate-800">
         <button
-          onClick={() => signOut({ callbackUrl: '/' })}
+          onClick={() => signOut({ callbackUrl: '/login' })}
           className={cn(
             "flex items-center gap-3 px-3 py-2.5 rounded-md text-slate-400 hover:bg-rose-500/10 hover:text-rose-500 w-full transition-all font-medium text-sm",
             isCollapsed && !isMobileOpen && "justify-center"
@@ -218,7 +218,7 @@ export default function ManagerLayout({ children }: ManagerLayoutProps): React.J
                     <DropdownMenuSeparator className="bg-slate-50 my-1" />
                     <DropdownMenuItem 
                       className="rounded-lg h-10 px-3 font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 cursor-pointer transition-all flex items-center"
-                      onClick={() => signOut({ callbackUrl: '/' })}
+                      onClick={() => signOut({ callbackUrl: '/login' })}
                     >
                       <LogOut className="w-4 h-4 mr-3" /> Đăng xuất
                     </DropdownMenuItem>
