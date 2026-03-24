@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Bell,
+  TrendingUp,
 } from 'lucide-react';
 import { signOut } from 'next-auth/react';
 import { useQuery } from '@tanstack/react-query';
@@ -59,6 +60,7 @@ const MENU_ICONS: Record<string, React.ElementType> = {
   reviews: Star,
   settings: Settings,
   customers: UserCheck,
+  'branch-revenue': TrendingUp,
 };
 
 export default function AdminLayout({ children }: AdminLayoutProps) {

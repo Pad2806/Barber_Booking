@@ -200,9 +200,11 @@ model Salon {
   shifts      StaffShift[]
 
   // Payment settings
-  bankCode    String?
-  bankAccount String?
-  bankName    String?
+  bankCode          String?
+  bankAccount       String?
+  bankName          String?
+  transferTemplate  String?           // e.g. "RBQ1 {ma}" — custom CK per branch
+  revenueTarget     Decimal?  @db.Decimal(12, 0)  // monthly revenue target (optional)
 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -451,6 +453,7 @@ model Payment {
   qrContent       String?
   bankCode        String?
   bankAccount     String?
+  transferContent String?         // generated CK content, e.g. "RBQ1 BK240301A2"
 
   // Sepay webhook data
   sepayTransId    String?       @unique

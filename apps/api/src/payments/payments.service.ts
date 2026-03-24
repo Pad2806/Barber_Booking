@@ -25,6 +25,59 @@ export class PaymentsService {
   ) { }
 
   /**
+   * Resolve transfer content from template.
+   * Variables: {ma} = bookingCode, {ten} = customer name, {tien} = amount
+   */
+  private resolveTransferContent(
+    template: string,
+    vars: { bookingCode: string; customerName?: string; amount?: number },
+  ): string {
+    let result = template;
+    result = result.replace(/\{ma\}/g, vars.bookingCode);
+    if (vars.customerName) {
+      const shortName = vars.customerName
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase().split(' ').slice(-2).join(' ');
+      result = result.replace(/\{ten\}/g, shortName);
+    }
+    if (vars.amount !== undefined) {
+      result = result.replace(/\{tien\}/g, String(vars.amount));
+    }
+    return result.substring(0, 50); // bank CK max ~50 chars
+  }
+
+  /**
+   * Resolve bank info based on bankMode setting.
+   * UNIFIED: use global Settings. PER_BRANCH: use Salon config.
+   */
+  private async resolveBankInfo(salon: any): Promise<{
+    bankCode: string | null;
+    bankAccount: string | null;
+    bankAccountName: string | null;
+    transferTemplate: string;
+  }> {
+    const bankMode = await this.settingsService.getBankMode();
+    const bankConfig = await this.settingsService.getBankConfig();
+    const defaultTemplate = await this.settingsService.getDefaultTransferTemplate();
+
+    if (bankMode === 'PER_BRANCH' && salon.bankCode && salon.bankAccount) {
+      return {
+        bankCode: salon.bankCode,
+        bankAccount: salon.bankAccount,
+        bankAccountName: salon.bankName || salon.name,
+        transferTemplate: salon.transferTemplate || defaultTemplate,
+      };
+    }
+
+    return {
+      bankCode: bankConfig.bankCode || salon.bankCode,
+      bankAccount: bankConfig.bankAccount || salon.bankAccount,
+      bankAccountName: bankConfig.bankAccountName || salon.bankName || salon.name,
+      transferTemplate: salon.transferTemplate || defaultTemplate,
+    };
+  }
+
+  /**
    * Create a DEPOSIT payment for an online booking (25% of totalAmount).
    * This is called when a customer books online via Web or Zalo.
    */
@@ -56,11 +109,9 @@ export class PaymentsService {
 
     const salon = booking.salon;
 
-    // Use system-wide bank config from Settings, fallback to Salon-level config
-    const bankConfig = await this.settingsService.getBankConfig();
-    const bankCode = bankConfig.bankCode || salon.bankCode;
-    const bankAccount = bankConfig.bankAccount || salon.bankAccount;
-    const bankAccountName = bankConfig.bankAccountName || salon.bankName || salon.name;
+    // Resolve bank info based on mode
+    const bankInfo = await this.resolveBankInfo(salon);
+    const { bankCode, bankAccount, bankAccountName } = bankInfo;
 
     if (dto.method === PaymentMethod.VIETQR || dto.method === PaymentMethod.BANK_TRANSFER) {
       if (!bankCode || !bankAccount) {
@@ -74,26 +125,27 @@ export class PaymentsService {
     // Calculate deposit amount (25%)
     const depositAmount = Math.round(Number(booking.totalAmount) * 0.25);
 
-    if (dto.method === PaymentMethod.VIETQR && bankCode && bankAccount) {
-      const prefix = 'RB';
-      const description = booking.bookingCode.startsWith(prefix)
-        ? booking.bookingCode
-        : `${prefix}${booking.bookingCode}`;
+    // Resolve transfer content from template
+    const transferContent = this.resolveTransferContent(
+      bankInfo.transferTemplate,
+      { bookingCode: booking.bookingCode, amount: depositAmount },
+    );
 
+    if (dto.method === PaymentMethod.VIETQR && bankCode && bankAccount) {
       qrCode = this.vietQRService.generateQRCodeUrl({
         bankCode,
         accountNumber: bankAccount,
-        accountName: bankAccountName,
+        accountName: bankAccountName || '',
         amount: depositAmount,
-        description,
+        description: transferContent,
       });
 
       qrContent = this.vietQRService.generateQRContent({
         bankCode,
         accountNumber: bankAccount,
-        accountName: bankAccountName,
+        accountName: bankAccountName || '',
         amount: depositAmount,
-        description,
+        description: transferContent,
       });
     }
 
@@ -108,6 +160,7 @@ export class PaymentsService {
         qrContent,
         bankCode,
         bankAccount,
+        transferContent,
       },
     });
 
@@ -119,7 +172,7 @@ export class PaymentsService {
     return {
       ...payment,
       qrCodeUrl: qrCode,
-      bankName: bankConfig.bankName || salon.bankName || salon.name,
+      bankName: bankAccountName || salon.bankName || salon.name,
     };
   }
 
@@ -296,27 +349,30 @@ export class PaymentsService {
     let qrCode: string | undefined;
     let qrContent: string | undefined;
 
-    // Use system-wide bank config, fallback to Salon-level config
-    const bankConfig = await this.settingsService.getBankConfig();
-    const bankCode = bankConfig.bankCode || salon.bankCode;
-    const bankAccount = bankConfig.bankAccount || salon.bankAccount;
-    const bankAccountName = bankConfig.bankAccountName || salon.bankName || salon.name;
+    // Resolve bank info based on mode
+    const bankInfo = await this.resolveBankInfo(salon);
+    const { bankCode, bankAccount, bankAccountName } = bankInfo;
+
+    // Resolve transfer content
+    const transferContent = this.resolveTransferContent(
+      bankInfo.transferTemplate,
+      { bookingCode: booking.bookingCode, amount: remainingAmount },
+    );
 
     if (method === PaymentMethod.VIETQR && bankCode && bankAccount) {
-      const description = `${booking.bookingCode}F`;
       qrCode = this.vietQRService.generateQRCodeUrl({
         bankCode,
         accountNumber: bankAccount,
-        accountName: bankAccountName,
+        accountName: bankAccountName || '',
         amount: remainingAmount,
-        description,
+        description: transferContent,
       });
       qrContent = this.vietQRService.generateQRContent({
         bankCode,
         accountNumber: bankAccount,
-        accountName: bankAccountName,
+        accountName: bankAccountName || '',
         amount: remainingAmount,
-        description,
+        description: transferContent,
       });
     }
 
@@ -333,6 +389,7 @@ export class PaymentsService {
         qrContent,
         bankCode,
         bankAccount,
+        transferContent,
       },
     });
 
@@ -363,7 +420,7 @@ export class PaymentsService {
     return {
       ...finalPayment,
       qrCodeUrl: qrCode,
-      bankName: bankConfig.bankName || salon.bankName || salon.name,
+      bankName: bankAccountName || salon.bankName || salon.name,
     };
   }
 

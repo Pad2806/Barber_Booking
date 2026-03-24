@@ -1027,4 +1027,224 @@ export class AdminService extends BaseQueryService {
 
     return { message: 'Password updated successfully' };
   }
+
+  // ============== BRANCH REVENUE ==============
+
+  async getBranchRevenue(params: {
+    period?: 'week' | 'month' | 'quarter' | 'year';
+    search?: string;
+  }) {
+    const now = dayjs().tz(VIETNAM_TZ);
+    let startDate: Date;
+
+    switch (params.period || 'month') {
+      case 'week':
+        startDate = now.subtract(7, 'day').startOf('day').toDate();
+        break;
+      case 'month':
+        startDate = now.startOf('month').toDate();
+        break;
+      case 'quarter':
+        startDate = now.subtract(3, 'month').startOf('month').toDate();
+        break;
+      case 'year':
+        startDate = now.startOf('year').toDate();
+        break;
+    }
+
+    // Get all active salons
+    const salonWhere: any = { isActive: true };
+    if (params.search) {
+      salonWhere.name = { contains: params.search, mode: 'insensitive' };
+    }
+
+    const salons = await this.prisma.salon.findMany({
+      where: salonWhere,
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        city: true,
+        district: true,
+        revenueTarget: true,
+        transferTemplate: true,
+      },
+    });
+
+    // Get paid payments grouped by salon
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        status: PaymentStatus.PAID,
+        paidAt: { gte: startDate },
+        booking: {
+          salonId: { in: salons.map(s => s.id) },
+        },
+      },
+      select: {
+        amount: true,
+        method: true,
+        paidAt: true,
+        booking: {
+          select: { salonId: true },
+        },
+      },
+    });
+
+    // Aggregate per salon
+    const revenueMap = new Map<string, {
+      totalRevenue: number;
+      bookingCount: number;
+      cashCount: number;
+      transferCount: number;
+    }>();
+
+    for (const p of payments) {
+      const salonId = p.booking.salonId;
+      const existing = revenueMap.get(salonId) || {
+        totalRevenue: 0,
+        bookingCount: 0,
+        cashCount: 0,
+        transferCount: 0,
+      };
+      existing.totalRevenue += Number(p.amount);
+      existing.bookingCount++;
+      if (p.method === 'CASH') existing.cashCount++;
+      else existing.transferCount++;
+      revenueMap.set(salonId, existing);
+    }
+
+    const totalSystemRevenue = Array.from(revenueMap.values())
+      .reduce((sum, r) => sum + r.totalRevenue, 0);
+
+    const branches = salons.map(salon => {
+      const rev = revenueMap.get(salon.id) || {
+        totalRevenue: 0,
+        bookingCount: 0,
+        cashCount: 0,
+        transferCount: 0,
+      };
+      const target = salon.revenueTarget ? Number(salon.revenueTarget) : null;
+      const percentage = target ? Math.round((rev.totalRevenue / target) * 100) : null;
+
+      return {
+        salonId: salon.id,
+        salonName: salon.name,
+        slug: salon.slug,
+        city: salon.city,
+        district: salon.district,
+        totalRevenue: rev.totalRevenue,
+        bookingCount: rev.bookingCount,
+        cashCount: rev.cashCount,
+        transferCount: rev.transferCount,
+        revenueTarget: target,
+        percentage,
+        transferTemplate: salon.transferTemplate,
+      };
+    });
+
+    // Sort by revenue descending
+    branches.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+    return {
+      totalSystemRevenue,
+      branchCount: salons.length,
+      period: params.period || 'month',
+      branches,
+    };
+  }
+
+  async getBranchRevenueDetail(salonId: string, params: {
+    period?: 'week' | 'month' | 'quarter' | 'year';
+  }) {
+    const now = dayjs().tz(VIETNAM_TZ);
+    let startDate: Date;
+
+    switch (params.period || 'month') {
+      case 'week':
+        startDate = now.subtract(7, 'day').startOf('day').toDate();
+        break;
+      case 'month':
+        startDate = now.startOf('month').toDate();
+        break;
+      case 'quarter':
+        startDate = now.subtract(3, 'month').startOf('month').toDate();
+        break;
+      case 'year':
+        startDate = now.startOf('year').toDate();
+        break;
+    }
+
+    const salon = await this.prisma.salon.findUnique({
+      where: { id: salonId },
+      select: { id: true, name: true, revenueTarget: true },
+    });
+
+    if (!salon) throw new Error('Salon not found');
+
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        status: PaymentStatus.PAID,
+        paidAt: { gte: startDate },
+        booking: { salonId },
+      },
+      select: {
+        amount: true,
+        method: true,
+        paidAt: true,
+        transferContent: true,
+        booking: {
+          select: {
+            bookingCode: true,
+            customer: { select: { name: true } },
+            services: {
+              select: { service: { select: { name: true } } },
+            },
+          },
+        },
+      },
+      orderBy: { paidAt: 'desc' },
+    });
+
+    // Daily breakdown
+    const dailyMap = new Map<string, { date: string; revenue: number; count: number }>();
+    for (const p of payments) {
+      if (!p.paidAt) continue;
+      const dateKey = dayjs(p.paidAt).tz(VIETNAM_TZ).format('YYYY-MM-DD');
+      const existing = dailyMap.get(dateKey) || { date: dateKey, revenue: 0, count: 0 };
+      existing.revenue += Number(p.amount);
+      existing.count++;
+      dailyMap.set(dateKey, existing);
+    }
+
+    // Payment method breakdown
+    let cashTotal = 0, transferTotal = 0;
+    for (const p of payments) {
+      if (p.method === 'CASH') cashTotal += Number(p.amount);
+      else transferTotal += Number(p.amount);
+    }
+
+    return {
+      salon: {
+        id: salon.id,
+        name: salon.name,
+        revenueTarget: salon.revenueTarget ? Number(salon.revenueTarget) : null,
+      },
+      totalRevenue: payments.reduce((sum, p) => sum + Number(p.amount), 0),
+      transactionCount: payments.length,
+      dailyBreakdown: Array.from(dailyMap.values()).sort((a, b) => a.date.localeCompare(b.date)),
+      byMethod: {
+        cash: cashTotal,
+        transfer: transferTotal,
+      },
+      transactions: payments.slice(0, 50).map(p => ({
+        bookingCode: p.booking.bookingCode,
+        customerName: p.booking.customer?.name || 'N/A',
+        services: p.booking.services.map(s => s.service.name).join(', '),
+        amount: Number(p.amount),
+        method: p.method,
+        paidAt: p.paidAt,
+        transferContent: p.transferContent,
+      })),
+    };
+  }
 }

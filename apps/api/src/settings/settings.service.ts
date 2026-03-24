@@ -31,6 +31,8 @@ export const SETTINGS_KEYS = {
   bankAccount: 'string',
   bankAccountName: 'string',
   sepayApiKey: 'string',
+  bankMode: 'string',                // 'UNIFIED' | 'PER_BRANCH'
+  defaultTransferTemplate: 'string', // e.g. 'RB {ma}'
 
   // Notifications
   notify_new_booking: 'boolean',
@@ -60,6 +62,8 @@ const DEFAULTS: Partial<Record<SettingKey, any>> = {
   notify_payment: true,
   notify_review: true,
   primaryColor: '#D4A574',
+  bankMode: 'UNIFIED',
+  defaultTransferTemplate: 'RB {ma}',
 };
 
 /** Keys safe to expose without auth */
@@ -160,5 +164,15 @@ export class SettingsService {
       bankAccount: s.bankAccount || null,
       bankAccountName: s.bankAccountName || null,
     };
+  }
+  /** Get bank mode: UNIFIED or PER_BRANCH */
+  async getBankMode(): Promise<'UNIFIED' | 'PER_BRANCH'> {
+    const mode = await this.get('bankMode', 'UNIFIED');
+    return mode === 'PER_BRANCH' ? 'PER_BRANCH' : 'UNIFIED';
+  }
+
+  /** Get default transfer content template */
+  async getDefaultTransferTemplate(): Promise<string> {
+    return this.get('defaultTransferTemplate', 'RB {ma}');
   }
 }

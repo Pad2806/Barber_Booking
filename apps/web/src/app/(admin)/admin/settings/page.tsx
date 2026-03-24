@@ -317,6 +317,60 @@ export default function AdminSettingsPage(): JSX.Element {
                          />
                       </div>
                    </div>
+
+                    {/* Bank Mode */}
+                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+                       <div>
+                          <p className="font-bold text-slate-800">Chế độ tài khoản ngân hàng</p>
+                          <p className="text-xs text-slate-500">Chọn cách quản lý tài khoản nhận thanh toán cho các chi nhánh.</p>
+                       </div>
+                       <div className="grid md:grid-cols-2 gap-3">
+                          {[
+                            { value: 'UNIFIED', label: '1 TK chung', desc: 'Tất cả chi nhánh dùng tài khoản ở trên' },
+                            { value: 'PER_BRANCH', label: 'Riêng từng CN', desc: 'Mỗi chi nhánh cấu hình TK riêng' },
+                          ].map(mode => (
+                            <button
+                              key={mode.value}
+                              type="button"
+                              onClick={() => updateField('bankMode', mode.value)}
+                              className={`p-4 rounded-xl border-2 text-left transition-all ${
+                                (settings.bankMode || 'UNIFIED') === mode.value
+                                  ? 'border-primary bg-primary/5 shadow-sm'
+                                  : 'border-slate-200 hover:border-slate-300'
+                              }`}
+                            >
+                              <p className="font-bold text-sm text-slate-800">{mode.label}</p>
+                              <p className="text-[11px] text-slate-500 mt-1">{mode.desc}</p>
+                            </button>
+                          ))}
+                       </div>
+                    </div>
+
+                    {/* Default Transfer Template */}
+                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+                       <div>
+                          <p className="font-bold text-slate-800">Mẫu nội dung CK mặc định</p>
+                          <p className="text-xs text-slate-500">Dùng cho chi nhánh chưa cấu hình template riêng.</p>
+                       </div>
+                       <Input
+                         value={settings.defaultTransferTemplate || 'RB {ma}'}
+                         onChange={e => updateField('defaultTransferTemplate', e.target.value)}
+                         placeholder="RB {ma}"
+                         className="rounded-xl h-12 font-mono"
+                       />
+                       <div className="flex flex-wrap gap-2">
+                          {[
+                            { v: '{ma}', d: 'Mã booking' },
+                            { v: '{ten}', d: 'Tên khách' },
+                            { v: '{tien}', d: 'Số tiền' },
+                          ].map(item => (
+                            <span key={item.v} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs">
+                              <code className="font-mono font-bold text-primary">{item.v}</code>
+                              <span className="text-slate-500">= {item.d}</span>
+                            </span>
+                          ))}
+                       </div>
+                    </div>
                 </CardContent>
              </Card>
           </TabsContent>

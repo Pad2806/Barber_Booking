@@ -420,4 +420,30 @@ export class AdminController {
   deleteShift(@Param('id') id: string, @CurrentUser() user: User) {
     return this.staffService.removeShift(id, user);
   }
+
+  // ============== BRANCH REVENUE ==============
+
+  @Get('branch-revenue')
+  @RequirePermissions(Permission.VIEW_REVENUE)
+  @ApiOperation({ summary: 'Get revenue by branch' })
+  @ApiQuery({ name: 'period', required: false, enum: ['week', 'month', 'quarter', 'year'] })
+  @ApiQuery({ name: 'search', required: false })
+  getBranchRevenue(
+    @Query('period') period?: 'week' | 'month' | 'quarter' | 'year',
+    @Query('search') search?: string,
+  ) {
+    return this.adminService.getBranchRevenue({ period, search });
+  }
+
+  @Get('branch-revenue/:salonId')
+  @RequirePermissions(Permission.VIEW_REVENUE)
+  @ApiOperation({ summary: 'Get revenue detail for a branch' })
+  @ApiParam({ name: 'salonId', description: 'Salon ID' })
+  @ApiQuery({ name: 'period', required: false, enum: ['week', 'month', 'quarter', 'year'] })
+  getBranchRevenueDetail(
+    @Param('salonId') salonId: string,
+    @Query('period') period?: 'week' | 'month' | 'quarter' | 'year',
+  ) {
+    return this.adminService.getBranchRevenueDetail(salonId, { period });
+  }
 }

@@ -761,6 +761,14 @@ export const adminApi = {
     const response = await apiClient.patch<Record<string, any>>('/admin/settings', data);
     return response.data;
   },
+  getBranchRevenue: async (params?: { period?: string; search?: string }) => {
+    const response = await apiClient.get<any>('/admin/branch-revenue', { params });
+    return response.data;
+  },
+  getBranchRevenueDetail: async (salonId: string, params?: { period?: string }) => {
+    const response = await apiClient.get<any>(`/admin/branch-revenue/${salonId}`, { params });
+    return response.data;
+  },
 };
 
 // Review APIs
