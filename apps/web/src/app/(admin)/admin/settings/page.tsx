@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   Save, 
   Building, 
@@ -18,6 +20,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ImageUpload from '@/components/ImageUpload';
+import { salonApi } from '@/lib/api';
+import { Store, Check } from 'lucide-react';
 
 export default function AdminSettingsPage(): JSX.Element {
   const { settings, isLoading, isSaving, updateField, saveSettings } = useSettings();
@@ -395,6 +399,9 @@ export default function AdminSettingsPage(): JSX.Element {
                           })}
                        </div>
                     </div>
+
+                    {/* Per-Branch Template Override */}
+                    <PerBranchTemplateConfig />
                 </CardContent>
              </Card>
           </TabsContent>
@@ -476,6 +483,216 @@ export default function AdminSettingsPage(): JSX.Element {
           </TabsContent>
         </div>
       </Tabs>
+    </div>
+  );
+}
+
+function deriveBranchCode(slug: string): string {
+  const parts = slug.split('-');
+  const meaningful = parts.length > 1 ? parts.slice(1) : parts;
+  return meaningful.map(p => p.charAt(0).toUpperCase()).join('');
+}
+
+function PerBranchTemplateConfig() {
+  const queryClient = useQueryClient();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
+
+  const { data: salonsData } = useQuery({
+    queryKey: ['admin-salons-templates'],
+    queryFn: () => salonApi.getAll({ limit: 50 }),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, template }: { id: string; template: string }) =>
+      salonApi.update(id, { transferTemplate: template || null }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-salons-templates'] });
+      setEditingId(null);
+    },
+  });
+
+  const salons = salonsData?.data || [];
+  if (salons.length === 0) return null;
+
+  const TEMPLATE_VARS = [
+    { v: '{cn}', d: 'Mã CN' },
+    { v: '{ma}', d: 'Mã booking' },
+    { v: '{ten}', d: 'Tên khách' },
+    { v: '{tien}', d: 'Số tiền' },
+  ];
+
+  const getPresets = (code: string) => [
+    { label: '📋 Mã CN + Mã booking', value: `${code} {ma}` },
+    { label: '👤 Mã CN + Tên khách + Mã booking', value: `${code} {ten} {ma}` },
+    { label: '💰 Mã CN + Mã booking + Số tiền', value: `${code} {ma} {tien}` },
+    { label: '⚙️ Tùy chỉnh...', value: '__custom__' },
+  ];
+
+  const renderPreview = (tpl: string, code: string) => {
+    if (!tpl) return null;
+    const preview = tpl
+      .replace(/\{cn\}/g, code)
+      .replace(/\{ma\}/g, 'RBMN5X3N')
+      .replace(/\{ten\}/g, 'NGUYEN A')
+      .replace(/\{tien\}/g, '150000');
+    return (
+      <div className="mt-2 flex items-center gap-2">
+        <span className="text-[10px] text-slate-400">Xem trước:</span>
+        <span className="font-mono text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-md border border-emerald-200">{preview}</span>
+      </div>
+    );
+  };
+
+  const toggleVar = (variable: string) => {
+    if (editValue.includes(variable)) {
+      setEditValue(editValue.replace(new RegExp(variable.replace(/[{}]/g, '\\$&'), 'g'), '').replace(/\s+/g, ' ').trim());
+    } else {
+      setEditValue((editValue + ' ' + variable).trim());
+    }
+  };
+
+  return (
+    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
+      <div>
+        <p className="font-bold text-slate-800">Nội dung CK từng chi nhánh</p>
+        <p className="text-xs text-slate-500">Nếu để trống, chi nhánh sẽ dùng mẫu mặc định phía trên.</p>
+      </div>
+      <div className="space-y-2">
+        {salons.map((salon: any) => {
+          const code = deriveBranchCode(salon.slug);
+          const isEditing = editingId === salon.id;
+          return (
+            <div key={salon.id} className={`p-4 bg-white rounded-xl border transition-all ${isEditing ? 'border-primary/30 shadow-sm' : 'border-slate-100'}`}>
+              {/* Header */}
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                  <Store className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{salon.name}</p>
+                    <span className="px-1.5 py-0.5 bg-primary/10 text-primary text-[10px] font-bold rounded shrink-0">{code}</span>
+                  </div>
+                  {!isEditing && (
+                    <p
+                      className="text-xs text-slate-400 mt-0.5 cursor-pointer hover:text-primary transition-colors"
+                      onClick={() => { setEditingId(salon.id); setEditValue(salon.transferTemplate || ''); }}
+                    >
+                      {salon.transferTemplate
+                        ? <span className="font-mono text-slate-600">{salon.transferTemplate}</span>
+                        : 'Dùng mẫu mặc định — nhấn để tùy chỉnh'}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Editing Panel */}
+              {isEditing && (
+                <div className="mt-3 pl-12 space-y-3">
+                  {/* Preset Dropdown */}
+                  <div>
+                    <p className="text-[11px] font-medium text-slate-500 mb-1.5">Chọn mẫu có sẵn:</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {getPresets(code).map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => {
+                            if (preset.value === '__custom__') {
+                              setEditValue(editValue || `${code} {ma}`);
+                            } else {
+                              setEditValue(preset.value);
+                            }
+                          }}
+                          className={`px-2.5 py-1.5 rounded-lg text-[11px] transition-all ${
+                            editValue === preset.value
+                              ? 'bg-primary text-white font-semibold shadow-sm'
+                              : 'bg-slate-50 border border-slate-200 text-slate-600 hover:border-primary/30 hover:bg-primary/5'
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Custom Tags Builder */}
+                  {editValue && !getPresets(code).slice(0, -1).some(p => p.value === editValue) && (
+                    <div>
+                      <p className="text-[11px] font-medium text-slate-500 mb-1.5">Tùy chỉnh — nhấn để thêm/bỏ biến:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {TEMPLATE_VARS.map(item => {
+                          const isActive = editValue.includes(item.v);
+                          return (
+                            <button
+                              key={item.v}
+                              type="button"
+                              onClick={() => toggleVar(item.v)}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] transition-all ${
+                                isActive
+                                  ? 'bg-primary/10 border-2 border-primary/30 text-primary font-semibold'
+                                  : 'bg-white border border-slate-200 text-slate-500 hover:border-primary/30'
+                              }`}
+                            >
+                              <code className="font-mono font-bold">{item.v}</code>
+                              <span className="text-[10px]">{item.d}</span>
+                              {isActive && <span className="text-primary/50 hover:text-red-400 text-[10px] font-bold">✕</span>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Template Input (read-only for preset, editable for custom) */}
+                  <Input
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    placeholder={`VD: ${code} {ma}`}
+                    className="h-8 text-xs font-mono rounded-lg"
+                  />
+
+                  {/* Live Preview */}
+                  {editValue && renderPreview(editValue, code)}
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button
+                      size="sm"
+                      className="h-8 px-4 text-xs"
+                      onClick={() => updateMutation.mutate({ id: salon.id, template: editValue })}
+                      disabled={updateMutation.isPending}
+                    >
+                      <Check className="w-3.5 h-3.5 mr-1.5" /> Lưu
+                    </Button>
+                    {salon.transferTemplate && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 px-3 text-xs text-slate-500"
+                        onClick={() => {
+                          setEditValue('');
+                          updateMutation.mutate({ id: salon.id, template: '' });
+                        }}
+                      >
+                        Dùng mặc định
+                      </Button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(null)}
+                      className="text-xs text-slate-400 hover:text-slate-600 ml-auto"
+                    >
+                      Hủy
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -33,12 +33,12 @@ export class PaymentsService {
     vars: { bookingCode: string; customerName?: string; amount?: number; salonSlug?: string },
   ): string {
     let result = template;
-    // {cn} = branch code derived from salon slug (last segment, uppercased)
+    // {cn} = branch code: skip first segment (brand), take first char of each remaining
+    // e.g. reetro-quan-1 → Q1, reetro-binh-thanh → BT, reetro-go-vap → GV
     if (vars.salonSlug) {
       const parts = vars.salonSlug.split('-');
-      const branchCode = parts.length > 1
-        ? parts.slice(-1)[0].toUpperCase()
-        : parts[0].substring(0, 3).toUpperCase();
+      const meaningful = parts.length > 1 ? parts.slice(1) : parts;
+      const branchCode = meaningful.map(p => p.charAt(0).toUpperCase()).join('');
       result = result.replace(/\{cn\}/g, branchCode);
     } else {
       result = result.replace(/\{cn\}/g, '');
