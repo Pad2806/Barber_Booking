@@ -29,7 +29,8 @@ const BarChart = dynamicImport(() => import('recharts').then(mod => mod.BarChart
 const Bar = dynamicImport(() => import('recharts').then(mod => mod.Bar), { ssr: false });
 const PieChart = dynamicImport(() => import('recharts').then(mod => mod.PieChart), { ssr: false });
 const Pie = dynamicImport(() => import('recharts').then(mod => mod.Pie), { ssr: false });
-const Cell = dynamicImport(() => import('recharts').then(mod => mod.Cell), { ssr: false });
+// Cell must be imported directly — dynamic wrapper breaks Recharts' fill prop reading
+import { Cell } from 'recharts';
 const Legend = dynamicImport(() => import('recharts').then(mod => mod.Legend), { ssr: false });
 import { adminApi } from '@/lib/api';
 import { formatPrice, cn } from '@/lib/utils';
