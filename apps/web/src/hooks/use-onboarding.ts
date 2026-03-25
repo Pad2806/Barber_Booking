@@ -39,7 +39,7 @@ export function useOnboarding(actorType: ActorType) {
         stageRadius: 12,
         popoverClass: 'reetro-tour-popover',
         progressText: '{{current}} / {{total}}',
-        nextBtnText: 'Tiếp tục →',
+        nextBtnText: 'Tiếp theo →',
         prevBtnText: '← Quay lại',
         doneBtnText: 'Hoàn thành ✓',
         steps: config.steps,
