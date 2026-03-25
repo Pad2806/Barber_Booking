@@ -82,7 +82,7 @@ describe('PaymentsService', () => {
       bankAccountName: 'NGUYEN VAN A',
     }),
     getBankMode: jest.fn().mockResolvedValue('UNIFIED'),
-    getDefaultTransferTemplate: jest.fn().mockResolvedValue('RB {ma}'),
+    getDefaultTransferTemplate: jest.fn().mockResolvedValue('{cn} {ma}'),
   };
 
   const mockNotificationsService = {

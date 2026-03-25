@@ -26,13 +26,23 @@ export class PaymentsService {
 
   /**
    * Resolve transfer content from template.
-   * Variables: {ma} = bookingCode, {ten} = customer name, {tien} = amount
+   * Variables: {ma} = bookingCode, {ten} = customer name, {tien} = amount, {cn} = branch code
    */
   private resolveTransferContent(
     template: string,
-    vars: { bookingCode: string; customerName?: string; amount?: number },
+    vars: { bookingCode: string; customerName?: string; amount?: number; salonSlug?: string },
   ): string {
     let result = template;
+    // {cn} = branch code derived from salon slug (last segment, uppercased)
+    if (vars.salonSlug) {
+      const parts = vars.salonSlug.split('-');
+      const branchCode = parts.length > 1
+        ? parts.slice(-1)[0].toUpperCase()
+        : parts[0].substring(0, 3).toUpperCase();
+      result = result.replace(/\{cn\}/g, branchCode);
+    } else {
+      result = result.replace(/\{cn\}/g, '');
+    }
     result = result.replace(/\{ma\}/g, vars.bookingCode);
     if (vars.customerName) {
       const shortName = vars.customerName
@@ -43,7 +53,7 @@ export class PaymentsService {
     if (vars.amount !== undefined) {
       result = result.replace(/\{tien\}/g, String(vars.amount));
     }
-    return result.substring(0, 50); // bank CK max ~50 chars
+    return result.replace(/\s+/g, ' ').trim().substring(0, 50);
   }
 
   /**
@@ -128,7 +138,7 @@ export class PaymentsService {
     // Resolve transfer content from template
     const transferContent = this.resolveTransferContent(
       bankInfo.transferTemplate,
-      { bookingCode: booking.bookingCode, amount: depositAmount },
+      { bookingCode: booking.bookingCode, amount: depositAmount, salonSlug: salon.slug },
     );
 
     if (dto.method === PaymentMethod.VIETQR && bankCode && bankAccount) {
@@ -356,7 +366,7 @@ export class PaymentsService {
     // Resolve transfer content
     const transferContent = this.resolveTransferContent(
       bankInfo.transferTemplate,
-      { bookingCode: booking.bookingCode, amount: remainingAmount },
+      { bookingCode: booking.bookingCode, amount: remainingAmount, salonSlug: salon.slug },
     );
 
     if (method === PaymentMethod.VIETQR && bankCode && bankAccount) {

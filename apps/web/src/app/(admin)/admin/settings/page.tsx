@@ -350,25 +350,49 @@ export default function AdminSettingsPage(): JSX.Element {
                     <div className="p-6 bg-slate-50 rounded-2xl border border-slate-100 space-y-4">
                        <div>
                           <p className="font-bold text-slate-800">Mẫu nội dung CK mặc định</p>
-                          <p className="text-xs text-slate-500">Dùng cho chi nhánh chưa cấu hình template riêng.</p>
+                          <p className="text-xs text-slate-500">Nhấn vào biến bên dưới để thêm vào mẫu. Nhấn ✕ để xóa.</p>
                        </div>
                        <Input
-                         value={settings.defaultTransferTemplate || 'RB {ma}'}
+                         value={settings.defaultTransferTemplate || '{cn} {ma}'}
                          onChange={e => updateField('defaultTransferTemplate', e.target.value)}
-                         placeholder="RB {ma}"
+                         placeholder="{cn} {ma}"
                          className="rounded-xl h-12 font-mono"
                        />
                        <div className="flex flex-wrap gap-2">
                           {[
+                            { v: '{cn}', d: 'Mã chi nhánh' },
                             { v: '{ma}', d: 'Mã booking' },
                             { v: '{ten}', d: 'Tên khách' },
                             { v: '{tien}', d: 'Số tiền' },
-                          ].map(item => (
-                            <span key={item.v} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-xs">
-                              <code className="font-mono font-bold text-primary">{item.v}</code>
-                              <span className="text-slate-500">= {item.d}</span>
-                            </span>
-                          ))}
+                          ].map(item => {
+                            const tpl = settings.defaultTransferTemplate || '{cn} {ma}';
+                            const isActive = tpl.includes(item.v);
+                            return (
+                              <button
+                                key={item.v}
+                                type="button"
+                                onClick={() => {
+                                  if (isActive) {
+                                    const newTpl = tpl.replace(new RegExp(item.v.replace(/[{}]/g, '\\$&'), 'g'), '').replace(/\s+/g, ' ').trim();
+                                    updateField('defaultTransferTemplate', newTpl);
+                                  } else {
+                                    updateField('defaultTransferTemplate', (tpl + ' ' + item.v).trim());
+                                  }
+                                }}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all ${
+                                  isActive
+                                    ? 'bg-primary/10 border-2 border-primary/30 text-primary font-semibold shadow-sm'
+                                    : 'bg-white border border-slate-200 text-slate-500 hover:border-primary/30 hover:bg-primary/5'
+                                }`}
+                              >
+                                <code className="font-mono font-bold">{item.v}</code>
+                                <span className={isActive ? 'text-primary/70' : 'text-slate-400'}>= {item.d}</span>
+                                {isActive && (
+                                  <span className="ml-1 text-primary/50 hover:text-red-400 text-[10px] font-bold">✕</span>
+                                )}
+                              </button>
+                            );
+                          })}
                        </div>
                     </div>
                 </CardContent>

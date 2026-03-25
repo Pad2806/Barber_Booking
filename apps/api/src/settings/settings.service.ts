@@ -63,7 +63,7 @@ const DEFAULTS: Partial<Record<SettingKey, any>> = {
   notify_review: true,
   primaryColor: '#D4A574',
   bankMode: 'UNIFIED',
-  defaultTransferTemplate: 'RB {ma}',
+  defaultTransferTemplate: '{cn} {ma}',
 };
 
 /** Keys safe to expose without auth */
