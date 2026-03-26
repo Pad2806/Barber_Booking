@@ -1247,4 +1247,62 @@ export class AdminService extends BaseQueryService {
       })),
     };
   }
+
+  // ============== USER ROLES (RBAC) ==============
+
+  async getUserRoles(userId: string) {
+    const roles = await this.prisma.userRole.findMany({
+      where: { userId },
+      include: {
+        salon: { select: { id: true, name: true, slug: true } },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+    return roles;
+  }
+
+  async updateUserRoles(
+    userId: string,
+    newRoles: { role: string; salonId?: string | null }[],
+  ) {
+    // Role priority for determining primary role
+    const ROLE_PRIORITY: Record<string, number> = {
+      SUPER_ADMIN: 100, SALON_OWNER: 50, MANAGER: 40,
+      CASHIER: 25, BARBER: 25, SKINNER: 25, STAFF: 25,
+      CUSTOMER: 10,
+    };
+
+    return this.prisma.$transaction(async (tx) => {
+      // Delete all existing roles
+      await tx.userRole.deleteMany({ where: { userId } });
+
+      // Create new roles
+      if (newRoles.length > 0) {
+        await tx.userRole.createMany({
+          data: newRoles.map(r => ({
+            userId,
+            role: r.role as any,
+            salonId: r.salonId || null,
+          })),
+        });
+      }
+
+      // Update user.role to highest-priority role (backward compat)
+      const primaryRole = newRoles.length > 0
+        ? newRoles.reduce((best, r) =>
+          (ROLE_PRIORITY[r.role] || 0) > (ROLE_PRIORITY[best.role] || 0) ? r : best
+        ).role
+        : 'CUSTOMER';
+
+      await tx.user.update({
+        where: { id: userId },
+        data: { role: primaryRole as any },
+      });
+
+      return tx.userRole.findMany({
+        where: { userId },
+        include: { salon: { select: { id: true, name: true, slug: true } } },
+      });
+    });
+  }
 }

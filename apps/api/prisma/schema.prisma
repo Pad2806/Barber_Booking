@@ -134,6 +134,7 @@ model User {
   favorites     UserFavoriteSalon[]
   customerNotes CustomerNote[] @relation("UserNotes")
   managerRatings StaffPerformance[] @relation("ManagerRating")
+  userRoles     UserRole[]
 
   @@map("users")
 }
@@ -209,6 +210,7 @@ model Salon {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   waitingQueue WaitingQueue[]
+  userRoles    UserRole[]
 
   @@map("salons")
 }
@@ -618,4 +620,17 @@ model WaitingQueue {
   updatedAt    DateTime @updatedAt
 
   @@map("waiting_queue")
+}
+
+model UserRole {
+  id        String   @id @default(uuid())
+  userId    String
+  role      Role
+  salonId   String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  salon     Salon?   @relation(fields: [salonId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, role, salonId])
+  @@map("user_roles")
 }

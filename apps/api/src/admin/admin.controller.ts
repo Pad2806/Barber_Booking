@@ -446,4 +446,24 @@ export class AdminController {
   ) {
     return this.adminService.getBranchRevenueDetail(salonId, { period });
   }
+
+  // ============== USER ROLES (RBAC) ==============
+
+  @Get('users/:userId/roles')
+  @RequirePermissions(Permission.MANAGE_STAFF)
+  @ApiOperation({ summary: 'Get all roles for a user' })
+  getUserRoles(@Param('userId') userId: string) {
+    return this.adminService.getUserRoles(userId);
+  }
+
+  @Patch('users/:userId/roles')
+  @RequirePermissions(Permission.MANAGE_STAFF)
+  @ApiOperation({ summary: 'Update all roles for a user (replace)' })
+  @ApiBody({ schema: { type: 'object', properties: { roles: { type: 'array', items: { type: 'object', properties: { role: { type: 'string' }, salonId: { type: 'string', nullable: true } } } } } } })
+  updateUserRoles(
+    @Param('userId') userId: string,
+    @Body() body: { roles: { role: string; salonId?: string | null }[] },
+  ) {
+    return this.adminService.updateUserRoles(userId, body.roles);
+  }
 }

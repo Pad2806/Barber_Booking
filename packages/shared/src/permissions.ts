@@ -177,6 +177,42 @@ export function hasPermission(
     return perms.includes(permission);
 }
 
+// ============== MULTI-ROLE RBAC FUNCTIONS ==============
+
+/**
+ * Get all permissions for a user with MULTIPLE roles.
+ * Returns the UNION of permissions from all assigned roles.
+ */
+export function getUserMultiRolePermissions(roles: Role[]): Permission[] {
+    const allPerms = new Set<Permission>();
+    for (const role of roles) {
+        const perms = ROLE_PERMISSIONS[role] || [];
+        perms.forEach(p => allPerms.add(p));
+    }
+    return Array.from(allPerms);
+}
+
+/**
+ * Check if a user with multiple roles has a specific permission.
+ */
+export function hasMultiRolePermission(
+    roles: Role[],
+    permission: Permission,
+): boolean {
+    return getUserMultiRolePermissions(roles).includes(permission);
+}
+
+/**
+ * Check if a user with multiple roles has ANY of the given permissions.
+ */
+export function hasAnyMultiRolePermission(
+    roles: Role[],
+    permissions: Permission[],
+): boolean {
+    const userPerms = getUserMultiRolePermissions(roles);
+    return permissions.some(p => userPerms.includes(p));
+}
+
 /**
  * Check if a user has ANY of the given permissions.
  */
@@ -206,6 +242,7 @@ export const ADMIN_MENU_ITEMS = [
     { key: 'customers', href: '/admin/customers', label: 'Khách hàng', permission: Permission.VIEW_USERS },
     { key: 'reviews', href: '/admin/reviews', label: 'Đánh giá', permission: Permission.VIEW_REVIEWS },
     { key: 'branch-revenue', href: '/admin/branch-revenue', label: 'Doanh thu CN', permission: Permission.VIEW_REVENUE },
+    { key: 'roles', href: '/admin/roles', label: 'Phân quyền', permission: Permission.MANAGE_STAFF },
     { key: 'settings', href: '/admin/settings', label: 'Cài đặt', permission: Permission.MANAGE_SETTINGS },
 ] as const;
 
@@ -216,6 +253,7 @@ export const ADMIN_MENU_ITEMS = [
 export const ROUTE_PERMISSION_MAP: Record<string, Permission> = {
     '/admin/settings': Permission.MANAGE_SETTINGS,
     '/admin/branch-revenue': Permission.VIEW_REVENUE,
+    '/admin/roles': Permission.MANAGE_STAFF,
     '/admin/salons': Permission.VIEW_SALONS,
     '/admin/staff': Permission.VIEW_STAFF,
     '/admin/services': Permission.VIEW_SERVICES,

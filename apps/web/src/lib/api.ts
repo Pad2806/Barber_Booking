@@ -880,4 +880,16 @@ export const notificationApi = {
   },
 };
 
+// User Roles (RBAC) APIs
+export const userRoleApi = {
+  getUserRoles: async (userId: string) => {
+    const response = await apiClient.get(`/admin/users/${userId}/roles`);
+    return response.data;
+  },
+  updateUserRoles: async (userId: string, roles: { role: string; salonId?: string | null }[]) => {
+    const response = await apiClient.patch(`/admin/users/${userId}/roles`, { roles });
+    return response.data;
+  },
+};
+
 export default apiClient;

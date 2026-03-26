@@ -28,6 +28,7 @@ export interface User {
   zaloId?: string;
   authProvider: AuthProvider;
   role: Role;
+  roles?: string[];
   isVerified: boolean;
   isActive: boolean;
   createdAt: Date;
@@ -301,6 +302,7 @@ export interface JwtPayload {
   email?: string;
   phone?: string;
   role: Role;
+  roles?: string[];
   iat?: number;
   exp?: number;
 }

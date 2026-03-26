@@ -16,6 +16,7 @@ export interface JwtPayload {
   sub: string;
   email: string;
   role: string;
+  roles: string[];
   position?: string;
 }
 
@@ -187,10 +188,20 @@ export class AuthService {
       position = staff?.position;
     }
 
+    // Fetch all roles from UserRole table
+    const userRoles = await this.prisma.userRole.findMany({
+      where: { userId: user.id },
+      select: { role: true },
+    });
+    const roles = userRoles.length > 0
+      ? userRoles.map(ur => ur.role)
+      : [user.role];
+
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email ?? '',
       role: user.role,
+      roles,
       position,
     };
 
@@ -220,6 +231,7 @@ export class AuthService {
       refreshToken,
       user: {
         ...sanitizedUser,
+        roles,
         position,
       } as any,
     };

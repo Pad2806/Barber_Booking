@@ -1,6 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { Permission, hasAnyPermission, Role } from '@reetro/shared';
+import { Permission, hasAnyMultiRolePermission, Role } from '@reetro/shared';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
 import { PrismaService } from '../../database/prisma.service';
 
@@ -27,19 +27,24 @@ export class PermissionsGuard implements CanActivate {
             throw new ForbiddenException('Authentication required');
         }
 
-        const role = user.role as Role;
+        // Multi-role: query all roles from UserRole table
+        const userRoles = await this.prisma.userRole.findMany({
+            where: { userId: user.id },
+            select: { role: true },
+        });
 
-        // For STAFF, we need to resolve their position from DB
-        let staffPosition: string | null = null;
-        if (role === Role.STAFF) {
-            const staff = await this.prisma.staff.findUnique({
-                where: { userId: user.id },
-                select: { position: true },
-            });
-            staffPosition = staff?.position || null;
+        let roles: Role[];
+        if (userRoles.length > 0) {
+            roles = userRoles.map(ur => ur.role as Role);
+        } else {
+            // Fallback to single role for backward compat
+            roles = [user.role as Role];
         }
 
-        const allowed = hasAnyPermission(role, requiredPermissions, staffPosition);
+        // Attach roles to request user for downstream use
+        user.roles = roles;
+
+        const allowed = hasAnyMultiRolePermission(roles, requiredPermissions);
 
         if (!allowed) {
             throw new ForbiddenException(

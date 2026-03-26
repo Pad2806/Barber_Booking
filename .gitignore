@@ -12,7 +12,7 @@ build
 .turbo
 
 # Environment
-.env
+.env*
 .env.local
 .env.*.local
 !.env.example

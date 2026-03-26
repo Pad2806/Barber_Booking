@@ -13,7 +13,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 // ═══ Vietnamese day of week map ═══
-const VIET_DAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+const VIET_DAYS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
 
 // ═══ FAQ Router ═══
 const FAQ_PATTERNS: { keywords: string[]; response: string | (() => string) }[] = [

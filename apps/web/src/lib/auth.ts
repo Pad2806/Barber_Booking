@@ -29,6 +29,7 @@ export const authOptions: NextAuthOptions = {
               name: response.data.user.name,
               image: response.data.user.avatar,
               role: response.data.user.role,
+              roles: response.data.user.roles || [response.data.user.role],
               position: response.data.user.position,
               accessToken: response.data.accessToken,
               refreshToken: response.data.refreshToken,
@@ -70,6 +71,8 @@ export const authOptions: NextAuthOptions = {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (user as any).role = response.data.user.role;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (user as any).roles = response.data.user.roles || [response.data.user.role];
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (user as any).position = response.data.user.position;
             return true;
           }
@@ -85,6 +88,8 @@ export const authOptions: NextAuthOptions = {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.role = (user as any).role;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        token.roles = (user as any).roles;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.position = (user as any).position;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.accessToken = (user as any).accessToken;
@@ -99,6 +104,8 @@ export const authOptions: NextAuthOptions = {
         (session.user as any).id = token.id;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session.user as any).role = token.role;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (session.user as any).roles = token.roles;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session.user as any).position = token.position;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
