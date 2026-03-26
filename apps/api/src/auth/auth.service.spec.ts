@@ -55,6 +55,9 @@ describe('AuthService', () => {
       delete: jest.fn(),
       deleteMany: jest.fn(),
     },
+    userRole: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
   };
 
   const mockUsersService = {
