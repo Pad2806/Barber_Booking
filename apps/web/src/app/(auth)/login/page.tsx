@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signIn, getSession } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { Eye, EyeOff, Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -11,48 +11,18 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams?.get('callbackUrl');
+  const { update: updateSession } = useSession();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const getRedirectUrl = (role: string, position?: string): string => {
+  const getRedirectUrl = (role: string): string => {
     if (callbackUrl) return callbackUrl;
-    
-    // Check role first
-    switch (role) {
-      case 'SUPER_ADMIN':
-      case 'SALON_OWNER':
-        return '/admin';
-      case 'MANAGER':
-        return '/manager/dashboard';
-      case 'BARBER':
-        return '/barber/dashboard';
-      case 'CASHIER':
-        return '/cashier/dashboard';
-      case 'SKINNER':
-        return '/barber/dashboard'; // Assuming skinner uses barber dashboard
-    }
-
-    // If role is STAFF, redirect based on position
-    if (role === 'STAFF' && position) {
-      switch (position) {
-        case 'MANAGER':
-          return '/manager/dashboard';
-        case 'CASHIER':
-        case 'RECEPTIONIST':
-          return '/cashier/dashboard';
-        case 'BARBER':
-        case 'STYLIST':
-        case 'SENIOR_STYLIST':
-        case 'MASTER_STYLIST':
-        case 'SKINNER':
-          return '/barber/dashboard';
-      }
-    }
-
-    return '/';
+    // All staff/admin go to unified dashboard
+    if (role === 'CUSTOMER') return '/';
+    return '/dashboard';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,18 +41,16 @@ function LoginForm() {
       } else {
         toast.success('Đăng nhập thành công!');
 
-        // Retry getSession to handle race condition where session cookie
-        // is set but getSession returns stale/cached data
+        // Refresh the session to get the latest data from JWT
         let session = null;
         for (let i = 0; i < 3; i++) {
-          session = await getSession();
+          session = await updateSession();
           if (session?.user) break;
           await new Promise(resolve => setTimeout(resolve, 300));
         }
 
         const role = (session?.user as any)?.role || 'CUSTOMER';
-        const position = (session?.user as any)?.position;
-        const redirectUrl = getRedirectUrl(role, position);
+        const redirectUrl = getRedirectUrl(role);
 
         // Use window.location for full page reload so SessionProvider
         // re-initializes with the new session — router.push only does
@@ -95,6 +63,7 @@ function LoginForm() {
       setIsLoading(false);
     }
   };
+
 
 
   const handleSocialLogin = async (provider: 'google' | 'facebook') => {

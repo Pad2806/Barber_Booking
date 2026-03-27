@@ -29,10 +29,18 @@ export class CashierService {
   private async getSalonId(userId: string): Promise<string> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      include: { staff: true },
+      include: {
+        staff: true,
+        userRoles: { select: { role: true } },
+      },
     });
 
     if (!user) throw new ForbiddenException('User not found');
+
+    // Build effective roles list (multi-role RBAC + legacy single role)
+    const userRolesArr: Role[] = (user as any).userRoles?.length
+      ? (user as any).userRoles.map((ur: any) => ur.role as Role)
+      : [user.role as Role];
 
     const allowed: Role[] = [
       Role.CASHIER,
@@ -40,13 +48,24 @@ export class CashierService {
       Role.SALON_OWNER,
       Role.SUPER_ADMIN,
     ];
-    const isAuthorized =
-      allowed.includes(user.role) ||
-      (user.role === Role.STAFF &&
-        user.staff?.position === StaffPosition.CASHIER);
 
-    if (!isAuthorized || !user.staff) {
+    const isAllowedRole = userRolesArr.some(r => allowed.includes(r)) ||
+      (userRolesArr.includes(Role.STAFF) && user.staff?.position === StaffPosition.CASHIER);
+
+    if (!isAllowedRole) {
       throw new ForbiddenException('Không có quyền truy cập');
+    }
+
+    // SUPER_ADMIN / SALON_OWNER may not have a staff record — use first salon
+    if (!user.staff) {
+      const isSuperAdmin = userRolesArr.includes(Role.SUPER_ADMIN);
+      const isSalonOwner = userRolesArr.includes(Role.SALON_OWNER);
+      if (isSuperAdmin || isSalonOwner) {
+        const firstSalon = await this.prisma.salon.findFirst({ select: { id: true } });
+        if (!firstSalon) throw new ForbiddenException('Không có chi nhánh nào trong hệ thống');
+        return firstSalon.id;
+      }
+      throw new ForbiddenException('Nhân viên chưa được gán chi nhánh');
     }
 
     return user.staff.salonId;

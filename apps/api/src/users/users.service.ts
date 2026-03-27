@@ -179,22 +179,24 @@ export class UsersService extends BaseQueryService {
     };
   }
 
-  async findOne(id: string): Promise<User> {
+  async findOne(id: string): Promise<any> {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
-        staff: {
-          include: {
-            salon: true,
-          },
-        },
+        staff: { include: { salon: true } },
         ownedSalons: true,
+        userRoles: { select: { role: true, salonId: true } },
       },
     });
 
     if (!user) {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
+
+    // Attach flattened roles[] for convenience
+    (user as any).roles = (user as any).userRoles?.length
+      ? (user as any).userRoles.map((ur: any) => ur.role)
+      : [user.role];
 
     return user;
   }

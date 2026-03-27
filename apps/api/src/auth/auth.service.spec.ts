@@ -40,6 +40,8 @@ describe('AuthService', () => {
     authProvider: 'LOCAL',
     createdAt: new Date(),
     updatedAt: new Date(),
+    userRoles: [],  // multi-role RBAC
+    staff: null,
   };
 
   const mockPrismaService = {

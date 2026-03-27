@@ -3,11 +3,7 @@ import type { Metadata } from 'next';
 import { Inter, Playfair_Display } from 'next/font/google';
 import './globals.css';
 import { Providers } from '@/components/providers';
-import dynamicImport from 'next/dynamic';
-
-const AIChatWidget = dynamicImport(() => import('@/components/chat/AIChatWidget').then(mod => mod.AIChatWidget), { ssr: false });
-
-const Toaster = dynamicImport(() => import('react-hot-toast').then(mod => mod.Toaster), { ssr: false });
+import { ClientWidgets } from '@/components/client-widgets';
 
 const inter = Inter({
   subsets: ['latin', 'vietnamese'],
@@ -58,8 +54,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }):
       <body className={`${inter.variable} ${playfair.variable} font-body antialiased`}>
         <Providers>
           {children}
-          <Toaster position="top-center" />
-          <AIChatWidget />
+          <ClientWidgets />
         </Providers>
       </body>
     </html>

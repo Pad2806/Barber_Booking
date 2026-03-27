@@ -43,6 +43,14 @@ export enum Permission {
 
     // Scheduling
     MANAGE_SCHEDULE = 'MANAGE_SCHEDULE',
+
+    // Cashier-specific
+    MANAGE_CHECKOUT = 'MANAGE_CHECKOUT',
+    MANAGE_WALK_IN = 'MANAGE_WALK_IN',
+    VIEW_ONLINE_BOOKINGS = 'VIEW_ONLINE_BOOKINGS',
+
+    // Barber-specific
+    VIEW_OWN_SCHEDULE = 'VIEW_OWN_SCHEDULE',
 }
 
 const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
@@ -78,16 +86,22 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
 
     [Role.BARBER]: [
         Permission.VIEW_OWN_BOOKINGS,
+        Permission.VIEW_OWN_SCHEDULE,
     ],
 
     [Role.CASHIER]: [
         Permission.VIEW_DASHBOARD,
         Permission.VIEW_ALL_BOOKINGS,
         Permission.MANAGE_BOOKINGS,
+        Permission.MANAGE_CHECKOUT,
+        Permission.MANAGE_WALK_IN,
+        Permission.VIEW_ONLINE_BOOKINGS,
+        Permission.VIEW_REVENUE,
     ],
 
     [Role.SKINNER]: [
         Permission.VIEW_OWN_BOOKINGS,
+        Permission.VIEW_OWN_SCHEDULE,
     ],
 
     [Role.STAFF]: [],
@@ -225,11 +239,11 @@ export function hasAnyPermission(
     return permissions.some(p => userPerms.includes(p));
 }
 
-// ============== ADMIN MENU CONFIGURATION ==============
+// ============== ADMIN MENU CONFIGURATION (Legacy) ==============
 
 /**
- * Admin menu items with required permissions.
- * Used by BOTH backend (to validate routes) and frontend (to render menus).
+ * @deprecated Use DASHBOARD_MENU_ITEMS instead.
+ * Kept for backward compatibility during migration.
  */
 export const ADMIN_MENU_ITEMS = [
     { key: 'dashboard', href: '/admin', label: 'Dashboard', permission: Permission.VIEW_DASHBOARD },
@@ -244,6 +258,40 @@ export const ADMIN_MENU_ITEMS = [
     { key: 'branch-revenue', href: '/admin/branch-revenue', label: 'Doanh thu CN', permission: Permission.VIEW_REVENUE },
     { key: 'roles', href: '/admin/roles', label: 'Phân quyền', permission: Permission.MANAGE_STAFF },
     { key: 'settings', href: '/admin/settings', label: 'Cài đặt', permission: Permission.MANAGE_SETTINGS },
+] as const;
+
+// ============== UNIFIED DASHBOARD MENU CONFIGURATION ==============
+
+/**
+ * Unified menu items for the /dashboard route — single source of truth for ALL roles.
+ * Frontend layout filters this list by getUserMultiRolePermissions(roles).
+ */
+export const DASHBOARD_MENU_ITEMS = [
+    // ── Barber section ──
+    { key: 'my-schedule', href: '/dashboard/my-schedule', label: 'Lịch làm việc', permission: Permission.VIEW_OWN_SCHEDULE, section: 'barber' },
+    { key: 'my-bookings', href: '/dashboard/my-bookings', label: 'Lịch phân công', permission: Permission.VIEW_OWN_BOOKINGS, section: 'barber' },
+
+    // ── Cashier section ──
+    { key: 'online-bookings', href: '/dashboard/online-bookings', label: 'Duyệt Online', permission: Permission.VIEW_ONLINE_BOOKINGS, section: 'cashier' },
+    { key: 'walk-in', href: '/dashboard/walk-in', label: 'Khách vãng lai', permission: Permission.MANAGE_WALK_IN, section: 'cashier' },
+    { key: 'appointments', href: '/dashboard/appointments', label: 'Lịch hẹn', permission: Permission.VIEW_ALL_BOOKINGS, section: 'cashier' },
+    { key: 'checkout', href: '/dashboard/checkout', label: 'Thanh toán', permission: Permission.MANAGE_CHECKOUT, section: 'cashier' },
+
+    // ── Management section ──
+    { key: 'dashboard', href: '/dashboard', label: 'Tổng quan', permission: Permission.VIEW_DASHBOARD, section: 'management' },
+    { key: 'bookings', href: '/dashboard/bookings', label: 'Đặt lịch', permission: Permission.VIEW_ALL_BOOKINGS, section: 'management' },
+    { key: 'staff', href: '/dashboard/staff', label: 'Nhân viên', permission: Permission.VIEW_STAFF, section: 'management' },
+    { key: 'leave-requests', href: '/dashboard/leave-requests', label: 'Nghỉ phép', permission: Permission.VIEW_STAFF, section: 'management' },
+    { key: 'schedule', href: '/dashboard/schedule', label: 'Lịch làm', permission: Permission.MANAGE_SCHEDULE, section: 'management' },
+    { key: 'services', href: '/dashboard/services', label: 'Dịch vụ', permission: Permission.VIEW_SERVICES, section: 'management' },
+    { key: 'reviews', href: '/dashboard/reviews', label: 'Đánh giá', permission: Permission.VIEW_REVIEWS, section: 'management' },
+    { key: 'revenue', href: '/dashboard/revenue', label: 'Doanh thu', permission: Permission.VIEW_REVENUE, section: 'management' },
+
+    // ── Admin section ──
+    { key: 'salons', href: '/dashboard/salons', label: 'Chi nhánh', permission: Permission.VIEW_SALONS, section: 'admin' },
+    { key: 'customers', href: '/dashboard/customers', label: 'Khách hàng', permission: Permission.VIEW_USERS, section: 'admin' },
+    { key: 'roles', href: '/dashboard/roles', label: 'Phân quyền', permission: Permission.MANAGE_STAFF, section: 'admin' },
+    { key: 'settings', href: '/dashboard/settings', label: 'Cài đặt', permission: Permission.MANAGE_SETTINGS, section: 'admin' },
 ] as const;
 
 /**
@@ -261,6 +309,30 @@ export const ROUTE_PERMISSION_MAP: Record<string, Permission> = {
     '/admin/customers': Permission.VIEW_USERS,
     '/admin/bookings': Permission.VIEW_ALL_BOOKINGS,
     '/admin': Permission.VIEW_DASHBOARD,
+};
+
+/**
+ * DASHBOARD_ROUTE_PERMISSION_MAP — for /dashboard/* route protection in middleware.
+ */
+export const DASHBOARD_ROUTE_PERMISSION_MAP: Record<string, Permission> = {
+    '/dashboard/settings': Permission.MANAGE_SETTINGS,
+    '/dashboard/roles': Permission.MANAGE_STAFF,
+    '/dashboard/salons': Permission.VIEW_SALONS,
+    '/dashboard/customers': Permission.VIEW_USERS,
+    '/dashboard/staff': Permission.VIEW_STAFF,
+    '/dashboard/leave-requests': Permission.VIEW_STAFF,
+    '/dashboard/schedule': Permission.MANAGE_SCHEDULE,
+    '/dashboard/services': Permission.VIEW_SERVICES,
+    '/dashboard/reviews': Permission.VIEW_REVIEWS,
+    '/dashboard/revenue': Permission.VIEW_REVENUE,
+    '/dashboard/bookings': Permission.VIEW_ALL_BOOKINGS,
+    '/dashboard/appointments': Permission.VIEW_ALL_BOOKINGS,
+    '/dashboard/checkout': Permission.MANAGE_CHECKOUT,
+    '/dashboard/walk-in': Permission.MANAGE_WALK_IN,
+    '/dashboard/online-bookings': Permission.VIEW_ONLINE_BOOKINGS,
+    '/dashboard/my-schedule': Permission.VIEW_OWN_SCHEDULE,
+    '/dashboard/my-bookings': Permission.VIEW_OWN_BOOKINGS,
+    '/dashboard': Permission.VIEW_DASHBOARD,
 };
 
 // ============== ROLE DISPLAY INFO ==============

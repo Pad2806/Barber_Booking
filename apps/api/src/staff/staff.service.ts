@@ -698,8 +698,9 @@ export class StaffService extends BaseQueryService {
       where: { userId },
     });
 
+    // Non-staff users (admin, etc.) have no schedule — return empty gracefully
     if (!staff) {
-      throw new NotFoundException('Staff profile not found');
+      return [];
     }
 
     const where: any = { staffId: staff.id };

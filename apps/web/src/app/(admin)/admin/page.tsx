@@ -294,7 +294,7 @@ export default function AdminDashboardPage(): JSX.Element {
                     const total = stats.topServices.reduce((sum: number, s: any) => sum + s.count, 0);
                     const pct = total > 0 ? Math.round((service.count / total) * 100) : 0;
                     return (
-                      <div key={service.name} className="group">
+                      <div key={`service-${index}-${service.name}`} className="group">
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2.5">
                             <div className="w-3 h-3 rounded-full shrink-0 ring-2 ring-offset-1 ring-transparent group-hover:ring-current transition-all" style={{ backgroundColor: COLORS[index % COLORS.length], color: COLORS[index % COLORS.length] }} />

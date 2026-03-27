@@ -271,12 +271,20 @@ export class AuthService {
   }
 
   async validateJwtPayload(payload: JwtPayload): Promise<any | null> {
-    return this.prisma.user.findUnique({
+    const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
       include: {
         staff: true,
+        userRoles: { select: { role: true } },
       },
     });
+    if (user) {
+      // Attach roles[] for multi-role RBAC guards
+      (user as any).roles = (user as any).userRoles?.length
+        ? (user as any).userRoles.map((ur: any) => ur.role)
+        : [user.role];
+    }
+    return user;
   }
 
   // ============== Password Reset ==============

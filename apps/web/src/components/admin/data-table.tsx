@@ -53,6 +53,11 @@ export function DataTable<TData, TValue>({
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
+  const [globalFilter, setGlobalFilter] = React.useState('')
+
+  // If searchKey uses dot-notation (e.g. "user.name"), TanStack Table cannot find
+  // it as a column ID — use globalFilter instead for those cases.
+  const useGlobalFilter = !!searchKey && searchKey.includes('.')
 
   const table = useReactTable({
     data,
@@ -65,11 +70,14 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    globalFilterFn: 'includesString' as any,
+    onGlobalFilterChange: setGlobalFilter,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      globalFilter,
     },
   })
 
@@ -111,10 +119,18 @@ export function DataTable<TData, TValue>({
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Tìm kiếm..."
-              value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
-              onChange={(event) =>
-                table.getColumn(searchKey)?.setFilterValue(event.target.value)
+              value={
+                useGlobalFilter
+                  ? globalFilter
+                  : ((table.getColumn(searchKey)?.getFilterValue() as string) ?? "")
               }
+              onChange={(event) => {
+                if (useGlobalFilter) {
+                  setGlobalFilter(event.target.value)
+                } else {
+                  table.getColumn(searchKey)?.setFilterValue(event.target.value)
+                }
+              }}
               className="pl-9 bg-white"
             />
           </div>

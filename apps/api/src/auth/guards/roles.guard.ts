@@ -44,7 +44,11 @@ export class RolesGuard implements CanActivate {
       userRoleLevel = Math.max(userRoleLevel, roleHierarchy[Role.MANAGER]);
     }
 
-    // User can access if their highest role level >= any of the required roles
+    // 1. Direct match: user has at least one of the required roles explicitly
+    const directMatch = requiredRoles.some(role => userRoles.includes(role));
+    if (directMatch) return true;
+
+    // 2. Hierarchy fallback: higher roles (SUPER_ADMIN, SALON_OWNER) access lower endpoints
     return requiredRoles.some(
       role => userRoleLevel >= roleHierarchy[role],
     );

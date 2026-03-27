@@ -1,16 +1,15 @@
-import { NextAuthOptions } from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
-import FacebookProvider from 'next-auth/providers/facebook';
-import CredentialsProvider from 'next-auth/providers/credentials';
+import NextAuth from 'next-auth';
+import Credentials from 'next-auth/providers/credentials';
+import Google from 'next-auth/providers/google';
+import Facebook from 'next-auth/providers/facebook';
 import axios from 'axios';
 
 // Use INTERNAL_API_URL for server-to-server calls on Dokploy to bypass public DNS issues
 const API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
-export const authOptions: NextAuthOptions = {
+export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
-    CredentialsProvider({
-      name: 'credentials',
+    Credentials({
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
@@ -42,11 +41,11 @@ export const authOptions: NextAuthOptions = {
         }
       },
     }),
-    GoogleProvider({
+    Google({
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
     }),
-    FacebookProvider({
+    Facebook({
       clientId: process.env.FACEBOOK_CLIENT_ID || '',
       clientSecret: process.env.FACEBOOK_CLIENT_SECRET || '',
     }),
@@ -64,15 +63,10 @@ export const authOptions: NextAuthOptions = {
           });
 
           if (response.data) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (user as any).accessToken = response.data.accessToken;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (user as any).refreshToken = response.data.refreshToken;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (user as any).role = response.data.user.role;
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (user as any).roles = response.data.user.roles || [response.data.user.role];
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             (user as any).position = response.data.user.position;
             return true;
           }
@@ -85,32 +79,21 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.role = (user as any).role;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.roles = (user as any).roles;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.position = (user as any).position;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.accessToken = (user as any).accessToken;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         token.refreshToken = (user as any).refreshToken;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session.user as any).id = token.id;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session.user as any).role = token.role;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session.user as any).roles = token.roles;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session.user as any).position = token.position;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session as any).accessToken = token.accessToken;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (session as any).refreshToken = token.refreshToken;
       }
       return session;
@@ -125,4 +108,4 @@ export const authOptions: NextAuthOptions = {
     maxAge: 7 * 24 * 60 * 60, // 7 days
   },
   secret: process.env.NEXTAUTH_SECRET || 'reetro-barbershop-dev-secret-key-123456789',
-};
+});
