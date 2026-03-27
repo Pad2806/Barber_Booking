@@ -10,9 +10,15 @@ import { useEffect } from 'react';
 // Lazy-import the actual dashboard content from original pages
 import dynamic from 'next/dynamic';
 
-// For users with VIEW_DASHBOARD (cashier, manager, admin, salon_owner)
+// For SUPER_ADMIN, SALON_OWNER, MANAGER — full analytics dashboard
 const AdminDashboardContent = dynamic(
   () => import('@/app/(admin)/admin/page').then(m => ({ default: m.default })),
+  { ssr: false },
+);
+
+// For CASHIER — cashier-specific dashboard (checkout/appointments focused)
+const CashierDashboardContent = dynamic(
+  () => import('@/app/(cashier)/cashier/dashboard/page').then(m => ({ default: m.default })),
   { ssr: false },
 );
 
@@ -21,6 +27,9 @@ const BarberDashboardContent = dynamic(
   () => import('@/app/(barber)/barber/dashboard/page').then(m => ({ default: m.default })),
   { ssr: false },
 );
+
+// Roles that have access to the full Admin analytics dashboard
+const ADMIN_ANALYTICS_ROLES: Role[] = [Role.SUPER_ADMIN, Role.SALON_OWNER, Role.MANAGER];
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -41,6 +50,8 @@ export default function DashboardPage() {
     [userRoles],
   );
 
+  const hasFullAnalytics = userRoles.some(r => ADMIN_ANALYTICS_ROLES.includes(r));
+  const isCashier = userRoles.includes(Role.CASHIER) && !hasFullAnalytics;
   const hasFullDashboard = userPermissions.includes(Permission.VIEW_DASHBOARD);
   const hasOwnBookings = userPermissions.includes(Permission.VIEW_OWN_BOOKINGS);
 
@@ -63,9 +74,14 @@ export default function DashboardPage() {
     );
   }
 
-  // Full analytics dashboard for admin/manager/cashier/salon_owner
-  if (hasFullDashboard) {
+  // Full analytics dashboard for admin/manager/salon_owner ONLY
+  if (hasFullAnalytics) {
     return <AdminDashboardContent />;
+  }
+
+  // Cashier-specific dashboard
+  if (isCashier || (hasFullDashboard && !hasFullAnalytics)) {
+    return <CashierDashboardContent />;
   }
 
   // Personal schedule dashboard for barber/skinner

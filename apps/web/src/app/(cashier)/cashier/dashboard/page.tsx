@@ -50,9 +50,9 @@ export default function CashierDashboard() {
   ];
 
   const quickActions = [
-    { label: 'Duyệt lịch Online', href: '/cashier/online-bookings', icon: Smartphone, desc: 'Duyệt booking mới từ website' },
-    { label: 'Tiếp nhận khách', href: '/cashier/walk-in', icon: UserPlus, desc: 'Tạo booking cho khách vãng lai' },
-    { label: 'Thanh toán', href: '/cashier/checkout', icon: CreditCard, desc: 'Xử lý thanh toán tại quầy' },
+    { label: 'Duyệt lịch Online', href: '/dashboard/online-bookings', icon: Smartphone, desc: 'Duyệt booking mới từ website' },
+    { label: 'Tiếp nhận khách', href: '/dashboard/walk-in', icon: UserPlus, desc: 'Tạo booking cho khách vãng lai' },
+    { label: 'Thanh toán', href: '/dashboard/checkout', icon: CreditCard, desc: 'Xử lý thanh toán tại quầy' },
   ];
 
   return (
@@ -119,7 +119,7 @@ export default function CashierDashboard() {
                 <CardTitle className="text-lg font-bold">Lịch hẹn sắp tới</CardTitle>
                 <CardDescription>Các booking hôm nay cần phục vụ</CardDescription>
               </div>
-              <Link href="/cashier/appointments">
+              <Link href="/dashboard/appointments">
                 <Button variant="ghost" size="sm" className="text-xs text-primary hover:text-primary">
                   Xem tất cả
                 </Button>
