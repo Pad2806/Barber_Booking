@@ -27,6 +27,9 @@ COPY tsconfig.base.json ./
 # Generate Prisma client
 RUN cd apps/api && pnpm prisma generate
 
+# Compile seed script for production use
+RUN cd apps/api && npx tsc prisma/seed.ts --outDir dist/prisma --esModuleInterop --skipLibCheck
+
 # Build the API
 RUN pnpm turbo run build --filter=api
 
@@ -64,5 +67,5 @@ USER nestjs
 
 EXPOSE 3001
 
-# Run Prisma migrations and start the app
-CMD ["sh", "-c", "prisma migrate deploy --schema=./prisma/schema.prisma && node dist/apps/api/src/main.js"]
+# Run Prisma migrations, safely allow DB seeping via SEED_DB=true, and start the app
+CMD ["sh", "-c", "prisma migrate deploy --schema=./prisma/schema.prisma && if [ \"$SEED_DB\" = 'true' ]; then node dist/prisma/seed.js; fi && node dist/apps/api/src/main.js"]
