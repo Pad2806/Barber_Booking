@@ -287,10 +287,10 @@ export const DASHBOARD_MENU_ITEMS = [
     { key: 'reviews', href: '/dashboard/reviews', label: 'Đánh giá', permission: Permission.VIEW_REVIEWS, section: 'management' },
     { key: 'revenue', href: '/dashboard/revenue', label: 'Doanh thu', permission: Permission.VIEW_REVENUE, section: 'management' },
 
-    // ── Admin section ──
-    { key: 'salons', href: '/dashboard/salons', label: 'Chi nhánh', permission: Permission.VIEW_SALONS, section: 'admin' },
-    { key: 'customers', href: '/dashboard/customers', label: 'Khách hàng', permission: Permission.VIEW_USERS, section: 'admin' },
-    { key: 'roles', href: '/dashboard/roles', label: 'Phân quyền', permission: Permission.MANAGE_STAFF, section: 'admin' },
+    // ── Admin section (SUPER_ADMIN only) ──
+    { key: 'salons', href: '/dashboard/salons', label: 'Chi nhánh', permission: Permission.MANAGE_SALONS, section: 'admin' },
+    { key: 'customers', href: '/dashboard/customers', label: 'Khách hàng', permission: Permission.MANAGE_USERS, section: 'admin' },
+    { key: 'roles', href: '/dashboard/roles', label: 'Phân quyền', permission: Permission.MANAGE_USERS, section: 'admin' },
     { key: 'settings', href: '/dashboard/settings', label: 'Cài đặt', permission: Permission.MANAGE_SETTINGS, section: 'admin' },
 ] as const;
 
@@ -301,8 +301,8 @@ export const DASHBOARD_MENU_ITEMS = [
 export const ROUTE_PERMISSION_MAP: Record<string, Permission> = {
     '/admin/settings': Permission.MANAGE_SETTINGS,
     '/admin/branch-revenue': Permission.VIEW_REVENUE,
-    '/admin/roles': Permission.MANAGE_STAFF,
-    '/admin/salons': Permission.VIEW_SALONS,
+    '/admin/roles': Permission.MANAGE_USERS,
+    '/admin/salons': Permission.MANAGE_SALONS,
     '/admin/staff': Permission.VIEW_STAFF,
     '/admin/services': Permission.VIEW_SERVICES,
     '/admin/reviews': Permission.VIEW_REVIEWS,
@@ -316,8 +316,8 @@ export const ROUTE_PERMISSION_MAP: Record<string, Permission> = {
  */
 export const DASHBOARD_ROUTE_PERMISSION_MAP: Record<string, Permission> = {
     '/dashboard/settings': Permission.MANAGE_SETTINGS,
-    '/dashboard/roles': Permission.MANAGE_STAFF,
-    '/dashboard/salons': Permission.VIEW_SALONS,
+    '/dashboard/roles': Permission.MANAGE_USERS,
+    '/dashboard/salons': Permission.MANAGE_SALONS,
     '/dashboard/customers': Permission.VIEW_USERS,
     '/dashboard/staff': Permission.VIEW_STAFF,
     '/dashboard/leave-requests': Permission.VIEW_STAFF,
