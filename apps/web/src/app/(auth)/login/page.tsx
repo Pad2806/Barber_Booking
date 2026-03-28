@@ -64,10 +64,18 @@ function LoginForm() {
         const role = (session?.user as any)?.role || 'CUSTOMER';
         const redirectUrl = getRedirectUrl(role);
 
-        // Use window.location for full page reload so SessionProvider
-        // re-initializes with the new session — router.push only does
-        // a client-side navigation that keeps the old session state
-        window.location.href = redirectUrl;
+        // Clear the cached session in axios interceptor so next API calls
+        // use the fresh token from the new session
+        if (typeof window !== 'undefined') {
+          (window as any).__clearSessionCache?.();
+        }
+
+        // Use router.push (client-side nav) instead of window.location.href
+        // to avoid full HTTP reload that can cause ERR_TOO_MANY_REDIRECTS
+        // when the session cookie isn't fully propagated yet
+        router.push(redirectUrl);
+        router.refresh();
+
       }
     } catch (error) {
       toast.error('Đã có lỗi xảy ra');

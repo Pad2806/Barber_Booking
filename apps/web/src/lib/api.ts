@@ -34,6 +34,14 @@ let cachedSession: any = null;
 let sessionCacheTime = 0;
 const SESSION_CACHE_TTL = 30 * 1000; // 30 seconds
 
+// Expose cache clear function for login page
+if (typeof window !== 'undefined') {
+  (window as any).__clearSessionCache = () => {
+    cachedSession = null;
+    sessionCacheTime = 0;
+  };
+}
+
 // Request interceptor - add auth token
 apiClient.interceptors.request.use(
   async config => {
