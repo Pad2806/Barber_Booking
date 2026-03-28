@@ -29,14 +29,23 @@ export const apiClient = axios.create({
   },
 });
 
+// Session cache to avoid calling getSession() on every request
+let cachedSession: any = null;
+let sessionCacheTime = 0;
+const SESSION_CACHE_TTL = 30 * 1000; // 30 seconds
+
 // Request interceptor - add auth token
 apiClient.interceptors.request.use(
   async config => {
     if (typeof window !== 'undefined') {
-      const { getSession } = await import('next-auth/react');
-      const session = await getSession();
-      if (session?.accessToken) {
-        config.headers.Authorization = `Bearer ${session.accessToken}`;
+      const now = Date.now();
+      if (!cachedSession || now - sessionCacheTime > SESSION_CACHE_TTL) {
+        const { getSession } = await import('next-auth/react');
+        cachedSession = await getSession();
+        sessionCacheTime = now;
+      }
+      if (cachedSession?.accessToken) {
+        config.headers.Authorization = `Bearer ${cachedSession.accessToken}`;
       }
     }
     return config;
@@ -46,19 +55,17 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Response interceptor
+
+// Response interceptor — DO NOT redirect on 401 here.
+// Auth redirection is handled by dashboard layout via useSession().
+// Redirecting here causes infinite loop: 401 → /login → session valid → /dashboard → 401...
 apiClient.interceptors.response.use(
   response => response,
   error => {
-    if (error.response?.status === 401) {
-      // Redirect to login
-      if (typeof window !== 'undefined') {
-        window.location.href = '/login';
-      }
-    }
     return Promise.reject(error);
   }
 );
+
 
 // Salon APIs
 export const salonApi = {
