@@ -59,7 +59,7 @@ export default function BarberLayout({ children }: BarberLayoutProps) {
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/login?callbackUrl=/barber/dashboard');
+      router.push('/login?callbackUrl=/dashboard');
     } else if (status === 'authenticated') {
       const userRole = session?.user?.role;
       const staffPosition = me?.staff?.position;
@@ -101,7 +101,7 @@ export default function BarberLayout({ children }: BarberLayoutProps) {
         )}
       >
         <Link
-          href="/barber/dashboard"
+          href="/dashboard"
           className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
         >
           {isCollapsed && !isMobileOpen ? (

@@ -51,7 +51,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     if (!isLoading && !me) {
-      router.push('/login?callbackUrl=/cashier/dashboard');
+      router.push('/login?callbackUrl=/dashboard');
     }
   }, [me, isLoading, router]);
 
@@ -91,7 +91,7 @@ export default function CashierLayout({ children }: { children: React.ReactNode 
         {/* Logo */}
         <div className="h-16 flex items-center justify-between px-5 border-b border-slate-100 shrink-0">
           <Link
-            href="/cashier/dashboard"
+            href="/dashboard"
             className={cn(
               'font-heading font-black italic tracking-tighter transition-all hover:scale-105',
               isCollapsed && !isMobileOpen ? 'text-lg' : 'text-xl',

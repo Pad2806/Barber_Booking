@@ -70,7 +70,7 @@ export default function ManagerLayout({ children }: ManagerLayoutProps): React.J
 
   useEffect(() => {
     if (status === 'unauthenticated') {
-      router.push('/login?callbackUrl=/manager/dashboard');
+      router.push('/login?callbackUrl=/dashboard');
     } else if (status === 'authenticated' && me && !isLoadingMe) {
       const userRole = me.role;
       const staffPosition = me.staff?.position;
@@ -99,7 +99,7 @@ export default function ManagerLayout({ children }: ManagerLayoutProps): React.J
   const SidebarContent = () => (
     <div className="flex flex-col h-full py-4">
       <div className={cn("px-6 mb-8 flex items-center", isCollapsed && !isMobileOpen ? "justify-center px-2" : "justify-between")}>
-        <Link href="/manager/dashboard" className={cn("font-heading font-black italic tracking-tighter transition-all hover:scale-105", isCollapsed && !isMobileOpen ? "text-xl" : "text-2xl")}>
+        <Link href="/dashboard" className={cn("font-heading font-black italic tracking-tighter transition-all hover:scale-105", isCollapsed && !isMobileOpen ? "text-xl" : "text-2xl")}>
           {isCollapsed && !isMobileOpen ? (
             <span className="text-[#C8A97E] text-2xl font-black">R</span>
           ) : (
