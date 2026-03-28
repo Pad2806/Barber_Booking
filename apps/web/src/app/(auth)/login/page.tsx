@@ -10,7 +10,19 @@ import toast from 'react-hot-toast';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams?.get('callbackUrl');
+  const rawCallbackUrl = searchParams?.get('callbackUrl');
+  // Sanitize: only allow same-origin paths (strip any full URL to just pathname)
+  const callbackUrl = rawCallbackUrl
+    ? (() => {
+        try {
+          const url = new URL(rawCallbackUrl, 'http://localhost');
+          return url.pathname + url.search;
+        } catch {
+          return rawCallbackUrl.startsWith('/') ? rawCallbackUrl : '/dashboard';
+        }
+      })()
+    : null;
+
   const { update: updateSession } = useSession();
 
   const [email, setEmail] = useState('');
