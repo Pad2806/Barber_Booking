@@ -45,15 +45,21 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL('/', request.url));
     }
 
-    // Check route-specific permission
-    const requiredPermission = resolveRoutePermission(pathname, DASHBOARD_ROUTE_PERMISSION_MAP);
-    if (requiredPermission) {
-      const allowed = hasMultiRolePermission(roles as Role[], requiredPermission);
-      if (!allowed) {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+    // Allow ALL authenticated staff to access the main /dashboard page.
+    // Only check permissions on sub-routes (/dashboard/settings, /dashboard/roles, etc.)
+    // This prevents a redirect loop: /dashboard requires VIEW_DASHBOARD but
+    // BARBER/SKINNER don't have it → redirect to /dashboard → loop!
+    if (pathname !== '/dashboard') {
+      const requiredPermission = resolveRoutePermission(pathname, DASHBOARD_ROUTE_PERMISSION_MAP);
+      if (requiredPermission) {
+        const allowed = hasMultiRolePermission(roles as Role[], requiredPermission);
+        if (!allowed) {
+          return NextResponse.redirect(new URL('/dashboard', request.url));
+        }
       }
     }
   }
+
 
   // ── /admin/* protection (legacy — keep for backward compat) ───
   if (pathname.startsWith('/admin')) {
