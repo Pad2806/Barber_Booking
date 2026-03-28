@@ -6,25 +6,12 @@ import { getUserMultiRolePermissions, Permission, Role } from '@reetro/shared';
 import { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 
-// Lazy-import the actual dashboard content from original pages
+// Only import AdminDashboardContent — this one works fine for Admin/Manager
 import dynamic from 'next/dynamic';
-
-// For SUPER_ADMIN, SALON_OWNER, MANAGER — full analytics dashboard
 const AdminDashboardContent = dynamic(
   () => import('@/app/(admin)/admin/page').then(m => ({ default: m.default })),
-  { ssr: false },
-);
-
-// For CASHIER — cashier-specific dashboard (checkout/appointments focused)
-const CashierDashboardContent = dynamic(
-  () => import('@/app/(cashier)/cashier/dashboard/page').then(m => ({ default: m.default })),
-  { ssr: false },
-);
-
-// For barbers/skinners (only VIEW_OWN_BOOKINGS)
-const BarberDashboardContent = dynamic(
-  () => import('@/app/(barber)/barber/dashboard/page').then(m => ({ default: m.default })),
   { ssr: false },
 );
 
@@ -33,10 +20,12 @@ const ADMIN_ANALYTICS_ROLES: Role[] = [Role.SUPER_ADMIN, Role.SALON_OWNER, Role.
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { status } = useSession();
 
   const { data: me, isLoading } = useQuery({
     queryKey: ['users', 'me'],
     queryFn: usersApi.getMe,
+    enabled: status === 'authenticated', // Only fetch when session is ready
   });
 
   const userRoles = useMemo((): Role[] => {
@@ -52,7 +41,6 @@ export default function DashboardPage() {
 
   const hasFullAnalytics = userRoles.some(r => ADMIN_ANALYTICS_ROLES.includes(r));
   const isCashier = userRoles.includes(Role.CASHIER) && !hasFullAnalytics;
-  const hasFullDashboard = userPermissions.includes(Permission.VIEW_DASHBOARD);
   const hasOwnBookings = userPermissions.includes(Permission.VIEW_OWN_BOOKINGS);
 
   // Redirect customer to home
@@ -62,7 +50,7 @@ export default function DashboardPage() {
     }
   }, [me, isLoading, userRoles, router]);
 
-  if (isLoading) {
+  if (isLoading || status === 'loading') {
     return (
       <div className="space-y-6 animate-pulse">
         <div className="h-28 bg-white rounded-2xl" />
@@ -79,14 +67,66 @@ export default function DashboardPage() {
     return <AdminDashboardContent />;
   }
 
-  // Cashier-specific dashboard
-  if (isCashier || (hasFullDashboard && !hasFullAnalytics)) {
-    return <CashierDashboardContent />;
+  // Simple cashier dashboard (inline, no legacy import)
+  if (isCashier) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-2xl p-6 border border-slate-100">
+          <h1 className="text-2xl font-bold text-slate-900">
+            Xin chào, {me?.name || 'Thu ngân'} 👋
+          </h1>
+          <p className="text-slate-500 mt-1">Chọn chức năng từ thanh bên để bắt đầu làm việc.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[
+            { label: 'Duyệt lịch Online', href: '/dashboard/online-bookings', desc: 'Duyệt booking mới từ website', icon: '📱' },
+            { label: 'Tiếp nhận khách', href: '/dashboard/walk-in', desc: 'Tạo booking cho khách vãng lai', icon: '🚶' },
+            { label: 'Thanh toán', href: '/dashboard/checkout', desc: 'Xử lý thanh toán tại quầy', icon: '💳' },
+            { label: 'Lịch hẹn', href: '/dashboard/appointments', desc: 'Xem tất cả lịch hẹn hôm nay', icon: '📋' },
+          ].map(action => (
+            <a
+              key={action.href}
+              href={action.href}
+              className="bg-white rounded-xl p-5 border border-slate-100 hover:border-primary/30 hover:shadow-md transition-all group"
+            >
+              <div className="text-3xl mb-3">{action.icon}</div>
+              <h3 className="font-semibold text-slate-900 group-hover:text-primary transition-colors">{action.label}</h3>
+              <p className="text-sm text-slate-500 mt-1">{action.desc}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    );
   }
 
-  // Personal schedule dashboard for barber/skinner
+  // Simple barber/skinner dashboard (inline, no legacy import)
   if (hasOwnBookings) {
-    return <BarberDashboardContent />;
+    return (
+      <div className="space-y-6">
+        <div className="bg-white rounded-2xl p-6 border border-slate-100">
+          <h1 className="text-2xl font-bold text-slate-900">
+            Xin chào, {me?.name || 'Nhân viên'} ✂️
+          </h1>
+          <p className="text-slate-500 mt-1">Chọn chức năng từ thanh bên để xem lịch làm việc.</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[
+            { label: 'Lịch làm việc', href: '/dashboard/my-schedule', desc: 'Xem ca làm việc của bạn', icon: '🗓️' },
+            { label: 'Lịch phân công', href: '/dashboard/my-bookings', desc: 'Xem khách hàng được phân công', icon: '📅' },
+          ].map(action => (
+            <a
+              key={action.href}
+              href={action.href}
+              className="bg-white rounded-xl p-5 border border-slate-100 hover:border-primary/30 hover:shadow-md transition-all group"
+            >
+              <div className="text-3xl mb-3">{action.icon}</div>
+              <h3 className="font-semibold text-slate-900 group-hover:text-primary transition-colors">{action.label}</h3>
+              <p className="text-sm text-slate-500 mt-1">{action.desc}</p>
+            </a>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -96,3 +136,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
