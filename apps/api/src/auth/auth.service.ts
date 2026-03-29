@@ -188,14 +188,20 @@ export class AuthService {
       position = staff?.position;
     }
 
-    // Fetch all roles from UserRole table
+    // Fetch all roles from UserRole table — deduplicate by role name
     const userRoles = await this.prisma.userRole.findMany({
       where: { userId: user.id },
       select: { role: true },
     });
-    const roles = userRoles.length > 0
-      ? userRoles.map(ur => ur.role)
-      : [user.role];
+
+    const rawRoles: string[] = userRoles.length > 0
+      ? Array.from(new Set<string>(userRoles.map(ur => ur.role as string)))
+      : [user.role as string];
+
+    // Filter out generic STAFF if more specific roles are present
+    const roles = rawRoles.length > 1
+      ? rawRoles.filter(r => r !== 'STAFF')
+      : rawRoles;
 
     const payload: JwtPayload = {
       sub: user.id,
@@ -279,10 +285,15 @@ export class AuthService {
       },
     });
     if (user) {
-      // Attach roles[] for multi-role RBAC guards
-      (user as any).roles = (user as any).userRoles?.length
-        ? (user as any).userRoles.map((ur: any) => ur.role)
-        : [user.role];
+      // Attach deduplicated roles[] for multi-role RBAC guards
+      const rawRoles: string[] = (user as any).userRoles?.length
+        ? Array.from(new Set<string>((user as any).userRoles.map((ur: any) => ur.role as string)))
+        : [user.role as string];
+
+      // Filter out generic STAFF if more specific roles are present
+      (user as any).roles = rawRoles.length > 1
+        ? rawRoles.filter(r => r !== 'STAFF')
+        : rawRoles;
     }
     return user;
   }

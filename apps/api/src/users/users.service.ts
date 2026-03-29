@@ -216,10 +216,15 @@ export class UsersService extends BaseQueryService {
       throw new NotFoundException(`User with ID ${id} not found`);
     }
 
-    // Attach flattened roles[] for convenience
-    (user as any).roles = (user as any).userRoles?.length
-      ? (user as any).userRoles.map((ur: any) => ur.role)
-      : [user.role];
+    // Attach deduplicated roles[] — unique by role name, exclude STAFF when specific roles exist
+    const rawRoles: string[] = (user as any).userRoles?.length
+      ? Array.from(new Set<string>((user as any).userRoles.map((ur: any) => ur.role as string)))
+      : [user.role as string];
+
+    // Filter out generic STAFF if more specific roles are present
+    (user as any).roles = rawRoles.length > 1
+      ? rawRoles.filter(r => r !== 'STAFF')
+      : rawRoles;
 
     return user;
   }

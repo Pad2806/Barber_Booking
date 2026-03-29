@@ -1272,14 +1272,24 @@ export class AdminService extends BaseQueryService {
       CUSTOMER: 10,
     };
 
+    // Sanitize: remove legacy STAFF role + deduplicate by role name
+    const ALLOWED_ROLES = new Set(['SUPER_ADMIN', 'SALON_OWNER', 'MANAGER', 'CASHIER', 'BARBER', 'SKINNER', 'CUSTOMER']);
+    const seen = new Set<string>();
+    const sanitizedRoles = newRoles.filter(r => {
+      if (!ALLOWED_ROLES.has(r.role)) return false; // block STAFF and unknown roles
+      if (seen.has(r.role)) return false;           // deduplicate
+      seen.add(r.role);
+      return true;
+    });
+
     return this.prisma.$transaction(async (tx) => {
       // Delete all existing roles
       await tx.userRole.deleteMany({ where: { userId } });
 
-      // Create new roles
-      if (newRoles.length > 0) {
+      // Create new sanitized roles
+      if (sanitizedRoles.length > 0) {
         await tx.userRole.createMany({
-          data: newRoles.map(r => ({
+          data: sanitizedRoles.map(r => ({
             userId,
             role: r.role as any,
             salonId: r.salonId || null,
@@ -1288,8 +1298,8 @@ export class AdminService extends BaseQueryService {
       }
 
       // Update user.role to highest-priority role (backward compat)
-      const primaryRole = newRoles.length > 0
-        ? newRoles.reduce((best, r) =>
+      const primaryRole = sanitizedRoles.length > 0
+        ? sanitizedRoles.reduce((best, r) =>
           (ROLE_PRIORITY[r.role] || 0) > (ROLE_PRIORITY[best.role] || 0) ? r : best
         ).role
         : 'CUSTOMER';
