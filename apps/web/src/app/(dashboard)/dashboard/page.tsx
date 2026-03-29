@@ -25,8 +25,12 @@ export default function DashboardPage() {
   const { data: me, isLoading } = useQuery({
     queryKey: ['users', 'me'],
     queryFn: usersApi.getMe,
-    enabled: status === 'authenticated', // Only fetch when session is ready
+    enabled: status === 'authenticated',
+    retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
+
 
   const userRoles = useMemo((): Role[] => {
     if (!me) return [];

@@ -94,7 +94,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     queryKey: ['users', 'me'],
     queryFn: usersApi.getMe,
     enabled: status === 'authenticated',
+    retry: false,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
+
 
   // ── Redirect if unauthenticated ──────────────────────────────
   useEffect(() => {

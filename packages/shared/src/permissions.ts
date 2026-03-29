@@ -85,6 +85,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     ],
 
     [Role.BARBER]: [
+        Permission.VIEW_DASHBOARD,
         Permission.VIEW_OWN_BOOKINGS,
         Permission.VIEW_OWN_SCHEDULE,
     ],
@@ -100,6 +101,7 @@ const ROLE_PERMISSIONS: Record<Role, Permission[]> = {
     ],
 
     [Role.SKINNER]: [
+        Permission.VIEW_DASHBOARD,
         Permission.VIEW_OWN_BOOKINGS,
         Permission.VIEW_OWN_SCHEDULE,
     ],
