@@ -13,7 +13,8 @@ import {
   Store,
 } from 'lucide-react';
 import { formatDateTime } from '@/lib/utils';
-import { adminApi, salonApi, Salon } from '@/lib/api';
+import { adminApi, managerApi, salonApi, Salon } from '@/lib/api';
+import { useSalonScope } from '@/hooks/use-salon-scope';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge } from '@/components/admin/status-badge';
@@ -48,6 +49,7 @@ const VISIBILITY_CONFIG: any = {
 
 export default function AdminReviewsPage() {
   const queryClient = useQueryClient();
+  const { isSuperAdmin } = useSalonScope();
   const [page] = useState(1);
   const [limit] = useState(10);
   const [search] = useState('');
@@ -63,26 +65,25 @@ export default function AdminReviewsPage() {
   const { data: salonsData } = useQuery({
     queryKey: ['admin', 'salons', 'list'],
     queryFn: () => salonApi.getAll({ limit: 100 }),
+    enabled: isSuperAdmin,
   });
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin', 'reviews', { page, limit, search, rating, salonId, dateFrom, dateTo }],
-    queryFn: () => adminApi.getAllReviews({ 
-      page, 
-      limit, 
-      search, 
-      rating, 
-      salonId,
-      dateFrom: dateFrom || undefined,
-      dateTo: dateTo || undefined,
-    }),
+    queryKey: isSuperAdmin
+      ? ['admin', 'reviews', { page, limit, search, rating, salonId, dateFrom, dateTo }]
+      : ['manager', 'reviews', { page, limit, search, rating, dateFrom, dateTo }],
+    queryFn: () => isSuperAdmin
+      ? adminApi.getAllReviews({ page, limit, search, rating, salonId, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined })
+      : managerApi.getReviews({ page, limit, rating, dateFrom: dateFrom || undefined, dateTo: dateTo || undefined }),
+    enabled: isSuperAdmin !== undefined,
   });
 
   const deleteMutation = useMutation({
+    // Manager cũng được xóa review — fallback về adminApi (endpoint dùng chung)
     mutationFn: (id: string) => adminApi.deleteReview(id),
     onSuccess: () => {
       toast.success('Đã xóa đánh giá');
-      queryClient.invalidateQueries({ queryKey: ['admin', 'reviews'] });
+      queryClient.invalidateQueries({ queryKey: isSuperAdmin ? ['admin', 'reviews'] : ['manager', 'reviews'] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Không thể xóa đánh giá');
@@ -90,11 +91,13 @@ export default function AdminReviewsPage() {
   });
 
   const replyMutation = useMutation({
-    mutationFn: ({ id, reply }: { id: string; reply: string }) => adminApi.replyReview(id, reply),
+    mutationFn: ({ id, reply }: { id: string; reply: string }) => isSuperAdmin
+      ? adminApi.replyReview(id, reply)
+      : managerApi.replyToReview(id, reply),
     onSuccess: () => {
       toast.success('Đã gửi phản hồi');
       setReplyDialogOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['admin', 'reviews'] });
+      queryClient.invalidateQueries({ queryKey: isSuperAdmin ? ['admin', 'reviews'] : ['manager', 'reviews'] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Không thể gửi phản hồi');
@@ -299,18 +302,20 @@ export default function AdminReviewsPage() {
         <CardHeader className="px-6 flex flex-row items-center justify-between space-y-0 pb-6 border-b border-slate-100">
           <CardTitle className="text-xl font-bold text-slate-800">Phản hồi khách hàng</CardTitle>
           <div className="flex flex-wrap items-center gap-3">
-            {/* Salon Filter */}
-            <select
-              title="Salon Filter"
-              value={salonId || 'ALL'}
-              onChange={(e) => setSalonId(e.target.value === 'ALL' ? undefined : e.target.value)}
-              className="h-9 px-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer font-medium min-w-[160px]"
-            >
-              <option value="ALL">Tất cả chi nhánh</option>
-              {salonsData?.data.map((s: Salon) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
+            {/* Salon Filter — chỉ SUPER_ADMIN */}
+            {isSuperAdmin && (
+              <select
+                title="Salon Filter"
+                value={salonId || 'ALL'}
+                onChange={(e) => setSalonId(e.target.value === 'ALL' ? undefined : e.target.value)}
+                className="h-9 px-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer font-medium min-w-[160px]"
+              >
+                <option value="ALL">Tất cả chi nhánh</option>
+                {salonsData?.data.map((s: Salon) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            )}
 
             {/* Rating Filter */}
             <select

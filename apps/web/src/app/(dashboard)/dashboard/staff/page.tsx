@@ -15,7 +15,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { STAFF_POSITIONS } from '@/lib/utils';
-import { adminApi } from '@/lib/api';
+import { adminApi, managerApi } from '@/lib/api';
+import { useSalonScope } from '@/hooks/use-salon-scope';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge } from '@/components/admin/status-badge';
@@ -50,8 +51,10 @@ const STATUS_CONFIG: any = {
 export default function AdminStaffPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { isGlobalAdmin, isSuperAdmin, isManager, salonId: mySalonId } = useSalonScope();
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
+  // Admin có thể filter theo chi nhánh; Manager chỉ thấy chi nhánh của mình
   const [salonId, setSalonId] = useState<string | undefined>(undefined);
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
   const [sortBy, setSortBy] = useState<string>('createdAt');
@@ -74,20 +77,28 @@ export default function AdminStaffPage() {
   });
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin', 'staff', { page, limit, salonId, minRating, sortBy, sortOrder }],
-    queryFn: () => adminApi.getAllStaff({ page, limit, salonId, minRating, sortBy, sortOrder }),
+    queryKey: isSuperAdmin
+      ? ['admin', 'staff', { page, limit, salonId, minRating, sortBy, sortOrder }]
+      : ['manager', 'staff', { page, limit, search: '', minRating, sortBy, sortOrder }],
+    queryFn: () => isSuperAdmin
+      ? adminApi.getAllStaff({ page, limit, salonId, minRating, sortBy, sortOrder })
+      : managerApi.getStaff({ page, limit, minRating, sortBy, sortOrder }),
+    // Chỉ fetch khi scope đã được resolve (tránh gọi sai API lúc đầu)
+    enabled: isSuperAdmin !== undefined,
   });
 
+  // Danh sách salons chỉ dành cho SUPER_ADMIN (để filter)
   const { data: salonsData } = useQuery({
     queryKey: ['admin', 'salons', 'list'],
     queryFn: () => adminApi.getAllSalons({ limit: 100 }),
+    enabled: isSuperAdmin,
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => adminApi.deleteStaff(id),
+    mutationFn: (id: string) => isSuperAdmin ? adminApi.deleteStaff(id) : managerApi.deleteStaff(id),
     onSuccess: () => {
       toast.success('Đã xóa nhân viên');
-      queryClient.invalidateQueries({ queryKey: ['admin', 'staff'] });
+      queryClient.invalidateQueries({ queryKey: isSuperAdmin ? ['admin', 'staff'] : ['manager', 'staff'] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Không thể xóa nhân viên');
@@ -95,11 +106,11 @@ export default function AdminStaffPage() {
   });
 
   const createMutation = useMutation({
-    mutationFn: (creationData: any) => adminApi.createStaff(creationData),
+    mutationFn: (creationData: any) => isSuperAdmin ? adminApi.createStaff(creationData) : managerApi.createStaff(creationData),
     onSuccess: () => {
       toast.success('Thêm nhân viên thành công');
       setPanelOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['admin', 'staff'] });
+      queryClient.invalidateQueries({ queryKey: isSuperAdmin ? ['admin', 'staff'] : ['manager', 'staff'] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Không thể thêm nhân viên');
@@ -107,11 +118,11 @@ export default function AdminStaffPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, updateData }: { id: string; updateData: any }) => adminApi.updateStaff(id, updateData),
+    mutationFn: ({ id, updateData }: { id: string; updateData: any }) => isSuperAdmin ? adminApi.updateStaff(id, updateData) : managerApi.updateStaff(id, updateData),
     onSuccess: () => {
       toast.success('Cập nhật thành công');
       setPanelOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['admin', 'staff'] });
+      queryClient.invalidateQueries({ queryKey: isSuperAdmin ? ['admin', 'staff'] : ['manager', 'staff'] });
     },
     onError: (err: any) => {
       toast.error(err.response?.data?.message || 'Không thể cập nhật nhân viên');
@@ -347,19 +358,22 @@ export default function AdminStaffPage() {
               {data?.meta?.total || 0} nhân viên
             </Badge>
 
-            <select
-              title="Salon Filter"
-              value={salonId || 'ALL'}
-              onChange={e => setSalonId(e.target.value === 'ALL' ? undefined : e.target.value)}
-              className="h-9 px-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer font-medium"
-            >
-              <option value="ALL">Tất cả chi nhánh</option>
-              {salonsData?.data?.map((salon: any) => (
-                <option key={salon.id} value={salon.id}>
-                  {salon.name}
-                </option>
-              ))}
-            </select>
+            {/* Dropdown chi nhánh chỉ hiển thị cho SUPER_ADMIN */}
+            {isSuperAdmin && (
+              <select
+                title="Salon Filter"
+                value={salonId || 'ALL'}
+                onChange={e => setSalonId(e.target.value === 'ALL' ? undefined : e.target.value)}
+                className="h-9 px-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer font-medium"
+              >
+                <option value="ALL">Tất cả chi nhánh</option>
+                {salonsData?.data?.map((salon: any) => (
+                  <option key={salon.id} value={salon.id}>
+                    {salon.name}
+                  </option>
+                ))}
+              </select>
+            )}
 
             <select
               title="Rating Filter"

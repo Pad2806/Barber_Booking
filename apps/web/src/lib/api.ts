@@ -338,8 +338,8 @@ export const managerApi = {
     const response = await apiClient.get('/manager/reports/revenue', { params: { period } });
     return response.data;
   },
-  getReviews: async () => {
-    const response = await apiClient.get('/manager/reviews');
+  getReviews: async (params?: { page?: number; limit?: number; rating?: number; dateFrom?: string; dateTo?: string }) => {
+    const response = await apiClient.get('/manager/reviews', { params });
     return response.data;
   },
   replyToReview: async (id: string, reply: string) => {

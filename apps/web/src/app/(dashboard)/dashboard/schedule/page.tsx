@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   ChevronLeft, 
@@ -17,6 +17,7 @@ import {
 import { format, addDays, startOfWeek, isSameDay, parseISO } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import { adminApi, salonApi, StaffShift } from '@/lib/api';
+import { useSalonScope } from '@/hooks/use-salon-scope';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -34,9 +35,17 @@ import { Badge } from '@/components/ui/badge';
 
 export default function AdminSchedulePage() {
   const queryClient = useQueryClient();
+  const { isSuperAdmin, salonId: mySalonId } = useSalonScope();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedSalonId, setSelectedSalonId] = useState<string | null>(null);
   
+  // Với manager: tự động scope vào chi nhánh của mình
+  useEffect(() => {
+    if (!isSuperAdmin && mySalonId && !selectedSalonId) {
+      setSelectedSalonId(mySalonId);
+    }
+  }, [isSuperAdmin, mySalonId, selectedSalonId]);
+
   // Sheet states
   const [isShiftSheetOpen, setIsShiftSheetOpen] = useState(false);
   const [isBulkSheetOpen, setIsBulkSheetOpen] = useState(false);
@@ -169,22 +178,25 @@ export default function AdminSchedulePage() {
         </div>
 
         <div className="flex flex-col md:flex-row items-start md:items-center gap-3">
-          <div className="flex flex-col gap-1 min-w-[240px]">
-            <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-               <Store className="w-3.5 h-3.5" />
-               Chi nhánh
+          {/* Chỉ SUPER_ADMIN mới có thể chọn chi nhánh */}
+          {isSuperAdmin && (
+            <div className="flex flex-col gap-1 min-w-[240px]">
+              <div className="flex items-center gap-2 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                 <Store className="w-3.5 h-3.5" />
+                 Chi nhánh
+              </div>
+              <Select
+                placeholder="Chọn Chi Nhánh"
+                className="w-full h-9"
+                value={selectedSalonId}
+                onChange={setSelectedSalonId}
+                options={salons?.data.map((s: any) => ({
+                  label: s.name,
+                  value: s.id
+                }))}
+              />
             </div>
-            <Select
-              placeholder="Chọn Chi Nhánh"
-              className="w-full h-9"
-              value={selectedSalonId}
-              onChange={setSelectedSalonId}
-              options={salons?.data.map((s: any) => ({
-                label: s.name,
-                value: s.id
-              }))}
-            />
-          </div>
+          )}
 
           <div className="flex items-center gap-2 bg-white p-2 border rounded-xl shadow-sm">
             <Button variant="ghost" size="icon" onClick={handlePrevWeek} className="h-8 w-8 text-slate-400">

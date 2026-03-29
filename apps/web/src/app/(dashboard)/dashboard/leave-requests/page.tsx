@@ -1,7 +1,8 @@
 'use client';
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminApi, salonApi } from '@/lib/api';
+import { adminApi, managerApi, salonApi } from '@/lib/api';
+import { useSalonScope } from '@/hooks/use-salon-scope';
 import { 
   ShieldCheck,
   ShieldAlert,
@@ -48,6 +49,7 @@ const STATUS_CONFIG: any = {
 
 export default function AdminLeaveRequestsPage() {
   const queryClient = useQueryClient();
+  const { isSuperAdmin } = useSalonScope();
   const [activeTab, setActiveTab] = useState('PENDING');
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null);
   const [searchStaff, setSearchStaff] = useState('');
@@ -57,20 +59,26 @@ export default function AdminLeaveRequestsPage() {
   const [rejectReason, setRejectReason] = useState('');
 
   const { data: requests, isLoading } = useQuery({
-    queryKey: ['admin', 'leave-requests'],
-    queryFn: () => adminApi.getGlobalLeaveRequests(),
+    queryKey: isSuperAdmin ? ['admin', 'leave-requests'] : ['manager', 'leave-requests'],
+    queryFn: () => isSuperAdmin
+      ? adminApi.getGlobalLeaveRequests()
+      : managerApi.getLeaveRequests(),
+    enabled: isSuperAdmin !== undefined,
   });
 
   const { data: salons } = useQuery({
     queryKey: ['salons'],
     queryFn: () => salonApi.getAll(),
+    enabled: isSuperAdmin,
   });
 
   const approveMutation = useMutation({
-    mutationFn: (id: string) => adminApi.approveGlobalLeave(id, { status: 'APPROVED' }),
+    mutationFn: (id: string) => isSuperAdmin
+      ? adminApi.approveGlobalLeave(id, { status: 'APPROVED' })
+      : managerApi.approveLeave(id, { status: 'APPROVED' }),
     onSuccess: () => {
       toast.success('Đã duyệt đơn nghỉ phép');
-      queryClient.invalidateQueries({ queryKey: ['admin', 'leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: isSuperAdmin ? ['admin', 'leave-requests'] : ['manager', 'leave-requests'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'schedules'] });
     },
     onError: (err: any) => {
@@ -80,12 +88,14 @@ export default function AdminLeaveRequestsPage() {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: (id: string) => adminApi.approveGlobalLeave(id, { status: 'REJECTED', reason: rejectReason }),
+    mutationFn: (id: string) => isSuperAdmin
+      ? adminApi.approveGlobalLeave(id, { status: 'REJECTED', reason: rejectReason })
+      : managerApi.approveLeave(id, { status: 'REJECTED', reason: rejectReason }),
     onSuccess: () => {
       toast.success('Đã từ chối đơn nghỉ phép');
       setIsRejectOpen(false);
       setRejectReason('');
-      queryClient.invalidateQueries({ queryKey: ['admin', 'leave-requests'] });
+      queryClient.invalidateQueries({ queryKey: isSuperAdmin ? ['admin', 'leave-requests'] : ['manager', 'leave-requests'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'schedules'] });
     },
     onError: () => {
@@ -270,19 +280,21 @@ export default function AdminLeaveRequestsPage() {
                />
             </div>
 
-            {/* Salon Filter */}
-            <div>
-              <Select
-                placeholder="Tất cả chi nhánh"
-                className="w-full h-10"
-                value={selectedSalon}
-                onChange={setSelectedSalon}
-                options={[
-                  { label: 'Tất cả chi nhánh', value: 'ALL' },
-                  ...(salons?.data?.map((s: any) => ({ label: s.name, value: s.id })) || [])
-                ]}
-              />
-            </div>
+            {/* Salon Filter — chỉ SUPER_ADMIN */}
+            {isSuperAdmin && (
+              <div>
+                <Select
+                  placeholder="Tất cả chi nhánh"
+                  className="w-full h-10"
+                  value={selectedSalon}
+                  onChange={setSelectedSalon}
+                  options={[
+                    { label: 'Tất cả chi nhánh', value: 'ALL' },
+                    ...(salons?.data?.map((s: any) => ({ label: s.name, value: s.id })) || [])
+                  ]}
+                />
+              </div>
+            )}
 
             {/* Date Filter */}
             <div className="md:col-span-2">

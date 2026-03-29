@@ -30,10 +30,22 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  const getRedirectUrl = (role: string): string => {
+  const getRedirectUrl = (role: string, roles?: string[]): string => {
     if (callbackUrl) return callbackUrl;
-    // All staff/admin go to unified dashboard
-    if (role === 'CUSTOMER') return '/';
+    
+    // Ưu tiên roles[] (multi-role RBAC) nếu có
+    const allRoles = roles?.length ? roles : [role];
+    
+    if (allRoles.includes('CUSTOMER')) return '/';
+    // BARBER/SKINNER-only (không có MANAGER hay admin role) → barber dashboard
+    const isBarberOnly = (allRoles.includes('BARBER') || allRoles.includes('SKINNER')) &&
+      !allRoles.includes('MANAGER') &&
+      !allRoles.includes('SUPER_ADMIN') &&
+      !allRoles.includes('SALON_OWNER') &&
+      !allRoles.includes('CASHIER');
+    if (isBarberOnly) return '/barber/dashboard';
+    
+    // Mọi role khác (MANAGER, CASHIER, SUPER_ADMIN, multi-role) → unified dashboard
     return '/dashboard';
   };
 
@@ -62,7 +74,8 @@ function LoginForm() {
         }
 
         const role = (session?.user as any)?.role || 'CUSTOMER';
-        const redirectUrl = getRedirectUrl(role);
+        const roles = (session?.user as any)?.roles || [];
+        const redirectUrl = getRedirectUrl(role, roles);
 
         // Clear the cached session in axios interceptor so next API calls
         // use the fresh token from the new session

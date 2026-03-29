@@ -16,7 +16,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import { formatPrice, formatDate } from '@/lib/utils';
-import { adminApi, Booking } from '@/lib/api';
+import { adminApi, managerApi, Booking } from '@/lib/api';
+import { useSalonScope } from '@/hooks/use-salon-scope';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge } from '@/components/admin/status-badge';
@@ -46,6 +47,7 @@ const STATUS_CONFIG: Record<string, { label: string, variant: 'warning' | 'info'
 
 export default function AdminBookingsPage(): React.ReactElement {
   const queryClient = useQueryClient();
+  const { isSuperAdmin } = useSalonScope();
   const [page, setPage] = useState(1);
   const [limit] = useState(10);
   
@@ -68,51 +70,83 @@ export default function AdminBookingsPage(): React.ReactElement {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Fetch Data
+  // Fetch Data — chỉ SUPER_ADMIN mới có salons/staff/services dropdown toàn hệ thống
   const { data: salonsData } = useQuery({
     queryKey: ['admin', 'salons', 'list'],
     queryFn: () => adminApi.getAllSalons({ limit: 100 }),
+    enabled: isSuperAdmin,
   });
 
   const { data: staffData } = useQuery({
     queryKey: ['admin', 'staff', 'list', salonId],
     queryFn: () => adminApi.getAllStaff({ limit: 100, salonId: salonId || undefined }),
+    enabled: isSuperAdmin,
   });
 
   const { data: servicesData } = useQuery({
     queryKey: ['admin', 'services', 'list', salonId],
     queryFn: () => adminApi.getAllServices({ limit: 100, salonId: salonId || undefined }),
+    enabled: isSuperAdmin,
+  });
+
+  // Manager: lấy danh sách nhân viên và dịch vụ của chi nhánh mình
+  const { data: myStaffData } = useQuery({
+    queryKey: ['manager', 'staff'],
+    queryFn: () => managerApi.getStaff({ limit: 100 }),
+    enabled: !isSuperAdmin,
+  });
+
+  const { data: myServicesData } = useQuery({
+    queryKey: ['manager', 'services'],
+    queryFn: () => managerApi.getServices(),
+    enabled: !isSuperAdmin,
   });
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin', 'bookings', { page, limit, status, salonId, staffId, serviceId, dateFrom, dateTo, search: debouncedSearch }],
-    queryFn: () => adminApi.getAllBookings({ 
-      page, 
-      limit, 
-      status: status || undefined, 
-      salonId: salonId || undefined, 
-      staffId: staffId || undefined,
-      serviceId: serviceId || undefined,
-      dateFrom: dateFrom || undefined,
-      dateTo: dateTo || undefined,
-      search: debouncedSearch || undefined,
-    }),
+    queryKey: isSuperAdmin
+      ? ['admin', 'bookings', { page, limit, status, salonId, staffId, serviceId, dateFrom, dateTo, search: debouncedSearch }]
+      : ['manager', 'bookings', { page, limit, status, staffId, serviceId, dateFrom, dateTo, search: debouncedSearch }],
+    queryFn: () => isSuperAdmin
+      ? adminApi.getAllBookings({ 
+          page, limit,
+          status: status || undefined,
+          salonId: salonId || undefined,
+          staffId: staffId || undefined,
+          serviceId: serviceId || undefined,
+          dateFrom: dateFrom || undefined,
+          dateTo: dateTo || undefined,
+          search: debouncedSearch || undefined,
+        })
+      : managerApi.getBookings({
+          page, limit,
+          status: (status || undefined) as any,
+          staffId: staffId || undefined,
+          serviceId: serviceId || undefined,
+          dateFrom: dateFrom || undefined,
+          dateTo: dateTo || undefined,
+          search: debouncedSearch || undefined,
+        }),
+    enabled: isSuperAdmin !== undefined,
   });
 
-  // Mutations
+  // Mutations — routed theo role
   const updateStatusMutation = useMutation({
-    mutationFn: ({ id, status }: { id: string, status: string }) => adminApi.updateBookingStatus(id, status),
+    mutationFn: ({ id, status }: { id: string, status: string }) => isSuperAdmin
+      ? adminApi.updateBookingStatus(id, status)
+      : managerApi.updateBookingStatus(id, status as any),
     onSuccess: () => {
       toast.success('Cập nhật trạng thái thành công');
-      queryClient.invalidateQueries({ queryKey: ['admin', 'bookings'] });
+      queryClient.invalidateQueries({ queryKey: isSuperAdmin ? ['admin', 'bookings'] : ['manager', 'bookings'] });
     },
   });
 
   const bulkStatusMutation = useMutation({
-    mutationFn: ({ ids, status }: { ids: string[], status: string }) => adminApi.bulkUpdateBookingStatus(ids, status),
+    mutationFn: ({ ids, status }: { ids: string[], status: string }) => isSuperAdmin
+      ? adminApi.bulkUpdateBookingStatus(ids, status)
+      : managerApi.bulkUpdateBookingStatus(ids, status),
     onSuccess: (res: any) => {
       toast.success(`Đã cập nhật ${res.count} đặt lịch`);
-      queryClient.invalidateQueries({ queryKey: ['admin', 'bookings'] });
+      queryClient.invalidateQueries({ queryKey: isSuperAdmin ? ['admin', 'bookings'] : ['manager', 'bookings'] });
       setSelectedBookings([]);
     },
   });
@@ -335,20 +369,23 @@ export default function AdminBookingsPage(): React.ReactElement {
               </select>
             </div>
             
-            <select
-              title="Salon Filter"
-              className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
-              value={salonId}
-              onChange={(e) => {
-                setSalonId(e.target.value);
-                setStaffId('');
-              }}
-            >
-              <option value="">Tất cả chi nhánh</option>
-              {salonsData?.data?.map((s: any) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
+            {/* Chi nhánh filter chỉ hiển thị cho SUPER_ADMIN */}
+            {isSuperAdmin && (
+              <select
+                title="Salon Filter"
+                className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+                value={salonId}
+                onChange={(e) => {
+                  setSalonId(e.target.value);
+                  setStaffId('');
+                }}
+              >
+                <option value="">Tất cả chi nhánh</option>
+                {salonsData?.data?.map((s: any) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            )}
 
             <select
               title="Staff Filter"
@@ -357,7 +394,7 @@ export default function AdminBookingsPage(): React.ReactElement {
               onChange={(e) => setStaffId(e.target.value)}
             >
               <option value="">Tất cả nhân viên</option>
-              {staffData?.data?.map((s: any) => (
+              {(isSuperAdmin ? staffData?.data : myStaffData?.data)?.map((s: any) => (
                 <option key={s.id} value={s.id}>{s.user?.name}</option>
               ))}
             </select>
@@ -369,7 +406,7 @@ export default function AdminBookingsPage(): React.ReactElement {
               onChange={(e) => setServiceId(e.target.value)}
             >
               <option value="">Tất cả dịch vụ</option>
-              {servicesData?.data?.map((s: any) => (
+              {(isSuperAdmin ? servicesData?.data : myServicesData)?.map((s: any) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
