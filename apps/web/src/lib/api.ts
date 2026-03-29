@@ -43,14 +43,30 @@ if (typeof window !== 'undefined') {
 }
 
 // Request interceptor - add auth token
+// Uses promise deduplication to prevent N concurrent getSession() calls
+let sessionPromise: Promise<any> | null = null;
+
 apiClient.interceptors.request.use(
   async config => {
     if (typeof window !== 'undefined') {
       const now = Date.now();
       if (!cachedSession || now - sessionCacheTime > SESSION_CACHE_TTL) {
-        const { getSession } = await import('next-auth/react');
-        cachedSession = await getSession();
-        sessionCacheTime = now;
+        // Deduplicate: if a getSession() call is already in-flight, reuse it
+        if (!sessionPromise) {
+          sessionPromise = import('next-auth/react')
+            .then(mod => mod.getSession())
+            .then(session => {
+              cachedSession = session;
+              sessionCacheTime = Date.now();
+              sessionPromise = null;
+              return session;
+            })
+            .catch(err => {
+              sessionPromise = null;
+              throw err;
+            });
+        }
+        await sessionPromise;
       }
       if (cachedSession?.accessToken) {
         config.headers.Authorization = `Bearer ${cachedSession.accessToken}`;
@@ -62,6 +78,7 @@ apiClient.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
 
 
 // Response interceptor — DO NOT redirect on 401 here.

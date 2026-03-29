@@ -35,10 +35,11 @@ import { SettingsModule } from './settings/settings.module';
       ],
       load: [configuration],
     }),
-    // Global rate limiting: 100 requests per 60 seconds per IP
+    // Global rate limiting: 300 requests per 60 seconds per IP
+    // Admin dashboard fires 10+ queries on mount; 100 was too restrictive
     ThrottlerModule.forRoot([{
       ttl: 60000,
-      limit: 100,
+      limit: 300,
     }]),
     ScheduleModule.forRoot(),
     PrismaModule,

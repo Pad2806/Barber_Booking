@@ -51,38 +51,49 @@ export default function AdminDashboardPage(): JSX.Element {
     queryFn: () => adminApi.getDashboardStats(),
   });
 
+  // Stagger: wait for main stats before firing detail queries
+  // This prevents 8+ concurrent API calls that trigger rate limiting
+  const statsReady = !!stats;
+
   const { data: bookingStats, isLoading: bookingLoading } = useQuery({
     queryKey: ['admin-booking-stats'],
     queryFn: () => adminApi.getBookingStats('month'),
+    enabled: statsReady,
   });
   const { data: revenueStats, isLoading: revenueLoading } = useQuery({
     queryKey: ['admin-revenue-stats'],
     queryFn: () => adminApi.getRevenueStats('month'),
+    enabled: statsReady,
   });
 
   const { data: ranking, isLoading: rankingLoading } = useQuery({
     queryKey: ['admin-barber-ranking'],
     queryFn: () => adminApi.getBarberRanking(5),
+    enabled: statsReady,
   });
 
   const { data: ratingDist, isLoading: distLoading } = useQuery({
     queryKey: ['admin-rating-distribution'],
     queryFn: () => adminApi.getRatingDistribution(),
+    enabled: statsReady,
   });
 
   const { data: barberAverages, isLoading: averagesLoading } = useQuery({
     queryKey: ['admin-barber-averages'],
     queryFn: () => adminApi.getBarberAverages(),
+    enabled: statsReady,
   });
 
   const { data: botm, isLoading: botmLoading } = useQuery({
     queryKey: ['admin-botm'],
     queryFn: () => adminApi.getBarberOfTheMonth(),
+    enabled: statsReady,
   });
 
   const { data: botmHistory, isLoading: historyLoading } = useQuery({
     queryKey: ['admin-botm-history'],
     queryFn: () => adminApi.getBarberHistory(6),
+    enabled: statsReady,
   });
 
   const loading = statsLoading || bookingLoading || revenueLoading || rankingLoading || distLoading || averagesLoading || botmLoading || historyLoading;
