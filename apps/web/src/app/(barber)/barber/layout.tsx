@@ -61,17 +61,15 @@ export default function BarberLayout({ children }: BarberLayoutProps) {
     if (status === 'unauthenticated') {
       router.push('/login?callbackUrl=/dashboard');
     } else if (status === 'authenticated') {
-      const userRole = session?.user?.role;
-      const staffPosition = me?.staff?.position;
+      // Multi-role: check all assigned roles (UserRole table → JWT roles[])
+      const userRoles: string[] = ((session?.user as any)?.roles as string[]) || [session?.user?.role || ''];
 
       const isBarber =
-        userRole === 'BARBER' ||
-        userRole === 'SKINNER' ||
-        userRole === 'SUPER_ADMIN' ||
-        (userRole === 'STAFF' &&
-          ['BARBER', 'STYLIST', 'SENIOR_STYLIST', 'MASTER_STYLIST', 'SKINNER'].includes(
-            staffPosition || ''
-          ));
+        userRoles.includes('BARBER') ||
+        userRoles.includes('SKINNER') ||
+        userRoles.includes('SUPER_ADMIN') ||
+        userRoles.includes('SALON_OWNER') ||
+        userRoles.includes('MANAGER');
 
       if (!isBarber && !isLoadingMe && me) {
         toast.error('Bạn không có quyền truy cập trang này');

@@ -8,10 +8,25 @@ import { PrismaService } from '../database/prisma.service';
 import { CreateStaffDto } from './dto/create-staff.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
-import { Staff, Role, User, ShiftType } from '@prisma/client';
+import { Staff, Role, StaffPosition, User, ShiftType } from '@prisma/client';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+
+/**
+ * Canonical mapping: Staff job title → Auth role
+ * Display (STYLIST, SENIOR_STYLIST, MASTER_STYLIST) map to BARBER (same permissions).
+ * Staff.position stays as-is for display — only AUTHORIZATION uses this map.
+ */
+const POSITION_TO_ROLE: Record<StaffPosition, Role> = {
+  [StaffPosition.BARBER]: Role.BARBER,
+  [StaffPosition.STYLIST]: Role.BARBER,
+  [StaffPosition.SENIOR_STYLIST]: Role.BARBER,
+  [StaffPosition.MASTER_STYLIST]: Role.BARBER,
+  [StaffPosition.SKINNER]: Role.SKINNER,
+  [StaffPosition.CASHIER]: Role.CASHIER,
+  [StaffPosition.MANAGER]: Role.MANAGER,
+};
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -44,11 +59,13 @@ export class StaffService extends BaseQueryService {
       throw new ConflictException('User is already staff at another salon');
     }
 
-    // Update user role based on position
-    const userRole = dto.position === 'CASHIER' ? Role.CASHIER : Role.STAFF;
+    // Map position → auth role (single source of truth = UserRole table)
+    const authRole: Role = POSITION_TO_ROLE[dto.position] ?? Role.STAFF;
+
+    // Update User.role for backward-compat cache
     await this.prisma.user.update({
       where: { id: dto.userId },
-      data: { role: userRole },
+      data: { role: authRole },
     });
 
     // Create staff record
@@ -70,6 +87,19 @@ export class StaffService extends BaseQueryService {
           },
         },
       },
+    });
+
+    // AUTO-SYNC: Create UserRole record (single source of truth for auth)
+    await this.prisma.userRole.upsert({
+      where: {
+        userId_role_salonId: {
+          userId: dto.userId,
+          role: authRole,
+          salonId: dto.salonId,
+        },
+      },
+      create: { userId: dto.userId, role: authRole, salonId: dto.salonId },
+      update: {},
     });
 
     // Create default schedule (all days working)
@@ -488,10 +518,31 @@ export class StaffService extends BaseQueryService {
     // Verify salon ownership
     await this.verifySalonOwnership(staff.salonId, currentUser);
 
-    // Update user role back to CUSTOMER
+    // AUTO-SYNC: Remove UserRole records for this staff's salon
+    await this.prisma.userRole.deleteMany({
+      where: { userId: staff.userId, salonId: staff.salonId },
+    });
+
+    // If user has no remaining roles, revert to CUSTOMER
+    const remainingRoles = await this.prisma.userRole.findMany({
+      where: { userId: staff.userId },
+      select: { role: true },
+    });
+
+    const ROLE_PRIORITY: Record<string, number> = {
+      SUPER_ADMIN: 100, SALON_OWNER: 50, MANAGER: 40,
+      CASHIER: 25, BARBER: 25, SKINNER: 25, STAFF: 25, CUSTOMER: 10,
+    };
+
+    const primaryRole = remainingRoles.length > 0
+      ? remainingRoles.reduce((best, ur) =>
+          (ROLE_PRIORITY[ur.role] ?? 0) >= (ROLE_PRIORITY[best.role] ?? 0) ? ur : best
+        ).role
+      : Role.CUSTOMER;
+
     await this.prisma.user.update({
       where: { id: staff.userId },
-      data: { role: Role.CUSTOMER },
+      data: { role: primaryRole },
     });
 
     await this.prisma.staff.delete({ where: { id } });

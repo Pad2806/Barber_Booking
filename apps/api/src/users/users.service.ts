@@ -4,12 +4,23 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
 import { CreateStaffDto } from './dto/create-staff.dto';
-import { User, Role } from '@prisma/client';
+import { User, Role, StaffPosition } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 import { BaseQueryService } from '../common/services/base-query.service';
 import { UserQueryDto } from './dto/user-query.dto';
 import { PaginationQueryDto } from '../common/dto/pagination-query.dto';
+
+// Canonical mapping: Staff job title → Auth role (mirror of staff.service.ts)
+const POSITION_TO_ROLE: Record<StaffPosition, Role> = {
+  [StaffPosition.BARBER]: Role.BARBER,
+  [StaffPosition.STYLIST]: Role.BARBER,
+  [StaffPosition.SENIOR_STYLIST]: Role.BARBER,
+  [StaffPosition.MASTER_STYLIST]: Role.BARBER,
+  [StaffPosition.SKINNER]: Role.SKINNER,
+  [StaffPosition.CASHIER]: Role.CASHIER,
+  [StaffPosition.MANAGER]: Role.MANAGER,
+};
 
 @Injectable()
 export class UsersService extends BaseQueryService {
@@ -74,7 +85,10 @@ export class UsersService extends BaseQueryService {
     // Hash password
     const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-    // Create user and staff in a transaction
+    // Map position → auth role
+    const authRole: Role = POSITION_TO_ROLE[dto.position as StaffPosition] ?? Role.STAFF;
+
+    // Create user, staff, and UserRole in a single transaction
     return this.prisma.$transaction(async (prisma) => {
       // Create user
       const user = await prisma.user.create({
@@ -84,12 +98,12 @@ export class UsersService extends BaseQueryService {
           password: hashedPassword,
           name: dto.name,
           avatar: dto.avatar,
-          role: Role.STAFF,
+          role: authRole,           // correct role from the start
           authProvider: 'LOCAL',
         },
       });
 
-      // Create staff record
+      // Create staff record (position = job title for display)
       const staff = await prisma.staff.create({
         data: {
           userId: user.id,
@@ -115,6 +129,15 @@ export class UsersService extends BaseQueryService {
               slug: true,
             },
           },
+        },
+      });
+
+      // AUTO-SYNC: Create UserRole (single source of truth for auth guards)
+      await prisma.userRole.create({
+        data: {
+          userId: user.id,
+          role: authRole,
+          salonId: dto.salonId!,
         },
       });
 

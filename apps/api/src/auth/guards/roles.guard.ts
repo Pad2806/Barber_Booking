@@ -23,7 +23,7 @@ export class RolesGuard implements CanActivate {
       return false;
     }
 
-    // Role hierarchy: SUPER_ADMIN > SALON_OWNER > MANAGER > STAFF/BARBER/CASHIER/SKINNER > CUSTOMER
+    // Role hierarchy: SUPER_ADMIN > SALON_OWNER > MANAGER > BARBER/CASHIER/SKINNER > CUSTOMER
     const roleHierarchy: Record<Role, number> = {
       [Role.SUPER_ADMIN]: 100,
       [Role.SALON_OWNER]: 50,
@@ -35,14 +35,10 @@ export class RolesGuard implements CanActivate {
       [Role.CUSTOMER]: 10,
     };
 
-    // Multi-role: use user.roles array, fallback to single user.role
+    // Multi-role: use user.roles[] array (set by validateJwtPayload from UserRole table)
+    // UserRole table is the single source of truth — no staff.position fallback needed
     const userRoles: Role[] = (user.roles as Role[]) || [user.role as Role];
-    let userRoleLevel = Math.max(...userRoles.map(r => roleHierarchy[r] || 0));
-
-    // If any role includes STAFF with MANAGER position, elevate
-    if (userRoles.includes(Role.STAFF) && user.staff?.position === 'MANAGER') {
-      userRoleLevel = Math.max(userRoleLevel, roleHierarchy[Role.MANAGER]);
-    }
+    const userRoleLevel = Math.max(...userRoles.map(r => roleHierarchy[r] || 0));
 
     // 1. Direct match: user has at least one of the required roles explicitly
     const directMatch = requiredRoles.some(role => userRoles.includes(role));

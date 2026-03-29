@@ -49,8 +49,8 @@ export class CashierService {
       Role.SUPER_ADMIN,
     ];
 
-    const isAllowedRole = userRolesArr.some(r => allowed.includes(r)) ||
-      (userRolesArr.includes(Role.STAFF) && user.staff?.position === StaffPosition.CASHIER);
+    // UserRole table is the single source of truth — no staff.position fallback needed
+    const isAllowedRole = userRolesArr.some(r => allowed.includes(r));
 
     if (!isAllowedRole) {
       throw new ForbiddenException('Không có quyền truy cập');

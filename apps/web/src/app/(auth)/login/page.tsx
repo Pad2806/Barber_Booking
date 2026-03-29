@@ -101,7 +101,7 @@ function LoginForm() {
       {/* Session expired notification */}
       {searchParams?.get('reason') === 'session_expired' && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 text-center animate-in fade-in duration-300">
-          ⏰ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.
+          Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.
         </div>
       )}
 

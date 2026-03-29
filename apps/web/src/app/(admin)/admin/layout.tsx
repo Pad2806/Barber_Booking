@@ -29,7 +29,7 @@ import { usersApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import {
   Role,
-  hasPermission,
+  getUserMultiRolePermissions,
   ADMIN_MENU_ITEMS,
 } from '@reetro/shared';
 import { Button } from '@/components/ui/button';
@@ -85,8 +85,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const visibleMenuItems = useMemo(() => {
     if (!me) return [];
-    const role = me.role as Role;
-    const staffPosition = me.staff?.position || null;
+    // Multi-role: get union of all permissions from all assigned roles
+    const userRoles: Role[] = ((me as any).roles as Role[]) || [me.role as Role];
+    const userPermissions = getUserMultiRolePermissions(userRoles);
 
     interface MenuItem {
       key: string;
@@ -96,7 +97,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     }
 
     const adminItems: MenuItem[] = ADMIN_MENU_ITEMS
-      .filter(item => hasPermission(role, item.permission, staffPosition))
+      .filter(item => userPermissions.includes(item.permission))
       .map(item => ({
         key: item.key,
         href: item.href,

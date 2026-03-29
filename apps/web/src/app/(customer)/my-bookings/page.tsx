@@ -6,9 +6,9 @@ import { useSession } from 'next-auth/react';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { useRouter } from 'next/navigation';
-import { Calendar, Clock, MapPin, ChevronRight } from 'lucide-react';
+import { Calendar, Clock, MapPin, ChevronRight, Scissors, CreditCard } from 'lucide-react';
 import { bookingApi, Booking } from '@/lib/api';
-import { formatPrice, formatDate, BOOKING_STATUS, cn } from '@/lib/utils';
+import { formatPrice, formatDate, BOOKING_STATUS, PAYMENT_STATUS, cn } from '@/lib/utils';
 
 export default function MyBookingsPage(): React.ReactNode {
   const { status } = useSession();
@@ -133,7 +133,10 @@ export default function MyBookingsPage(): React.ReactNode {
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="text-xs font-bold text-[#8B7355] uppercase tracking-wider">#{booking.bookingCode}</span>
+                    <div className="bg-[#FAF8F5] border border-[#E8E0D4] px-2.5 py-1 rounded-md flex items-center gap-1.5">
+                       <span className="text-[10px] font-bold text-[#8B7355] uppercase tracking-wider">Mã đặt lịch</span>
+                       <span className="text-sm font-bold text-[#2C1E12]">#{booking.bookingCode}</span>
+                    </div>
                     <span
                       className={cn(
                         'px-2.5 py-1 rounded-md text-xs font-bold',
@@ -145,6 +148,16 @@ export default function MyBookingsPage(): React.ReactNode {
                     >
                       {BOOKING_STATUS[booking.status]?.label || booking.status}
                     </span>
+                    <span
+                      className={cn(
+                        'px-2.5 py-1 rounded-md text-xs font-bold hidden sm:inline-block',
+                        PAYMENT_STATUS[booking.paymentStatus]?.color?.includes('bg-green') ? 'bg-[#E8F5E9] text-[#2E7D32]' : 
+                        PAYMENT_STATUS[booking.paymentStatus]?.color?.includes('bg-yellow') ? 'bg-[#FFF8E1] text-[#F57F17]' :
+                        'bg-white border border-[#E8E0D4] text-[#8B7355]'
+                      )}
+                    >
+                      {PAYMENT_STATUS[booking.paymentStatus]?.label || booking.paymentStatus}
+                    </span>
                   </div>
                   
                   <h3 className="text-lg font-bold text-[#2C1E12] mb-1 group-hover:text-[#C8A97E] transition-colors">{booking.salon.name}</h3>
@@ -153,7 +166,7 @@ export default function MyBookingsPage(): React.ReactNode {
                     {booking.salon.address}
                   </p>
                   
-                  <div className="flex flex-wrap gap-2 md:gap-4">
+                  <div className="flex flex-wrap gap-2 md:gap-4 mb-4">
                     <div className="px-3 py-1.5 rounded-lg bg-[#FAF8F5] border border-[#E8E0D4] flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-[#C8A97E]" />
                       <span className="text-sm font-semibold text-[#2C1E12]">{formatDate(booking.date)}</span>
@@ -163,12 +176,35 @@ export default function MyBookingsPage(): React.ReactNode {
                       <span className="text-sm font-semibold text-[#2C1E12]">{booking.timeSlot}</span>
                     </div>
                   </div>
+
+                  <div className="bg-[#FAF8F5] rounded-xl p-3 border border-[#E8E0D4]/60 hidden md:block">
+                     <div className="flex flex-wrap gap-2">
+                       {booking.services.slice(0, 2).map((s, i) => (
+                         <div key={i} className="flex items-center gap-1.5 text-xs font-medium text-[#5C4A32] bg-white border border-[#E8E0D4] px-2 py-1 rounded-md">
+                            <Scissors className="w-3 h-3 text-[#C8A97E]" />
+                            {s.service.name}
+                         </div>
+                       ))}
+                       {booking.services.length > 2 && (
+                         <div className="flex items-center gap-1.5 text-xs font-medium text-[#8B7355] bg-white border border-[#E8E0D4] px-2 py-1 rounded-md">
+                            +{booking.services.length - 2} dịch vụ khác
+                         </div>
+                       )}
+                     </div>
+                  </div>
                 </div>
 
-                <div className="pt-4 border-t border-[#E8E0D4] md:border-t-0 md:pt-0 md:pl-6 md:border-l md:text-right flex items-center justify-between md:flex-col md:items-end md:justify-center">
-                   <p className="text-sm font-medium text-[#8B7355] mb-1 block md:hidden">Tổng cộng</p>
-                   <p className="text-xl font-bold text-[#2C1E12]">{formatPrice(booking.totalAmount)}</p>
-                   <p className="text-sm font-bold text-[#C8A97E] hidden md:flex items-center gap-1 mt-2 group-hover:translate-x-1 transition-transform">
+                <div className="pt-4 border-t border-[#E8E0D4] md:border-t-0 md:pt-0 md:pl-6 md:border-l md:text-right flex flex-row md:flex-col items-center justify-between md:items-end md:justify-center w-full md:w-auto mt-4 md:mt-0">
+                   <div className="text-left md:text-right">
+                     <p className="text-xs font-bold text-[#8B7355] mb-1 uppercase tracking-wider hidden md:block">Tổng cộng</p>
+                     <p className="text-xl font-bold text-[#2C1E12] mb-1">{formatPrice(booking.totalAmount)}</p>
+                     <div className="flex items-center gap-1 text-xs font-semibold text-[#5C4A32] md:justify-end">
+                       <CreditCard className="w-3.5 h-3.5 text-[#C8A97E]" />
+                       {booking.paymentStatus === 'PAID' ? 'Đã thu tiền' : booking.paymentStatus === 'DEPOSIT_PAID' ? 'Đã cọc' : 'Chưa thanh toán'}
+                     </div>
+                   </div>
+                   
+                   <p className="text-sm font-bold text-white bg-[#C8A97E] hover:bg-[#B8975E] px-4 py-2 rounded-xl flex items-center gap-1 group-hover:scale-105 transition-all">
                      Chi tiết <ChevronRight className="w-4 h-4" />
                    </p>
                 </div>

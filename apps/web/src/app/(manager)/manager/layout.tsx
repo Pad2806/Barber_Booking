@@ -72,14 +72,13 @@ export default function ManagerLayout({ children }: ManagerLayoutProps): React.J
     if (status === 'unauthenticated') {
       router.push('/login?callbackUrl=/dashboard');
     } else if (status === 'authenticated' && me && !isLoadingMe) {
-      const userRole = me.role;
-      const staffPosition = me.staff?.position;
-      
-      const isManager = 
-        userRole === 'MANAGER' || 
-        userRole === 'SALON_OWNER' || 
-        userRole === 'SUPER_ADMIN' ||
-        (userRole === 'STAFF' && staffPosition === 'MANAGER');
+      // Multi-role: check all assigned roles (UserRole table → JWT roles[])
+      const userRoles: string[] = ((me as any).roles as string[]) || [me.role];
+
+      const isManager =
+        userRoles.includes('MANAGER') ||
+        userRoles.includes('SALON_OWNER') ||
+        userRoles.includes('SUPER_ADMIN');
 
       if (!isManager) {
         toast.error('Bạn không có quyền truy cập khu vực Quản lý');
