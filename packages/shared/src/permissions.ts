@@ -265,36 +265,65 @@ export const ADMIN_MENU_ITEMS = [
 // ============== UNIFIED DASHBOARD MENU CONFIGURATION ==============
 
 /**
- * Unified menu items for the /dashboard route — single source of truth for ALL roles.
- * Frontend layout filters this list by getUserMultiRolePermissions(roles).
+ * Each menu item must specify BOTH:
+ *  - permission: the capability needed
+ *  - roles: which roles are allowed to see this item in the sidebar
+ *
+ * Visibility = user has the permission AND user has at least one matching role.
+ * SUPER_ADMIN always sees everything.
  */
 export const DASHBOARD_MENU_ITEMS = [
-    // ── Barber section ──
-    { key: 'my-schedule', href: '/dashboard/my-schedule', label: 'Lịch làm việc', permission: Permission.VIEW_OWN_SCHEDULE, section: 'barber' },
-    { key: 'my-bookings', href: '/dashboard/my-bookings', label: 'Lịch phân công', permission: Permission.VIEW_OWN_BOOKINGS, section: 'barber' },
+    // ── Barber / Skinner section ──
+    { key: 'my-schedule', href: '/dashboard/my-schedule', label: 'Lịch làm việc', permission: Permission.VIEW_OWN_SCHEDULE, section: 'barber', roles: [Role.BARBER, Role.SKINNER] },
+    { key: 'my-bookings', href: '/dashboard/my-bookings', label: 'Lịch phân công', permission: Permission.VIEW_OWN_BOOKINGS, section: 'barber', roles: [Role.BARBER, Role.SKINNER] },
 
     // ── Cashier section ──
-    { key: 'online-bookings', href: '/dashboard/online-bookings', label: 'Duyệt Online', permission: Permission.VIEW_ONLINE_BOOKINGS, section: 'cashier' },
-    { key: 'walk-in', href: '/dashboard/walk-in', label: 'Khách vãng lai', permission: Permission.MANAGE_WALK_IN, section: 'cashier' },
-    { key: 'appointments', href: '/dashboard/appointments', label: 'Lịch hẹn', permission: Permission.VIEW_ALL_BOOKINGS, section: 'cashier' },
-    { key: 'checkout', href: '/dashboard/checkout', label: 'Thanh toán', permission: Permission.MANAGE_CHECKOUT, section: 'cashier' },
+    { key: 'online-bookings', href: '/dashboard/online-bookings', label: 'Duyệt Online', permission: Permission.VIEW_ONLINE_BOOKINGS, section: 'cashier', roles: [Role.CASHIER] },
+    { key: 'walk-in', href: '/dashboard/walk-in', label: 'Khách vãng lai', permission: Permission.MANAGE_WALK_IN, section: 'cashier', roles: [Role.CASHIER] },
+    { key: 'appointments', href: '/dashboard/appointments', label: 'Lịch hẹn', permission: Permission.VIEW_ALL_BOOKINGS, section: 'cashier', roles: [Role.CASHIER] },
+    { key: 'checkout', href: '/dashboard/checkout', label: 'Thanh toán', permission: Permission.MANAGE_CHECKOUT, section: 'cashier', roles: [Role.CASHIER] },
+    { key: 'cashier-revenue', href: '/dashboard/revenue', label: 'Doanh thu', permission: Permission.VIEW_REVENUE, section: 'cashier', roles: [Role.CASHIER] },
 
-    // ── Management section ──
-    { key: 'dashboard', href: '/dashboard', label: 'Tổng quan', permission: Permission.VIEW_DASHBOARD, section: 'management' },
-    { key: 'bookings', href: '/dashboard/bookings', label: 'Đặt lịch', permission: Permission.VIEW_ALL_BOOKINGS, section: 'management' },
-    { key: 'staff', href: '/dashboard/staff', label: 'Nhân viên', permission: Permission.VIEW_STAFF, section: 'management' },
-    { key: 'leave-requests', href: '/dashboard/leave-requests', label: 'Nghỉ phép', permission: Permission.VIEW_STAFF, section: 'management' },
-    { key: 'schedule', href: '/dashboard/schedule', label: 'Lịch làm', permission: Permission.MANAGE_SCHEDULE, section: 'management' },
-    { key: 'services', href: '/dashboard/services', label: 'Dịch vụ', permission: Permission.VIEW_SERVICES, section: 'management' },
-    { key: 'reviews', href: '/dashboard/reviews', label: 'Đánh giá', permission: Permission.VIEW_REVIEWS, section: 'management' },
-    { key: 'revenue', href: '/dashboard/revenue', label: 'Doanh thu', permission: Permission.VIEW_REVENUE, section: 'management' },
+    // ── Management section (Manager + Salon Owner) ──
+    { key: 'dashboard', href: '/dashboard', label: 'Tổng quan', permission: Permission.VIEW_DASHBOARD, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
+    { key: 'bookings', href: '/dashboard/bookings', label: 'Đặt lịch', permission: Permission.VIEW_ALL_BOOKINGS, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
+    { key: 'staff', href: '/dashboard/staff', label: 'Nhân viên', permission: Permission.VIEW_STAFF, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
+    { key: 'leave-requests', href: '/dashboard/leave-requests', label: 'Nghỉ phép', permission: Permission.VIEW_STAFF, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
+    { key: 'schedule', href: '/dashboard/schedule', label: 'Lịch làm', permission: Permission.MANAGE_SCHEDULE, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
+    { key: 'services', href: '/dashboard/services', label: 'Dịch vụ', permission: Permission.VIEW_SERVICES, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
+    { key: 'reviews', href: '/dashboard/reviews', label: 'Đánh giá', permission: Permission.VIEW_REVIEWS, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
+    { key: 'revenue', href: '/dashboard/revenue', label: 'Doanh thu', permission: Permission.VIEW_REVENUE, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
 
     // ── Admin section (SUPER_ADMIN only) ──
-    { key: 'salons', href: '/dashboard/salons', label: 'Chi nhánh', permission: Permission.MANAGE_SALONS, section: 'admin' },
-    { key: 'customers', href: '/dashboard/customers', label: 'Khách hàng', permission: Permission.MANAGE_USERS, section: 'admin' },
-    { key: 'roles', href: '/dashboard/roles', label: 'Phân quyền', permission: Permission.MANAGE_USERS, section: 'admin' },
-    { key: 'settings', href: '/dashboard/settings', label: 'Cài đặt', permission: Permission.MANAGE_SETTINGS, section: 'admin' },
+    { key: 'admin-dashboard', href: '/dashboard', label: 'Tổng quan', permission: Permission.VIEW_DASHBOARD, section: 'admin', roles: [Role.SUPER_ADMIN] },
+    { key: 'admin-bookings', href: '/dashboard/bookings', label: 'Đặt lịch', permission: Permission.VIEW_ALL_BOOKINGS, section: 'admin', roles: [Role.SUPER_ADMIN] },
+    { key: 'admin-staff', href: '/dashboard/staff', label: 'Nhân viên', permission: Permission.VIEW_STAFF, section: 'admin', roles: [Role.SUPER_ADMIN] },
+    { key: 'admin-leave', href: '/dashboard/leave-requests', label: 'Nghỉ phép', permission: Permission.VIEW_STAFF, section: 'admin', roles: [Role.SUPER_ADMIN] },
+    { key: 'admin-schedule', href: '/dashboard/schedule', label: 'Lịch làm', permission: Permission.MANAGE_SCHEDULE, section: 'admin', roles: [Role.SUPER_ADMIN] },
+    { key: 'admin-services', href: '/dashboard/services', label: 'Dịch vụ', permission: Permission.VIEW_SERVICES, section: 'admin', roles: [Role.SUPER_ADMIN] },
+    { key: 'admin-reviews', href: '/dashboard/reviews', label: 'Đánh giá', permission: Permission.VIEW_REVIEWS, section: 'admin', roles: [Role.SUPER_ADMIN] },
+    { key: 'admin-revenue', href: '/dashboard/revenue', label: 'Doanh thu', permission: Permission.VIEW_REVENUE, section: 'admin', roles: [Role.SUPER_ADMIN] },
+    { key: 'salons', href: '/dashboard/salons', label: 'Chi nhánh', permission: Permission.MANAGE_SALONS, section: 'admin', roles: [Role.SUPER_ADMIN] },
+    { key: 'customers', href: '/dashboard/customers', label: 'Khách hàng', permission: Permission.MANAGE_USERS, section: 'admin', roles: [Role.SUPER_ADMIN] },
+    { key: 'roles', href: '/dashboard/roles', label: 'Phân quyền', permission: Permission.MANAGE_USERS, section: 'admin', roles: [Role.SUPER_ADMIN] },
+    { key: 'settings', href: '/dashboard/settings', label: 'Cài đặt', permission: Permission.MANAGE_SETTINGS, section: 'admin', roles: [Role.SUPER_ADMIN] },
 ] as const;
+
+/**
+ * Filter DASHBOARD_MENU_ITEMS for a user based on their roles.
+ * An item is visible when:
+ *  1. User has the required permission (from their roles union), AND
+ *  2. User has at least one role listed in the item's 'roles' array.
+ *
+ * This prevents cross-section leaking (e.g. Manager seeing Cashier items).
+ */
+export function getVisibleDashboardMenuItems(userRoles: Role[]) {
+    const perms = getUserMultiRolePermissions(userRoles);
+    return DASHBOARD_MENU_ITEMS.filter(item =>
+        perms.includes(item.permission as Permission) &&
+        item.roles.some(r => userRoles.includes(r)),
+    );
+}
 
 /**
  * Route → Permission mapping for middleware validation.

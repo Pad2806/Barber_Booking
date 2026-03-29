@@ -35,9 +35,7 @@ import { usersApi } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import {
   Role,
-  Permission,
-  getUserMultiRolePermissions,
-  DASHBOARD_MENU_ITEMS,
+  getVisibleDashboardMenuItems,
   ROLE_DISPLAY,
 } from '@reetro/shared';
 import { Button } from '@/components/ui/button';
@@ -56,19 +54,28 @@ import { NotificationBell } from '@/components/admin/NotificationBell';
 // ── Icon mapping for menu keys ──────────────────────────────────
 const MENU_ICONS: Record<string, React.ElementType> = {
   'dashboard': LayoutDashboard,
+  'admin-dashboard': LayoutDashboard,
   'my-schedule': Clock,
   'my-bookings': ClipboardList,
   'online-bookings': Smartphone,
   'walk-in': UserPlus,
   'appointments': ClipboardList,
   'checkout': CreditCard,
+  'cashier-revenue': BarChart3,
   'bookings': Calendar,
+  'admin-bookings': Calendar,
   'staff': Users,
+  'admin-staff': Users,
   'leave-requests': Clock,
+  'admin-leave': Clock,
   'schedule': Calendar,
+  'admin-schedule': Calendar,
   'services': Scissors,
+  'admin-services': Scissors,
   'reviews': Star,
+  'admin-reviews': Star,
   'revenue': BarChart3,
+  'admin-revenue': BarChart3,
   'salons': Store,
   'customers': UserCheck,
   'roles': Shield,
@@ -115,18 +122,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     return [me.role as Role];
   }, [me]);
 
-  // ── Compute permissions from all roles (union) ───────────────
-  const userPermissions = useMemo(
-    () => getUserMultiRolePermissions(userRoles),
+  // ── Filter menu items by user's roles + permissions ─────────
+  const visibleMenuItems = useMemo(
+    () => getVisibleDashboardMenuItems(userRoles),
     [userRoles],
   );
-
-  // ── Filter menu items by user's union permissions ────────────
-  const visibleMenuItems = useMemo(() => {
-    return DASHBOARD_MENU_ITEMS.filter(item =>
-      userPermissions.includes(item.permission as Permission),
-    );
-  }, [userPermissions]);
 
   // ── Block pure customers ────────────────────────────────────
   const isCustomerOnly = useMemo(
@@ -134,13 +134,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     [me, isLoadingMe, userRoles],
   );
 
-  // ── Deduplicate 'appointments' and 'bookings' if both exist ──
-  // (cashier appointments and management bookings map same perm)
+  // ── Deduplicate by href (same page, different keys per role) ──
   const deduplicatedMenu = useMemo(() => {
     const seen = new Set<string>();
     return visibleMenuItems.filter(item => {
-      if (seen.has(item.key)) return false;
-      seen.add(item.key);
+      const id = `${item.section}::${item.href}`;
+      if (seen.has(id)) return false;
+      seen.add(id);
       return true;
     });
   }, [visibleMenuItems]);
