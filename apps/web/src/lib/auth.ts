@@ -3,9 +3,33 @@ import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import Facebook from 'next-auth/providers/facebook';
 import axios from 'axios';
+import { jwtDecode } from 'jwt-decode';
 
 // Use INTERNAL_API_URL for server-to-server calls on Dokploy to bypass public DNS issues
 const API_URL = process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+/**
+ * Check if a JWT access token is expired or about to expire (within 5 min buffer).
+ * Returns true if the token should be refreshed.
+ */
+function shouldRefreshToken(accessToken: string): boolean {
+  try {
+    const decoded = jwtDecode<{ exp: number }>(accessToken);
+    const now = Math.floor(Date.now() / 1000);
+    const BUFFER_SECONDS = 5 * 60; // refresh 5 minutes before expiry
+    return decoded.exp - now < BUFFER_SECONDS;
+  } catch {
+    return true; // can't decode → treat as expired
+  }
+}
+
+/**
+ * Call backend to refresh the access token using the refresh token.
+ */
+async function refreshAccessToken(refreshToken: string) {
+  const response = await axios.post(`${API_URL}/api/auth/refresh`, { refreshToken });
+  return response.data; // { accessToken, refreshToken, user }
+}
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -77,6 +101,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return true;
     },
     async jwt({ token, user }) {
+      // Initial sign in — store user data
       if (user) {
         token.id = user.id;
         token.role = (user as any).role;
@@ -84,7 +109,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.position = (user as any).position;
         token.accessToken = (user as any).accessToken;
         token.refreshToken = (user as any).refreshToken;
+        token.error = undefined;
+        return token;
       }
+
+      // Subsequent calls — check if accessToken needs refresh
+      if (token.accessToken && !shouldRefreshToken(token.accessToken as string)) {
+        // Token still valid, return as-is
+        return token;
+      }
+
+      // Token expired or about to expire — try to refresh
+      if (token.refreshToken) {
+        try {
+          const refreshed = await refreshAccessToken(token.refreshToken as string);
+          token.accessToken = refreshed.accessToken;
+          token.refreshToken = refreshed.refreshToken;
+          token.error = undefined;
+          return token;
+        } catch (error) {
+          console.error('Token refresh failed:', error);
+          // Refresh token also expired — signal frontend to logout
+          token.error = 'RefreshTokenExpired';
+          return token;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
@@ -96,6 +146,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         (session as any).accessToken = token.accessToken;
         (session as any).refreshToken = token.refreshToken;
       }
+      // Propagate token error to client so it can auto-logout
+      (session as any).error = token.error;
       return session;
     },
   },
@@ -110,3 +162,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET || 'reetro-barbershop-dev-secret-key-123456789',
   trustHost: true,
 });
+

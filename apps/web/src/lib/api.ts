@@ -79,17 +79,44 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Response interceptor — graceful 401 handling with anti-loop protection
+// When token expires and refresh fails, auto-logout instead of showing errors
+let isLoggingOut = false;
 
-
-// Response interceptor — DO NOT redirect on 401 here.
-// Auth redirection is handled by dashboard layout via useSession().
-// Redirecting here causes infinite loop: 401 → /login → session valid → /dashboard → 401...
 apiClient.interceptors.response.use(
   response => response,
-  error => {
+  async error => {
+    const status = error?.response?.status;
+
+    // On 401: token expired → clear cache + auto signOut
+    // Anti-loop: only trigger once (isLoggingOut flag prevents cascading logouts)
+    if (status === 401 && typeof window !== 'undefined' && !isLoggingOut) {
+      // Check we're not already on login page
+      const isLoginPage = window.location.pathname.includes('/login');
+      if (!isLoginPage) {
+        isLoggingOut = true;
+        // Clear session cache so stale token isn't reused
+        cachedSession = null;
+        sessionCacheTime = 0;
+        sessionPromise = null;
+
+        try {
+          const { signOut } = await import('next-auth/react');
+          await signOut({ redirectTo: '/login?reason=session_expired' });
+        } catch {
+          // Fallback: hard redirect if signOut fails
+          window.location.href = '/login?reason=session_expired';
+        } finally {
+          // Reset flag after 5s to allow retry if user navigates back
+          setTimeout(() => { isLoggingOut = false; }, 5000);
+        }
+      }
+    }
+
     return Promise.reject(error);
   }
 );
+
 
 
 // Salon APIs

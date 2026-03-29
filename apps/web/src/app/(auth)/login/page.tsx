@@ -98,6 +98,13 @@ function LoginForm() {
         <p className="text-sm font-medium text-[#8B7355]">Vui lòng nhập thông tin để tiếp tục với Reetro</p>
       </div>
 
+      {/* Session expired notification */}
+      {searchParams?.get('reason') === 'session_expired' && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800 text-center animate-in fade-in duration-300">
+          ⏰ Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.
+        </div>
+      )}
+
       {/* Email/Password Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-5">
