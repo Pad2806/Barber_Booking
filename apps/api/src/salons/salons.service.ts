@@ -265,18 +265,39 @@ export class SalonsService extends BaseQueryService {
     await this.prisma.salon.delete({ where: { id } });
   }
 
-  async getOwnerSalons(ownerId: string) {
-    return this.prisma.salon.findMany({
-      where: { ownerId },
-      include: {
-        _count: {
-          select: {
-            staff: true,
-            services: true,
-            bookings: true,
-          },
+  /**
+   * Get all salons accessible to a user:
+   * - Salons they own (ownerId), OR
+   * - Salons where they are a staff member (staff.userId)
+   * Used by /salons/my-salons endpoint (Manager, Cashier, Barber...)
+   */
+  async getOwnerSalons(userId: string) {
+    const [ownedSalons, staffSalons] = await Promise.all([
+      // Salons owned by the user
+      this.prisma.salon.findMany({
+        where: { ownerId: userId },
+        include: {
+          _count: { select: { staff: true, services: true, bookings: true } },
         },
-      },
+      }),
+      // Salons where user is a staff member
+      this.prisma.salon.findMany({
+        where: {
+          staff: { some: { userId, isActive: true } },
+        },
+        include: {
+          _count: { select: { staff: true, services: true, bookings: true } },
+        },
+      }),
+    ]);
+
+    // Merge and deduplicate by id
+    const merged = [...ownedSalons, ...staffSalons];
+    const seen = new Set<string>();
+    return merged.filter((s) => {
+      if (seen.has(s.id)) return false;
+      seen.add(s.id);
+      return true;
     });
   }
 

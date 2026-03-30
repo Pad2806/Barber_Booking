@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { cashierApi } from '@/lib/api';
 import {
@@ -201,49 +201,69 @@ export default function CheckoutPage() {
     return { label: booking.status, class: 'bg-slate-50 text-slate-600 border-slate-200' };
   };
 
-  // Print invoice
-  const handlePrint = () => {
+  // Print invoice — uses hidden iframe to avoid popup blockers.
+  // The iframe is appended to the current document, content is written,
+  // print() fires on the iframe window, then iframe is cleaned up.
+  const handlePrint = useCallback(() => {
     const printContent = invoiceRef.current;
     if (!printContent) return;
 
-    const printWindow = window.open('', '_blank', 'width=400,height=600');
-    if (!printWindow) return;
+    const printCSS = `
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font-family: 'Courier New', monospace; font-size: 12px; color: #000; }
+      .container { width: 300px; margin: 0 auto; padding: 16px; }
+      .text-center { text-align: center; }
+      .font-bold { font-weight: bold; }
+      .flex { display: flex; }
+      .justify-between { justify-content: space-between; }
+      .border-dashed { border-bottom: 1px dashed #999; }
+      .mb-2 { margin-bottom: 8px; }
+      .mt-2 { margin-top: 8px; }
+      .pb-2 { padding-bottom: 8px; }
+      .pt-2 { padding-top: 8px; }
+      .text-sm { font-size: 11px; }
+      .text-xs { font-size: 10px; }
+      .text-lg { font-size: 16px; }
+      .uppercase { text-transform: uppercase; }
+      .tracking-wider { letter-spacing: 2px; }
+      .text-gray { color: #888; }
+      .text-green { color: #059669; }
+      @media print { @page { margin: 0; size: 80mm auto; } }
+    `;
 
-    printWindow.document.write(`
+    // Create hidden iframe — never blocked by popup blockers
+    const iframe = document.createElement('iframe');
+    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:400px;height:600px;border:none;';
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) { document.body.removeChild(iframe); return; }
+
+    doc.open();
+    doc.write(`<!DOCTYPE html>
       <html>
         <head>
           <title>Hóa đơn</title>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            body { font-family: 'Courier New', monospace; font-size: 12px; color: #000; }
-            .container { width: 300px; margin: 0 auto; padding: 16px; }
-            .text-center { text-align: center; }
-            .font-bold { font-weight: bold; }
-            .flex { display: flex; }
-            .justify-between { justify-content: space-between; }
-            .border-dashed { border-bottom: 1px dashed #999; }
-            .mb-2 { margin-bottom: 8px; }
-            .mt-2 { margin-top: 8px; }
-            .pb-2 { padding-bottom: 8px; }
-            .pt-2 { padding-top: 8px; }
-            .text-sm { font-size: 11px; }
-            .text-xs { font-size: 10px; }
-            .text-lg { font-size: 16px; }
-            .uppercase { text-transform: uppercase; }
-            .tracking-wider { letter-spacing: 2px; }
-            .text-gray { color: #888; }
-            .text-green { color: #059669; }
-            @media print { @page { margin: 0; size: 80mm auto; } }
-          </style>
+          <meta charset="utf-8" />
+          <style>${printCSS}</style>
         </head>
         <body>
           <div class="container">${printContent.innerHTML}</div>
-          <script>window.onload = function() { window.print(); window.close(); }</script>
         </body>
       </html>
     `);
-    printWindow.document.close();
-  };
+    doc.close();
+
+    // Wait for iframe to fully render then print
+    iframe.onload = () => {
+      iframe.contentWindow?.focus();
+      iframe.contentWindow?.print();
+      // Clean up after a short delay (print dialog keeps a reference)
+      setTimeout(() => {
+        if (document.body.contains(iframe)) document.body.removeChild(iframe);
+      }, 1000);
+    };
+  }, []);
 
   // Export summary as text/CSV
   const handleExportSummary = () => {
@@ -519,7 +539,12 @@ export default function CheckoutPage() {
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-slate-400">Dịch vụ</span>
-                      <span className="font-semibold">{selectedBooking.services?.length} item</span>
+                      <span
+                        className="font-semibold underline decoration-dotted decoration-slate-400 cursor-help"
+                        title={selectedBooking.services?.map((s: any) => s.service?.name).join('\n')}
+                      >
+                        {selectedBooking.services?.length} dịch vụ
+                      </span>
                     </div>
                     {paymentInfo.depositPaid > 0 && (
                       <div className="flex justify-between text-sm">

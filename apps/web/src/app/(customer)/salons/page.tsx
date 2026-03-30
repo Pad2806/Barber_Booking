@@ -16,7 +16,7 @@ export default function SalonsPage(): React.ReactNode {
   const fetchSalons = useCallback(async (query?: string) => {
     try {
       setLoading(true);
-      const response = await salonApi.getAll(query ? { search: query } : undefined);
+      const response = await salonApi.getAll(query !== undefined ? { search: query } : undefined);
       setSalons(response.data);
     } catch (error) {
       console.error('Failed to fetch salons:', error);
@@ -25,13 +25,18 @@ export default function SalonsPage(): React.ReactNode {
     }
   }, []);
 
+  // Initial load
   useEffect(() => {
     void fetchSalons();
   }, [fetchSalons]);
 
-  const handleSearch = () => {
-    void fetchSalons(search);
-  };
+  // Debounced real-time search — fires 400ms after user stops typing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void fetchSalons(search);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search, fetchSalons]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -54,13 +59,13 @@ export default function SalonsPage(): React.ReactNode {
                 type="text"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && handleSearch()}
+                onKeyDown={e => e.key === 'Enter' && fetchSalons(search)}
                 placeholder="NHẬP TÊN HOẶC ĐỊA CHỈ..."
                 className="w-full pl-14 pr-8 py-4 bg-background/5 border-2 border-background/10 rounded-full focus:outline-none focus:border-primary focus:bg-background/10 text-background font-bold text-sm tracking-tight transition-all placeholder:text-background/40"
               />
             </div>
             <button
-              onClick={handleSearch}
+              onClick={() => fetchSalons(search)}
               className="bg-primary text-background hover:bg-background hover:text-foreground border-2 border-primary px-10 py-4 rounded-full font-bold text-[10px] uppercase tracking-wider transition-all duration-500 shadow-xl shadow-primary/10 active:scale-95"
             >
               TÌM KIẾM

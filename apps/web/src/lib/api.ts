@@ -582,7 +582,19 @@ export const paymentApi = {
 
 
 
+/**
+ * Salons API — for authenticated staff/manager/owner to get their own salons.
+ * Uses /salons/my-salons which returns all salons the user owns OR is a staff member in.
+ */
+export const salonsApi = {
+  getMySalons: async () => {
+    const response = await apiClient.get<Salon[]>('/salons/my-salons');
+    return response.data;
+  },
+};
+
 export const adminApi = {
+
   getDashboardStats: async () => {
     const response = await apiClient.get<DashboardStats>('/admin/dashboard');
     return response.data;

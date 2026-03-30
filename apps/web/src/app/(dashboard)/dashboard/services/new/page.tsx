@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Save, ArrowLeft, Loader2, Image as ImageIcon, Check, Store } from 'lucide-react';
-import { adminApi } from '@/lib/api';
+import { adminApi, salonsApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 import { SERVICE_CATEGORIES, cn } from '@/lib/utils';
 import ImageUpload from '@/components/ImageUpload';
@@ -14,6 +15,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 export default function NewServicePage(): React.JSX.Element {
   const router = useRouter();
+  const { data: session } = useSession();
   const queryClient = useQueryClient();
   const [salons, setSalons] = useState<{ id: string; name: string }[]>([]);
   const [loadingSalons, setLoadingSalons] = useState(true);
@@ -33,13 +35,21 @@ export default function NewServicePage(): React.JSX.Element {
   });
 
   useEffect(() => {
-    fetchSalons();
-  }, []);
+    if (session) fetchSalons();
+  }, [session]);
 
   const fetchSalons = async () => {
     try {
-      const data = await adminApi.getAllSalons({ limit: 100 });
-      setSalons(data.data || []);
+      const isSuperAdmin = (session?.user as any)?.role === 'SUPER_ADMIN';
+      if (isSuperAdmin) {
+        // Super admin can see all salons
+        const data = await adminApi.getAllSalons({ limit: 100 });
+        setSalons(data.data || []);
+      } else {
+        // Manager / Cashier / Barber — only salons they belong to
+        const data = await salonsApi.getMySalons();
+        setSalons(Array.isArray(data) ? data : []);
+      }
     } catch (err) {
       toast.error('Không thể tải danh sách chi nhánh');
     } finally {
@@ -110,7 +120,8 @@ export default function NewServicePage(): React.JSX.Element {
       }
 
       queryClient.invalidateQueries({ queryKey: ['admin', 'services'] });
-      router.push('/admin/services');
+      queryClient.invalidateQueries({ queryKey: ['dashboard', 'services'] });
+      router.push('/dashboard/services');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Tạo dịch vụ thất bại');
     } finally {
@@ -122,7 +133,7 @@ export default function NewServicePage(): React.JSX.Element {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Link href="/admin/services" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+        <Link href="/dashboard/services" className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
@@ -360,7 +371,7 @@ export default function NewServicePage(): React.JSX.Element {
               )}
             </button>
             <Link
-              href="/admin/services"
+              href="/dashboard/services"
               className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Hủy
