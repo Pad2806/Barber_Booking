@@ -6,7 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import {
   ChevronLeft, Check, Scissors, Star, CalendarDays, Sparkles, X,
-  MessageSquare, Eye, MapPin, Calendar, User, AlertCircle, RefreshCw, ChevronRight,
+  MessageSquare, Eye, MapPin, Calendar, User, AlertCircle, RefreshCw,
+  ChevronRight, Zap, Clock,
 } from 'lucide-react';
 import { staffApi, serviceApi, bookingApi, Staff } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
@@ -24,6 +25,13 @@ const VIETNAM_TZ = 'Asia/Ho_Chi_Minh';
 const DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 const FULL_DAYS = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
 const MONTHS = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+
+interface SuggestedSlot {
+  date: string;
+  time: string;
+  label: string;   // "Hôm nay", "Ngày mai", "T6 04/04"
+  period: string;   // "Sáng", "Chiều", "Tối"
+}
 
 export default function BookingPage() {
   const router = useRouter();
@@ -43,6 +51,13 @@ export default function BookingPage() {
   const [showSummary, setShowSummary] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
+
+  // Smart suggest state
+  const [suggestedSlots, setSuggestedSlots] = useState<SuggestedSlot[]>([]);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const [showFullCalendar, setShowFullCalendar] = useState(false);
+
+  const dateScrollRef = useRef<HTMLDivElement>(null);
   const timeRef = useRef<HTMLDivElement>(null);
 
   // ── Date list: next 14 days ──────────────────────────────────
@@ -79,52 +94,112 @@ export default function BookingPage() {
     }
   }, [salon]);
 
-  // ── Fetch time slots ─────────────────────────────────────────
+  // ── Fetch time slots for a specific date ─────────────────────
+  const fetchSlotsForDate = useCallback(async (dateStr: string): Promise<{ time: string; available: boolean }[]> => {
+    if (!salon) return [];
+    try {
+      const data = await staffApi.getAvailableSlots(salon.id, dateStr, totalDuration, selectedStaff?.id);
+      const slotsData = Array.isArray(data) ? data : [];
+      const todayStr = dayjs.tz(undefined, VIETNAM_TZ).format('YYYY-MM-DD');
+      const isToday = dateStr === todayStr;
+
+      if (isToday) {
+        const limit = dayjs.tz(undefined, VIETNAM_TZ).add(1, 'hour');
+        return slotsData.map((slot: any) => {
+          const time = typeof slot === 'string' ? slot : slot.time;
+          const [h, m] = time.split(':').map(Number);
+          const slotTime = dayjs.tz(dateStr, VIETNAM_TZ).set('hour', h).set('minute', m);
+          return { time, available: !slotTime.isBefore(limit) };
+        });
+      }
+      return slotsData.map((slot: any) =>
+        typeof slot === 'string' ? { time: slot, available: true } : slot
+      );
+    } catch {
+      return [];
+    }
+  }, [salon, totalDuration, selectedStaff?.id]);
+
+  // ── Fetch time slots for selected date ───────────────────────
   const fetchTimeSlots = useCallback(async () => {
     if (!salon || !selectedDate) return;
     try {
       setLoadingSlots(true);
-      const data = await staffApi.getAvailableSlots(salon.id, selectedDate, totalDuration, selectedStaff?.id);
-      const slotsData = Array.isArray(data) ? data : [];
-      const todayStr = dayjs.tz(undefined, VIETNAM_TZ).format('YYYY-MM-DD');
-      const isToday = selectedDate === todayStr;
-
-      if (isToday) {
-        const limit = dayjs.tz(undefined, VIETNAM_TZ).add(1, 'hour');
-        setTimeSlots(slotsData.map((slot: any) => {
-          const time = typeof slot === 'string' ? slot : slot.time;
-          const [h, m] = time.split(':').map(Number);
-          const slotTime = dayjs.tz(selectedDate, VIETNAM_TZ).set('hour', h).set('minute', m);
-          return { time, available: !slotTime.isBefore(limit) };
-        }));
-      } else {
-        setTimeSlots(slotsData.map((slot: any) =>
-          typeof slot === 'string' ? { time: slot, available: true } : slot
-        ));
-      }
+      const slots = await fetchSlotsForDate(selectedDate);
+      setTimeSlots(slots);
     } catch (e) {
       console.error(e);
     } finally {
       setLoadingSlots(false);
     }
-  }, [salon, selectedDate, totalDuration, selectedStaff?.id]);
+  }, [salon, selectedDate, fetchSlotsForDate]);
 
+  // ── Smart Suggest: fetch best slots from next 3-5 days ───────
+  const fetchSuggestedSlots = useCallback(async () => {
+    if (!salon || DATES.length === 0) return;
+    try {
+      setLoadingSuggestions(true);
+      const todayStr = dayjs.tz(undefined, VIETNAM_TZ).format('YYYY-MM-DD');
+      const tomorrowStr = dayjs.tz(undefined, VIETNAM_TZ).add(1, 'day').format('YYYY-MM-DD');
+
+      // Fetch slots for first 5 days in parallel
+      const datesToCheck = DATES.slice(0, 5);
+      const results = await Promise.all(
+        datesToCheck.map(d => fetchSlotsForDate(d.format('YYYY-MM-DD')))
+      );
+
+      const suggestions: SuggestedSlot[] = [];
+      const preferredHours = [10, 14, 16, 9, 15, 11]; // Preferred hours in order
+
+      for (let i = 0; i < datesToCheck.length && suggestions.length < 3; i++) {
+        const dateObj = datesToCheck[i];
+        const dateStr = dateObj.format('YYYY-MM-DD');
+        const available = results[i].filter(s => s.available);
+        if (available.length === 0) continue;
+
+        // Pick best slot: try preferred hours first, fallback to first available
+        let bestSlot = available[0];
+        for (const prefH of preferredHours) {
+          const match = available.find(s => parseInt(s.time.split(':')[0]) === prefH);
+          if (match) { bestSlot = match; break; }
+        }
+
+        const hour = parseInt(bestSlot.time.split(':')[0]);
+        let label: string;
+        if (dateStr === todayStr) label = 'Hôm nay';
+        else if (dateStr === tomorrowStr) label = 'Ngày mai';
+        else label = `${DAYS[dateObj.day()]} ${dateObj.date()}/${dateObj.month() + 1}`;
+
+        suggestions.push({
+          date: dateStr,
+          time: bestSlot.time,
+          label,
+          period: hour < 12 ? 'Sáng' : hour < 17 ? 'Chiều' : 'Tối',
+        });
+      }
+      setSuggestedSlots(suggestions);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingSuggestions(false);
+    }
+  }, [salon, DATES, fetchSlotsForDate]);
+
+  // ── Effects ──────────────────────────────────────────────────
   useEffect(() => {
     if (!salon) { router.push('/salons'); return; }
     if (selectedServices.length === 0) { router.back(); return; }
     void fetchData();
   }, [salon, router, selectedServices.length, fetchData]);
 
+  // Fetch suggestions after staff/data loads
+  useEffect(() => {
+    if (salon && DATES.length > 0) void fetchSuggestedSlots();
+  }, [salon, DATES.length, fetchSuggestedSlots]);
+
   useEffect(() => {
     if (selectedDate && salon) void fetchTimeSlots();
   }, [fetchTimeSlots, selectedDate, salon]);
-
-  // Auto-scroll to time section after date selected
-  useEffect(() => {
-    if (selectedDate && timeRef.current) {
-      setTimeout(() => timeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
-    }
-  }, [selectedDate]);
 
   // Show summary sheet when time slot selected
   useEffect(() => {
@@ -148,7 +223,13 @@ export default function BookingPage() {
     return `${FULL_DAYS[d.day()]}, ${d.date()} ${MONTHS[d.month()]}`;
   }, [selectedDate]);
 
-  // ── Confirm booking (from summary sheet) ────────────────────
+  // ── Select a suggested slot (1-tap booking) ──────────────────
+  const handleSuggestSelect = (slot: SuggestedSlot) => {
+    setDate(slot.date);
+    setTimeSlot(slot.time);
+  };
+
+  // ── Confirm booking ──────────────────────────────────────────
   const handleConfirm = async () => {
     if (!salon || !selectedDate || !selectedTimeSlot) return;
     if (status !== 'authenticated') {
@@ -175,7 +256,6 @@ export default function BookingPage() {
   };
 
   if (!salon) return null;
-
   const depositAmount = Math.round(totalAmount * 0.25);
 
   return (
@@ -194,7 +274,7 @@ export default function BookingPage() {
 
       <div className="max-w-2xl mx-auto px-4 py-4 space-y-6">
 
-        {/* ─── Selected Services ─── */}
+        {/* ─── Selected Services (compact) ─── */}
         <div className="bg-white rounded-2xl border border-[#E8E0D4] p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs font-bold text-[#8B7355] uppercase tracking-wider flex items-center gap-2">
@@ -240,7 +320,7 @@ export default function BookingPage() {
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {/* Auto-assign card */}
+              {/* Auto-assign */}
               <div
                 onClick={() => setStaff(null)}
                 className={cn(
@@ -262,7 +342,6 @@ export default function BookingPage() {
                 )}
               </div>
 
-              {/* Staff cards */}
               {staffList.map(member => {
                 const selected = selectedStaff?.id === member.id;
                 return (
@@ -301,87 +380,185 @@ export default function BookingPage() {
           )}
         </div>
 
-        {/* ─── Section 2: Choose Date ─── */}
-        <div>
-          <h2 className="text-base font-bold text-[#2C1E12] mb-1">Chọn ngày</h2>
-          <p className="text-sm text-[#8B7355] mb-4">14 ngày tiếp theo</p>
-          <div className="grid grid-cols-7 gap-1.5">
-            {DATES.map(date => {
-              const dateStr = date.format('YYYY-MM-DD');
-              const isSelected = selectedDate === dateStr;
-              const isToday = dateStr === dayjs.tz(undefined, VIETNAM_TZ).format('YYYY-MM-DD');
-              return (
-                <button
-                  key={dateStr}
-                  onClick={() => setDate(dateStr)}
-                  className={cn(
-                    'relative flex flex-col items-center py-2.5 px-1 rounded-xl border-2 transition-all duration-300 cursor-pointer',
-                    isSelected ? 'border-[#C8A97E] bg-[#C8A97E] text-white shadow-sm' : 'border-transparent bg-white hover:border-[#E8E0D4] text-[#2C1E12] hover:shadow-sm'
-                  )}
-                >
-                  <span className={cn('text-[10px] font-bold uppercase mb-0.5', isSelected ? 'text-white/70' : 'text-[#8B7355]')}>{DAYS[date.day()]}</span>
-                  <span className="text-base font-bold leading-tight">{date.date()}</span>
-                  {isToday && <div className={cn('w-1 h-1 rounded-full mt-0.5', isSelected ? 'bg-white' : 'bg-[#C8A97E]')} />}
-                </button>
-              );
-            })}
+        {/* ════════════════════════════════════════════════════════════
+            SECTION 2: HYBRID SMART DATE-TIME PICKER (Option H)
+            Smart Suggest + Inline horizontal date strip + time grid
+        ════════════════════════════════════════════════════════════ */}
+        <div className="space-y-4">
+          <div>
+            <h2 className="text-base font-bold text-[#2C1E12] mb-1">Chọn ngày & giờ</h2>
+            <p className="text-sm text-[#8B7355]">Chọn nhanh hoặc tự chọn bên dưới</p>
           </div>
-          {selectedDate && (
-            <p className="text-sm text-[#C8A97E] font-medium mt-3 flex items-center gap-1.5">
-              <CalendarDays className="w-3.5 h-3.5" /> {formattedDate}
-            </p>
-          )}
-        </div>
 
-        {/* ─── Section 3: Choose Time (auto-appears after date) ─── */}
-        {selectedDate && (
-          <div ref={timeRef} className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <h2 className="text-base font-bold text-[#2C1E12] mb-1">Chọn giờ</h2>
-            <p className="text-sm text-[#8B7355] mb-4">Các khung giờ còn trống</p>
+          {/* ── Smart Suggest Cards ── */}
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-[#C8A97E] to-[#A0845C] flex items-center justify-center">
+                <Zap className="w-3.5 h-3.5 text-white" />
+              </div>
+              <span className="text-xs font-bold text-[#8B7355] uppercase tracking-wider">Gợi ý nhanh</span>
+            </div>
 
-            {loadingSlots ? (
-              <div className="flex flex-col items-center py-12 gap-3">
-                <div className="w-8 h-8 border-[3px] border-[#E8E0D4] border-t-[#C8A97E] rounded-full animate-spin" />
-                <p className="text-sm text-[#8B7355]">Đang tải...</p>
-              </div>
-            ) : timeSections.length === 0 ? (
-              <div className="text-center py-12 bg-white rounded-2xl border border-[#E8E0D4]">
-                <CalendarDays className="w-8 h-8 text-[#D4C9BA] mx-auto mb-2" />
-                <p className="text-sm font-bold text-[#2C1E12]">Hết lịch trống</p>
-                <p className="text-xs text-[#8B7355] mt-1">Vui lòng chọn ngày khác</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {timeSections.map(section => (
-                  <div key={section.label}>
-                    <h4 className="text-xs font-bold text-[#8B7355] mb-2 flex items-center gap-1.5">
-                      <span>{section.icon}</span> {section.label}
-                      <span className="text-[#C4B9A8] font-normal">({section.slots.length} khung giờ)</span>
-                    </h4>
-                    <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
-                      {section.slots.map(slot => (
-                        <button
-                          key={slot.time}
-                          onClick={() => setTimeSlot(slot.time)}
-                          className={cn(
-                            'py-2.5 rounded-xl text-sm font-bold transition-all duration-300 cursor-pointer border-2',
-                            selectedTimeSlot === slot.time
-                              ? 'bg-[#C8A97E] border-[#C8A97E] text-white shadow-sm'
-                              : 'bg-white border-transparent text-[#2C1E12] hover:border-[#E8E0D4] hover:shadow-sm'
-                          )}
-                        >
-                          {slot.time}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+            {loadingSuggestions ? (
+              <div className="flex gap-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="flex-1 h-[88px] bg-white rounded-2xl border border-[#E8E0D4] animate-pulse" />
                 ))}
+              </div>
+            ) : suggestedSlots.length === 0 ? (
+              <p className="text-sm text-[#8B7355] italic">Không tìm thấy slot gợi ý, hãy tự chọn bên dưới</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-2.5">
+                {suggestedSlots.map((slot, idx) => {
+                  const isActive = selectedDate === slot.date && selectedTimeSlot === slot.time;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleSuggestSelect(slot)}
+                      className={cn(
+                        'relative p-3 rounded-2xl border-2 text-left transition-all duration-300 cursor-pointer group',
+                        isActive
+                          ? 'border-[#C8A97E] bg-[#C8A97E] text-white shadow-md'
+                          : 'border-[#E8E0D4] bg-white hover:border-[#C8A97E]/50 hover:shadow-sm'
+                      )}
+                    >
+                      <p className={cn('text-[11px] font-bold uppercase tracking-wider mb-1', isActive ? 'text-white/70' : 'text-[#C8A97E]')}>
+                        {slot.label}
+                      </p>
+                      <p className={cn('text-xl font-bold leading-tight', isActive ? 'text-white' : 'text-[#2C1E12]')}>
+                        {slot.time}
+                      </p>
+                      <div className={cn('flex items-center gap-1 mt-1', isActive ? 'text-white/70' : 'text-[#8B7355]')}>
+                        <Clock className="w-3 h-3" />
+                        <span className="text-[10px] font-medium">{slot.period}</span>
+                      </div>
+                      {isActive && (
+                        <div className="absolute top-2 right-2 w-5 h-5 bg-white/30 rounded-full flex items-center justify-center">
+                          <Check className="w-3 h-3 text-white stroke-[3]" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
-        )}
 
-        {/* ─── Section 4: Note (visible after time selected) ─── */}
+          {/* ── Divider with "or pick manually" toggle ── */}
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px bg-[#E8E0D4]" />
+            <button
+              onClick={() => setShowFullCalendar(!showFullCalendar)}
+              className="text-[11px] font-bold text-[#8B7355] uppercase tracking-wider hover:text-[#C8A97E] transition-colors cursor-pointer whitespace-nowrap flex items-center gap-1.5"
+            >
+              <CalendarDays className="w-3.5 h-3.5" />
+              {showFullCalendar ? 'Ẩn lịch' : 'Tự chọn ngày & giờ'}
+            </button>
+            <div className="flex-1 h-px bg-[#E8E0D4]" />
+          </div>
+
+          {/* ── Full Calendar (expandable) ── */}
+          <div className={cn(
+            'transition-all duration-500 overflow-hidden',
+            showFullCalendar ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+          )}>
+            <div className="bg-white rounded-2xl border border-[#E8E0D4] p-4 space-y-4">
+
+              {/* Horizontal date strip */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-bold text-[#8B7355] uppercase tracking-wider flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5" /> Chọn ngày
+                  </h3>
+                  {selectedDate && (
+                    <span className="text-xs font-medium text-[#C8A97E]">{formattedDate}</span>
+                  )}
+                </div>
+                <div
+                  ref={dateScrollRef}
+                  className="flex gap-2 overflow-x-auto pb-2 scroll-smooth snap-x snap-mandatory"
+                  style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                  <style>{`.date-scroll::-webkit-scrollbar { display: none; }`}</style>
+                  {DATES.map(date => {
+                    const dateStr = date.format('YYYY-MM-DD');
+                    const isSelected = selectedDate === dateStr;
+                    const isToday = dateStr === dayjs.tz(undefined, VIETNAM_TZ).format('YYYY-MM-DD');
+                    return (
+                      <button
+                        key={dateStr}
+                        onClick={() => setDate(dateStr)}
+                        className={cn(
+                          'flex-shrink-0 snap-center flex flex-col items-center w-14 py-2.5 rounded-xl border-2 transition-all duration-300 cursor-pointer',
+                          isSelected
+                            ? 'border-[#C8A97E] bg-[#C8A97E] text-white shadow-sm'
+                            : 'border-transparent hover:border-[#E8E0D4] text-[#2C1E12] hover:bg-[#FAF8F5]'
+                        )}
+                      >
+                        <span className={cn('text-[10px] font-bold uppercase mb-0.5', isSelected ? 'text-white/70' : 'text-[#8B7355]')}>
+                          {DAYS[date.day()]}
+                        </span>
+                        <span className="text-lg font-bold leading-tight">{date.date()}</span>
+                        {isToday && <div className={cn('w-1 h-1 rounded-full mt-0.5', isSelected ? 'bg-white' : 'bg-[#C8A97E]')} />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Time grid (inline, auto-shows) */}
+              {selectedDate && (
+                <div ref={timeRef} className="animate-in fade-in duration-300 border-t border-[#E8E0D4] pt-4">
+                  <h3 className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5" /> Chọn giờ
+                  </h3>
+
+                  {loadingSlots ? (
+                    <div className="flex items-center justify-center py-8 gap-2">
+                      <div className="w-6 h-6 border-[3px] border-[#E8E0D4] border-t-[#C8A97E] rounded-full animate-spin" />
+                      <span className="text-sm text-[#8B7355]">Đang tải...</span>
+                    </div>
+                  ) : timeSections.length === 0 ? (
+                    <div className="text-center py-8">
+                      <CalendarDays className="w-7 h-7 text-[#D4C9BA] mx-auto mb-2" />
+                      <p className="text-sm font-bold text-[#2C1E12]">Hết lịch trống</p>
+                      <p className="text-xs text-[#8B7355] mt-1">Vui lòng chọn ngày khác</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-[240px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+                      {timeSections.map(section => (
+                        <div key={section.label}>
+                          <h4 className="text-[10px] font-bold text-[#8B7355] mb-1.5 flex items-center gap-1">
+                            <span>{section.icon}</span> {section.label}
+                            <span className="text-[#C4B9A8] font-normal">({section.slots.length})</span>
+                          </h4>
+                          <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
+                            {section.slots.map(slot => (
+                              <button
+                                key={slot.time}
+                                onClick={() => setTimeSlot(slot.time)}
+                                className={cn(
+                                  'py-2 rounded-lg text-sm font-bold transition-all duration-300 cursor-pointer border',
+                                  selectedTimeSlot === slot.time
+                                    ? 'bg-[#C8A97E] border-[#C8A97E] text-white shadow-sm'
+                                    : 'bg-[#FAF8F5] border-transparent text-[#2C1E12] hover:border-[#E8E0D4]'
+                                )}
+                              >
+                                {slot.time}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ─── Note (visible after time selected) ─── */}
         {selectedTimeSlot && (
           <div className="animate-in fade-in duration-500">
             {!showNoteInput ? (
@@ -415,25 +592,22 @@ export default function BookingPage() {
           </div>
         )}
 
-        {/* Bottom padding to avoid sheet overlap */}
-        {showSummary && <div className="h-64" />}
+        {showSummary && <div className="h-72" />}
       </div>
 
       {/* ══════════════════════════════════════════════════════
-          BOOKING SUMMARY SHEET (Option B)
+          BOOKING SUMMARY SHEET
           Slides up from bottom when time slot is selected
       ══════════════════════════════════════════════════════ */}
       <div className={cn(
         'fixed bottom-0 left-0 right-0 z-50 transition-transform duration-500 ease-out',
         showSummary ? 'translate-y-0' : 'translate-y-full'
       )}>
-        {/* Backdrop (tap to dismiss) */}
         {showSummary && (
           <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] -z-10" onClick={() => setShowSummary(false)} />
         )}
 
         <div className="bg-white rounded-t-3xl shadow-[0_-8px_40px_rgba(0,0,0,0.12)] max-h-[85vh] overflow-y-auto">
-          {/* Drag handle */}
           <div className="flex justify-center pt-3 pb-1">
             <div className="w-12 h-1 rounded-full bg-[#E8E0D4]" />
           </div>
@@ -458,7 +632,7 @@ export default function BookingPage() {
               </div>
             </div>
 
-            {/* Time + Staff row */}
+            {/* Time + Staff */}
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E0D4]">
                 <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1.5">Thời gian</p>
@@ -490,7 +664,7 @@ export default function BookingPage() {
               </div>
             </div>
 
-            {/* Services compact list */}
+            {/* Services */}
             <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E0D4] space-y-2">
               <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider">Dịch vụ</p>
               {selectedServices.map(s => (
@@ -527,7 +701,6 @@ export default function BookingPage() {
               </div>
             )}
 
-            {/* Error */}
             {confirmError && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
                 <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
@@ -535,7 +708,6 @@ export default function BookingPage() {
               </div>
             )}
 
-            {/* CTA Button */}
             <button
               onClick={handleConfirm}
               disabled={confirming}
