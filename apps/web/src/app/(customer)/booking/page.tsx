@@ -234,36 +234,37 @@ export default function BookingPage() {
         {/* ─── Section 1: Choose Barber ─── */}
         <div>
           <h2 className="text-base font-bold text-[#2C1E12] mb-1">Chọn thợ cắt</h2>
-          <p className="text-sm text-[#8B7355] mb-4">Bạn có thể để hệ thống tự chọn hoặc chọn thợ yêu thích</p>
+          <p className="text-sm text-[#8B7355] mb-3">Bạn có thể để hệ thống tự chọn hoặc chọn thợ yêu thích</p>
 
           {loading ? (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex items-center justify-center py-6">
               <div className="w-7 h-7 border-[3px] border-[#E8E0D4] border-t-[#C8A97E] rounded-full animate-spin" />
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="space-y-2">
               {/* Auto-assign */}
               <div
                 onClick={() => setStaff(null)}
                 className={cn(
-                  'relative p-4 rounded-2xl border-2 transition-all duration-300 cursor-pointer flex flex-col items-center gap-3 text-center group',
-                  !selectedStaff ? 'border-[#C8A97E] bg-[#C8A97E]/5 shadow-sm' : 'border-transparent bg-white hover:border-[#E8E0D4] hover:shadow-sm'
+                  'relative flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer',
+                  !selectedStaff ? 'border-[#C8A97E] bg-[#C8A97E]/5' : 'border-transparent bg-white hover:border-[#E8E0D4]'
                 )}
               >
-                <div className={cn('w-14 h-14 rounded-2xl flex items-center justify-center transition-all', !selectedStaff ? 'bg-[#C8A97E] text-white' : 'bg-[#F0EBE3] text-[#C8A97E] group-hover:bg-[#E8E0D4]')}>
-                  <Sparkles className="w-6 h-6" />
+                <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all', !selectedStaff ? 'bg-[#C8A97E] text-white' : 'bg-[#F0EBE3] text-[#C8A97E]')}>
+                  <Sparkles className="w-5 h-5" />
                 </div>
-                <div>
+                <div className="flex-1 min-w-0">
                   <h4 className="font-bold text-sm text-[#2C1E12]">Tự động</h4>
-                  <p className="text-[11px] text-[#8B7355] mt-0.5">Chọn thợ phù hợp nhất</p>
+                  <p className="text-[11px] text-[#8B7355]">Hệ thống chọn thợ phù hợp nhất</p>
                 </div>
                 {!selectedStaff && (
-                  <div className="absolute top-3 right-3 w-5 h-5 bg-[#C8A97E] rounded-full flex items-center justify-center">
+                  <div className="w-5 h-5 bg-[#C8A97E] rounded-full flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3 text-white stroke-[3]" />
                   </div>
                 )}
               </div>
 
+              {/* Staff list */}
               {staffList.map(member => {
                 const selected = selectedStaff?.id === member.id;
                 return (
@@ -271,27 +272,31 @@ export default function BookingPage() {
                     key={member.id}
                     onClick={() => setStaff(member)}
                     className={cn(
-                      'relative p-4 rounded-2xl border-2 transition-all duration-300 cursor-pointer flex flex-col items-center gap-3 text-center group',
-                      selected ? 'border-[#C8A97E] bg-[#C8A97E]/5 shadow-sm' : 'border-transparent bg-white hover:border-[#E8E0D4] hover:shadow-sm'
+                      'relative flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer',
+                      selected ? 'border-[#C8A97E] bg-[#C8A97E]/5' : 'border-transparent bg-white hover:border-[#E8E0D4]'
                     )}
                   >
-                    <Avatar src={member.user.avatar} name={member.user.name} size="lg" variant="circle" className={cn(selected && 'ring-2 ring-[#C8A97E] ring-offset-2')} />
-                    <div>
-                      <h4 className="font-bold text-sm text-[#2C1E12]">{member.user.name}</h4>
-                      <p className="text-[11px] text-[#8B7355] mt-0.5">{STAFF_POSITIONS[member.position]}</p>
-                      <div className="flex items-center justify-center gap-1 mt-1">
-                        <Star className="w-3 h-3 text-[#C8A97E] fill-[#C8A97E]" />
-                        <span className="text-xs font-bold text-[#2C1E12]">{member.rating.toFixed(1)}</span>
+                    <Avatar src={member.user.avatar} name={member.user.name} size="md" variant="circle" className={cn('shrink-0', selected && 'ring-2 ring-[#C8A97E] ring-offset-1')} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-sm text-[#2C1E12] truncate">{member.user.name}</h4>
+                        <div className="flex items-center gap-0.5 shrink-0">
+                          <Star className="w-3 h-3 text-[#C8A97E] fill-[#C8A97E]" />
+                          <span className="text-xs font-bold text-[#2C1E12]">{member.rating.toFixed(1)}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-[11px] text-[#8B7355] truncate">{STAFF_POSITIONS[member.position]}</p>
+                        <button
+                          onClick={e => { e.stopPropagation(); setProfileStaffId(member.id); }}
+                          className="text-[10px] font-semibold text-[#C8A97E] hover:text-[#B8975E] transition-colors shrink-0 flex items-center gap-0.5"
+                        >
+                          <Eye className="w-3 h-3" /> Hồ sơ
+                        </button>
                       </div>
                     </div>
-                    <button
-                      onClick={e => { e.stopPropagation(); setProfileStaffId(member.id); }}
-                      className="flex items-center gap-1 text-[10px] font-semibold text-[#C8A97E] hover:text-[#B8975E] transition-colors"
-                    >
-                      <Eye className="w-3 h-3" /> Xem hồ sơ
-                    </button>
                     {selected && (
-                      <div className="absolute top-3 right-3 w-5 h-5 bg-[#C8A97E] rounded-full flex items-center justify-center">
+                      <div className="w-5 h-5 bg-[#C8A97E] rounded-full flex items-center justify-center shrink-0">
                         <Check className="w-3 h-3 text-white stroke-[3]" />
                       </div>
                     )}
