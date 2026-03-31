@@ -42,6 +42,7 @@ export default function BookingPage() {
   const [showNoteInput, setShowNoteInput] = useState(false);
   const [profileStaffId, setProfileStaffId] = useState<string | null>(null);
   const [showSummary, setShowSummary] = useState(false);
+  const [summaryVisible, setSummaryVisible] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmError, setConfirmError] = useState<string | null>(null);
 
@@ -124,9 +125,22 @@ export default function BookingPage() {
   }, [fetchTimeSlots, selectedDate, salon]);
 
   useEffect(() => {
-    if (selectedTimeSlot) setShowSummary(true);
-    else setShowSummary(false);
+    if (selectedTimeSlot) {
+      setShowSummary(true);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setSummaryVisible(true));
+      });
+    } else {
+      setSummaryVisible(false);
+      const t = setTimeout(() => setShowSummary(false), 350);
+      return () => clearTimeout(t);
+    }
   }, [selectedTimeSlot]);
+
+  const closeSummary = () => {
+    setSummaryVisible(false);
+    setTimeout(() => setShowSummary(false), 350);
+  };
 
   // ── Time sections (morning / afternoon / evening) ────────────
   const timeSections = useMemo(() => {
@@ -465,139 +479,152 @@ export default function BookingPage() {
       </div>
 
       {/* ══════════════════════════════════════════════════════
-          BOOKING SUMMARY SHEET
+          BOOKING SUMMARY SHEET (smooth transition)
       ══════════════════════════════════════════════════════ */}
-      <div className={cn(
-        'fixed bottom-0 left-0 right-0 z-50 transition-transform duration-500 ease-out',
-        showSummary ? 'translate-y-0' : 'translate-y-full'
-      )}>
-        {showSummary && (
-          <div className="fixed inset-0 bg-black/20 backdrop-blur-[2px] -z-10" onClick={() => setShowSummary(false)} />
-        )}
+      {showSummary && (
+        <div className="fixed inset-0 z-50">
+          {/* Backdrop */}
+          <div
+            className={cn(
+              'absolute inset-0 bg-black/30 transition-opacity duration-300',
+              summaryVisible ? 'opacity-100' : 'opacity-0'
+            )}
+            onClick={closeSummary}
+          />
 
-        <div className="bg-white rounded-t-3xl shadow-[0_-8px_40px_rgba(0,0,0,0.12)] max-h-[85vh] overflow-y-auto">
-          <div className="flex justify-center pt-3 pb-1">
-            <div className="w-12 h-1 rounded-full bg-[#E8E0D4]" />
-          </div>
-
-          <div className="px-5 pb-6 space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold text-[#2C1E12]">Xác nhận đặt lịch</h2>
-              <button onClick={() => setShowSummary(false)} className="w-8 h-8 flex items-center justify-center rounded-full bg-[#F0EBE3] text-[#8B7355] hover:bg-[#E8E0D4] transition-colors cursor-pointer">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Salon */}
-            <div className="flex items-center gap-3 p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E0D4]">
-              <div className="w-9 h-9 rounded-lg bg-[#F0EBE3] flex items-center justify-center text-[#C8A97E] shrink-0">
-                <MapPin className="w-4 h-4" />
+          {/* Sheet */}
+          <div
+            className={cn(
+              'absolute bottom-0 left-0 right-0 transition-transform duration-300 ease-out will-change-transform',
+              summaryVisible ? 'translate-y-0' : 'translate-y-full'
+            )}
+          >
+            <div className="bg-white rounded-t-3xl shadow-[0_-8px_40px_rgba(0,0,0,0.12)] max-h-[85vh] overflow-y-auto">
+              {/* Handle bar */}
+              <div className="flex justify-center pt-3 pb-1 cursor-grab" onClick={closeSummary}>
+                <div className="w-12 h-1 rounded-full bg-[#E8E0D4]" />
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider">Địa điểm</p>
-                <p className="text-sm font-bold text-[#2C1E12] truncate">{salon.name}</p>
-                <p className="text-xs text-[#8B7355] truncate">{salon.address}</p>
-              </div>
-            </div>
 
-            {/* Time + Staff */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E0D4]">
-                <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1.5">Thời gian</p>
-                <div className="flex items-center gap-2">
-                  <Calendar className="w-4 h-4 text-[#C8A97E] shrink-0" />
-                  <div>
-                    <p className="text-sm font-bold text-[#2C1E12]">{selectedDate ? formatDate(selectedDate) : ''}</p>
-                    <p className="text-xs font-bold text-[#C8A97E]">Lúc {selectedTimeSlot}</p>
-                  </div>
+              <div className="px-5 pb-6 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-bold text-[#2C1E12]">Xác nhận đặt lịch</h2>
+                  <button onClick={closeSummary} className="w-8 h-8 flex items-center justify-center rounded-full bg-[#F0EBE3] text-[#8B7355] hover:bg-[#E8E0D4] transition-colors cursor-pointer">
+                    <X className="w-4 h-4" />
+                  </button>
                 </div>
-              </div>
-              <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E0D4]">
-                <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1.5">Thợ cắt</p>
-                <div className="flex items-center gap-2">
-                  {selectedStaff?.user.avatar ? (
-                    <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[#E8E0D4]">
-                      <OptimizedImage src={selectedStaff.user.avatar} alt="Staff" width={32} height={32} className="object-cover" enableBlur />
-                    </div>
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-[#F0EBE3] flex items-center justify-center shrink-0">
-                      <User className="w-4 h-4 text-[#C8A97E]/60" />
-                    </div>
-                  )}
+
+                {/* Salon */}
+                <div className="flex items-center gap-3 p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E0D4]">
+                  <div className="w-9 h-9 rounded-lg bg-[#F0EBE3] flex items-center justify-center text-[#C8A97E] shrink-0">
+                    <MapPin className="w-4 h-4" />
+                  </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-[#2C1E12] truncate">{selectedStaff?.user.name || 'Tự động'}</p>
-                    <p className="text-[10px] text-[#8B7355]">{selectedStaff ? STAFF_POSITIONS[selectedStaff.position] : 'Hệ thống xếp'}</p>
+                    <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider">Địa điểm</p>
+                    <p className="text-sm font-bold text-[#2C1E12] truncate">{salon.name}</p>
+                    <p className="text-xs text-[#8B7355] truncate">{salon.address}</p>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Services */}
-            <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E0D4] space-y-2">
-              <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider">Dịch vụ</p>
-              {selectedServices.map(s => (
-                <div key={s.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Scissors className="w-3.5 h-3.5 text-[#C8A97E]" />
-                    <span className="text-sm text-[#2C1E12] font-medium">{s.name}</span>
+                {/* Time + Staff */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E0D4]">
+                    <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1.5">Thời gian</p>
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-[#C8A97E] shrink-0" />
+                      <div>
+                        <p className="text-sm font-bold text-[#2C1E12]">{selectedDate ? formatDate(selectedDate) : ''}</p>
+                        <p className="text-xs font-bold text-[#C8A97E]">Lúc {selectedTimeSlot}</p>
+                      </div>
+                    </div>
                   </div>
-                  <span className="text-sm font-bold text-[#2C1E12]">{formatPrice(s.price)}</span>
+                  <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E0D4]">
+                    <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1.5">Thợ cắt</p>
+                    <div className="flex items-center gap-2">
+                      {selectedStaff?.user.avatar ? (
+                        <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-[#E8E0D4]">
+                          <OptimizedImage src={selectedStaff.user.avatar} alt="Staff" width={32} height={32} className="object-cover" enableBlur />
+                        </div>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-[#F0EBE3] flex items-center justify-center shrink-0">
+                          <User className="w-4 h-4 text-[#C8A97E]/60" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-[#2C1E12] truncate">{selectedStaff?.user.name || 'Tự động'}</p>
+                        <p className="text-[10px] text-[#8B7355]">{selectedStaff ? STAFF_POSITIONS[selectedStaff.position] : 'Hệ thống xếp'}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              ))}
-            </div>
 
-            {/* Totals */}
-            <div className="space-y-2.5">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-[#8B7355]">Tổng dịch vụ</span>
-                <span className="text-base font-bold text-[#2C1E12]">{formatPrice(totalAmount)}</span>
-              </div>
-              <div className="flex justify-between items-center p-3 bg-[#F0EBE3] rounded-xl">
-                <div>
-                  <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider">Tiền cọc giữ lịch (25%)</p>
-                  <p className="text-[11px] text-[#8B7355] mt-0.5">Thanh toán phần còn lại tại salon</p>
+                {/* Services */}
+                <div className="p-3 bg-[#FAF8F5] rounded-xl border border-[#E8E0D4] space-y-2">
+                  <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider">Dịch vụ</p>
+                  {selectedServices.map(s => (
+                    <div key={s.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Scissors className="w-3.5 h-3.5 text-[#C8A97E]" />
+                        <span className="text-sm text-[#2C1E12] font-medium">{s.name}</span>
+                      </div>
+                      <span className="text-sm font-bold text-[#2C1E12]">{formatPrice(s.price)}</span>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-lg font-bold text-[#C8A97E]">{formatPrice(depositAmount)}</p>
+
+                {/* Totals */}
+                <div className="space-y-2.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-[#8B7355]">Tổng dịch vụ</span>
+                    <span className="text-base font-bold text-[#2C1E12]">{formatPrice(totalAmount)}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-[#F0EBE3] rounded-xl">
+                    <div>
+                      <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider">Tiền cọc giữ lịch (25%)</p>
+                      <p className="text-[11px] text-[#8B7355] mt-0.5">Thanh toán phần còn lại tại salon</p>
+                    </div>
+                    <p className="text-lg font-bold text-[#C8A97E]">{formatPrice(depositAmount)}</p>
+                  </div>
+                </div>
+
+                {/* Login warning */}
+                {status !== 'authenticated' && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-700 font-medium">Bạn cần đăng nhập để hoàn tất đặt lịch</p>
+                  </div>
+                )}
+
+                {confirmError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-700 font-medium">{confirmError}</p>
+                  </div>
+                )}
+
+                <button
+                  onClick={handleConfirm}
+                  disabled={confirming}
+                  className={cn(
+                    'w-full py-4 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-2 transition-all active:scale-[0.98]',
+                    confirming
+                      ? 'bg-[#F0EBE3] text-[#8B7355] cursor-not-allowed'
+                      : 'bg-[#C8A97E] text-white hover:bg-[#B8975E] shadow-lg shadow-[#C8A97E]/30'
+                  )}
+                >
+                  {confirming ? (
+                    <RefreshCw className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <>
+                      Xác nhận & Thanh toán cọc {formatPrice(depositAmount)}
+                      <ChevronRight className="w-5 h-5" />
+                    </>
+                  )}
+                </button>
               </div>
             </div>
-
-            {/* Login warning */}
-            {status !== 'authenticated' && (
-              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-700 font-medium">Bạn cần đăng nhập để hoàn tất đặt lịch</p>
-              </div>
-            )}
-
-            {confirmError && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-red-700 font-medium">{confirmError}</p>
-              </div>
-            )}
-
-            <button
-              onClick={handleConfirm}
-              disabled={confirming}
-              className={cn(
-                'w-full py-4 rounded-2xl font-bold text-[15px] flex items-center justify-center gap-2 transition-all active:scale-[0.98]',
-                confirming
-                  ? 'bg-[#F0EBE3] text-[#8B7355] cursor-not-allowed'
-                  : 'bg-[#C8A97E] text-white hover:bg-[#B8975E] shadow-lg shadow-[#C8A97E]/30'
-              )}
-            >
-              {confirming ? (
-                <RefreshCw className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  Xác nhận & Thanh toán cọc {formatPrice(depositAmount)}
-                  <ChevronRight className="w-5 h-5" />
-                </>
-              )}
-            </button>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Barber Profile Sheet */}
       {profileStaffId && (
