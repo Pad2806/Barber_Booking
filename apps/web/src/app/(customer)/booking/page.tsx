@@ -47,7 +47,15 @@ export default function BookingPage() {
   const [confirmError, setConfirmError] = useState<string | null>(null);
 
   const dateScrollRef = useRef<HTMLDivElement>(null);
+  const dateSectionRef = useRef<HTMLDivElement>(null);
   const timeRef = useRef<HTMLDivElement>(null);
+
+  // ── Auto-scroll helper ───────────────────────────────────────
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>, delay = 350) => {
+    setTimeout(() => {
+      ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, delay);
+  };
 
   // ── Date list: next 14 days ──────────────────────────────────
   const DATES = useMemo(() => {
@@ -141,6 +149,14 @@ export default function BookingPage() {
     setSummaryVisible(false);
     setTimeout(() => setShowSummary(false), 350);
   };
+
+  // ── Auto-scroll: date → time when selectedDate changes ───────
+  useEffect(() => {
+    if (selectedDate && timeRef.current) {
+      scrollToSection(timeRef, 400);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate]);
 
   // ── Time sections (morning / afternoon / evening) ────────────
   const timeSections = useMemo(() => {
@@ -265,7 +281,7 @@ export default function BookingPage() {
             <div className="space-y-2">
               {/* Auto-assign */}
               <div
-                onClick={() => setStaff(null)}
+                onClick={() => { setStaff(null); scrollToSection(dateSectionRef, 350); }}
                 className={cn(
                   'relative flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer',
                   !selectedStaff ? 'border-[#C8A97E] bg-[#C8A97E]/5' : 'border-transparent bg-white hover:border-[#E8E0D4]'
@@ -291,7 +307,7 @@ export default function BookingPage() {
                 return (
                   <div
                     key={member.id}
-                    onClick={() => setStaff(member)}
+                    onClick={() => { setStaff(member); scrollToSection(dateSectionRef, 350); }}
                     className={cn(
                       'relative flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer',
                       selected ? 'border-[#C8A97E] bg-[#C8A97E]/5' : 'border-transparent bg-white hover:border-[#E8E0D4]'
@@ -329,7 +345,7 @@ export default function BookingPage() {
         </div>
 
         {/* ─── Section 2: Date & Time Picker ─── */}
-        <div>
+        <div ref={dateSectionRef}>
           <h2 className="text-base font-bold text-[#2C1E12] mb-1">Chọn ngày & giờ</h2>
           <p className="text-sm text-[#8B7355] mb-4">Chọn ngày rồi chọn giờ bên dưới</p>
 

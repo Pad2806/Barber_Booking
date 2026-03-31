@@ -1,18 +1,18 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import PaymentModalContent from '@/components/payment/PaymentModalContent';
 
-interface Props {
-  params: { bookingId: string };
-}
-
-export default function PaymentModalInterceptor({ params }: Props) {
+export default function PaymentModalInterceptor() {
   const router = useRouter();
+  const params = useParams();
+  const bookingId = params?.bookingId as string;
+
+  if (!bookingId) return null;
 
   return (
     <PaymentModalContent
-      bookingId={params.bookingId}
+      bookingId={bookingId}
       asModal={true}
       // router.back() → returns to booking page with booking UI still intact
       onClose={() => router.back()}
