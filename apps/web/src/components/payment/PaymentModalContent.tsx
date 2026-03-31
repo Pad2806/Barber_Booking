@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   CheckCircle, XCircle, Clock, Copy, Check,
-  RefreshCw, QrCode, Shield, Banknote, CreditCard,
+  RefreshCw, QrCode, Shield, Banknote, CreditCard, AlertTriangle,
 } from 'lucide-react';
 import { bookingApi, paymentApi, Booking } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
@@ -45,6 +45,10 @@ export default function PaymentModalContent({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(600);
   const [activeTab, setActiveTab] = useState<PaymentTab>('qr');
+
+  // ── Exit confirmation state ───────────────────────────────────
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   // Animate in (for modal mode)
   const [mounted, setMounted] = useState(false);
@@ -119,6 +123,27 @@ export default function PaymentModalContent({
     || (booking?.totalAmount ? Math.round(booking.totalAmount * 0.25) : 0);
   const isUrgent = countdown <= 60;
 
+  // ── Attempt close — guard during PENDING ─────────────────────
+  const handleAttemptClose = () => {
+    if (paymentStatus === 'PENDING') {
+      setShowExitConfirm(true);
+    } else {
+      onClose();
+    }
+  };
+
+  // ── Confirmed exit: cancel booking + reset store slot ────────
+  const handleConfirmExit = async () => {
+    setCancelling(true);
+    try {
+      await bookingApi.cancel(bookingId, 'Người dùng huỷ thanh toán');
+    } catch { /* ignore — slot will expire naturally */ }
+    reset(); // clears selectedTimeSlot so it won't appear as "selected"
+    setCancelling(false);
+    setShowExitConfirm(false);
+    onClose();
+  };
+
   // ── CopyBtn ──────────────────────────────────────────────────
   const CopyBtn = ({ field, value }: { field: string; value: string }) => (
     <button
@@ -132,6 +157,61 @@ export default function PaymentModalContent({
     >
       {copiedField === field ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
     </button>
+  );
+
+  // ── Exit Confirmation Dialog ──────────────────────────────────
+  const ExitConfirmDialog = () => (
+    <div className="absolute inset-0 z-10 flex items-center justify-center p-6 bg-black/20 rounded-t-3xl md:rounded-3xl">
+      <div className={cn(
+        'bg-white rounded-2xl shadow-2xl p-6 w-full max-w-sm transition-all duration-200',
+        showExitConfirm ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
+      )}>
+        {/* Icon */}
+        <div className="flex justify-center mb-4">
+          <div className="w-14 h-14 bg-amber-50 border-2 border-amber-100 rounded-full flex items-center justify-center">
+            <AlertTriangle className="w-7 h-7 text-amber-500" />
+          </div>
+        </div>
+
+        {/* Content */}
+        <h3 className="text-base font-bold text-[#2C1E12] text-center mb-2">
+          Huỷ thanh toán?
+        </h3>
+        <p className="text-sm text-[#8B7355] text-center leading-relaxed mb-5">
+          Giao dịch đang chờ xác nhận. Nếu thoát,{' '}
+          <strong className="text-[#2C1E12]">slot giờ sẽ được giải phóng</strong>{' '}
+          và bạn cần đặt lại.
+        </p>
+
+        {/* Remaining time indicator */}
+        <div className="flex items-center justify-center gap-2 mb-5 px-3 py-2 bg-[#FAF8F5] rounded-xl border border-[#E8E0D4]">
+          <Clock className="w-3.5 h-3.5 text-[#C8A97E]" />
+          <span className="text-xs font-semibold text-[#8B7355]">
+            Còn <span className="text-[#2C1E12] font-bold">{formatTime(countdown)}</span> để hoàn tất thanh toán
+          </span>
+        </div>
+
+        {/* Buttons */}
+        <div className="flex flex-col gap-2.5">
+          <button
+            onClick={() => setShowExitConfirm(false)}
+            className="w-full py-3 bg-[#C8A97E] text-white rounded-xl font-bold text-sm hover:bg-[#B8975E] transition-all active:scale-[0.98] cursor-pointer"
+          >
+            Tiếp tục thanh toán
+          </button>
+          <button
+            onClick={handleConfirmExit}
+            disabled={cancelling}
+            className="w-full py-3 bg-[#F0EBE3] text-[#5C4A32] rounded-xl font-bold text-sm hover:bg-[#E8E0D4] transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {cancelling
+              ? <><RefreshCw className="w-4 h-4 animate-spin" /> Đang huỷ...</>
+              : 'Thoát & huỷ đặt lịch'
+            }
+          </button>
+        </div>
+      </div>
+    </div>
   );
 
   // ── Card content ─────────────────────────────────────────────
@@ -361,13 +441,13 @@ export default function PaymentModalContent({
   if (asModal) {
     return (
       <div className="fixed inset-0 z-[200] flex items-end md:items-center justify-center">
-        {/* Backdrop */}
+        {/* Backdrop — clicks trigger exit confirmation during PENDING */}
         <div
           className={cn(
             'absolute inset-0 bg-black/40 transition-opacity duration-300',
             mounted ? 'opacity-100' : 'opacity-0'
           )}
-          onClick={paymentStatus === 'PENDING' ? onClose : undefined}
+          onClick={handleAttemptClose}
         />
         {/* Card */}
         <div
@@ -381,6 +461,8 @@ export default function PaymentModalContent({
           )}
         >
           {cardContent}
+          {/* Exit confirmation dialog — overlays on top of card */}
+          {showExitConfirm && <ExitConfirmDialog />}
         </div>
       </div>
     );
@@ -390,18 +472,20 @@ export default function PaymentModalContent({
   return (
     <div className="min-h-screen bg-[#FAF8F5] flex items-end md:items-center justify-center">
       <div className={cn(
-        'w-full md:max-w-md bg-white md:rounded-3xl shadow-lg md:my-8',
+        'relative w-full md:max-w-md bg-white md:rounded-3xl shadow-lg md:my-8',
         'max-h-screen md:max-h-[88vh] flex flex-col overflow-hidden',
         'transition-all duration-300',
         mounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
       )}>
         {/* Back button for full-page mode */}
         <div className="flex justify-end px-5 pt-4 shrink-0">
-          <button onClick={onClose} className="text-xs font-bold text-[#8B7355] hover:text-[#5C4A32] transition-colors cursor-pointer flex items-center gap-1">
+          <button onClick={handleAttemptClose} className="text-xs font-bold text-[#8B7355] hover:text-[#5C4A32] transition-colors cursor-pointer flex items-center gap-1">
             ← Quay lại
           </button>
         </div>
         {cardContent}
+        {/* Exit confirmation dialog */}
+        {showExitConfirm && <ExitConfirmDialog />}
       </div>
     </div>
   );
