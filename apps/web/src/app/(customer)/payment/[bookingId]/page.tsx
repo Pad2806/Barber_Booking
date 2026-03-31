@@ -313,7 +313,7 @@ export default function PaymentPage() {
             <div className="px-5 py-3.5 flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-bold text-[#8B7355] uppercase tracking-wider mb-0.5">Ngân hàng</p>
-                <p className="text-sm font-bold text-[#2C1E12]">{qrData?.bankName || qrData?.bankCode}</p>
+                <p className="text-sm font-bold text-[#2C1E12] uppercase">{qrData?.bankName || qrData?.bankCode}</p>
               </div>
             </div>
 

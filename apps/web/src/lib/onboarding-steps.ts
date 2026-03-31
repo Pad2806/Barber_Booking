@@ -126,7 +126,7 @@ export const ONBOARDING_CONFIGS: Record<ActorType, OnboardingConfig> = {
       {
         element: 'nav a[href="/cashier/online-bookings"]',
         popover: {
-          title: '📱 Duyệt đơn Online',
+          title: ' Duyệt đơn Online',
           description: 'Duyệt lịch hẹn đặt online từ khách hàng. Xác nhận, phân thợ hoặc từ chối đơn tại đây.',
           side: 'right',
           align: 'start',
