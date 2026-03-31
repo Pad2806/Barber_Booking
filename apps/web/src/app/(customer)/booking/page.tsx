@@ -165,6 +165,12 @@ export default function BookingPage() {
     dateScrollRef.current.scrollBy({ left: amount, behavior: 'smooth' });
   };
 
+  // ── Prefetch payment route when time slot selected ──────────
+  useEffect(() => {
+    // Warm up the payment page bundle so navigation feels instant
+    router.prefetch('/payment/prefetch');
+  }, [router]);
+
   // ── Confirm booking ──────────────────────────────────────────
   const handleConfirm = async () => {
     if (!salon || !selectedDate || !selectedTimeSlot) return;
@@ -183,6 +189,7 @@ export default function BookingPage() {
         serviceIds: selectedServices.map(s => s.id),
         note: note || undefined,
       });
+      // Push so user can use browser back if needed
       router.push(`/payment/${booking.id}`);
     } catch (err: any) {
       setConfirmError(err.response?.data?.message || 'Đặt lịch thất bại. Vui lòng thử lại.');
