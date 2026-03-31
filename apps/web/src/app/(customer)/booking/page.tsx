@@ -281,7 +281,12 @@ export default function BookingPage() {
             <div className="space-y-2">
               {/* Auto-assign */}
               <div
-                onClick={() => { setStaff(null); scrollToSection(dateSectionRef, 350); }}
+                onClick={() => {
+                  const today = dayjs.tz(undefined, VIETNAM_TZ).format('YYYY-MM-DD');
+                  setStaff(null);
+                  setDate(today);
+                  scrollToSection(timeRef, 350);
+                }}
                 className={cn(
                   'relative flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer',
                   !selectedStaff ? 'border-[#C8A97E] bg-[#C8A97E]/5' : 'border-transparent bg-white hover:border-[#E8E0D4]'
@@ -307,7 +312,12 @@ export default function BookingPage() {
                 return (
                   <div
                     key={member.id}
-                    onClick={() => { setStaff(member); scrollToSection(dateSectionRef, 350); }}
+                    onClick={() => {
+                      const today = dayjs.tz(undefined, VIETNAM_TZ).format('YYYY-MM-DD');
+                      setStaff(member);
+                      setDate(today);
+                      scrollToSection(timeRef, 350);
+                    }}
                     className={cn(
                       'relative flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer',
                       selected ? 'border-[#C8A97E] bg-[#C8A97E]/5' : 'border-transparent bg-white hover:border-[#E8E0D4]'
@@ -518,7 +528,8 @@ export default function BookingPage() {
           {/* Sheet */}
           <div
             className={cn(
-              'absolute bottom-0 left-0 right-0 transition-transform duration-300 ease-out will-change-transform',
+              'absolute bottom-0 left-0 right-0 will-change-transform',
+              'transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]',
               summaryVisible ? 'translate-y-0' : 'translate-y-full'
             )}
           >
