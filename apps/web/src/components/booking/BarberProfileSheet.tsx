@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { staffApi } from '@/lib/api';
 import {
@@ -12,6 +13,7 @@ import {
   X,
 } from 'lucide-react';
 import { STAFF_POSITIONS, cn } from '@/lib/utils';
+import OptimizedImage from '@/components/OptimizedImage';
 
 interface BarberProfileSheetProps {
   staffId: string | null;
@@ -20,33 +22,68 @@ interface BarberProfileSheetProps {
 }
 
 export default function BarberProfileSheet({ staffId, onClose, onSelect }: BarberProfileSheetProps) {
+  const [isVisible, setIsVisible] = useState(false);
+
   const { data: profile, isLoading } = useQuery({
     queryKey: ['staff', 'profile', staffId],
     queryFn: () => staffApi.getProfile(staffId!),
     enabled: !!staffId,
   });
 
+  // Animate in on mount
+  useEffect(() => {
+    if (staffId) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setIsVisible(true));
+      });
+    } else {
+      setIsVisible(false);
+    }
+  }, [staffId]);
+
+  // Animate out before close
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(onClose, 300);
+  };
+
+  const handleSelect = () => {
+    setIsVisible(false);
+    setTimeout(onSelect, 300);
+  };
+
   if (!staffId) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-end justify-center animate-in fade-in duration-300" onClick={onClose}>
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+    <div
+      className="fixed inset-0 z-[100] flex items-end justify-center"
+      onClick={handleClose}
+    >
+      {/* Backdrop — no blur for performance */}
+      <div
+        className={cn(
+          'absolute inset-0 bg-black/40 transition-opacity duration-300',
+          isVisible ? 'opacity-100' : 'opacity-0'
+        )}
+      />
 
       {/* Sheet */}
       <div
-        className="relative w-full max-w-lg bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col animate-in slide-in-from-bottom-8 duration-500"
+        className={cn(
+          'relative w-full max-w-lg bg-white rounded-t-3xl shadow-2xl max-h-[85vh] flex flex-col transition-transform duration-300 ease-out will-change-transform',
+          isVisible ? 'translate-y-0' : 'translate-y-full'
+        )}
         onClick={e => e.stopPropagation()}
       >
         {/* Handle */}
         <div className="flex justify-center pt-3 pb-1">
-          <div className="w-10 h-1 rounded-full bg-slate-200" />
+          <div className="w-10 h-1 rounded-full bg-[#E8E0D4]" />
         </div>
 
         {/* Close button */}
         <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 transition-colors z-10"
+          onClick={handleClose}
+          className="absolute top-4 right-4 p-2 rounded-full bg-[#F0EBE3] text-[#8B7355] hover:bg-[#E8E0D4] transition-colors z-10 cursor-pointer"
         >
           <X className="w-4 h-4" />
         </button>
@@ -61,11 +98,11 @@ export default function BarberProfileSheet({ staffId, onClose, onSelect }: Barbe
             <div className="space-y-5">
               {/* Hero */}
               <div className="flex items-center gap-4 pt-2">
-                <div className="w-20 h-20 rounded-2xl overflow-hidden bg-[#F0EBE3] shrink-0 border-2 border-[#C8A97E]/20">
+                <div className="w-16 h-16 rounded-2xl overflow-hidden bg-[#F0EBE3] shrink-0 border-2 border-[#C8A97E]/20 relative">
                   {profile.user?.avatar ? (
-                    <img src={profile.user.avatar} alt={profile.user.name} className="w-full h-full object-cover" />
+                    <OptimizedImage src={profile.user.avatar} alt={profile.user.name} fill className="object-cover" enableBlur />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-2xl font-bold text-[#C8A97E]">
+                    <div className="w-full h-full flex items-center justify-center text-xl font-bold text-[#C8A97E]">
                       {profile.user?.name?.charAt(0)}
                     </div>
                   )}
@@ -133,8 +170,8 @@ export default function BarberProfileSheet({ staffId, onClose, onSelect }: Barbe
                   </h3>
                   <div className="grid grid-cols-3 gap-2">
                     {profile.gallery.slice(0, 6).map((url: string, i: number) => (
-                      <div key={i} className="aspect-square rounded-xl overflow-hidden border border-[#E8E0D4]">
-                        <img src={url} alt={`work-${i}`} className="w-full h-full object-cover" />
+                      <div key={i} className="aspect-square rounded-xl overflow-hidden border border-[#E8E0D4] relative bg-[#F0EBE3]">
+                        <OptimizedImage src={url} alt={`work-${i}`} fill className="object-cover" enableBlur />
                       </div>
                     ))}
                   </div>
@@ -164,7 +201,7 @@ export default function BarberProfileSheet({ staffId, onClose, onSelect }: Barbe
                 </div>
               )}
 
-              {/* Empty state if no profile data at all */}
+              {/* Empty state */}
               {!profile.bio && !profile.longDescription && !profile.specialties?.length && !profile.gallery?.length && !profile.achievements?.length && (
                 <div className="text-center py-6 text-[#8B7355]">
                   <p className="text-sm">Thợ chưa cập nhật hồ sơ chi tiết</p>
@@ -175,10 +212,10 @@ export default function BarberProfileSheet({ staffId, onClose, onSelect }: Barbe
         </div>
 
         {/* Bottom CTA */}
-        <div className="px-6 py-4 border-t border-[#E8E0D4] bg-white">
+        <div className="px-6 py-4 border-t border-[#E8E0D4] bg-white rounded-b-none">
           <button
-            onClick={onSelect}
-            className="w-full py-3.5 rounded-xl bg-[#C8A97E] text-white font-bold text-sm hover:bg-[#B8975E] active:scale-[0.98] transition-all shadow-sm"
+            onClick={handleSelect}
+            className="w-full py-3.5 rounded-xl bg-[#C8A97E] text-white font-bold text-sm hover:bg-[#B8975E] active:scale-[0.98] transition-all shadow-sm cursor-pointer"
           >
             Chọn thợ này
           </button>
