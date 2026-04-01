@@ -49,6 +49,22 @@ export default function PaymentModalContent({
   // ── Exit confirmation state ───────────────────────────────────
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const [manualChecking, setManualChecking] = useState(false);
+
+  // Manual "I already transferred" — instant status check
+  const handleManualCheck = async () => {
+    setManualChecking(true);
+    try {
+      const b = await bookingApi.getById(bookingId);
+      if (b.paymentStatus === 'DEPOSIT_PAID' || b.paymentStatus === 'PAID') {
+        setPaymentStatus('PAID');
+        resetBooking();
+      }
+    } catch { /* ignore */ } finally {
+      setManualChecking(false);
+    }
+  };
+
 
   // Animate in (for modal mode)
   const [mounted, setMounted] = useState(false);
@@ -84,14 +100,22 @@ export default function PaymentModalContent({
   // ── Poll status ──────────────────────────────────────────────
   useEffect(() => {
     if (paymentStatus !== 'PENDING') return;
-    const interval = setInterval(async () => {
+
+    const poll = async () => {
       try {
-        const s = await paymentApi.getStatus(bookingId);
-        if (s.paymentStatus === 'PAID') { setPaymentStatus('PAID'); reset(); }
-      } catch { /* ignore */ }
-    }, 5000);
+        // Check the actual booking status from the DB (updated by webhook)
+        const b = await bookingApi.getById(bookingId);
+        if (b.paymentStatus === 'DEPOSIT_PAID' || b.paymentStatus === 'PAID') {
+          setPaymentStatus('PAID');
+          resetBooking(); // keep salon data — don't blank the booking page
+        }
+      } catch { /* ignore transient errors */ }
+    };
+
+    void poll(); // immediate check on mount
+    const interval = setInterval(poll, 3000); // every 3s
     return () => clearInterval(interval);
-  }, [bookingId, paymentStatus, reset]);
+  }, [bookingId, paymentStatus, resetBooking]);
 
   // ── Countdown ────────────────────────────────────────────────
   useEffect(() => {
@@ -381,13 +405,12 @@ export default function PaymentModalContent({
                 <span className="text-xs font-bold text-[#8B7355]">Đang tạo mã...</span>
               </div>
             )}
-            <div className="flex items-center gap-2.5">
-              <div className="flex gap-1">
-                {[0, 0.2, 0.4].map(delay => (
-                  <div key={delay} className="w-1.5 h-1.5 bg-[#C8A97E] rounded-full animate-pulse" style={{ animationDelay: `${delay}s` }} />
-                ))}
+            <div className="flex flex-col items-center gap-1.5">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-[#E8E0D4] border-t-[#C8A97E] rounded-full animate-spin" />
+                <p className="text-xs text-[#8B7355] font-semibold">Đang theo dõi giao dịch...</p>
               </div>
-              <p className="text-xs text-[#8B7355] font-medium">Đang chờ xác nhận thanh toán...</p>
+              <p className="text-[10px] text-[#C4B9A8]">Hệ thống sẽ tự xác nhận sau khi nhận được tiền</p>
             </div>
           </div>
         )}
@@ -428,6 +451,18 @@ export default function PaymentModalContent({
             Tiền cọc <strong>25%</strong> sẽ được khấu trừ khi thanh toán tại salon.
           </p>
         </div>
+
+        {/* Manual check button */}
+        <button
+          onClick={handleManualCheck}
+          disabled={manualChecking}
+          className="w-full py-3 bg-[#2C1E12] hover:bg-[#1C130B] disabled:opacity-60 text-white rounded-xl font-bold text-sm transition-all active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+        >
+          {manualChecking
+            ? <><RefreshCw className="w-4 h-4 animate-spin" /> Đang kiểm tra...</>
+            : <><CheckCircle className="w-4 h-4" /> Tôi đã chuyển khoản rồi</>
+          }
+        </button>
 
         <button
           className="w-full py-3 text-[#5C4A32] bg-white hover:bg-[#F0EBE3] border border-[#E8E0D4] rounded-xl font-bold text-sm transition-all active:scale-[0.98] cursor-pointer mb-2"
