@@ -5,7 +5,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { ChevronLeft, MapPin, User, Scissors, Phone } from 'lucide-react';
+import {
+  ChevronLeft, MapPin, User, Scissors, Phone, Clock,
+  Calendar, CheckCircle2, XCircle, AlertCircle, Hourglass,
+  Star, MessageSquare, CreditCard, Receipt, Banknote, RefreshCw,
+} from 'lucide-react';
 import { bookingApi, Booking } from '@/lib/api';
 import {
   formatPrice,
@@ -16,7 +20,24 @@ import {
 } from '@/lib/utils';
 import Footer from '@/components/footer';
 import ReviewModal from '@/components/ReviewModal';
-import { Star, MessageSquare } from 'lucide-react';
+import Avatar from '@/components/Avatar';
+
+/* ── Status config ─────────────────────────────────────────────── */
+const bookingStatusConfig: Record<string, { icon: React.ElementType; bg: string; text: string; border: string }> = {
+  PENDING:   { icon: Hourglass,      bg: 'bg-amber-50',   text: 'text-amber-700',  border: 'border-amber-200' },
+  CONFIRMED: { icon: CheckCircle2,   bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+  COMPLETED: { icon: CheckCircle2,   bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+  CANCELLED: { icon: XCircle,        bg: 'bg-red-50',     text: 'text-red-600',    border: 'border-red-200' },
+  NO_SHOW:   { icon: AlertCircle,    bg: 'bg-gray-50',    text: 'text-gray-500',   border: 'border-gray-200' },
+  IN_SERVICE:{ icon: Scissors,       bg: 'bg-blue-50',    text: 'text-blue-700',   border: 'border-blue-200' },
+};
+
+const paymentStatusConfig: Record<string, { icon: React.ElementType; bg: string; text: string; border: string }> = {
+  UNPAID:       { icon: CreditCard,   bg: 'bg-gray-50',    text: 'text-gray-500',   border: 'border-gray-200' },
+  PENDING:      { icon: Hourglass,    bg: 'bg-amber-50',   text: 'text-amber-700',  border: 'border-amber-200' },
+  DEPOSIT_PAID: { icon: Banknote,     bg: 'bg-sky-50',     text: 'text-sky-700',    border: 'border-sky-200' },
+  PAID:         { icon: CheckCircle2, bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
+};
 
 export default function BookingDetailPage(): React.ReactNode {
   const params = useParams();
@@ -41,7 +62,7 @@ export default function BookingDetailPage(): React.ReactNode {
   const totalPaid = booking?.payments
     ? booking.payments.filter(p => p.status === 'PAID').reduce((sum, p) => sum + Number(p.amount), 0)
     : 0;
-  
+
   const remainingAmount = booking ? Math.max(0, booking.totalAmount - totalPaid) : 0;
 
   const fetchBooking = useCallback(async () => {
@@ -85,102 +106,223 @@ export default function BookingDetailPage(): React.ReactNode {
     ['PENDING', 'CONFIRMED'].includes(booking.status) &&
     new Date(booking.date) > new Date();
 
+  /* ── Loading ─────────────────────────────────────────────────── */
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="w-16 h-16 border-[6px] border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-[#FAF8F5] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 border-[3px] border-[#E8E0D4] border-t-[#C8A97E] rounded-full animate-spin" />
+          <p className="text-sm font-medium text-[#8B7355]">Đang tải...</p>
+        </div>
       </div>
     );
   }
 
   if (!booking) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <div className="text-6xl mb-6">😕</div>
-        <h2 className="text-2xl font-bold text-[#2C1E12] mb-4 uppercase tracking-tight">Không tìm thấy lịch hẹn</h2>
-        <Link href="/my-bookings" className="text-primary font-bold uppercase tracking-widest text-[11px] border-b-2 border-primary pb-1 hover:text-foreground hover:border-foreground transition-all">
-          Quay lại danh sách
+      <div className="min-h-screen bg-[#FAF8F5] flex flex-col items-center justify-center p-4 gap-4">
+        <div className="text-6xl">😕</div>
+        <h2 className="text-xl font-bold text-[#2C1E12]">Không tìm thấy lịch hẹn</h2>
+        <Link href="/my-bookings" className="text-sm font-bold text-[#C8A97E] hover:text-[#B8975E] transition-colors">
+          ← Quay lại danh sách
         </Link>
       </div>
     );
   }
 
+  const bStatus = bookingStatusConfig[booking.status] ?? bookingStatusConfig.PENDING;
+  const pStatus = paymentStatusConfig[booking.paymentStatus] ?? paymentStatusConfig.UNPAID;
+  const BStatusIcon = bStatus.icon;
+  const PStatusIcon = pStatus.icon;
+
   return (
-    <div className="min-h-screen bg-[#FAF8F5] pb-32">
-      {/* Header */}
+    <div className="min-h-screen bg-[#FAF8F5]">
+      {/* ── Sticky Header ──────────────────────────────────────── */}
       <header className="bg-white/80 backdrop-blur-md border-b border-[#E8E0D4] sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 md:py-6 max-w-2xl">
+        <div className="container mx-auto px-4 py-3.5 max-w-2xl flex items-center justify-between">
           <button
             onClick={() => router.push('/my-bookings')}
-            className="flex items-center gap-2 text-sm font-bold text-[#8B7355] hover:text-[#C8A97E] transition-colors active:scale-95"
+            className="flex items-center gap-1.5 text-sm font-bold text-[#8B7355] hover:text-[#C8A97E] transition-colors active:scale-95"
           >
-            <ChevronLeft className="w-5 h-5" />
-            Về danh sách
+            <ChevronLeft className="w-4 h-4" />
+            Lịch hẹn
           </button>
+          <span className="text-xs font-bold text-[#8B7355] tracking-wider">{booking.bookingCode}</span>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8 md:py-12 max-w-2xl animate-in fade-in duration-500">
-        {/* Booking Code Card */}
-        <div className="bg-[#2C1E12] text-white rounded-2xl p-8 md:p-12 text-center mb-8 relative overflow-hidden shadow-sm border border-[#2C1E12]">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="relative z-10">
-            <p className="text-xs font-bold text-white/50 uppercase tracking-wider mb-2">MÃ ĐẶT LỊCH</p>
-            <p className="text-4xl md:text-5xl font-bold tracking-tight text-[#C8A97E]">{booking.bookingCode}</p>
+      <div className="container mx-auto px-4 py-6 max-w-2xl space-y-4 pb-32">
+
+        {/* ── Hero Card ─────────────────────────────────────────── */}
+        <div className="relative bg-gradient-to-br from-[#2C1E12] via-[#3D2A18] to-[#2C1E12] rounded-2xl overflow-hidden shadow-lg">
+          {/* Decorative circles */}
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#C8A97E]/10 rounded-full" />
+          <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-white/5 rounded-full" />
+          <div className="absolute top-1/2 right-8 w-1 h-16 bg-[#C8A97E]/20 rounded-full -translate-y-1/2" />
+
+          <div className="relative z-10 p-6 text-center">
+            <p className="text-[10px] font-bold text-[#C8A97E]/60 uppercase tracking-[0.3em] mb-2">Mã đặt lịch</p>
+            <p className="text-3xl font-bold tracking-widest text-[#C8A97E] mb-4">{booking.bookingCode}</p>
+
+            {/* Status pills */}
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <span className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border', bStatus.bg, bStatus.text, bStatus.border)}>
+                <BStatusIcon className="w-3.5 h-3.5" />
+                {BOOKING_STATUS[booking.status]?.label || booking.status}
+              </span>
+              <span className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold border', pStatus.bg, pStatus.text, pStatus.border)}>
+                <PStatusIcon className="w-3.5 h-3.5" />
+                {PAYMENT_STATUS[booking.paymentStatus]?.label || booking.paymentStatus}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* Status Section */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-            <div className={cn(
-              'flex-1 p-6 rounded-2xl border transition-all',
-              BOOKING_STATUS[booking.status]?.color?.includes('bg-green') ? 'bg-[#E8F5E9] text-[#2E7D32] border-[#C8E6C9]' : 
-              'bg-white border-[#E8E0D4] text-[#2C1E12]'
-            )}>
-               <p className={cn("text-xs font-bold uppercase tracking-wider mb-1", booking.status === 'COMPLETED' ? "text-[#2E7D32]/70" : "text-[#8B7355]")}>TRẠNG THÁI</p>
-               <p className="text-lg font-bold">
-                 {BOOKING_STATUS[booking.status]?.label || booking.status}
-               </p>
+        {/* ── Date & Time Banner ────────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-[#E8E0D4] shadow-sm overflow-hidden">
+          <div className="grid grid-cols-2 divide-x divide-[#E8E0D4]">
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#F0EBE3] flex items-center justify-center shrink-0">
+                <Calendar className="w-4 h-4 text-[#C8A97E]" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-[#8B7355] uppercase tracking-wider">Ngày</p>
+                <p className="text-sm font-bold text-[#2C1E12]">{formatDate(booking.date)}</p>
+              </div>
             </div>
-            <div className={cn(
-              'flex-1 p-6 rounded-2xl border transition-all',
-              PAYMENT_STATUS[booking.paymentStatus]?.color?.includes('bg-green') ? 'bg-[#E8F5E9] text-[#2E7D32] border-[#C8E6C9]' : 
-              'bg-white border-[#E8E0D4] text-[#2C1E12]'
-            )}>
-               <p className={cn("text-xs font-bold uppercase tracking-wider mb-1", booking.paymentStatus === 'PAID' ? "text-[#2E7D32]/70" : "text-[#8B7355]")}>THANH TOÁN</p>
-               <p className="text-lg font-bold">
-                 {PAYMENT_STATUS[booking.paymentStatus]?.label || booking.paymentStatus}
-               </p>
+            <div className="p-4 flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-[#F0EBE3] flex items-center justify-center shrink-0">
+                <Clock className="w-4 h-4 text-[#C8A97E]" />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-[#8B7355] uppercase tracking-wider">Giờ</p>
+                <p className="text-sm font-bold text-[#2C1E12]">{booking.timeSlot}</p>
+              </div>
             </div>
+          </div>
         </div>
 
-        {/* Existing Review Display */}
-        {booking.review && (
-          <div className="bg-white rounded-2xl p-6 md:p-8 border border-[#C8A97E]/30 shadow-sm mb-8 animate-in slide-in-from-top-4 duration-500">
-            <div className="flex items-center justify-between mb-4">
-               <div>
-                 <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">Đánh giá của bạn</p>
-                 <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star 
-                        key={star} 
-                        className={cn(
-                          "w-4 h-4",
-                          booking.review && star <= booking.review.rating ? "text-[#C8A97E] fill-current" : "text-[#E8E0D4]"
-                        )} 
-                      />
-                    ))}
-                 </div>
-               </div>
-               <div className="w-10 h-10 rounded-full bg-[#FAF8F5] flex items-center justify-center">
-                  <MessageSquare className="w-5 h-5 text-[#C8A97E]" />
-               </div>
+        {/* ── Salon Card ────────────────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-[#E8E0D4] shadow-sm p-5">
+          <p className="text-[10px] font-bold text-[#8B7355] uppercase tracking-wider mb-3">Địa điểm</p>
+          <h2 className="text-lg font-bold text-[#2C1E12] mb-1">{booking.salon.name}</h2>
+          <p className="text-sm text-[#5C4A32] flex items-start gap-1.5 mb-4 leading-relaxed">
+            <MapPin className="w-4 h-4 text-[#C8A97E] shrink-0 mt-0.5" />
+            {booking.salon.address}
+          </p>
+          <a
+            href={`tel:${booking.salon.phone}`}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-[#F0EBE3] hover:bg-[#E8E0D4] rounded-xl transition-colors text-sm font-bold text-[#2C1E12]"
+          >
+            <Phone className="w-3.5 h-3.5 text-[#C8A97E]" />
+            {booking.salon.phone}
+          </a>
+        </div>
+
+        {/* ── Barber Card ───────────────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-[#E8E0D4] shadow-sm p-5 flex items-center gap-4">
+          {booking.staff ? (
+            <Avatar
+              src={booking.staff.user.avatar}
+              name={booking.staff.user.name}
+              size="lg"
+              variant="circle"
+              className="shrink-0"
+            />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-[#F0EBE3] flex items-center justify-center shrink-0">
+              <User className="w-5 h-5 text-[#C8A97E]" />
             </div>
-            <p className="text-[#2C1E12] font-medium italic text-sm leading-relaxed">&ldquo;{booking.review?.comment}&rdquo;</p>
+          )}
+          <div>
+            <p className="text-[10px] font-bold text-[#8B7355] uppercase tracking-wider mb-0.5">Thợ cắt</p>
+            <p className="text-base font-bold text-[#2C1E12]">{booking.staff?.user.name ?? 'Thợ bất kỳ'}</p>
+          </div>
+        </div>
+
+        {/* ── Services ──────────────────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-[#E8E0D4] shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#F0EBE3] flex items-center gap-2">
+            <Scissors className="w-4 h-4 text-[#C8A97E]" />
+            <p className="text-[10px] font-bold text-[#8B7355] uppercase tracking-wider">Dịch vụ đã chọn</p>
+          </div>
+          <div className="divide-y divide-[#F0EBE3]">
+            {booking.services.map(item => (
+              <div key={item.id} className="px-5 py-3.5 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-bold text-[#2C1E12]">{item.service.name}</p>
+                  <p className="text-xs text-[#8B7355] mt-0.5">{item.duration} phút</p>
+                </div>
+                <p className="text-sm font-bold text-[#2C1E12]">{formatPrice(item.price)}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Financial Summary ─────────────────────────────────── */}
+        <div className="bg-white rounded-2xl border border-[#E8E0D4] shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-[#F0EBE3] flex items-center gap-2">
+            <Receipt className="w-4 h-4 text-[#C8A97E]" />
+            <p className="text-[10px] font-bold text-[#8B7355] uppercase tracking-wider">Thanh toán</p>
+          </div>
+
+          {/* Total row */}
+          <div className="px-5 py-4 flex items-center justify-between border-b border-[#F0EBE3]">
+            <span className="text-sm text-[#5C4A32] font-medium">Tổng dịch vụ</span>
+            <span className="text-lg font-bold text-[#2C1E12]">{formatPrice(booking.totalAmount)}</span>
+          </div>
+
+          {/* Paid / Remaining */}
+          <div className="grid grid-cols-2 divide-x divide-[#F0EBE3]">
+            <div className="px-5 py-4">
+              <p className="text-[10px] font-bold text-[#8B7355] uppercase tracking-wider mb-1">Đã thanh toán</p>
+              <p className="text-base font-bold text-emerald-600">{formatPrice(totalPaid)}</p>
+            </div>
+            <div className="px-5 py-4">
+              <p className="text-[10px] font-bold text-[#8B7355] uppercase tracking-wider mb-1">Còn lại</p>
+              <p className="text-base font-bold text-[#2C1E12]">{formatPrice(remainingAmount)}</p>
+            </div>
+          </div>
+
+          {/* Duration */}
+          <div className="px-5 py-3.5 bg-[#FAF8F5] flex items-center justify-between border-t border-[#F0EBE3]">
+            <span className="text-xs text-[#8B7355] font-medium flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-[#C8A97E]" />
+              Tổng thời gian
+            </span>
+            <span className="text-xs font-bold text-[#5C4A32]">{booking.totalDuration} phút</span>
+          </div>
+        </div>
+
+        {/* ── Existing Review ───────────────────────────────────── */}
+        {booking.review && (
+          <div className="bg-white rounded-2xl border border-[#C8A97E]/30 shadow-sm p-5">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <p className="text-[10px] font-bold text-[#8B7355] uppercase tracking-wider mb-1.5">Đánh giá của bạn</p>
+                <div className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <Star
+                      key={star}
+                      className={cn(
+                        'w-4 h-4',
+                        booking.review && star <= booking.review.rating
+                          ? 'text-[#C8A97E] fill-current'
+                          : 'text-[#E8E0D4]'
+                      )}
+                    />
+                  ))}
+                </div>
+              </div>
+              <div className="w-9 h-9 rounded-full bg-[#F0EBE3] flex items-center justify-center">
+                <MessageSquare className="w-4 h-4 text-[#C8A97E]" />
+              </div>
+            </div>
+            <p className="text-sm text-[#5C4A32] italic leading-relaxed">&ldquo;{booking.review?.comment}&rdquo;</p>
             {booking.review?.images && booking.review.images.length > 0 && (
-              <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+              <div className="flex gap-2 mt-3 overflow-x-auto pb-1">
                 {booking.review.images.map((img: string, i: number) => (
-                  <div key={i} className="relative w-16 h-16 rounded-lg overflow-hidden border border-[#E8E0D4] shrink-0">
+                  <div key={i} className="relative w-14 h-14 rounded-xl overflow-hidden border border-[#E8E0D4] shrink-0">
                     <Image src={img} alt="Review" fill className="object-cover" />
                   </div>
                 ))}
@@ -189,143 +331,59 @@ export default function BookingDetailPage(): React.ReactNode {
           </div>
         )}
 
-        {/* Global Details Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-[#E8E0D4] overflow-hidden mb-8">
-           {/* Top: Salon & Time */}
-           <div className="p-6 md:p-8 space-y-8">
-              <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
-                 <div className="flex-1">
-                   <h2 className="text-2xl font-bold text-[#2C1E12] mb-2">{booking.salon.name}</h2>
-                   <p className="text-sm font-medium text-[#5C4A32] flex items-center gap-1.5 mb-4">
-                      <MapPin className="w-4 h-4 text-[#C8A97E]" />
-                      {booking.salon.address}
-                   </p>
-                   <a
-                    href={`tel:${booking.salon.phone}`}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-[#F0EBE3] hover:bg-[#E8E0D4] rounded-lg transition-colors text-sm font-bold text-[#2C1E12]"
-                   >
-                    <Phone className="w-4 h-4" />
-                    {booking.salon.phone}
-                   </a>
-                 </div>
-                 <div className="text-left md:text-right md:pl-6 md:border-l border-[#E8E0D4] pt-6 md:pt-0 border-t md:border-t-0">
-                    <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">Thời gian</p>
-                    <p className="text-xl font-bold text-[#2C1E12] mb-0.5">{booking.timeSlot}</p>
-                    <p className="text-sm font-medium text-[#8B7355]">{formatDate(booking.date)}</p>
-                 </div>
-              </div>
-
-               {/* Staff Row */}
-               <div className="flex items-center gap-4 p-4 md:p-6 bg-[#FAF8F5] rounded-xl border border-[#E8E0D4]">
-                  <div className="w-14 h-14 rounded-full bg-white border border-[#E8E0D4] flex items-center justify-center shrink-0">
-                     {booking.staff?.user.avatar ? (
-                        <Image src={booking.staff.user.avatar} alt="Staff" width={56} height={56} className="rounded-full object-cover" />
-                     ) : (
-                        <User className="w-6 h-6 text-[#C8A97E]" />
-                     )}
-                  </div>
-                  <div>
-                     <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">Thợ cạo</p>
-                     <p className="text-lg font-bold text-[#2C1E12]">{booking.staff?.user.name || 'Bất kỳ Stylist'}</p>
-                  </div>
-               </div>
-           </div>
-
-           {/* Services List */}
-           <div className="bg-[#FAF8F5] p-6 md:p-8 border-t border-[#E8E0D4]">
-             <h3 className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-6">Dịch vụ đã chọn</h3>
-             <div className="space-y-4">
-                {booking.services.map(item => (
-                  <div key={item.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-white border border-[#E8E0D4] rounded-lg flex items-center justify-center text-[#C8A97E] shrink-0">
-                        <Scissors className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <p className="text-base font-bold text-[#2C1E12]">{item.service.name}</p>
-                        <p className="text-sm font-medium text-[#8B7355] mt-0.5">{item.duration} Phút</p>
-                      </div>
-                    </div>
-                    <p className="text-lg font-bold text-[#2C1E12] shrink-0 ml-4">{formatPrice(item.price)}</p>
-                  </div>
-                ))}
-             </div>
-           </div>
-
-           {/* Financial Summary */}
-           <div className="p-6 md:p-8 bg-[#F0EBE3] border-t border-[#E8E0D4]">
-              <div className="space-y-6">
-                <div className="flex justify-between items-center pb-6 border-b border-[#E8E0D4]">
-                   <div>
-                     <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">Tổng cộng</p>
-                     <p className="text-3xl font-bold text-[#2C1E12]">{formatPrice(booking.totalAmount)}</p>
-                   </div>
-                   <div className="text-right">
-                      <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">Thời gian</p>
-                      <p className="text-lg font-bold text-[#5C4A32]">{booking.totalDuration} Phút</p>
-                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white rounded-xl p-4 border border-[#E8E0D4]">
-                    <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">Đã cọc</p>
-                    <p className="text-lg font-bold text-[#2C1E12]">{formatPrice(totalPaid)}</p>
-                  </div>
-                  <div className="bg-white rounded-xl p-4 border border-[#E8E0D4]">
-                    <p className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-1">Còn lại</p>
-                    <p className="text-lg font-bold text-[#2E7D32]">{formatPrice(remainingAmount)}</p>
-                  </div>
-                </div>
-              </div>
-           </div>
-        </div>
-
-        {/* Actions */}
-        <div className="space-y-4">
-           {(booking.paymentStatus === 'UNPAID' || booking.paymentStatus === 'PENDING') &&
+        {/* ── Actions ───────────────────────────────────────────── */}
+        <div className="space-y-3 pt-2">
+          {/* Pay deposit */}
+          {(booking.paymentStatus === 'UNPAID' || booking.paymentStatus === 'PENDING') &&
             ['PENDING', 'CONFIRMED'].includes(booking.status) && (
               <Link
                 href={`/payment/${booking.id}`}
-                className="block w-full py-4 bg-[#C8A97E] hover:bg-[#B8975E] text-white rounded-xl font-bold text-center transition-colors shadow-sm"
+                className="flex items-center justify-center gap-2 w-full py-4 bg-[#C8A97E] hover:bg-[#B8975E] text-white rounded-2xl font-bold text-sm transition-all active:scale-[0.98] shadow-lg shadow-[#C8A97E]/20"
               >
+                <CreditCard className="w-4 h-4" />
                 Thanh toán cọc giữ chỗ
               </Link>
             )}
 
-           {canCancel && (
+          {/* Cancel */}
+          {canCancel && (
             <button
               onClick={() => setShowCancelModal(true)}
-              className="w-full py-4 text-[#8B7355] hover:text-[#2C1E12] font-bold text-sm bg-white border border-[#E8E0D4] rounded-xl transition-colors hover:bg-[#F0EBE3]"
+              className="w-full py-3.5 text-[#8B7355] hover:text-red-600 font-bold text-sm bg-white border border-[#E8E0D4] hover:border-red-200 rounded-2xl transition-all hover:bg-red-50"
             >
               Hủy lịch hẹn
             </button>
-           )}
+          )}
 
-           {booking.status === 'COMPLETED' && !booking.review && (
-             <>
-               {isWithinReviewPeriod(booking.updatedAt) ? (
-                 <div className="space-y-4">
-                   <p className="text-sm text-[#8B7355] text-center italic bg-[#F0EBE3] p-3 rounded-lg border border-[#E8E0D4]">
-                     📢 Bạn đang ở trong thời gian vàng 3 ngày để đánh giá dịch vụ này!
-                   </p>
-                   <button
-                     onClick={() => setShowReviewModal(true)}
-                     className="w-full py-4 bg-[#2C1E12] hover:bg-[#1C130B] text-white rounded-xl font-bold text-center transition-all shadow-lg active:scale-[0.98] animate-bounce-slow"
-                   >
-                     Đánh giá dịch vụ ngay
-                   </button>
-                 </div>
-               ) : (
-                 <p className="w-full py-4 text-[#8B7355] text-center font-medium bg-[#FAF8F5] border border-[#E8E0D4] rounded-xl italic">
-                   ⏳ Thời hạn 3 ngày để đánh giá dịch vụ này đã kết thúc.
-                 </p>
-               )}
-             </>
-           )}
+          {/* Review prompt */}
+          {booking.status === 'COMPLETED' && !booking.review && (
+            <>
+              {isWithinReviewPeriod(booking.updatedAt) ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl">
+                    <Star className="w-4 h-4 text-amber-500 fill-amber-500 shrink-0" />
+                    <p className="text-xs text-amber-700 font-medium">Còn trong 3 ngày để đánh giá dịch vụ này!</p>
+                  </div>
+                  <button
+                    onClick={() => setShowReviewModal(true)}
+                    className="w-full py-4 bg-[#2C1E12] hover:bg-[#1C130B] text-white rounded-2xl font-bold text-sm transition-all active:scale-[0.98] shadow-lg flex items-center justify-center gap-2"
+                  >
+                    <Star className="w-4 h-4 fill-[#C8A97E] text-[#C8A97E]" />
+                    Đánh giá dịch vụ
+                  </button>
+                </div>
+              ) : (
+                <p className="text-xs text-[#8B7355] text-center py-3 font-medium">
+                  ⏳ Đã hết thời hạn 3 ngày để đánh giá dịch vụ này.
+                </p>
+              )}
+            </>
+          )}
         </div>
       </div>
 
-      <ReviewModal 
+      {/* ── Review Modal ──────────────────────────────────────────── */}
+      <ReviewModal
         isOpen={showReviewModal}
         onClose={() => setShowReviewModal(false)}
         bookingId={booking.id}
@@ -334,40 +392,45 @@ export default function BookingDetailPage(): React.ReactNode {
         onSuccess={fetchBooking}
       />
 
-      {/* Cancel Modal */}
+      {/* ── Cancel Confirmation Modal ─────────────────────────────── */}
       {showCancelModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-[100] animate-in fade-in duration-300">
-          <div className="bg-white rounded-2xl p-6 md:p-8 max-w-sm w-full shadow-lg border border-[#E8E0D4] animate-in zoom-in-95 duration-300">
-            <h3 className="text-xl font-bold text-[#2C1E12] mb-2">Xác nhận hủy</h3>
-            <p className="text-sm font-medium text-[#5C4A32] mb-6">Bạn có chắc chắn muốn bỏ lịch hẹn này?</p>
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-[100] animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
+                <XCircle className="w-5 h-5 text-red-500" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-[#2C1E12]">Huỷ lịch hẹn?</h3>
+                <p className="text-xs text-[#8B7355]">Hành động này không thể hoàn tác</p>
+              </div>
+            </div>
             <textarea
               value={cancelReason}
               onChange={e => setCancelReason(e.target.value)}
-              placeholder="Lý do hủy (không bắt buộc)..."
+              placeholder="Lý do huỷ (không bắt buộc)..."
               rows={3}
-              className="w-full p-4 bg-[#FAF8F5] border border-[#E8E0D4] rounded-xl mb-6 focus:outline-none focus:border-[#C8A97E] focus:ring-1 focus:ring-[#C8A97E] transition-all text-sm text-[#2C1E12] placeholder:text-[#8B7355]/50"
+              className="w-full p-3.5 bg-[#FAF8F5] border border-[#E8E0D4] rounded-xl mb-4 focus:outline-none focus:border-[#C8A97E] focus:ring-1 focus:ring-[#C8A97E]/20 transition-all text-sm text-[#2C1E12] placeholder:text-[#C4B9A8] resize-none"
             />
-            <div className="flex gap-3">
+            <div className="flex gap-2.5">
               <button
                 onClick={() => setShowCancelModal(false)}
-                className="flex-1 py-3 bg-[#F0EBE3] text-[#5C4A32] rounded-xl font-bold text-sm hover:bg-[#E8E0D4] transition-colors border border-[#E8E0D4]"
+                className="flex-1 py-3 bg-[#F0EBE3] text-[#5C4A32] rounded-xl font-bold text-sm hover:bg-[#E8E0D4] transition-colors"
               >
-                Đóng
+                Không
               </button>
               <button
                 onClick={handleCancel}
                 disabled={cancelling}
-                className={cn(
-                  'flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-sm transition-colors',
-                  cancelling ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-700'
-                )}
+                className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold text-sm hover:bg-red-700 transition-colors disabled:opacity-60 flex items-center justify-center gap-1.5"
               >
-                {cancelling ? 'Đang xử lý...' : 'Đệ trình'}
+                {cancelling ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Đang huỷ...</> : 'Xác nhận huỷ'}
               </button>
             </div>
           </div>
         </div>
       )}
+
       <Footer />
     </div>
   );
