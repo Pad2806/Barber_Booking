@@ -14,6 +14,7 @@ import {
 import { bookingApi, Booking } from '@/lib/api';
 import { formatPrice, formatDate, BOOKING_STATUS, PAYMENT_STATUS, cn } from '@/lib/utils';
 import Avatar from '@/components/Avatar';
+import BookingDetailSheet from '@/components/booking/BookingDetailSheet';
 
 /* ── Status dot color ──────────────────────────────────────────── */
 const statusDot: Record<string, { color: string; icon: React.ElementType }> = {
@@ -31,6 +32,7 @@ export default function MyBookingsPage(): React.ReactNode {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'upcoming' | 'past'>('upcoming');
+  const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -106,7 +108,7 @@ export default function MyBookingsPage(): React.ReactNode {
                   : 'text-[#8B7355] hover:text-[#2C1E12]'
               )}
             >
-              {tab === 'upcoming' ? '📅 Sắp tới' : '🕐 Đã qua'}
+              {tab === 'upcoming' ? 'Sắp tới' : 'Đã qua'}
             </button>
           ))}
         </div>
@@ -144,10 +146,10 @@ export default function MyBookingsPage(): React.ReactNode {
               const isUnpaid = !isPaid && !isDeposit;
 
               return (
-                <Link
+                <button
                   key={booking.id}
-                  href={`/my-bookings/${booking.id}`}
-                  className="group bg-white rounded-2xl border border-[#E8E0D4] shadow-sm hover:shadow-md hover:border-[#C8A97E]/40 transition-all duration-200 overflow-hidden animate-in fade-in slide-in-from-bottom-4"
+                  onClick={() => setSelectedBookingId(booking.id)}
+                  className="group text-left w-full bg-white rounded-2xl border border-[#E8E0D4] shadow-sm hover:shadow-md hover:border-[#C8A97E]/40 transition-all duration-200 overflow-hidden animate-in fade-in slide-in-from-bottom-4"
                   style={{ animationDelay: `${idx * 60}ms` }}
                 >
                   {/* ── Top stripe: status color indicator ── */}
@@ -218,7 +220,7 @@ export default function MyBookingsPage(): React.ReactNode {
                         <Avatar
                           src={booking.staff.user.avatar}
                           name={booking.staff.user.name}
-                          size="xs"
+                          size="sm"
                           variant="circle"
                           className="shrink-0"
                         />
@@ -244,12 +246,17 @@ export default function MyBookingsPage(): React.ReactNode {
                       )}
                     </div>
                   )}
-                </Link>
+                </button>
               );
             })}
           </div>
         )}
       </div>
+
+      <BookingDetailSheet
+        bookingId={selectedBookingId}
+        onClose={() => setSelectedBookingId(null)}
+      />
 
       <Footer />
     </div>
