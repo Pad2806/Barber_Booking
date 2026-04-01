@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import {
   X, MapPin, User, Scissors, Phone, Clock, Calendar,
@@ -359,8 +360,8 @@ export default function BookingDetailSheet({ bookingId, onClose }: Props) {
         </div>
       </div>
 
-      {/* ── Review Modal ────────────────────────────────────────── */}
-      {booking && (
+      {/* ── Review Modal — portal to escape stacking context ────── */}
+      {booking && typeof document !== 'undefined' && createPortal(
         <ReviewModal
           isOpen={showReviewModal}
           onClose={() => setShowReviewModal(false)}
@@ -370,13 +371,15 @@ export default function BookingDetailSheet({ bookingId, onClose }: Props) {
           onSuccess={async () => {
             const updated = await bookingApi.getById(booking.id);
             setBooking(updated);
+            setShowReviewModal(false);
           }}
-        />
+        />,
+        document.body
       )}
 
-      {/* ── Cancel Confirmation ─────────────────────────────────── */}
-      {showCancelModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-[102] animate-in fade-in duration-200">
+      {/* ── Cancel Confirmation — portal to escape stacking context ─ */}
+      {showCancelModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-end sm:items-center justify-center p-4 z-[200] animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 rounded-full bg-red-50 border border-red-100 flex items-center justify-center shrink-0">
@@ -407,7 +410,8 @@ export default function BookingDetailSheet({ bookingId, onClose }: Props) {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
