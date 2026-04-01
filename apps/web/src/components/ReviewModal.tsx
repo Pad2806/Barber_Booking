@@ -56,7 +56,7 @@ export default function ReviewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-300">
       <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl border border-[#E8E0D4] overflow-hidden animate-in zoom-in-95 duration-300">
         {/* Header */}
         <div className="bg-[#2C1E12] p-6 text-white flex items-center justify-between">
