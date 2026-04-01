@@ -279,7 +279,7 @@ export default function PaymentModalContent({
       )}
       <div className="flex flex-col gap-2 w-full">
         <button
-          onClick={() => { window.location.href = `/my-bookings/${bookingId}`; }}
+          onClick={() => { window.location.href = `/my-bookings?detail=${bookingId}`; }}
           className="w-full py-3.5 bg-[#C8A97E] text-white rounded-xl font-bold hover:bg-[#B8975E] transition-all active:scale-[0.98] shadow-md shadow-[#C8A97E]/20 cursor-pointer"
         >
           Xem chi tiết đặt lịch

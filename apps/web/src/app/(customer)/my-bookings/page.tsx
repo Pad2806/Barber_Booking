@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import Header from '@/components/header';
 import Footer from '@/components/footer';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Calendar, Clock, MapPin, ChevronRight, CreditCard,
   CheckCircle2, XCircle, AlertCircle, Hourglass, Scissors,
@@ -15,6 +15,22 @@ import { bookingApi, Booking } from '@/lib/api';
 import { formatPrice, formatDate, BOOKING_STATUS, PAYMENT_STATUS, cn } from '@/lib/utils';
 import Avatar from '@/components/Avatar';
 import BookingDetailSheet from '@/components/booking/BookingDetailSheet';
+
+/* ── Reads ?detail= param and notifies parent (must be inside Suspense) ─── */
+function SearchParamsReader({ onDetail }: { onDetail: (id: string) => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const detailId = searchParams?.get('detail');
+    if (detailId) {
+      onDetail(detailId);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('detail');
+      window.history.replaceState({}, '', url.toString());
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+  return null;
+}
 
 /* ── Status dot color ──────────────────────────────────────────── */
 const statusDot: Record<string, { color: string; icon: React.ElementType }> = {
@@ -84,6 +100,11 @@ export default function MyBookingsPage(): React.ReactNode {
   return (
     <div className="min-h-screen bg-[#FAF8F5] text-[#2C1E12]">
       <Header />
+      {/* Reads ?detail= query param — must be in Suspense */}
+      <Suspense fallback={null}>
+        <SearchParamsReader onDetail={setSelectedBookingId} />
+      </Suspense>
+
 
       <div className="container mx-auto px-4 py-8 md:py-12 max-w-2xl">
 
