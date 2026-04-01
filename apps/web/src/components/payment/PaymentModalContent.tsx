@@ -128,7 +128,8 @@ export default function PaymentModalContent({
     if (paymentStatus === 'PENDING') {
       setShowExitConfirm(true);
     } else {
-      onClose();
+      // Hard navigate to clear @modal parallel route slot
+      window.location.href = '/booking';
     }
   };
 
@@ -138,11 +139,11 @@ export default function PaymentModalContent({
     try {
       await bookingApi.cancel(bookingId, 'Người dùng huỷ thanh toán');
     } catch { /* ignore — slot will expire naturally */ }
-    // Keep salon in store so booking page doesn't go blank on router.back()
     resetBooking();
     setCancelling(false);
     setShowExitConfirm(false);
-    onClose();
+    // Hard navigate back to booking page — clears @modal slot
+    window.location.href = '/booking';
   };
 
   // ── CopyBtn ──────────────────────────────────────────────────
@@ -254,13 +255,13 @@ export default function PaymentModalContent({
       )}
       <div className="flex flex-col gap-2 w-full">
         <button
-          onClick={() => router.replace(`/my-bookings/${bookingId}`)}
+          onClick={() => { window.location.href = `/my-bookings/${bookingId}`; }}
           className="w-full py-3.5 bg-[#C8A97E] text-white rounded-xl font-bold hover:bg-[#B8975E] transition-all active:scale-[0.98] shadow-md shadow-[#C8A97E]/20 cursor-pointer"
         >
           Xem chi tiết đặt lịch
         </button>
         <button
-          onClick={onClose}
+          onClick={() => { window.location.href = '/'; }}
           className="text-sm font-bold text-[#8B7355] py-2 hover:text-[#5C4A32] transition-colors cursor-pointer"
         >
           Về trang chủ
@@ -287,7 +288,7 @@ export default function PaymentModalContent({
           <RefreshCw className="w-4 h-4" /> Thử lại
         </button>
         <button
-          onClick={onClose}
+          onClick={() => { window.location.href = '/booking'; }}
           className="w-full py-3.5 bg-[#F0EBE3] text-[#5C4A32] rounded-xl font-bold hover:bg-[#E8E0D4] transition-all active:scale-[0.98] cursor-pointer"
         >
           Đóng
@@ -430,7 +431,12 @@ export default function PaymentModalContent({
 
         <button
           className="w-full py-3 text-[#5C4A32] bg-white hover:bg-[#F0EBE3] border border-[#E8E0D4] rounded-xl font-bold text-sm transition-all active:scale-[0.98] cursor-pointer mb-2"
-          onClick={() => { reset(); router.replace(`/my-bookings/${bookingId}`); }}
+          onClick={() => {
+            // Hard navigate — clears Next.js parallel route (@modal slot) state
+            // so the payment modal doesn't persist over the my-bookings page.
+            // reset() is NOT called: booking remains valid, user pays at salon.
+            window.location.href = `/my-bookings/${bookingId}`;
+          }}
         >
           Thanh toán tại salon
         </button>
