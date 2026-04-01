@@ -29,7 +29,7 @@ export default function PaymentModalContent({
   asModal = true,
 }: PaymentModalContentProps) {
   const router = useRouter();
-  const { reset } = useBookingStore();
+  const { reset, resetBooking } = useBookingStore();
 
   const [booking, setBooking] = useState<Booking | null>(null);
   const [qrData, setQrData] = useState<{
@@ -132,13 +132,14 @@ export default function PaymentModalContent({
     }
   };
 
-  // ── Confirmed exit: cancel booking + reset store slot ────────
+  // ── Confirmed exit: cancel booking + clear time slot only ──
   const handleConfirmExit = async () => {
     setCancelling(true);
     try {
       await bookingApi.cancel(bookingId, 'Người dùng huỷ thanh toán');
     } catch { /* ignore — slot will expire naturally */ }
-    reset(); // clears selectedTimeSlot so it won't appear as "selected"
+    // Keep salon in store so booking page doesn't go blank on router.back()
+    resetBooking();
     setCancelling(false);
     setShowExitConfirm(false);
     onClose();

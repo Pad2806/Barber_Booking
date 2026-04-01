@@ -27,6 +27,7 @@ interface BookingState {
   nextStep: () => void;
   prevStep: () => void;
   reset: () => void;
+  resetBooking: () => void; // clears selections but keeps salon
   isServiceSelected: (serviceId: string) => boolean;
 }
 
@@ -108,6 +109,16 @@ export const useBookingStore = create<BookingState>((set, get) => ({
       currentStep: 1,
       totalDuration: 0,
       totalAmount: 0,
+    }),
+
+  // Clears booking selections but keeps salon so booking page stays visible
+  resetBooking: () =>
+    set({
+      selectedStaff: null,
+      selectedDate: null,
+      selectedTimeSlot: null,
+      note: '',
+      currentStep: 1,
     }),
 
   isServiceSelected: (serviceId) => {
