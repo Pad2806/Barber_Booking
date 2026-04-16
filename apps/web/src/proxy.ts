@@ -82,6 +82,39 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // ── /barber/* | /cashier/* | /manager/* (legacy routes) ───────
+  // These have their own layout-level checks, but middleware RBAC
+  // ensures consistent enforcement at the edge.
+  const LEGACY_ROUTE_ROLES: Record<string, Role[]> = {
+    '/barber': [Role.BARBER, Role.SKINNER],
+    '/cashier': [Role.CASHIER],
+    '/manager': [Role.MANAGER],
+  };
+
+  for (const [routePrefix, allowedRoles] of Object.entries(LEGACY_ROUTE_ROLES)) {
+    if (pathname.startsWith(routePrefix)) {
+      if (!session) {
+        return NextResponse.redirect(new URL(`/login?callbackUrl=${pathname}`, request.url));
+      }
+
+      const roles = (session.user as any)?.roles || [(session.user as any)?.role];
+
+      // Higher roles (SUPER_ADMIN, SALON_OWNER) always pass
+      const isHigherRole = roles.some((r: string) =>
+        [Role.SUPER_ADMIN, Role.SALON_OWNER].includes(r as Role),
+      );
+      // Direct role match (multi-role aware)
+      const hasDirectRole = allowedRoles.some((ar: Role) => roles.includes(ar));
+      // Manager can access cashier/barber routes
+      const isManager = roles.includes(Role.MANAGER);
+
+      if (!isHigherRole && !hasDirectRole && !isManager) {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+      break; // Matched a legacy route, stop checking others
+    }
+  }
+
   // ── Protected customer routes ──
   if (
     pathname.startsWith('/my-bookings') ||

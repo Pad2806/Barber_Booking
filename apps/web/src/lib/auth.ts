@@ -125,6 +125,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const refreshed = await refreshAccessToken(token.refreshToken as string);
           token.accessToken = refreshed.accessToken;
           token.refreshToken = refreshed.refreshToken;
+          // Sync roles/role/position from backend (UserRole table is source of truth)
+          // Without this, roles stay stale from initial login → multi-role users
+          // get denied access to pages for roles added after login.
+          if (refreshed.user) {
+            token.roles = refreshed.user.roles || token.roles;
+            token.role = refreshed.user.role || token.role;
+            token.position = refreshed.user.position ?? token.position;
+          }
           token.error = undefined;
           return token;
         } catch (error) {
