@@ -100,7 +100,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return true;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       // Initial sign in — store user data
       if (user) {
         token.id = user.id;
@@ -110,6 +110,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.accessToken = (user as any).accessToken;
         token.refreshToken = (user as any).refreshToken;
         token.error = undefined;
+        return token;
+      }
+
+      // Client called update() — roles may have changed, fetch fresh from backend
+      // This is triggered by dashboard layout when getMe() roles differ from session roles
+      if (trigger === 'update' && token.accessToken) {
+        try {
+          const meResponse = await axios.get(`${API_URL}/api/users/me`, {
+            headers: { Authorization: `Bearer ${token.accessToken}` },
+          });
+          const me = meResponse.data;
+          if (me?.roles?.length) {
+            token.roles = me.roles;
+            token.role = me.role || token.role;
+          }
+          if (me?.staff?.position !== undefined) {
+            token.position = me.staff.position;
+          }
+        } catch {
+          // If fetch fails, keep existing token data — don't break session
+        }
         return token;
       }
 

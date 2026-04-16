@@ -91,7 +91,7 @@ const SECTION_LABELS: Record<string, string> = {
 };
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const router = useRouter();
   const pathname = usePathname() || '';
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -106,6 +106,26 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     refetchOnWindowFocus: false,
   });
 
+  // ── Auto-sync session when roles change (no logout needed) ───
+  // When admin assigns a new role, getMe() returns fresh roles from DB
+  // but session.user.roles (from JWT) is stale → proxy blocks access.
+  // Calling updateSession() triggers jwt callback with trigger='update'
+  // which fetches fresh roles from backend and updates the JWT.
+  useEffect(() => {
+    if (!me || !session?.user) return;
+
+    const dbRoles = ((me as any).roles as string[]) || [me.role];
+    const sessionRoles = ((session.user as any).roles as string[]) || [(session.user as any).role];
+
+    // Compare sorted arrays to detect mismatch
+    const dbSorted = [...dbRoles].sort().join(',');
+    const sessionSorted = [...sessionRoles].sort().join(',');
+
+    if (dbSorted !== sessionSorted) {
+      // Roles changed in DB but session still has old roles → force refresh
+      updateSession();
+    }
+  }, [me, session?.user, updateSession]);
 
   // ── Redirect if unauthenticated ──────────────────────────────
   useEffect(() => {
