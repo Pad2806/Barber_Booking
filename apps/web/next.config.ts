@@ -5,10 +5,12 @@ const nextConfig: NextConfig = {
   output: process.env.BUILD_STANDALONE === 'true' ? 'standalone' : undefined,
   transpilePackages: ['@reetro/shared', '@reetro/brand'],
   images: {
+    loader: 'custom',
+    loaderFile: './src/lib/image-loader.ts',
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
-      { protocol: 'https', hostname: '**.cloudinary.com' },
+      { protocol: 'https', hostname: 'pub-f78e32922bd345179ee32d0df3c21721.r2.dev' },
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
       { protocol: 'https', hostname: 'platform-lookaside.fbsbx.com' },
       { protocol: 'https', hostname: 'images.unsplash.com' },

@@ -56,10 +56,12 @@ export default () => ({
     web: process.env.WEB_URL || 'http://localhost:3000',
   },
 
-  cloudinary: {
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-    apiKey: process.env.CLOUDINARY_API_KEY,
-    apiSecret: process.env.CLOUDINARY_API_SECRET,
+  r2: {
+    accountId: process.env.R2_ACCOUNT_ID,
+    accessKeyId: process.env.R2_ACCESS_KEY,
+    secretAccessKey: process.env.R2_SECRET_KEY,
+    bucketName: process.env.R2_BUCKET_NAME,
+    publicDomain: process.env.R2_PUBLIC_DOMAIN,
   },
 
   resend: {

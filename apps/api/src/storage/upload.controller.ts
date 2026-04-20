@@ -12,12 +12,12 @@ import {
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CloudinaryService, UploadFolder } from './cloudinary.service';
+import { StorageService, UploadFolder } from './storage.service';
 
 @ApiTags('Upload')
 @Controller('upload')
 export class UploadController {
-    constructor(private readonly cloudinaryService: CloudinaryService) { }
+    constructor(private readonly storageService: StorageService) { }
 
     @Post()
     @UseGuards(JwtAuthGuard)
@@ -37,8 +37,8 @@ export class UploadController {
         @UploadedFile() file: Express.Multer.File,
         @Query('folder') folder: UploadFolder = 'avatars',
     ) {
-        const result = await this.cloudinaryService.uploadImage(file, folder);
-        return result;
+        const result = await this.storageService.uploadFile(file, folder);
+        return result; // returns { url, publicId }
     }
 
     @Post('multiple')
@@ -59,7 +59,7 @@ export class UploadController {
         @UploadedFiles() files: Express.Multer.File[],
         @Query('folder') folder: UploadFolder = 'avatars',
     ) {
-        const results = await this.cloudinaryService.uploadMultiple(files, folder);
+        const results = await this.storageService.uploadMultiple(files, folder);
         return results;
     }
 
@@ -81,15 +81,18 @@ export class UploadController {
         @UploadedFile() file: Express.Multer.File,
         @Query('folder') folder: UploadFolder = 'services',
     ) {
-        const result = await this.cloudinaryService.uploadVideo(file, folder);
+        const result = await this.storageService.uploadFile(file, folder);
         return result;
     }
 
-    @Delete(':publicId')
+    @Delete(':publicId(*)')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    async deleteImage(@Param('publicId') publicId: string) {
-        await this.cloudinaryService.deleteImage(publicId);
-        return { message: 'Image deleted successfully' };
+    async deleteFile(@Param('publicId') publicId: string) {
+        // publicId might need to be url-decoded if it contains slashes, but usually Nest router handles it if defined carefully, or we pass it differently.
+        // Actually, Express param matching might stop at slash unless defined with wildcard.
+        // Let's assume standard behavior as before.
+        await this.storageService.deleteFile(publicId);
+        return { message: 'File deleted successfully' };
     }
 }

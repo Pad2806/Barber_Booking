@@ -20,7 +20,7 @@ import { ManagerModule } from './manager/manager.module';
 import { CashierModule } from './cashier/cashier.module';
 import configuration from './config/configuration';
 import { HealthModule } from './health/health.module';
-import { CloudinaryModule } from './cloudinary/cloudinary.module';
+import { StorageModule } from './storage/storage.module';
 import { AIAssistantModule } from './ai-assistant/ai-assistant.module';
 import { SettingsModule } from './settings/settings.module';
 
@@ -57,7 +57,7 @@ import { SettingsModule } from './settings/settings.module';
     AdminModule,
     ManagerModule,
     HealthModule,
-    CloudinaryModule,
+    StorageModule,
     AIAssistantModule,
     SettingsModule,
   ],

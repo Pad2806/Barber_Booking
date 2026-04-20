@@ -37,36 +37,24 @@ export async function compressImage(
   }
 }
 
-// ===== Option C: Cloudinary blur placeholder =====
+// ===== Option C: Future-proof placeholders =====
 
 /**
- * Chuyển Cloudinary URL thành URL thumbnail mờ (blur placeholder).
- * Dùng cho Next.js Image `blurDataURL`.
- *
- * Input:  https://res.cloudinary.com/xxx/image/upload/v123/reetro/avatars/abc.jpg
- * Output: https://res.cloudinary.com/xxx/image/upload/w_30,q_auto,f_auto,e_blur:500/v123/reetro/avatars/abc.jpg
+ * Returns a generic placeholder or the original URL.
+ * Blur is now primarily handled by Next.js Image component and our custom loader
+ * when using coollabs (which doesn't have a specific blur-dedicated endpoint like Cloudinary,
+ * but Next.js can generate placeholders or we can use generic skeletons).
  */
 export function getBlurPlaceholder(url: string): string {
-  if (!url || !url.includes('cloudinary.com')) return '';
-
-  // Regex match Cloudinary URL pattern
-  const match = url.match(/(.*\/upload\/)(v\d+\/.*)/);
-  if (!match) return '';
-
-  return `${match[1]}w_30,q_auto,f_auto,e_blur:500/${match[2]}`;
+  // coollabs doesn't have a direct "blur" endpoint like Cloudinary's e_blur.
+  // We'll return an empty string or a very tiny low-quality version if needed.
+  if (!url) return '';
+  return url; 
 }
 
 /**
- * Chuyển Cloudinary URL thành URL đã tối ưu kích thước.
- *
- * Example: getOptimizedUrl(url, 400) →
- *   .../upload/w_400,f_auto,q_auto/v123/reetro/...
+ * Returns the URL as is. Optimization is now handled globally via next.config.ts loader.
  */
-export function getOptimizedUrl(url: string, width: number): string {
-  if (!url || !url.includes('cloudinary.com')) return url;
-
-  const match = url.match(/(.*\/upload\/)(v\d+\/.*)/);
-  if (!match) return url;
-
-  return `${match[1]}w_${width},f_auto,q_auto/${match[2]}`;
+export function getOptimizedUrl(url: string, _width: number): string {
+  return url;
 }

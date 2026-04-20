@@ -13,10 +13,10 @@ import apiClient from '@/lib/api';
 
 // Assignable roles (exclude CUSTOMER and SUPER_ADMIN)
 const ASSIGNABLE_ROLES = [
-  { value: Role.BARBER, label: '💈 Barber', desc: 'Cắt tóc, quản lý lịch cá nhân' },
-  { value: Role.CASHIER, label: '💰 Thu ngân', desc: 'Xem booking, thanh toán' },
-  { value: Role.SKINNER, label: '🧴 Skinner', desc: 'Chăm sóc da, lịch cá nhân' },
-  { value: Role.MANAGER, label: '📊 Quản lý', desc: 'Quản lý nhân viên, doanh thu' },
+  { value: Role.BARBER, label: 'Thợ cắt tóc', desc: 'Cắt tóc, quản lý lịch cá nhân' },
+  { value: Role.CASHIER, label: 'Thu ngân', desc: 'Xem booking, thanh toán' },
+  { value: Role.SKINNER, label: 'Chăm sóc da', desc: 'Chăm sóc da, lịch cá nhân' },
+  { value: Role.MANAGER, label: 'Quản lý', desc: 'Quản lý nhân viên, doanh thu' },
 ];
 
 const PERMISSION_LABELS: Record<string, string> = {
@@ -226,17 +226,15 @@ function StaffRoleCard({
                         type="button"
                         onClick={() => toggleRole(r.value)}
                         disabled={updateMutation.isPending}
-                        className={`flex items-center gap-2 p-2.5 rounded-xl border-2 text-left transition-all ${
-                          isActive
-                            ? 'border-primary/40 bg-primary/5'
-                            : 'border-slate-100 bg-white hover:border-slate-200'
-                        } ${updateMutation.isPending ? 'opacity-50' : ''}`}
+                        className={`flex items-center gap-2 p-2.5 rounded-xl border-2 text-left transition-all ${isActive
+                          ? 'border-primary/40 bg-primary/5'
+                          : 'border-slate-100 bg-white hover:border-slate-200'
+                          } ${updateMutation.isPending ? 'opacity-50' : ''}`}
                       >
-                        <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] ${
-                          isActive
-                            ? 'bg-primary text-white'
-                            : 'bg-slate-100 text-slate-400'
-                        }`}>
+                        <div className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] ${isActive
+                          ? 'bg-primary text-white'
+                          : 'bg-slate-100 text-slate-400'
+                          }`}>
                           {isActive ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />}
                         </div>
                         <div>
