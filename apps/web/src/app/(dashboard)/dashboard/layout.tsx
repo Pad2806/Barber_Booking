@@ -106,6 +106,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     refetchOnWindowFocus: false,
   });
 
+  const [lastRequestedRoles, setLastRequestedRoles] = useState<string | null>(null);
+
   // ── Auto-sync session when roles change (no logout needed) ───
   // When admin assigns a new role, getMe() returns fresh roles from DB
   // but session.user.roles (from JWT) is stale → proxy blocks access.
@@ -121,11 +123,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const dbSorted = [...dbRoles].sort().join(',');
     const sessionSorted = [...sessionRoles].sort().join(',');
 
-    if (dbSorted !== sessionSorted) {
+    if (dbSorted !== sessionSorted && dbSorted !== lastRequestedRoles) {
       // Roles changed in DB but session still has old roles → force refresh
+      // Prevent infinite loop by only requesting an update once per role combination
+      setLastRequestedRoles(dbSorted);
       updateSession();
     }
-  }, [me, session?.user, updateSession]);
+  }, [me, session?.user, updateSession, lastRequestedRoles]);
 
   // ── Redirect if unauthenticated ──────────────────────────────
   useEffect(() => {
