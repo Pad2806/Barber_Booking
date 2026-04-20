@@ -253,8 +253,8 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    // Delete old refresh token
-    await this.prisma.refreshToken.delete({ where: { id: storedToken.id } });
+    // Delete old refresh token (use deleteMany to avoid errors if already deleted by concurrent request)
+    await this.prisma.refreshToken.deleteMany({ where: { id: storedToken.id } });
 
     return this.generateTokens(storedToken.user);
   }

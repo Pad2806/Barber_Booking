@@ -33,6 +33,7 @@ export class StorageService {
                 accessKeyId: accessKeyId || '',
                 secretAccessKey: secretAccessKey || '',
             },
+            forcePathStyle: true,
         });
     }
 
