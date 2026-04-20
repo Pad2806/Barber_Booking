@@ -19,15 +19,17 @@ export class StorageService {
     private readonly publicDomain: string;
 
     constructor(private readonly config: ConfigService) {
-        const accountId = this.config.get<string>('R2_ACCOUNT_ID');
-        const accessKeyId = this.config.get<string>('R2_ACCESS_KEY');
-        const secretAccessKey = this.config.get<string>('R2_SECRET_KEY');
+        const sanitize = (val: string | undefined) => val?.replace(/['"]/g, '').trim();
+
+        const accountId = sanitize(this.config.get<string>('R2_ACCOUNT_ID'));
+        const accessKeyId = sanitize(this.config.get<string>('R2_ACCESS_KEY'));
+        const secretAccessKey = sanitize(this.config.get<string>('R2_SECRET_KEY'));
         
-        this.bucketName = this.config.get<string>('R2_BUCKET_NAME') || 'reetro-barber-storage';
-        this.publicDomain = this.config.get<string>('R2_PUBLIC_DOMAIN') || '';
+        this.bucketName = sanitize(this.config.get<string>('R2_BUCKET_NAME')) || 'reetro-barber-storage';
+        this.publicDomain = sanitize(this.config.get<string>('R2_PUBLIC_DOMAIN')) || '';
 
         this.s3Client = new S3Client({
-            region: 'auto',
+            region: 'us-east-1', // Cloudflare R2 recommends us-east-1 for S3 compatibility
             endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
             credentials: {
                 accessKeyId: accessKeyId || '',
