@@ -17,7 +17,6 @@ const ASSIGNABLE_ROLES = [
   { value: Role.CASHIER, label: '💰 Thu ngân', desc: 'Xem booking, thanh toán' },
   { value: Role.SKINNER, label: '🧴 Skinner', desc: 'Chăm sóc da, lịch cá nhân' },
   { value: Role.MANAGER, label: '📊 Quản lý', desc: 'Quản lý nhân viên, doanh thu' },
-  { value: Role.SALON_OWNER, label: '🏪 Chủ salon', desc: 'Toàn quyền chi nhánh' },
 ];
 
 const PERMISSION_LABELS: Record<string, string> = {

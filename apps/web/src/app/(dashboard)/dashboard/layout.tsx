@@ -127,7 +127,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       // Roles changed in DB but session still has old roles → force refresh
       // Prevent infinite loop by only requesting an update once per role combination
       setLastRequestedRoles(dbSorted);
-      updateSession();
+      updateSession({ roles: dbRoles, role: dbRoles[0] });
     }
   }, [me, session?.user, updateSession, lastRequestedRoles]);
 

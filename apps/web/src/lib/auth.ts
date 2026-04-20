@@ -100,7 +100,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return true;
     },
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user, trigger, session }) {
       // Initial sign in — store user data
       if (user) {
         token.id = user.id;
@@ -113,23 +113,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return token;
       }
 
-      // Client called update() — roles may have changed, fetch fresh from backend
-      // This is triggered by dashboard layout when getMe() roles differ from session roles
-      if (trigger === 'update' && token.accessToken) {
-        try {
-          const meResponse = await axios.get(`${API_URL}/api/users/me`, {
-            headers: { Authorization: `Bearer ${token.accessToken}` },
-          });
-          const me = meResponse.data;
-          if (me?.roles?.length) {
-            token.roles = me.roles;
-            token.role = me.role || token.role;
+      // Client called update() — roles may have changed
+      if (trigger === 'update') {
+        // Prefer roles passed from client's updateSession({ roles: ... })
+        const updateData = session as any;
+        if (updateData?.roles || updateData?.role) {
+          if (updateData.roles) token.roles = updateData.roles;
+          if (updateData.role) token.role = updateData.role;
+          if (updateData.position !== undefined) token.position = updateData.position;
+        } else if (token.accessToken) {
+          // Fallback: try fetching from backend if payload wasn't provided
+          try {
+            const meResponse = await axios.get(`${API_URL}/api/users/me`, {
+              headers: { Authorization: `Bearer ${token.accessToken}` },
+            });
+            const me = meResponse.data;
+            if (me?.roles?.length) {
+              token.roles = me.roles;
+              token.role = me.role || token.role;
+            }
+            if (me?.staff?.position !== undefined) {
+              token.position = me.staff.position;
+            }
+          } catch {
+            // Keep existing on failure
           }
-          if (me?.staff?.position !== undefined) {
-            token.position = me.staff.position;
-          }
-        } catch {
-          // If fetch fails, keep existing token data — don't break session
         }
         return token;
       }
