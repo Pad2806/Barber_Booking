@@ -319,9 +319,38 @@ export const DASHBOARD_MENU_ITEMS = [
  */
 export function getVisibleDashboardMenuItems(userRoles: Role[]) {
     const perms = getUserMultiRolePermissions(userRoles);
-    return DASHBOARD_MENU_ITEMS.filter(item =>
+    
+    const visibleItems = DASHBOARD_MENU_ITEMS.filter(item =>
         perms.includes(item.permission as Permission) &&
         item.roles.some(r => userRoles.includes(r)),
+    );
+
+    // Deduplicate by href, keeping the highest privilege section
+    const SECTION_WEIGHTS: Record<string, number> = {
+        'admin': 4,
+        'management': 3,
+        'cashier': 2,
+        'barber': 1,
+    };
+
+    const deduplicated = new Map<string, typeof DASHBOARD_MENU_ITEMS[number]>();
+
+    for (const item of visibleItems) {
+        const existing = deduplicated.get(item.href);
+        if (!existing) {
+            deduplicated.set(item.href, item);
+        } else {
+            const currentWeight = SECTION_WEIGHTS[existing.section] || 0;
+            const newWeight = SECTION_WEIGHTS[item.section] || 0;
+            if (newWeight > currentWeight) {
+                deduplicated.set(item.href, item);
+            }
+        }
+    }
+
+    // Restore original ordering defined in DASHBOARD_MENU_ITEMS
+    return Array.from(deduplicated.values()).sort((a, b) => 
+        DASHBOARD_MENU_ITEMS.indexOf(a) - DASHBOARD_MENU_ITEMS.indexOf(b)
     );
 }
 
