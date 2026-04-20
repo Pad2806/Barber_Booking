@@ -284,15 +284,15 @@ export const DASHBOARD_MENU_ITEMS = [
     { key: 'checkout', href: '/dashboard/checkout', label: 'Thanh toán', permission: Permission.MANAGE_CHECKOUT, section: 'cashier', roles: [Role.CASHIER] },
     { key: 'cashier-revenue', href: '/dashboard/revenue', label: 'Doanh thu', permission: Permission.VIEW_REVENUE, section: 'cashier', roles: [Role.CASHIER] },
 
-    // ── Management section (Manager + Salon Owner) ──
-    { key: 'dashboard', href: '/dashboard', label: 'Tổng quan', permission: Permission.VIEW_DASHBOARD, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
-    { key: 'bookings', href: '/dashboard/bookings', label: 'Đặt lịch', permission: Permission.VIEW_ALL_BOOKINGS, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
-    { key: 'staff', href: '/dashboard/staff', label: 'Nhân viên', permission: Permission.VIEW_STAFF, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
-    { key: 'leave-requests', href: '/dashboard/leave-requests', label: 'Nghỉ phép', permission: Permission.VIEW_STAFF, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
-    { key: 'schedule', href: '/dashboard/schedule', label: 'Lịch làm', permission: Permission.MANAGE_SCHEDULE, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
-    { key: 'services', href: '/dashboard/services', label: 'Dịch vụ', permission: Permission.VIEW_SERVICES, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
-    { key: 'reviews', href: '/dashboard/reviews', label: 'Đánh giá', permission: Permission.VIEW_REVIEWS, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
-    { key: 'revenue', href: '/dashboard/revenue', label: 'Doanh thu', permission: Permission.VIEW_REVENUE, section: 'management', roles: [Role.MANAGER, Role.SALON_OWNER] },
+    // ── Management section (Manager only) ──
+    { key: 'dashboard', href: '/dashboard', label: 'Tổng quan', permission: Permission.VIEW_DASHBOARD, section: 'management', roles: [Role.MANAGER] },
+    { key: 'bookings', href: '/dashboard/bookings', label: 'Đặt lịch', permission: Permission.VIEW_ALL_BOOKINGS, section: 'management', roles: [Role.MANAGER] },
+    { key: 'staff', href: '/dashboard/staff', label: 'Nhân viên', permission: Permission.VIEW_STAFF, section: 'management', roles: [Role.MANAGER] },
+    { key: 'leave-requests', href: '/dashboard/leave-requests', label: 'Nghỉ phép', permission: Permission.VIEW_STAFF, section: 'management', roles: [Role.MANAGER] },
+    { key: 'schedule', href: '/dashboard/schedule', label: 'Lịch làm', permission: Permission.MANAGE_SCHEDULE, section: 'management', roles: [Role.MANAGER] },
+    { key: 'services', href: '/dashboard/services', label: 'Dịch vụ', permission: Permission.VIEW_SERVICES, section: 'management', roles: [Role.MANAGER] },
+    { key: 'reviews', href: '/dashboard/reviews', label: 'Đánh giá', permission: Permission.VIEW_REVIEWS, section: 'management', roles: [Role.MANAGER] },
+    { key: 'revenue', href: '/dashboard/revenue', label: 'Doanh thu', permission: Permission.VIEW_REVENUE, section: 'management', roles: [Role.MANAGER] },
 
     // ── Admin section (SUPER_ADMIN only) ──
     { key: 'admin-dashboard', href: '/dashboard', label: 'Tổng quan', permission: Permission.VIEW_DASHBOARD, section: 'admin', roles: [Role.SUPER_ADMIN] },
