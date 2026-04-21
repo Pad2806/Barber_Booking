@@ -5,7 +5,7 @@ import { Resend } from 'resend';
 import * as bcrypt from 'bcrypt';
 
 import * as crypto from 'crypto';
-
+import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '../database/prisma.service';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
@@ -202,8 +202,6 @@ export class AuthService {
     const roles = rawRoles.length > 1
       ? rawRoles.filter(r => r !== 'STAFF')
       : rawRoles;
-
-    const { v4: uuidv4 } = require('uuid');
 
     const payload: JwtPayload = {
       sub: user.id,
