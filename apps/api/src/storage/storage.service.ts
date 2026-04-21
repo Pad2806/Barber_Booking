@@ -56,9 +56,21 @@ export class StorageService {
             this.validateImageFile(file);
         }
 
-        const ext = path.extname(file.originalname);
+        let ext = path.extname(file.originalname);
+        if (!ext && file.mimetype) {
+            const mimeExtMap: Record<string, string> = {
+                'image/jpeg': '.jpg',
+                'image/png': '.png',
+                'image/webp': '.webp',
+                'image/gif': '.gif',
+                'video/mp4': '.mp4',
+                'video/webm': '.webm',
+                'video/quicktime': '.mov',
+            };
+            ext = mimeExtMap[file.mimetype] || '';
+        }
+        
         // Use a UUID to avoid collisions. 
-        // publicId format similar to what Cloudinary had, including folder.
         const fileKey = `reetro/${folder}/${uuidv4()}${ext}`;
 
         try {

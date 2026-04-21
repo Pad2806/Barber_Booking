@@ -115,8 +115,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       // Client called update() — roles may have changed
       if (trigger === 'update') {
-        // Prefer roles passed from client's updateSession({ roles: ... })
         const updateData = session as any;
+        // Update basic info
+        if (updateData?.name) token.name = updateData.name;
+        if (updateData?.image) token.picture = updateData.image;
+        
+        // Update roles/position
         if (updateData?.roles || updateData?.role) {
           if (updateData.roles) token.roles = updateData.roles;
           if (updateData.role) token.role = updateData.role;
@@ -135,6 +139,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             if (me?.staff?.position !== undefined) {
               token.position = me.staff.position;
             }
+            // Auto-sync image and name if backend has updated data
+            if (me?.avatar) token.picture = me.avatar;
+            if (me?.name) token.name = me.name;
           } catch {
             // Keep existing on failure
           }
