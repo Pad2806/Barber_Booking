@@ -28,8 +28,14 @@ export class StorageService {
         this.bucketName = sanitize(this.config.get<string>('R2_BUCKET_NAME')) || 'reetro-barber-storage';
         this.publicDomain = sanitize(this.config.get<string>('R2_PUBLIC_DOMAIN')) || '';
 
+        this.logger.debug(`R2 Config - AccountID length: ${accountId?.length}, AccessKey length: ${accessKeyId?.length}`);
+        
+        if (!accountId || !accessKeyId || !secretAccessKey) {
+            this.logger.error('CRITICAL: R2 Credentials missing in Environment Variables!');
+        }
+
         this.s3Client = new S3Client({
-            region: 'us-east-1', // Cloudflare R2 recommends us-east-1 for S3 compatibility
+            region: 'auto', // Cloudflare R2 works best with 'auto'
             endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
             credentials: {
                 accessKeyId: accessKeyId || '',
