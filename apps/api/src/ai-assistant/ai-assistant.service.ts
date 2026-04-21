@@ -514,9 +514,7 @@ export class AIAssistantService implements OnModuleInit {
 
     const groqModels = [
       'llama-3.3-70b-versatile',
-      'llama-3.1-8b-instant',
-      'llama3-70b-8192',
-      'llama3-8b-8192'
+      'llama-3.1-8b-instant'
     ];
 
     let lastError: any;
@@ -597,10 +595,11 @@ export class AIAssistantService implements OnModuleInit {
           break; // Thoát khỏi vòng lặp tool
         }
       } catch (error: any) {
-        lastError = error;
         const errStatus = error?.status || error?.response?.status;
+        if (!lastError || errStatus === 429 || lastError?.status !== 429) {
+          lastError = error;
+        }
         this.logger.warn(`[Groq Error] model=${modelName} status=${errStatus} msg=${error.message.substring(0, 150)}`);
-        // Nếu lỗi do rate limit hoặc model không support tool -> Chuyển sang model tiếp theo
       }
 
       if (isSuccess) break; // Thoát khỏi vòng lặp model nếu đã thành công
