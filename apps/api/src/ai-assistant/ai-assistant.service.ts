@@ -435,11 +435,12 @@ export class AIAssistantService implements OnModuleInit {
           const result = await this.chatWithGroq(message, sessionId, userId, startTime);
           return { ...result, source: 'groq' };
         } catch (error: any) {
-          this.logger.error(`[Groq FAIL] Falling back to Gemini... Error: ${error.message}`);
+          this.logger.error(`[Groq FAIL] All models exhausted... Error: ${error.message}`);
+          throw error; // Ném lỗi để return errorMessage thay vì gọi Gemini
         }
       }
 
-      // ── Gemini Fallback ──
+      // ── Gemini Fallback (Tạm tắt theo yêu cầu) ──
       return await this.chatWithGemini(message, sessionId, userId, startTime);
 
     } catch (error: any) {
@@ -511,75 +512,102 @@ export class AIAssistantService implements OnModuleInit {
     let toolCallsLog: any[] = [];
     let finalResponse = '';
 
-    while (true) {
-      const completion = await this.groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
-        messages,
-        tools: GROQ_TOOLS as any,
-        tool_choice: 'auto',
-      });
+    const groqModels = [
+      'llama-3.3-70b-versatile',
+      'llama-3.1-8b-instant',
+      'mixtral-8x7b-32768',
+      'gemma2-9b-it'
+    ];
 
-      const responseMessage = completion.choices[0].message;
-      messages.push(responseMessage);
+    let lastError: any;
+    let isSuccess = false;
 
-      let extractedToolCalls: any[] = [];
-      
-      // Native tool calls
-      if (responseMessage.tool_calls) {
-        for (const toolCall of responseMessage.tool_calls) {
-          extractedToolCalls.push({
-            id: toolCall.id,
-            name: toolCall.function.name,
-            args: toolCall.function.arguments || '{}',
-          });
-        }
-      }
-
-      // Fallback: parse <function:name>args</function:name> or <function:name>args</function> tags from content
-      if (responseMessage.content) {
-        const regex1 = /<function:([^>]+)>([\s\S]*?)<\/function:\1>/g;
-        const regex2 = /<function:([^>]+)>([\s\S]*?)<\/function>/g;
+    for (const modelName of groqModels) {
+      try {
+        this.logger.log(`[Groq] Trying model: ${modelName}`);
+        let localMessages = [...messages];
+        bookingCreated = false;
+        toolCallsLog = [];
         
-        let match;
-        while ((match = regex1.exec(responseMessage.content)) !== null) {
-          extractedToolCalls.push({ name: match[1].trim(), args: match[2].trim() || '{}', id: `call_${Date.now()}_${Math.random()}` });
-        }
-        if (extractedToolCalls.length === 0) {
-          while ((match = regex2.exec(responseMessage.content)) !== null) {
-            extractedToolCalls.push({ name: match[1].trim(), args: match[2].trim() || '{}', id: `call_${Date.now()}_${Math.random()}` });
-          }
-        }
-      }
-
-      if (extractedToolCalls.length > 0) {
-        for (const toolCall of extractedToolCalls) {
-          const functionName = toolCall.name;
-          let functionArgs = {};
-          try {
-            functionArgs = JSON.parse(toolCall.args);
-          } catch (e) {
-            this.logger.warn(`Could not parse JSON args for ${functionName}: ${toolCall.args}`);
-          }
-          
-          const toolResult = await this.toolsService.handleToolCall(functionName, functionArgs, sessionId);
-          if (toolResult.isBooking) bookingCreated = true;
-          
-          toolCallsLog.push({ name: functionName, args: functionArgs, output: toolResult.content });
-          
-          messages.push({
-            tool_call_id: toolCall.id,
-            role: 'tool',
-            name: functionName,
-            content: toolResult.content,
+        while (true) {
+          const completion = await this.groq.chat.completions.create({
+            model: modelName,
+            messages: localMessages,
+            tools: GROQ_TOOLS as any,
+            tool_choice: 'auto',
           });
+
+          const responseMessage = completion.choices[0].message;
+          localMessages.push(responseMessage);
+
+          let extractedToolCalls: any[] = [];
+          
+          if (responseMessage.tool_calls) {
+            for (const toolCall of responseMessage.tool_calls) {
+              extractedToolCalls.push({
+                id: toolCall.id,
+                name: toolCall.function.name,
+                args: toolCall.function.arguments || '{}',
+              });
+            }
+          }
+
+          if (responseMessage.content) {
+            const regex1 = /<function:([^>]+)>([\s\S]*?)<\/function:\1>/g;
+            const regex2 = /<function:([^>]+)>([\s\S]*?)<\/function>/g;
+            let match;
+            while ((match = regex1.exec(responseMessage.content)) !== null) {
+              extractedToolCalls.push({ name: match[1].trim(), args: match[2].trim() || '{}', id: `call_${Date.now()}_${Math.random()}` });
+            }
+            if (extractedToolCalls.length === 0) {
+              while ((match = regex2.exec(responseMessage.content)) !== null) {
+                extractedToolCalls.push({ name: match[1].trim(), args: match[2].trim() || '{}', id: `call_${Date.now()}_${Math.random()}` });
+              }
+            }
+          }
+
+          if (extractedToolCalls.length > 0) {
+            for (const toolCall of extractedToolCalls) {
+              const functionName = toolCall.name;
+              let functionArgs = {};
+              try {
+                functionArgs = JSON.parse(toolCall.args);
+              } catch (e) {
+                this.logger.warn(`Could not parse JSON args for ${functionName}: ${toolCall.args}`);
+              }
+              
+              const toolResult = await this.toolsService.handleToolCall(functionName, functionArgs, sessionId);
+              if (toolResult.isBooking) bookingCreated = true;
+              
+              toolCallsLog.push({ name: functionName, args: functionArgs, output: toolResult.content });
+              
+              localMessages.push({
+                tool_call_id: toolCall.id,
+                role: 'tool',
+                name: functionName,
+                content: toolResult.content,
+              });
+            }
+            continue;
+          }
+
+          finalResponse = responseMessage.content || '';
+          finalResponse = finalResponse.replace(/<function:([^>]+)>([\s\S]*?)<\/function(?::\1)?>/g, '').trim();
+          isSuccess = true;
+          break; // Thoát khỏi vòng lặp tool
         }
-        continue;
+      } catch (error: any) {
+        lastError = error;
+        const errStatus = error?.status || error?.response?.status;
+        this.logger.warn(`[Groq Error] model=${modelName} status=${errStatus} msg=${error.message.substring(0, 150)}`);
+        // Nếu lỗi do rate limit hoặc model không support tool -> Chuyển sang model tiếp theo
       }
 
-      finalResponse = responseMessage.content || '';
-      // Remove any leftover raw function tags before showing to user
-      finalResponse = finalResponse.replace(/<function:([^>]+)>([\s\S]*?)<\/function(?::\1)?>/g, '').trim();
-      break;
+      if (isSuccess) break; // Thoát khỏi vòng lặp model nếu đã thành công
+    }
+
+    if (!isSuccess) {
+      throw lastError; // Ném lỗi cuối cùng ra nếu tất cả model đều fail
     }
 
     this.setCachedResponse(message, finalResponse);
