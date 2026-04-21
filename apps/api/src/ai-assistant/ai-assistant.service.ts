@@ -39,7 +39,7 @@ const GROQ_TOOLS = [
       parameters: {
         type: 'object',
         properties: {
-          barber_id: { type: 'string' },
+          barber_id: { type: 'string', description: 'MÃ UUID dài của thợ. TUYỆT ĐỐI KHÔNG TRUYỀN TÊN.' },
           date: { type: 'string', description: 'YYYY-MM-DD' },
         },
         required: ['barber_id', 'date'],
@@ -56,8 +56,8 @@ const GROQ_TOOLS = [
         properties: {
           customer_name: { type: 'string' },
           phone: { type: 'string' },
-          service_id: { type: 'string' },
-          barber_id: { type: 'string' },
+          service_id: { type: 'string', description: 'MÃ UUID dài của dịch vụ. KHÔNG TRUYỀN TÊN.' },
+          barber_id: { type: 'string', description: 'MÃ UUID dài của thợ. KHÔNG TRUYỀN TÊN.' },
           date: { type: 'string' },
           time: { type: 'string' },
         },
@@ -75,8 +75,8 @@ const GROQ_TOOLS = [
         properties: {
           customer_name: { type: 'string' },
           phone: { type: 'string' },
-          service_id: { type: 'string' },
-          barber_id: { type: 'string' },
+          service_id: { type: 'string', description: 'MÃ UUID của dịch vụ' },
+          barber_id: { type: 'string', description: 'MÃ UUID của thợ' },
           date: { type: 'string', description: 'YYYY-MM-DD' },
           time: { type: 'string', description: 'HH:mm' },
         },
