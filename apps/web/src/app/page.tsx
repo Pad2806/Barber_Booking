@@ -4,6 +4,7 @@ import { Calendar, Clock, Users, Shield, Star, MapPin, ArrowRight } from 'lucide
 import Header from '@/components/header';
 import Footer from '@/components/footer';
 import { HeroCarousel } from '@/components/home/hero-carousel';
+import OptimizedImage from '@/components/OptimizedImage';
 
 import { salonApi, serviceApi, Salon, Service } from '@/lib/api';
 import { formatPrice } from '@/lib/utils';
@@ -126,13 +127,13 @@ export default async function HomePage(): Promise<React.ReactElement> {
                 className="group bg-white rounded-2xl overflow-hidden shadow-sm border border-[#E8E0D4] hover:shadow-md transition-all"
               >
                 <div className="relative h-64">
-                  <Image
+                  <OptimizedImage
                     src={service.image || 'https://images.unsplash.com/photo-1621605815971-fbc98d665033?w=800&h=600&fit=crop&q=80'}
                     alt={service.name}
                     fill
-                    loading="lazy"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    enableBlur
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#2C1E12]/80 to-transparent opacity-80" />
                   <div className="absolute bottom-6 left-6 right-6">
@@ -186,13 +187,13 @@ export default async function HomePage(): Promise<React.ReactElement> {
                 className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all border border-[#E8E0D4] flex flex-col"
               >
                 <div className="relative h-56">
-                  <Image
+                  <OptimizedImage
                     src={salon.coverImage || 'https://images.unsplash.com/photo-1503951914875-452162b0f3f1?w=800&h=600&fit=crop&q=80'}
                     alt={salon.name}
                     fill
-                    loading="lazy"
                     sizes="(max-width: 768px) 100vw, 33vw"
                     className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    enableBlur
                   />
                   <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-[#2C1E12]/60 to-transparent" />
                 </div>

@@ -10,8 +10,14 @@ export default function coollabsImageLoader({ src, width, quality }: { src: stri
   if (width) query.set('width', width.toString());
   query.set('quality', (quality || 75).toString());
 
-  // Priority 1: If it's a Cloudflare R2 link, use it DIRECTLY.
-  if (src.includes('r2.dev') || src.includes('cloudflarestorage.com')) {
+  // Priority 1: Use direct links for reliable sources that don't need proxying or are known to block it.
+  if (
+    src.includes('r2.dev') || 
+    src.includes('cloudflarestorage.com') ||
+    src.includes('cloudinary.com') ||
+    src.includes('googleusercontent.com') ||
+    src.includes('fbsbx.com')
+  ) {
     return src;
   }
 
