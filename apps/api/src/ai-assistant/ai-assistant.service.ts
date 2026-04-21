@@ -73,12 +73,12 @@ const GROQ_TOOLS = [
       parameters: {
         type: 'object',
         properties: {
-          customer_name: { type: 'string' },
-          phone: { type: 'string' },
-          service_id: { type: 'string', description: 'MÃ UUID của dịch vụ' },
-          barber_id: { type: 'string', description: 'MÃ UUID của thợ' },
-          date: { type: 'string', description: 'YYYY-MM-DD' },
-          time: { type: 'string', description: 'HH:mm' },
+          customer_name: { type: ['string', 'null'] },
+          phone: { type: ['string', 'null'] },
+          service_id: { type: ['string', 'null'], description: 'MÃ UUID/Tên của dịch vụ' },
+          barber_id: { type: ['string', 'null'], description: 'MÃ UUID của thợ' },
+          date: { type: ['string', 'null'], description: 'YYYY-MM-DD' },
+          time: { type: ['string', 'null'], description: 'HH:mm' },
         },
       },
     },
@@ -515,8 +515,8 @@ export class AIAssistantService implements OnModuleInit {
     const groqModels = [
       'llama-3.3-70b-versatile',
       'llama-3.1-8b-instant',
-      'mixtral-8x7b-32768',
-      'gemma2-9b-it'
+      'llama3-70b-8192',
+      'llama3-8b-8192'
     ];
 
     let lastError: any;
@@ -553,8 +553,8 @@ export class AIAssistantService implements OnModuleInit {
           }
 
           if (responseMessage.content) {
-            const regex1 = /<function:([^>]+)>([\s\S]*?)<\/function:\1>/g;
-            const regex2 = /<function:([^>]+)>([\s\S]*?)<\/function>/g;
+            const regex1 = /<function[:\s\/](?:name=")?([^>"]+)"?>([\s\S]*?)<\/function(?::\1)?>/gi;
+            const regex2 = /<function[:\s\/](?:name=")?([^>"]+)"?>([\s\S]*?)<\/function>/gi;
             let match;
             while ((match = regex1.exec(responseMessage.content)) !== null) {
               extractedToolCalls.push({ name: match[1].trim(), args: match[2].trim() || '{}', id: `call_${Date.now()}_${Math.random()}` });
@@ -592,7 +592,7 @@ export class AIAssistantService implements OnModuleInit {
           }
 
           finalResponse = responseMessage.content || '';
-          finalResponse = finalResponse.replace(/<function:([^>]+)>([\s\S]*?)<\/function(?::\1)?>/g, '').trim();
+          finalResponse = finalResponse.replace(/<function[^>]*>[\s\S]*?<\/function(?::[^>]+)?>/gi, '').trim();
           isSuccess = true;
           break; // Thoát khỏi vòng lặp tool
         }
