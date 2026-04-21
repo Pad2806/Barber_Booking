@@ -147,7 +147,7 @@ export default function AdminServicesPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[160px]">
               <DropdownMenuItem asChild>
-                <Link href={`/admin/services/${service.id}/edit`} className="flex items-center gap-2">
+                <Link href={`/dashboard/services/${service.id}/edit`} className="flex items-center gap-2">
                   <Edit className="w-4 h-4" /> Chỉnh sửa
                 </Link>
               </DropdownMenuItem>
@@ -189,7 +189,7 @@ export default function AdminServicesPage() {
           <p className="text-slate-500 mt-1">Quản lý bảng giá, danh mục và thời lượng các dịch vụ tại salon.</p>
         </div>
         <Button asChild className="gap-2">
-          <Link href="/admin/services/new">
+          <Link href="/dashboard/services/new">
             <Plus className="w-4 h-4" /> Thêm dịch vụ
           </Link>
         </Button>
