@@ -20,7 +20,11 @@ export default function coollabsImageLoader({ src, width, quality }: { src: stri
     return `${optimizeDomain}/image/${baseUrl}${src}?${query.toString()}`;
   }
 
-  // It's a full URL (like R2 pub- domain)
-  // Most proxies (like coollabs) require the nested URL to be encoded
-  return `${optimizeDomain}/image/${encodeURIComponent(src)}?${query.toString()}`;
+  // Temporary diagnostic: If it's an R2 URL, return it directly to check if coollabs is blocked
+  if (src.includes('r2.dev')) {
+    return src;
+  }
+
+  // It's a full URL (like Cloudinary or others)
+  return `${optimizeDomain}/image/${src}?${query.toString()}`;
 }
