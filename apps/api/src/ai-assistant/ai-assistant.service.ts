@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { Groq } from 'groq-sdk';
 import { PrismaService } from '../database/prisma.service';
 import { AIToolsService } from './ai-tools.service';
 import { systemPrompt } from './prompts/system.prompt';
@@ -11,6 +12,92 @@ import * as salonKnowledge from './data/salon_knowledge.json';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
+// ═══ OpenAI/Groq Tool Definitions ═══
+const GROQ_TOOLS = [
+  {
+    type: 'function',
+    function: {
+      name: 'get_services',
+      description: 'Lấy danh sách các dịch vụ của salon.',
+      parameters: { type: 'object', properties: {} },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_barbers',
+      description: 'Lấy danh sách thợ cắt tóc.',
+      parameters: { type: 'object', properties: {} },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'get_available_slots',
+      description: 'Kiểm tra khung giờ còn trống của thợ vào một ngày.',
+      parameters: {
+        type: 'object',
+        properties: {
+          barber_id: { type: 'string' },
+          date: { type: 'string', description: 'YYYY-MM-DD' },
+        },
+        required: ['barber_id', 'date'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'create_booking',
+      description: 'Tạo lịch hẹn mới.',
+      parameters: {
+        type: 'object',
+        properties: {
+          customer_name: { type: 'string' },
+          phone: { type: 'string' },
+          service_id: { type: 'string' },
+          barber_id: { type: 'string' },
+          date: { type: 'string' },
+          time: { type: 'string' },
+        },
+        required: ['customer_name', 'phone', 'service_id', 'barber_id', 'date', 'time'],
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'update_booking_state',
+      description: 'Lưu hoặc cập nhật thông tin khách hàng cung cấp (Tên, SĐT, Dịch vụ, Thợ, Ngày, Giờ) để duy trì ngữ cảnh.',
+      parameters: {
+        type: 'object',
+        properties: {
+          customer_name: { type: 'string' },
+          phone: { type: 'string' },
+          service_id: { type: 'string' },
+          barber_id: { type: 'string' },
+          date: { type: 'string', description: 'YYYY-MM-DD' },
+          time: { type: 'string', description: 'HH:mm' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
+      name: 'cancel_booking',
+      description: 'Hủy lịch hẹn đã có.',
+      parameters: {
+        type: 'object',
+        properties: {
+          booking_id: { type: 'string' },
+        },
+        required: ['booking_id'],
+      },
+    },
+  },
+];
 
 // ═══ Vietnamese day of week map ═══
 const VIET_DAYS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
@@ -152,6 +239,7 @@ const MODEL_PRIORITY = ['gemini-2.0-flash', 'gemini-1.5-flash'];
 @Injectable()
 export class AIAssistantService implements OnModuleInit {
   private genAI: GoogleGenerativeAI;
+  private groq: Groq;
   private models: Map<string, any> = new Map();
   private activeModelName: string = MODEL_PRIORITY[0];
   private readonly logger = new Logger(AIAssistantService.name);
@@ -166,30 +254,39 @@ export class AIAssistantService implements OnModuleInit {
     private prisma: PrismaService,
     private toolsService: AIToolsService,
   ) {
-    const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-    if (!apiKey) {
-      throw new Error('GEMINI_API_KEY is not configured');
+    // ═══ Gemini Setup ═══
+    const geminiKey = this.configService.get<string>('GEMINI_API_KEY');
+    if (geminiKey) {
+      this.genAI = new GoogleGenerativeAI(geminiKey);
     }
-    this.genAI = new GoogleGenerativeAI(apiKey);
+
+    // ═══ Groq Setup ═══
+    const groqKey = this.configService.get<string>('GROQ_API_KEY');
+    if (groqKey) {
+      this.groq = new Groq({ apiKey: groqKey });
+      this.logger.log('✅ Groq client initialized');
+    }
   }
 
   async onModuleInit() {
     // Initialize ALL models (no ping, just create instances)
-    for (const modelName of MODEL_PRIORITY) {
-      try {
-        const model = this.genAI.getGenerativeModel({
-          model: modelName,
-          tools: TOOL_DECLARATIONS,
-        });
-        this.models.set(modelName, model);
-        this.logger.log(`✅ Model ${modelName} initialized`);
-      } catch (error: any) {
-        this.logger.error(`❌ Failed to init ${modelName}: ${error.message}`);
+    if (this.genAI) {
+      for (const modelName of MODEL_PRIORITY) {
+        try {
+          const model = this.genAI.getGenerativeModel({
+            model: modelName,
+            tools: TOOL_DECLARATIONS,
+          });
+          this.models.set(modelName, model);
+          this.logger.log(`✅ Model ${modelName} initialized`);
+        } catch (error: any) {
+          this.logger.error(`❌ Failed to init ${modelName}: ${error.message}`);
+        }
       }
     }
 
-    if (this.models.size === 0) {
-      this.logger.error('❌ No Gemini models could be initialized!');
+    if (this.models.size === 0 && !this.groq) {
+      this.logger.error('❌ No AI models (Gemini or Groq) could be initialized!');
     }
 
     // Clean cache every 10 min
@@ -309,8 +406,6 @@ export class AIAssistantService implements OnModuleInit {
   // ═══ Main Chat Method ═══
   async chat(message: string, sessionId: string, userId?: string) {
     const startTime = Date.now();
-    let bookingCreated = false;
-    const toolCallsLog: any[] = [];
 
     // ── Step 1: FAQ (0 API calls) ──
     const faqResponse = this.matchFAQ(message);
@@ -327,7 +422,141 @@ export class AIAssistantService implements OnModuleInit {
       return { response: cachedResponse, source: 'cache' };
     }
 
-    // ── Step 3: Call Gemini ──
+    try {
+      this.logger.log(`[Chat] session=${sessionId} msg="${message.substring(0, 60)}"`);
+
+      // ── Step 3: Call AI (Groq First, then Gemini) ──
+      const useGroq = !!this.groq && this.configService.get('AI_PROVIDER') !== 'GEMINI';
+      
+      if (useGroq) {
+        try {
+          const result = await this.chatWithGroq(message, sessionId, userId, startTime);
+          return { ...result, source: 'groq' };
+        } catch (error: any) {
+          this.logger.error(`[Groq FAIL] Falling back to Gemini... Error: ${error.message}`);
+        }
+      }
+
+      // ── Gemini Fallback ──
+      return await this.chatWithGemini(message, sessionId, userId, startTime);
+
+    } catch (error: any) {
+      const errMsg = error?.message || 'Unknown';
+      this.logger.error(`[Chat FAIL] session=${sessionId} error=${errMsg}`);
+
+      let errorMessage: string;
+      if (errMsg === 'TIMEOUT') {
+        errorMessage = "Xin lỗi, em đang xử lý hơi chậm. Anh thử gửi lại nhé! ⏱️";
+      } else if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED') || errMsg.includes('quota')) {
+        errorMessage = "⏳ Hệ thống AI đang quá tải. Anh vui lòng thử lại sau 1 phút nhé!";
+      } else {
+        errorMessage = `Xin lỗi, em gặp sự cố. Anh thử lại sau nhé! 🙏`;
+      }
+
+      return { response: errorMessage, error: true };
+    }
+  }
+
+  // ═══ Groq Implementation ═══
+  private async chatWithGroq(message: string, sessionId: string, userId: string | undefined, startTime: number) {
+    let conversation = await this.prisma.chatConversation.findUnique({
+      where: { sessionId },
+      include: { messages: { orderBy: { createdAt: 'asc' }, take: 20 } },
+    });
+
+    if (!conversation) {
+      conversation = await this.prisma.chatConversation.create({
+        data: { sessionId, userId },
+        include: { messages: true },
+      });
+    }
+
+    let bookingRequest = await (this.prisma.bookingRequest as any).findUnique({
+      where: { sessionId },
+    });
+    
+    if (!bookingRequest || bookingRequest.status === 'COMPLETED') {
+      bookingRequest = await (this.prisma.bookingRequest as any).upsert({
+        where: { sessionId },
+        create: { sessionId },
+        update: {
+          status: 'PENDING', customerName: null, phone: null,
+          serviceId: null, barberId: null, date: null, time: null,
+        }
+      });
+    }
+
+    const now = dayjs().tz('Asia/Ho_Chi_Minh');
+    const sysInstruction = systemPrompt(now.format('dddd, DD/MM/YYYY HH:mm'), salonKnowledge, bookingRequest);
+
+    const messages: any[] = [
+      { role: 'system', content: sysInstruction },
+      ...conversation.messages.map(m => ({
+        role: m.role === 'user' ? 'user' : 'assistant',
+        content: m.content,
+      })),
+      { role: 'user', content: message }
+    ];
+
+    await this.prisma.chatMessage.create({
+      data: { conversationId: conversation.id, role: 'user', content: message },
+    });
+
+    let bookingCreated = false;
+    let toolCallsLog: any[] = [];
+    let finalResponse = '';
+
+    while (true) {
+      const completion = await this.groq.chat.completions.create({
+        model: 'llama-3.1-70b-versatile',
+        messages,
+        tools: GROQ_TOOLS as any,
+        tool_choice: 'auto',
+      });
+
+      const responseMessage = completion.choices[0].message;
+      messages.push(responseMessage);
+
+      if (responseMessage.tool_calls) {
+        for (const toolCall of responseMessage.tool_calls) {
+          const functionName = toolCall.function.name;
+          const functionArgs = JSON.parse(toolCall.function.arguments);
+          
+          const toolResult = await this.toolsService.handleToolCall(functionName, functionArgs, sessionId);
+          if (toolResult.isBooking) bookingCreated = true;
+          
+          toolCallsLog.push({ name: functionName, args: functionArgs, output: toolResult.content });
+          
+          messages.push({
+            tool_call_id: toolCall.id,
+            role: 'tool',
+            name: functionName,
+            content: toolResult.content,
+          });
+        }
+        continue;
+      }
+
+      finalResponse = responseMessage.content || '';
+      break;
+    }
+
+    this.setCachedResponse(message, finalResponse);
+    await this.prisma.chatMessage.create({
+      data: { conversationId: conversation.id, role: 'assistant', content: finalResponse },
+    });
+    await this.prisma.aiLog.create({
+      data: {
+        sessionId, userMessage: message, aiResponse: finalResponse,
+        toolCalls: toolCallsLog as any, bookingCreated, latency: Date.now() - startTime,
+      },
+    });
+
+    return { response: finalResponse };
+  }
+
+  // ═══ Gemini Implementation ═══
+  private async chatWithGemini(message: string, sessionId: string, userId: string | undefined, startTime: number) {
     let conversation = await this.prisma.chatConversation.findUnique({
       where: { sessionId },
       include: { messages: { orderBy: { createdAt: 'asc' }, take: 20 } },
@@ -367,91 +596,68 @@ export class AIAssistantService implements OnModuleInit {
       })),
     ];
 
-    try {
-      this.logger.log(`[Chat] session=${sessionId} msg="${message.substring(0, 60)}"`);
+    await this.prisma.chatMessage.create({
+      data: { conversationId: conversation.id, role: 'user', content: message },
+    });
 
-      await this.prisma.chatMessage.create({
-        data: { conversationId: conversation.id, role: 'user', content: message },
-      });
+    const timeout = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms));
+    let responseText = '';
+    let bookingCreated = false;
+    let toolCallsLog: any[] = [];
 
-      const timeout = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms));
+    let currentResult: any = await this.callWithRetry(
+      (model) => {
+        const chatSession = model.startChat({ history });
+        return Promise.race([chatSession.sendMessage(message), timeout(20000)]) as Promise<any>;
+      },
+    );
 
-      let responseText = '';
+    // Tool-calling loop
+    while (true) {
+      const calls = currentResult.response.functionCalls();
+      if (!calls || calls.length === 0) {
+        responseText = currentResult.response.text();
+        break;
+      }
 
-      let currentResult: any = await this.callWithRetry(
-        (model) => {
-          const chatSession = model.startChat({ history });
-          return Promise.race([chatSession.sendMessage(message), timeout(20000)]) as Promise<any>;
-        },
-      );
+      const toolResponses: any[] = [];
+      for (const call of calls) {
+        const result = await this.toolsService.handleToolCall(call.name, call.args, sessionId);
+        if (result.isBooking) bookingCreated = true;
 
-      // Tool-calling loop
-      while (true) {
-        const calls = currentResult.response.functionCalls();
-        if (!calls || calls.length === 0) {
-          responseText = currentResult.response.text();
-          break;
-        }
-
-        const toolResponses: any[] = [];
-        for (const call of calls) {
-          const result = await this.toolsService.handleToolCall(call.name, call.args, sessionId);
-          if (result.isBooking) bookingCreated = true;
-
-          toolCallsLog.push({ name: call.name, args: call.args, output: result.content });
-          toolResponses.push({
-            functionResponse: { name: call.name, response: { content: result.content } },
-          });
-        }
-
-        // Continue chat with tool results (use same model)
-        const activeModel = this.getModel();
-        const continueSession = activeModel.startChat({
-          history: [
-            ...history,
-            { role: 'user', parts: [{ text: message }] },
-            { role: 'model', parts: currentResult.response.candidates[0].content.parts },
-          ],
+        toolCallsLog.push({ name: call.name, args: call.args, output: result.content });
+        toolResponses.push({
+          functionResponse: { name: call.name, response: { content: result.content } },
         });
-
-        currentResult = await Promise.race([
-          continueSession.sendMessage(toolResponses),
-          timeout(20000),
-        ]);
       }
 
-      this.logger.log(`[Chat OK] session=${sessionId} model=${this.activeModelName} latency=${Date.now() - startTime}ms`);
-
-      this.setCachedResponse(message, responseText);
-
-      await this.prisma.chatMessage.create({
-        data: { conversationId: conversation.id, role: 'assistant', content: responseText },
+      const activeModel = this.getModel();
+      const continueSession = activeModel.startChat({
+        history: [
+          ...history,
+          { role: 'user', parts: [{ text: message }] },
+          { role: 'model', parts: currentResult.response.candidates[0].content.parts },
+        ],
       });
 
-      await this.prisma.aiLog.create({
-        data: {
-          sessionId, userMessage: message, aiResponse: responseText,
-          toolCalls: toolCallsLog as any, bookingCreated, latency: Date.now() - startTime,
-        },
-      });
-
-      return { response: responseText, source: 'gemini' };
-
-    } catch (error: any) {
-      const errMsg = error?.message || 'Unknown';
-      this.logger.error(`[Chat FAIL] session=${sessionId} error=${errMsg}`);
-
-      let errorMessage: string;
-      if (errMsg === 'TIMEOUT') {
-        errorMessage = "Xin lỗi, em đang xử lý hơi chậm. Anh thử gửi lại nhé! ⏱️";
-      } else if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED') || errMsg.includes('quota')) {
-        errorMessage = "⏳ Hệ thống AI đang quá tải. Anh vui lòng thử lại sau 1 phút nhé!";
-      } else {
-        errorMessage = `Xin lỗi, em gặp sự cố. Anh thử lại sau nhé! 🙏`;
-      }
-
-      return { response: errorMessage, error: true };
+      currentResult = await Promise.race([
+        continueSession.sendMessage(toolResponses),
+        timeout(20000),
+      ]);
     }
+
+    this.setCachedResponse(message, responseText);
+    await this.prisma.chatMessage.create({
+      data: { conversationId: conversation.id, role: 'assistant', content: responseText },
+    });
+    await this.prisma.aiLog.create({
+      data: {
+        sessionId, userMessage: message, aiResponse: responseText,
+        toolCalls: toolCallsLog as any, bookingCreated, latency: Date.now() - startTime,
+      },
+    });
+
+    return { response: responseText, source: 'gemini' };
   }
 
   // ═══ Helper: Store conversation messages ═══
