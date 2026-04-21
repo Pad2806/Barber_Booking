@@ -519,10 +519,44 @@ export class AIAssistantService implements OnModuleInit {
       const responseMessage = completion.choices[0].message;
       messages.push(responseMessage);
 
+      let extractedToolCalls: any[] = [];
+      
+      // Native tool calls
       if (responseMessage.tool_calls) {
         for (const toolCall of responseMessage.tool_calls) {
-          const functionName = toolCall.function.name;
-          const functionArgs = JSON.parse(toolCall.function.arguments);
+          extractedToolCalls.push({
+            id: toolCall.id,
+            name: toolCall.function.name,
+            args: toolCall.function.arguments || '{}',
+          });
+        }
+      }
+
+      // Fallback: parse <function:name>args</function:name> or <function:name>args</function> tags from content
+      if (responseMessage.content) {
+        const regex1 = /<function:([^>]+)>([\s\S]*?)<\/function:\1>/g;
+        const regex2 = /<function:([^>]+)>([\s\S]*?)<\/function>/g;
+        
+        let match;
+        while ((match = regex1.exec(responseMessage.content)) !== null) {
+          extractedToolCalls.push({ name: match[1].trim(), args: match[2].trim() || '{}', id: `call_${Date.now()}_${Math.random()}` });
+        }
+        if (extractedToolCalls.length === 0) {
+          while ((match = regex2.exec(responseMessage.content)) !== null) {
+            extractedToolCalls.push({ name: match[1].trim(), args: match[2].trim() || '{}', id: `call_${Date.now()}_${Math.random()}` });
+          }
+        }
+      }
+
+      if (extractedToolCalls.length > 0) {
+        for (const toolCall of extractedToolCalls) {
+          const functionName = toolCall.name;
+          let functionArgs = {};
+          try {
+            functionArgs = JSON.parse(toolCall.args);
+          } catch (e) {
+            this.logger.warn(`Could not parse JSON args for ${functionName}: ${toolCall.args}`);
+          }
           
           const toolResult = await this.toolsService.handleToolCall(functionName, functionArgs, sessionId);
           if (toolResult.isBooking) bookingCreated = true;
@@ -540,6 +574,8 @@ export class AIAssistantService implements OnModuleInit {
       }
 
       finalResponse = responseMessage.content || '';
+      // Remove any leftover raw function tags before showing to user
+      finalResponse = finalResponse.replace(/<function:([^>]+)>([\s\S]*?)<\/function(?::\1)?>/g, '').trim();
       break;
     }
 
