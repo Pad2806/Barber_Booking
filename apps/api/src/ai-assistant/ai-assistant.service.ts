@@ -234,7 +234,7 @@ const TOOL_DECLARATIONS = [
 ] as any;
 
 // ═══ Models to try in order ═══
-const MODEL_PRIORITY = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+const MODEL_PRIORITY = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash-8b'];
 
 @Injectable()
 export class AIAssistantService implements OnModuleInit {
@@ -265,6 +265,8 @@ export class AIAssistantService implements OnModuleInit {
     if (groqKey) {
       this.groq = new Groq({ apiKey: groqKey });
       this.logger.log('✅ Groq client initialized');
+    } else {
+      this.logger.warn('⚠️ GROQ_API_KEY is missing! Falling back to Gemini.');
     }
   }
 

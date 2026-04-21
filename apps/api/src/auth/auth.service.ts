@@ -203,6 +203,8 @@ export class AuthService {
       ? rawRoles.filter(r => r !== 'STAFF')
       : rawRoles;
 
+    const { v4: uuidv4 } = require('uuid');
+
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email ?? '',
@@ -213,7 +215,7 @@ export class AuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload),
-      this.jwtService.signAsync(payload, {
+      this.jwtService.signAsync({ ...payload, jti: uuidv4() }, {
         secret: this.configService.get<string>('jwt.refreshSecret'),
         expiresIn: this.configService.get<string>('jwt.refreshExpiresIn'),
       }),
