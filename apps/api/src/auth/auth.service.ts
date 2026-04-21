@@ -5,7 +5,6 @@ import { Resend } from 'resend';
 import * as bcrypt from 'bcrypt';
 
 import * as crypto from 'crypto';
-import { v4 as uuidv4 } from 'uuid';
 import { PrismaService } from '../database/prisma.service';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
@@ -213,7 +212,7 @@ export class AuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload),
-      this.jwtService.signAsync({ ...payload, jti: uuidv4() }, {
+      this.jwtService.signAsync({ ...payload, jti: crypto.randomUUID() }, {
         secret: this.configService.get<string>('jwt.refreshSecret'),
         expiresIn: this.configService.get<string>('jwt.refreshExpiresIn'),
       }),
