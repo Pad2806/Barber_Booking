@@ -84,12 +84,45 @@ export class AIToolsService {
 
           if (!barber) return { content: 'Lỗi: Không tìm thấy thợ cắt tóc này.' };
 
+          // --- FIX: Cross-branch service resolution & Fallback ---
+          let finalServiceId = args.service_id;
+          
+          let svc = await this.prisma.service.findFirst({
+            where: { 
+              id: finalServiceId.includes('-') && finalServiceId.length > 20 ? finalServiceId : undefined,
+              salonId: barber.salonId 
+            }
+          });
+
+          if (!svc) {
+            let serviceName = finalServiceId;
+            if (finalServiceId.includes('-') && finalServiceId.length > 20) {
+              const originalSvc = await this.prisma.service.findUnique({ where: { id: finalServiceId } });
+              if (originalSvc) serviceName = originalSvc.name;
+            }
+            
+            svc = await this.prisma.service.findFirst({
+              where: {
+                salonId: barber.salonId,
+                name: { contains: serviceName, mode: 'insensitive' },
+                isActive: true
+              }
+            });
+
+            if (svc) {
+              finalServiceId = svc.id;
+            } else {
+              return { content: `Lỗi: Dịch vụ bạn chọn không có sẵn tại chi nhánh của thợ ${barber.user.name}.` };
+            }
+          }
+          // -------------------------------------------------------
+
           const booking = await this.bookingsService.create({
             salonId: barber.salonId,
             staffId: args.barber_id,
             date: args.date,
             timeSlot: args.time,
-            serviceIds: [args.service_id],
+            serviceIds: [finalServiceId],
             customerName: args.customer_name,
             customerPhone: args.phone,
             note: 'Đặt lịch qua Trợ lý AI',
