@@ -463,8 +463,11 @@ export class AIAssistantService implements OnModuleInit {
   private async chatWithGroq(message: string, sessionId: string, userId: string | undefined, startTime: number) {
     let conversation = await this.prisma.chatConversation.findUnique({
       where: { sessionId },
-      include: { messages: { orderBy: { createdAt: 'asc' }, take: 20 } },
+      include: { messages: { orderBy: { createdAt: 'desc' }, take: 6 } },
     });
+    if (conversation && conversation.messages) {
+      conversation.messages.reverse();
+    }
 
     if (!conversation) {
       conversation = await this.prisma.chatConversation.create({
@@ -597,8 +600,11 @@ export class AIAssistantService implements OnModuleInit {
   private async chatWithGemini(message: string, sessionId: string, userId: string | undefined, startTime: number) {
     let conversation = await this.prisma.chatConversation.findUnique({
       where: { sessionId },
-      include: { messages: { orderBy: { createdAt: 'asc' }, take: 20 } },
+      include: { messages: { orderBy: { createdAt: 'desc' }, take: 6 } },
     });
+    if (conversation && conversation.messages) {
+      conversation.messages.reverse();
+    }
 
     if (!conversation) {
       conversation = await this.prisma.chatConversation.create({
