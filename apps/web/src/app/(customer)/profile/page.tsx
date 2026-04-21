@@ -88,7 +88,10 @@ export default function ProfilePage(): React.ReactNode {
       });
       toast.success('Cập nhật thành công!');
       fetchProfile();
-      await update({ name: formData.name });
+      await update({ 
+        name: formData.name,
+        image: formData.avatar 
+      });
     } catch (error: any) {
       const message = error.response?.data?.message || 'Cập nhật thất bại';
       toast.error(message);

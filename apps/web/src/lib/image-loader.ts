@@ -20,11 +20,7 @@ export default function coollabsImageLoader({ src, width, quality }: { src: stri
     return `${optimizeDomain}/image/${baseUrl}${src}?${query.toString()}`;
   }
 
-  // Temporary diagnostic: If it's an R2 URL, return it directly to check if coollabs is blocked
-  if (src.includes('r2.dev')) {
-    return src;
-  }
-
-  // It's a full URL (like Cloudinary or others)
+  // It's a full URL (R2, Cloudinary, etc.)
+  // We don't encode here because some proxy versions handle the raw URL better
   return `${optimizeDomain}/image/${src}?${query.toString()}`;
 }
