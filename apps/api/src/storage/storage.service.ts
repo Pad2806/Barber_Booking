@@ -82,8 +82,9 @@ export class StorageService {
                 publicId: fileKey, // we use the full S3 key as publicId so we can delete it later
             };
         } catch (error) {
-            this.logger.error(`Upload failed: ${error}`);
-            throw new BadRequestException('File upload failed');
+            this.logger.error('Upload failed with detailed error:');
+            console.error(error);
+            throw new BadRequestException(`File upload failed: ${error.message}`);
         }
     }
 

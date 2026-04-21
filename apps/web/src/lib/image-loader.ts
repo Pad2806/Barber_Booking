@@ -12,7 +12,7 @@ export default function coollabsImageLoader({ src, width, quality }: { src: stri
   
   const query = new URLSearchParams();
   if (width) query.set('width', width.toString());
-  if (quality) query.set('quality', (quality || 75).toString());
+  query.set('quality', (quality || 75).toString());
 
   // Handle local development or already-proxied URLs
   if (src.startsWith('/')) {
@@ -21,6 +21,6 @@ export default function coollabsImageLoader({ src, width, quality }: { src: stri
   }
 
   // It's a full URL (like R2 pub- domain)
-  // Some proxies require the URL to be encoded
-  return `${optimizeDomain}/image/${src}?${query.toString()}`;
+  // Most proxies (like coollabs) require the nested URL to be encoded
+  return `${optimizeDomain}/image/${encodeURIComponent(src)}?${query.toString()}`;
 }
