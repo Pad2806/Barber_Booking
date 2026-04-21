@@ -44,15 +44,16 @@ export function AIChatWidget() {
   const shouldHide = isStaffPage || isStaffRole;
 
   useEffect(() => {
-    const savedSession = localStorage.getItem('ai_chat_session');
-    if (savedSession) {
-      setSessionId(savedSession);
-    } else {
-      const newSession = uuidv4();
-      setSessionId(newSession);
-      localStorage.setItem('ai_chat_session', newSession);
-    }
+    // Luôn tạo session mới khi reload trang (Theo Option A)
+    setSessionId(uuidv4());
   }, []);
+
+  const handleResetChat = () => {
+    setSessionId(uuidv4());
+    setMessages([]);
+    setInput('');
+    setLastFailedMessage(null);
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -161,12 +162,23 @@ export function AIChatWidget() {
                 </div>
               </div>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="p-2 hover:bg-white/10 rounded-full transition-colors"
-            >
-              <X className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              {messages.length > 0 && (
+                <button
+                  onClick={handleResetChat}
+                  title="Làm mới hội thoại"
+                  className="p-2 hover:bg-[#C8A97E]/20 rounded-full transition-colors text-[#C8A97E]"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+              )}
+              <button
+                onClick={() => setIsOpen(false)}
+                className="p-2 hover:bg-white/10 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
           </div>
 
           {/* Messages Area */}
