@@ -12,6 +12,7 @@ export default function Header(): React.ReactElement {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const isLoggedIn = status === 'authenticated';
+  const isLoadingSession = status === 'loading';
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Close mobile menu when route changes
@@ -86,6 +87,10 @@ export default function Header(): React.ReactElement {
                      </span>
                   </div>
                 </Link>
+              ) : isLoadingSession ? (
+                <div className="pl-6 ml-2 border-l border-[#E8E0D4]">
+                  <div className="w-16 h-4 bg-[#E8E0D4] rounded animate-pulse" />
+                </div>
               ) : (
                 <div className="pl-6 ml-2 border-l border-[#E8E0D4]">
                   <Link
@@ -169,7 +174,7 @@ export default function Header(): React.ReactElement {
             ))}
           </div>
 
-          {!isLoggedIn && (
+          {!isLoggedIn && !isLoadingSession && (
             <div className="pt-4 border-t border-[#E8E0D4] space-y-4">
               <Link
                 href={`/login?callbackUrl=${encodeURIComponent(pathname || '/')}`}

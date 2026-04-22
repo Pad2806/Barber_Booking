@@ -115,14 +115,17 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // ── Protected customer routes ──
+  // ── Protected customer routes ──────────────────────────────
+  // NOTE: /booking and /salons are PUBLIC pages — users can browse
+  // without logging in. Auth is enforced client-side at the confirm step.
+  // Only /my-bookings and /payment require a valid session at the edge.
   if (
     pathname.startsWith('/my-bookings') ||
-    pathname.startsWith('/booking') ||
     pathname.startsWith('/payment')
   ) {
     if (!session) {
-      return NextResponse.redirect(new URL(`/login?callbackUrl=${pathname}`, request.url));
+      const encodedCallback = encodeURIComponent(pathname);
+      return NextResponse.redirect(new URL(`/login?callbackUrl=${encodedCallback}`, request.url));
     }
   }
 
@@ -137,7 +140,6 @@ export const config = {
     '/cashier/:path*',
     '/manager/:path*',
     '/my-bookings/:path*',
-    '/booking/:path*',
     '/payment/:path*',
   ],
 };
