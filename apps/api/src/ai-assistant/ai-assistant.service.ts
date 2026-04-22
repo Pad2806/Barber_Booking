@@ -301,8 +301,34 @@ export class AIAssistantService implements OnModuleInit {
     }
   }
 
+  // ═══ Validate tool args — reject garbage from dumb models ═══
+  private isGarbageArgs(functionName: string, args: Record<string, any>): boolean {
+    const values = Object.values(args);
+    // All values are "Unknown" or empty → garbage
+    if (values.length > 0 && values.every(v => v === 'Unknown' || v === 'unknown' || v === '' || v === null)) {
+      return true;
+    }
+    // create_booking with any "Unknown" field → block
+    if (functionName === 'create_booking') {
+      const required = ['customer_name', 'phone', 'service_id', 'barber_id', 'date', 'time'];
+      for (const field of required) {
+        const val = args[field];
+        if (!val || val === 'Unknown' || val === 'unknown') {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   // ═══ Groq Implementation ═══
   private async chatWithGroq(message: string, sessionId: string, userId: string | undefined, startTime: number) {
+    // ── Guardrail constants ──
+    const MAX_TOOL_LOOPS = 5;       // Max rounds of tool calls before forcing text
+    const MAX_TOOLS_PER_RESPONSE = 4; // Max tool calls to process per AI response
+    const API_TIMEOUT_MS = 15_000;  // 15s timeout per API call
+    const LOOP_DEADLINE_MS = 25_000; // 25s total deadline
+
     let conversation = await this.prisma.chatConversation.findUnique({
       where: { sessionId },
       include: { messages: { orderBy: { createdAt: 'desc' }, take: 10 } },
@@ -361,11 +387,32 @@ export class AIAssistantService implements OnModuleInit {
         let localMessages = [...messages];
         bookingCreated = false;
         toolCallsLog = [];
-        const loopDeadline = Date.now() + 30_000;
+        const loopDeadline = Date.now() + LOOP_DEADLINE_MS;
+        let toolLoopCount = 0;
 
         while (true) {
           if (Date.now() > loopDeadline) {
             throw new Error('TIMEOUT');
+          }
+
+          // ── GUARDRAIL 1: Max tool call loop iterations ──
+          if (toolLoopCount >= MAX_TOOL_LOOPS) {
+            this.logger.warn(`[Groq] Hit MAX_TOOL_LOOPS (${MAX_TOOL_LOOPS}) — forcing text response`);
+            // Force the model to respond with text only by removing tools
+            const noToolCompletion = await Promise.race([
+              this.groq.chat.completions.create({
+                model: modelName,
+                messages: localMessages,
+                max_tokens: 512,
+              }),
+              new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('TIMEOUT')), API_TIMEOUT_MS),
+              ),
+            ]) as any;
+            finalResponse = noToolCompletion.choices[0].message.content || '';
+            finalResponse = this.sanitizeResponse(finalResponse);
+            isSuccess = true;
+            break;
           }
 
           let completion: any;
@@ -379,11 +426,10 @@ export class AIAssistantService implements OnModuleInit {
                 max_tokens: 1024,
               }),
               new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error('TIMEOUT')), 25_000),
+                setTimeout(() => reject(new Error('TIMEOUT')), API_TIMEOUT_MS),
               ),
             ]);
           } catch (apiError: any) {
-            // Handle 429 at API call level — wait 2s and let model loop handle retry/fallback
             const status = apiError?.status || apiError?.error?.code;
             if (status === 429 || apiError?.message?.includes('429')) {
               this.logger.warn(`[Groq 429] model=${modelName} — waiting 2s before fallback`);
@@ -439,24 +485,59 @@ export class AIAssistantService implements OnModuleInit {
           }
 
           if (extractedToolCalls.length > 0) {
+            toolLoopCount++;
+
+            // ── GUARDRAIL 2: Cap tool calls per response ──
+            if (extractedToolCalls.length > MAX_TOOLS_PER_RESPONSE) {
+              this.logger.warn(`[Groq] Model returned ${extractedToolCalls.length} tool calls, capping at ${MAX_TOOLS_PER_RESPONSE}`);
+              extractedToolCalls = extractedToolCalls.slice(0, MAX_TOOLS_PER_RESPONSE);
+            }
+
+            // ── GUARDRAIL 3: Dedup same tool name within one response ──
+            const seenTools = new Set<string>();
+            const dedupedToolCalls: any[] = [];
+            for (const tc of extractedToolCalls) {
+              const dedupeKey = tc.name; // dedup by tool name only (same tool called 5x = execute once)
+              if (!seenTools.has(dedupeKey)) {
+                seenTools.add(dedupeKey);
+                dedupedToolCalls.push(tc);
+              }
+            }
+            extractedToolCalls = dedupedToolCalls;
+
+            let anyExecuted = false;
             for (const toolCall of extractedToolCalls) {
               const functionName = toolCall.name;
 
-              // Skip invalid/unknown tool names
               if (!VALID_TOOL_NAMES.has(functionName)) {
                 this.logger.warn(`[Groq] Skipping unknown tool: ${functionName}`);
+                localMessages.push({
+                  tool_call_id: toolCall.id, role: 'tool', name: functionName,
+                  content: JSON.stringify({ error: 'Unknown tool' }),
+                });
                 continue;
               }
 
-              let functionArgs = {};
+              let functionArgs: Record<string, any> = {};
               try {
                 functionArgs = typeof toolCall.args === 'string' ? JSON.parse(toolCall.args) : toolCall.args;
               } catch (e) {
                 this.logger.warn(`Could not parse JSON args for ${functionName}: ${toolCall.args}`);
               }
 
+              // ── GUARDRAIL 4: Validate args — reject garbage ──
+              if (this.isGarbageArgs(functionName, functionArgs)) {
+                this.logger.warn(`[Groq] Rejecting garbage args for ${functionName}: ${JSON.stringify(functionArgs)}`);
+                localMessages.push({
+                  tool_call_id: toolCall.id, role: 'tool', name: functionName,
+                  content: JSON.stringify({ error: 'Dữ liệu không hợp lệ. Hãy hỏi khách hàng cung cấp thông tin thật trước khi gọi tool.' }),
+                });
+                continue;
+              }
+
               const toolResult = await this.toolsService.handleToolCall(functionName, functionArgs, sessionId);
               if ((toolResult as any).isBooking) bookingCreated = true;
+              anyExecuted = true;
 
               toolCallsLog.push({ name: functionName, args: functionArgs, output: toolResult.content });
 
@@ -467,16 +548,18 @@ export class AIAssistantService implements OnModuleInit {
                 content: toolResult.content,
               });
             }
+
+            if (!anyExecuted) {
+              // All tool calls were garbage — force text response
+              this.logger.warn(`[Groq] All tool calls rejected as garbage — forcing text`);
+              toolLoopCount = MAX_TOOL_LOOPS; // trigger forced text on next iteration
+            }
+
             continue;
           }
 
           finalResponse = responseMessage.content || '';
-          // 3-layer catch-all sanitizer
-          finalResponse = finalResponse
-            .replace(/<function[\s\S]*?<\/function[^>]*>/gi, '')
-            .replace(/<function[:\s]\w+\s+"[^"]*"<\/function>/gi, '')
-            .replace(/<\/?function[^>]*>/gi, '')
-            .trim();
+          finalResponse = this.sanitizeResponse(finalResponse);
           isSuccess = true;
           break;
         }
@@ -507,6 +590,15 @@ export class AIAssistantService implements OnModuleInit {
     });
 
     return { response: finalResponse };
+  }
+
+  // ═══ Sanitize AI response — strip leaked function tags ═══
+  private sanitizeResponse(text: string): string {
+    return text
+      .replace(/<function[\s\S]*?<\/function[^>]*>/gi, '')
+      .replace(/<function[:\s]\w+\s+"[^"]*"<\/function>/gi, '')
+      .replace(/<\/?function[^>]*>/gi, '')
+      .trim();
   }
 
   // ═══ Helper: Store conversation messages ═══
