@@ -301,9 +301,11 @@ export class AIAssistantService implements OnModuleInit {
 
   // ═══ FAQ Router ═══
   private matchFAQ(message: string): string | null {
-    const normalized = message.toLowerCase().trim();
+    // Pad with spaces and remove punctuation for safe exact-word matching
+    const normalizedBytes = ' ' + message.toLowerCase().trim().replace(/[.,!?;()]/g, '') + ' ';
+    
     for (const faq of FAQ_PATTERNS) {
-      if (faq.keywords.some(kw => normalized.includes(kw))) {
+      if (faq.keywords.some(kw => normalizedBytes.includes(' ' + kw + ' '))) {
         return typeof faq.response === 'function' ? faq.response() : faq.response;
       }
     }
@@ -419,7 +421,7 @@ export class AIAssistantService implements OnModuleInit {
 
     // ── Step 2: Cache (0 API calls) ──
     // Skip cache for booking-intent messages to avoid stale booking responses
-    const isBookingIntent = /đặt lịch|book|cắt tóc|dịch vụ|thợ|barber|xác nhận|ok|yes|được|đúng|rồi/i.test(message);
+    const isBookingIntent = /(đặt lịch|\bbook\b|cắt tóc|dịch vụ|thợ|barber|xác nhận|\bok\b|\byes\b|được|đúng|rồi)/i.test(message);
     if (!isBookingIntent) {
       const cachedResponse = this.getCachedResponse(message);
       if (cachedResponse) {
