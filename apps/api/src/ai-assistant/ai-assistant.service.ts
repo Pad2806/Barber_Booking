@@ -1,6 +1,5 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Groq } from 'groq-sdk';
 import { PrismaService } from '../database/prisma.service';
 import { AIToolsService } from './ai-tools.service';
@@ -13,7 +12,7 @@ import * as salonKnowledge from './data/salon_knowledge.json';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-// ═══ OpenAI/Groq Tool Definitions ═══
+// ═══ Groq Tool Definitions ═══
 const GROQ_TOOLS = [
   {
     type: 'function',
@@ -99,18 +98,19 @@ const GROQ_TOOLS = [
   },
 ];
 
+// ═══ Groq model fallback order ═══
+const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+
 // ═══ Vietnamese day of week map ═══
-const VIET_DAYS = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
+const VIET_DAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
 
 // ═══ FAQ Router ═══
 const FAQ_PATTERNS: { keywords: string[]; response: string | (() => string) }[] = [
-  // Dynamic: date/time questions
   {
     keywords: ['hôm nay là thứ', 'thứ mấy', 'ngày mấy', 'hôm nay là ngày', 'ngày bao nhiêu', 'today'],
     response: () => {
       const now = dayjs().tz('Asia/Ho_Chi_Minh');
-      const day = VIET_DAYS[now.day()];
-      return `📅 Hôm nay là **${day}, ngày ${now.format('DD/MM/YYYY')}**.\n\nBây giờ là **${now.format('HH:mm')}**.\n\nAnh muốn đặt lịch hôm nay không ạ? Em hỗ trợ ngay! ✂️`;
+      return `📅 Hôm nay là **${VIET_DAYS[now.day()]}, ngày ${now.format('DD/MM/YYYY')}**.\n\nBây giờ là **${now.format('HH:mm')}**.\n\nAnh muốn đặt lịch hôm nay không ạ? Em hỗ trợ ngay! ✂️`;
     },
   },
   {
@@ -120,7 +120,6 @@ const FAQ_PATTERNS: { keywords: string[]; response: string | (() => string) }[] 
       return `🕐 Bây giờ là **${now.format('HH:mm')}** (${VIET_DAYS[now.day()]}, ${now.format('DD/MM/YYYY')}).\n\nAnh cần đặt lịch không ạ? 😊`;
     },
   },
-  // Static FAQs
   {
     keywords: ['giờ mở cửa', 'mấy giờ mở', 'mấy giờ đóng', 'mở cửa lúc', 'đóng cửa', 'giờ làm việc', 'giờ hoạt động'],
     response: '🕐 **Giờ hoạt động của Reetro Barber:**\n\n• Thứ 2 - Thứ 7: 8:00 - 20:00\n• Chủ nhật: 9:00 - 18:00\n\nAnh muốn đặt lịch không ạ? Em hỗ trợ ngay! ✂️',
@@ -163,147 +162,37 @@ interface CachedResponse {
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-// ═══ Tool declarations (shared between models) ═══
-const TOOL_DECLARATIONS = [
-  {
-    functionDeclarations: [
-      {
-        name: 'get_services',
-        description: 'Lấy danh sách các dịch vụ của salon.',
-      },
-      {
-        name: 'get_barbers',
-        description: 'Lấy danh sách thợ cắt tóc.',
-      },
-      {
-        name: 'get_available_slots',
-        description: 'Kiểm tra khung giờ còn trống của thợ vào một ngày.',
-        parameters: {
-          type: 'object',
-          properties: {
-            barber_id: { type: 'string' },
-            date: { type: 'string', description: 'YYYY-MM-DD' },
-          },
-          required: ['barber_id', 'date'],
-        },
-      },
-      {
-        name: 'create_booking',
-        description: 'Tạo lịch hẹn mới.',
-        parameters: {
-          type: 'object',
-          properties: {
-            customer_name: { type: 'string' },
-            phone: { type: 'string' },
-            service_id: { type: 'string' },
-            barber_id: { type: 'string' },
-            date: { type: 'string' },
-            time: { type: 'string' },
-          },
-          required: ['customer_name', 'phone', 'service_id', 'barber_id', 'date', 'time'],
-        },
-      },
-      {
-        name: 'update_booking_state',
-        description: 'Lưu hoặc cập nhật thông tin khách hàng cung cấp (Tên, SĐT, Dịch vụ, Thợ, Ngày, Giờ) để duy trì ngữ cảnh.',
-        parameters: {
-          type: 'object',
-          properties: {
-            customer_name: { type: 'string' },
-            phone: { type: 'string' },
-            service_id: { type: 'string' },
-            barber_id: { type: 'string' },
-            date: { type: 'string', description: 'YYYY-MM-DD' },
-            time: { type: 'string', description: 'HH:mm' },
-          },
-        },
-      },
-      {
-        name: 'cancel_booking',
-        description: 'Hủy lịch hẹn đã có.',
-        parameters: {
-          type: 'object',
-          properties: {
-            booking_id: { type: 'string' },
-          },
-          required: ['booking_id'],
-        },
-      },
-    ],
-  },
-] as any;
-
-// ═══ Models to try in order ═══
-const MODEL_PRIORITY = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash-8b'];
-
 @Injectable()
 export class AIAssistantService implements OnModuleInit {
-  private genAI: GoogleGenerativeAI;
   private groq: Groq;
-  private models: Map<string, any> = new Map();
-  private activeModelName: string = MODEL_PRIORITY[0];
   private readonly logger = new Logger(AIAssistantService.name);
   private responseCache = new Map<string, CachedResponse>();
-
-  // Rate limit tracking
-  private requestTimestamps: number[] = [];
-  private readonly MAX_RPM = 14;
 
   constructor(
     private configService: ConfigService,
     private prisma: PrismaService,
     private toolsService: AIToolsService,
   ) {
-    // ═══ Gemini Setup ═══
-    const geminiKey = this.configService.get<string>('GEMINI_API_KEY');
-    if (geminiKey) {
-      this.genAI = new GoogleGenerativeAI(geminiKey);
-    }
-
-    // ═══ Groq Setup ═══
     const groqKey = this.configService.get<string>('GROQ_API_KEY');
     if (groqKey) {
       this.groq = new Groq({ apiKey: groqKey });
       this.logger.log('✅ Groq client initialized');
     } else {
-      this.logger.warn('⚠️ GROQ_API_KEY is missing! Falling back to Gemini.');
+      this.logger.error('❌ GROQ_API_KEY is missing! AI Assistant will not work.');
     }
   }
 
   async onModuleInit() {
-    // Initialize ALL models (no ping, just create instances)
-    if (this.genAI) {
-      for (const modelName of MODEL_PRIORITY) {
-        try {
-          const model = this.genAI.getGenerativeModel({
-            model: modelName,
-            tools: TOOL_DECLARATIONS,
-          });
-          this.models.set(modelName, model);
-          this.logger.log(`✅ Model ${modelName} initialized`);
-        } catch (error: any) {
-          this.logger.error(`❌ Failed to init ${modelName}: ${error.message}`);
-        }
-      }
+    if (!this.groq) {
+      this.logger.error('❌ Groq not initialized. AI chat disabled.');
     }
-
-    if (this.models.size === 0 && !this.groq) {
-      this.logger.error('❌ No AI models (Gemini or Groq) could be initialized!');
-    }
-
     // Clean cache every 10 min
     setInterval(() => this.cleanCache(), 10 * 60 * 1000);
   }
 
-  private getModel(): any {
-    return this.models.get(this.activeModelName) || this.models.values().next().value;
-  }
-
   // ═══ FAQ Router ═══
   private matchFAQ(message: string): string | null {
-    // Pad with spaces and remove punctuation for safe exact-word matching
     const normalizedBytes = ' ' + message.toLowerCase().trim().replace(/[.,!?;()]/g, '') + ' ';
-    
     for (const faq of FAQ_PATTERNS) {
       if (faq.keywords.some(kw => normalizedBytes.includes(' ' + kw + ' '))) {
         return typeof faq.response === 'function' ? faq.response() : faq.response;
@@ -342,71 +231,6 @@ export class AIAssistantService implements OnModuleInit {
     }
   }
 
-  // ═══ Rate Limiter ═══
-  private canMakeRequest(): boolean {
-    const now = Date.now();
-    this.requestTimestamps = this.requestTimestamps.filter(t => now - t < 60_000);
-    return this.requestTimestamps.length < this.MAX_RPM;
-  }
-
-  private recordRequest() {
-    this.requestTimestamps.push(Date.now());
-  }
-
-  // ═══ Call Gemini with Retry + Model Fallback ═══
-  private async callWithRetry<T>(fn: (model: any) => Promise<T>, maxRetries = 3): Promise<T> {
-    let lastError: any;
-
-    // Try each model
-    for (const modelName of MODEL_PRIORITY) {
-      const model = this.models.get(modelName);
-      if (!model) continue;
-
-      for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-          // Check internal rate limit
-          if (!this.canMakeRequest()) {
-            const waitMs = Math.min(3000 * Math.pow(2, attempt), 15000);
-            this.logger.warn(`[Rate Limit] Waiting ${waitMs}ms (attempt ${attempt + 1})`);
-            await new Promise(resolve => setTimeout(resolve, waitMs));
-            if (!this.canMakeRequest()) continue;
-          }
-
-          this.recordRequest();
-          const result = await fn(model);
-          this.activeModelName = modelName;
-          return result;
-        } catch (error: any) {
-          lastError = error;
-          const errMsg = error?.message || '';
-          const errStatus = error?.status || error?.response?.status || error?.errorDetails?.[0]?.reason;
-
-          this.logger.error(`[Gemini Error] model=${modelName} attempt=${attempt + 1} status=${errStatus} msg=${errMsg.substring(0, 150)}`);
-
-          const isRateLimit = errStatus === 429
-            || errMsg.includes('429')
-            || errMsg.includes('RESOURCE_EXHAUSTED')
-            || errMsg.includes('Too Many Requests')
-            || errMsg.includes('quota');
-
-          if (isRateLimit) {
-            const backoffMs = Math.min(2000 * Math.pow(2, attempt), 15000);
-            this.logger.warn(`[429] model=${modelName} backoff=${backoffMs}ms`);
-            await new Promise(resolve => setTimeout(resolve, backoffMs));
-          } else {
-            // Non-rate-limit error → try next model
-            this.logger.warn(`[Non-429 Error] model=${modelName}: ${errMsg.substring(0, 100)}`);
-            break;
-          }
-        }
-      }
-
-      this.logger.warn(`[Model Exhausted] ${modelName}, trying next model...`);
-    }
-
-    throw lastError;
-  }
-
   // ═══ Main Chat Method ═══
   async chat(message: string, sessionId: string, userId?: string) {
     const startTime = Date.now();
@@ -420,7 +244,6 @@ export class AIAssistantService implements OnModuleInit {
     }
 
     // ── Step 2: Cache (0 API calls) ──
-    // Skip cache for booking-intent messages to avoid stale booking responses
     const isBookingIntent = /(đặt lịch|\bbook\b|cắt tóc|dịch vụ|thợ|barber|xác nhận|\bok\b|\byes\b|được|đúng|rồi)/i.test(message);
     if (!isBookingIntent) {
       const cachedResponse = this.getCachedResponse(message);
@@ -430,25 +253,15 @@ export class AIAssistantService implements OnModuleInit {
       }
     }
 
+    // ── Step 3: Groq AI ──
+    if (!this.groq) {
+      return { response: 'Xin lỗi, hệ thống AI đang bảo trì. Anh vui lòng thử lại sau! 🙏', error: true };
+    }
+
     try {
       this.logger.log(`[Chat] session=${sessionId} msg="${message.substring(0, 60)}"`);
-
-      // ── Step 3: Call AI (Groq First, then Gemini) ──
-      const useGroq = !!this.groq && this.configService.get('AI_PROVIDER') !== 'GEMINI';
-      
-      if (useGroq) {
-        try {
-          const result = await this.chatWithGroq(message, sessionId, userId, startTime);
-          return { ...result, source: 'groq' };
-        } catch (error: any) {
-          this.logger.error(`[Groq FAIL] All models exhausted... Error: ${error.message}`);
-          throw error; // Ném lỗi để return errorMessage thay vì gọi Gemini
-        }
-      }
-
-      // ── Gemini Fallback (Tạm tắt theo yêu cầu) ──
-      return await this.chatWithGemini(message, sessionId, userId, startTime);
-
+      const result = await this.chatWithGroq(message, sessionId, userId, startTime);
+      return { ...result, source: 'groq' };
     } catch (error: any) {
       const errMsg = error?.message || 'Unknown';
       this.logger.error(`[Chat FAIL] session=${sessionId} error=${errMsg}`);
@@ -456,10 +269,10 @@ export class AIAssistantService implements OnModuleInit {
       let errorMessage: string;
       if (errMsg === 'TIMEOUT') {
         errorMessage = "Xin lỗi, em đang xử lý hơi chậm. Anh thử gửi lại nhé! ⏱️";
-      } else if (errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED') || errMsg.includes('quota')) {
+      } else if (errMsg.includes('429') || errMsg.includes('rate_limit') || errMsg.includes('quota')) {
         errorMessage = "⏳ Hệ thống AI đang quá tải. Anh vui lòng thử lại sau 1 phút nhé!";
       } else {
-        errorMessage = `Xin lỗi, em gặp sự cố. Anh thử lại sau nhé! 🙏`;
+        errorMessage = 'Xin lỗi, em gặp sự cố. Anh thử lại sau nhé! 🙏';
       }
 
       return { response: errorMessage, error: true };
@@ -470,7 +283,7 @@ export class AIAssistantService implements OnModuleInit {
   private async chatWithGroq(message: string, sessionId: string, userId: string | undefined, startTime: number) {
     let conversation = await this.prisma.chatConversation.findUnique({
       where: { sessionId },
-      include: { messages: { orderBy: { createdAt: 'desc' }, take: 6 } },
+      include: { messages: { orderBy: { createdAt: 'desc' }, take: 10 } },
     });
     if (conversation && conversation.messages) {
       conversation.messages.reverse();
@@ -486,7 +299,7 @@ export class AIAssistantService implements OnModuleInit {
     let bookingRequest = await (this.prisma.bookingRequest as any).findUnique({
       where: { sessionId },
     });
-    
+
     if (!bookingRequest || bookingRequest.status === 'COMPLETED') {
       bookingRequest = await (this.prisma.bookingRequest as any).upsert({
         where: { sessionId },
@@ -494,7 +307,7 @@ export class AIAssistantService implements OnModuleInit {
         update: {
           status: 'PENDING', customerName: null, phone: null,
           serviceId: null, barberId: null, date: null, time: null,
-        }
+        },
       });
     }
 
@@ -507,7 +320,7 @@ export class AIAssistantService implements OnModuleInit {
         role: m.role === 'user' ? 'user' : 'assistant',
         content: m.content,
       })),
-      { role: 'user', content: message }
+      { role: 'user', content: message },
     ];
 
     await this.prisma.chatMessage.create({
@@ -517,23 +330,17 @@ export class AIAssistantService implements OnModuleInit {
     let bookingCreated = false;
     let toolCallsLog: any[] = [];
     let finalResponse = '';
-
-    const groqModels = [
-      'llama-3.3-70b-versatile',
-      'llama-3.1-8b-instant'
-    ];
-
     let lastError: any;
     let isSuccess = false;
 
-    for (const modelName of groqModels) {
+    for (const modelName of GROQ_MODELS) {
       try {
         this.logger.log(`[Groq] Trying model: ${modelName}`);
         let localMessages = [...messages];
         bookingCreated = false;
         toolCallsLog = [];
-        const loopDeadline = Date.now() + 30_000; // 30s hard cap
-        
+        const loopDeadline = Date.now() + 30_000;
+
         while (true) {
           if (Date.now() > loopDeadline) {
             throw new Error('TIMEOUT');
@@ -548,7 +355,7 @@ export class AIAssistantService implements OnModuleInit {
               max_tokens: 1024,
             }),
             new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new Error('TIMEOUT')), 25_000)
+              setTimeout(() => reject(new Error('TIMEOUT')), 25_000),
             ),
           ]);
 
@@ -556,7 +363,8 @@ export class AIAssistantService implements OnModuleInit {
           localMessages.push(responseMessage);
 
           let extractedToolCalls: any[] = [];
-          
+
+          // ── Structured tool_calls from Groq API ──
           if (responseMessage.tool_calls) {
             for (const toolCall of responseMessage.tool_calls) {
               extractedToolCalls.push({
@@ -567,18 +375,34 @@ export class AIAssistantService implements OnModuleInit {
             }
           }
 
-          if (responseMessage.content) {
-            const regex1 = /<function[:\s\/](?:name=")?([^>"]+)"?>([\s\S]*?)<\/function(?::\1)?>/gi;
-            const regex2 = /<function[:\s\/](?:name=")?([^>"]+)"?>([\s\S]*?)<\/function>/gi;
+          // ── Extract tool calls from text content (Llama hallucination formats) ──
+          if (responseMessage.content && extractedToolCalls.length === 0) {
+            const contentText = responseMessage.content;
+            const textToolCalls: any[] = [];
+
+            const reA = /<function[:\s](\w+)\s+"((?:[^"\\]|\\.)*)"\s*<\/function>/gi;
+            const reB = /<function[:\s](\w+)>([\s\S]*?)<\/function(?::\w+)?>/gi;
+            const reC = /<function\s+name="(\w+)">([\s\S]*?)<\/function>/gi;
+
             let match;
-            while ((match = regex1.exec(responseMessage.content)) !== null) {
-              extractedToolCalls.push({ name: match[1].trim(), args: match[2].trim() || '{}', id: `call_${Date.now()}_${Math.random()}` });
-            }
-            if (extractedToolCalls.length === 0) {
-              while ((match = regex2.exec(responseMessage.content)) !== null) {
-                extractedToolCalls.push({ name: match[1].trim(), args: match[2].trim() || '{}', id: `call_${Date.now()}_${Math.random()}` });
+            for (const re of [reA, reB, reC]) {
+              while ((match = re.exec(contentText)) !== null) {
+                const name = match[1].trim();
+                let args = match[2].trim();
+                if (args.startsWith('"') && args.endsWith('"')) {
+                  args = args.slice(1, -1);
+                }
+                args = args.replace(/\\"/g, '"');
+                textToolCalls.push({
+                  name,
+                  args: args || '{}',
+                  id: `call_${Date.now()}_${Math.random()}`,
+                });
               }
+              if (textToolCalls.length > 0) break;
             }
+
+            extractedToolCalls.push(...textToolCalls);
           }
 
           if (extractedToolCalls.length > 0) {
@@ -586,16 +410,16 @@ export class AIAssistantService implements OnModuleInit {
               const functionName = toolCall.name;
               let functionArgs = {};
               try {
-                functionArgs = JSON.parse(toolCall.args);
+                functionArgs = typeof toolCall.args === 'string' ? JSON.parse(toolCall.args) : toolCall.args;
               } catch (e) {
                 this.logger.warn(`Could not parse JSON args for ${functionName}: ${toolCall.args}`);
               }
-              
+
               const toolResult = await this.toolsService.handleToolCall(functionName, functionArgs, sessionId);
               if ((toolResult as any).isBooking) bookingCreated = true;
-              
+
               toolCallsLog.push({ name: functionName, args: functionArgs, output: toolResult.content });
-              
+
               localMessages.push({
                 tool_call_id: toolCall.id,
                 role: 'tool',
@@ -607,9 +431,14 @@ export class AIAssistantService implements OnModuleInit {
           }
 
           finalResponse = responseMessage.content || '';
-          finalResponse = finalResponse.replace(/<function[^>]*>[\s\S]*?<\/function(?::[^>]+)?>/gi, '').trim();
+          // 3-layer catch-all sanitizer
+          finalResponse = finalResponse
+            .replace(/<function[\s\S]*?<\/function[^>]*>/gi, '')
+            .replace(/<function[:\s]\w+\s+"[^"]*"<\/function>/gi, '')
+            .replace(/<\/?function[^>]*>/gi, '')
+            .trim();
           isSuccess = true;
-          break; // Thoát khỏi vòng lặp tool
+          break;
         }
       } catch (error: any) {
         const errStatus = error?.status || error?.response?.status;
@@ -619,11 +448,11 @@ export class AIAssistantService implements OnModuleInit {
         this.logger.warn(`[Groq Error] model=${modelName} status=${errStatus} msg=${error.message.substring(0, 150)}`);
       }
 
-      if (isSuccess) break; // Thoát khỏi vòng lặp model nếu đã thành công
+      if (isSuccess) break;
     }
 
     if (!isSuccess) {
-      throw lastError; // Ném lỗi cuối cùng ra nếu tất cả model đều fail
+      throw lastError;
     }
 
     this.setCachedResponse(message, finalResponse);
@@ -638,114 +467,6 @@ export class AIAssistantService implements OnModuleInit {
     });
 
     return { response: finalResponse };
-  }
-
-  // ═══ Gemini Implementation ═══
-  private async chatWithGemini(message: string, sessionId: string, userId: string | undefined, startTime: number) {
-    let conversation = await this.prisma.chatConversation.findUnique({
-      where: { sessionId },
-      include: { messages: { orderBy: { createdAt: 'desc' }, take: 6 } },
-    });
-    if (conversation && conversation.messages) {
-      conversation.messages.reverse();
-    }
-
-    if (!conversation) {
-      conversation = await this.prisma.chatConversation.create({
-        data: { sessionId, userId },
-        include: { messages: true },
-      });
-    }
-
-    let bookingRequest = await (this.prisma.bookingRequest as any).findUnique({
-      where: { sessionId },
-    });
-
-    if (!bookingRequest || bookingRequest.status === 'COMPLETED') {
-      bookingRequest = await (this.prisma.bookingRequest as any).upsert({
-        where: { sessionId },
-        create: { sessionId },
-        update: {
-          status: 'PENDING', customerName: null, phone: null,
-          serviceId: null, barberId: null, date: null, time: null,
-        }
-      });
-    }
-
-    const now = dayjs().tz('Asia/Ho_Chi_Minh');
-    const sysInstruction = systemPrompt(now.format('dddd, DD/MM/YYYY HH:mm'), salonKnowledge, bookingRequest);
-
-    const history = [
-      { role: 'user', parts: [{ text: sysInstruction }] },
-      { role: 'model', parts: [{ text: "Tôi là trợ lý ảo của Reetro Barber Shop, rất vui được hỗ trợ bạn!" }] },
-      ...conversation.messages.map(m => ({
-        role: m.role === 'user' ? 'user' : 'model',
-        parts: [{ text: m.content }],
-      })),
-    ];
-
-    await this.prisma.chatMessage.create({
-      data: { conversationId: conversation.id, role: 'user', content: message },
-    });
-
-    const timeout = (ms: number) => new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), ms));
-    let responseText = '';
-    let bookingCreated = false;
-    let toolCallsLog: any[] = [];
-
-    let currentResult: any = await this.callWithRetry(
-      (model) => {
-        const chatSession = model.startChat({ history });
-        return Promise.race([chatSession.sendMessage(message), timeout(20000)]) as Promise<any>;
-      },
-    );
-
-    // Tool-calling loop
-    while (true) {
-      const calls = currentResult.response.functionCalls();
-      if (!calls || calls.length === 0) {
-        responseText = currentResult.response.text();
-        break;
-      }
-
-      const toolResponses: any[] = [];
-      for (const call of calls) {
-        const result = await this.toolsService.handleToolCall(call.name, call.args, sessionId);
-        if ((result as any).isBooking) bookingCreated = true;
-
-        toolCallsLog.push({ name: call.name, args: call.args, output: result.content });
-        toolResponses.push({
-          functionResponse: { name: call.name, response: { content: result.content } },
-        });
-      }
-
-      const activeModel = this.getModel();
-      const continueSession = activeModel.startChat({
-        history: [
-          ...history,
-          { role: 'user', parts: [{ text: message }] },
-          { role: 'model', parts: currentResult.response.candidates[0].content.parts },
-        ],
-      });
-
-      currentResult = await Promise.race([
-        continueSession.sendMessage(toolResponses),
-        timeout(20000),
-      ]);
-    }
-
-    this.setCachedResponse(message, responseText);
-    await this.prisma.chatMessage.create({
-      data: { conversationId: conversation.id, role: 'assistant', content: responseText },
-    });
-    await this.prisma.aiLog.create({
-      data: {
-        sessionId, userMessage: message, aiResponse: responseText,
-        toolCalls: toolCallsLog as any, bookingCreated, latency: Date.now() - startTime,
-      },
-    });
-
-    return { response: responseText, source: 'gemini' };
   }
 
   // ═══ Helper: Store conversation messages ═══
