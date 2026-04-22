@@ -39,6 +39,9 @@ export default function ServiceDetailModal({
 
   const videoId = service.videoUrl ? getYoutubeId(service.videoUrl) : null;
 
+  // Detect if videoUrl is an uploaded file (not YouTube)
+  const isUploadedVideo = service.videoUrl && !videoId;
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-300">
       <div className="bg-white w-full max-w-2xl rounded-3xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
@@ -53,15 +56,29 @@ export default function ServiceDetailModal({
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             ></iframe>
+          ) : activeTab === 'video' && isUploadedVideo ? (
+            /* ── Uploaded video (Cloudinary / S3 / direct URL) ── */
+            <video
+              key={service.videoUrl}
+              className="w-full h-full object-contain bg-black"
+              controls
+              autoPlay
+              playsInline
+              preload="metadata"
+            >
+              <source src={service.videoUrl!} />
+              Trình duyệt không hỗ trợ phát video.
+            </video>
           ) : (
             <div className="relative w-full h-full group">
               {allImages.length > 0 ? (
                 <>
+                  {/* Use object-contain so full image is always visible without cropping */}
                   <OptimizedImage
                     src={allImages[currentImageIndex]}
                     alt={service.name}
                     fill
-                    className="object-cover transition-transform duration-700 group-hover:scale-105"
+                    className="object-contain transition-opacity duration-500"
                     priority
                     enableBlur
                   />

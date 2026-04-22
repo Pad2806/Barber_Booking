@@ -446,6 +446,8 @@ export default function BookingDetailPage() {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-lg font-semibold mb-4">Hành động</h2>
             <div className="space-y-3">
+
+              {/* PENDING: Xác nhận khách tới */}
               {booking.status === 'PENDING' && (
                 <button
                   onClick={() => handleUpdateStatus('CONFIRMED')}
@@ -456,16 +458,33 @@ export default function BookingDetailPage() {
                   Xác nhận khách tới
                 </button>
               )}
+
+              {/* CONFIRMED: Bắt đầu làm dịch vụ */}
               {booking.status === 'CONFIRMED' && (
                 <button
                   onClick={() => handleUpdateStatus('IN_PROGRESS')}
                   disabled={updating}
-                  className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 shadow-sm"
+                  className="w-full px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 shadow-sm flex items-center justify-center gap-2"
                 >
+                  <CheckCircle className="w-4 h-4" />
                   Bắt đầu làm dịch vụ
                 </button>
               )}
-              {remainingAmount > 0 && ['IN_PROGRESS', 'CONFIRMED'].includes(booking.status) && (
+
+              {/* IN_PROGRESS: Đã hoàn thành (không cần remainingAmount = 0) */}
+              {booking.status === 'IN_PROGRESS' && (
+                <button
+                  onClick={() => handleUpdateStatus('COMPLETED')}
+                  disabled={updating}
+                  className="w-full px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 shadow-sm flex items-center justify-center gap-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Đã hoàn thành
+                </button>
+              )}
+
+              {/* COMPLETED: Thanh toán tại quầy (chỉ xuất hiện sau khi hoàn thành và còn tiền) */}
+              {booking.status === 'COMPLETED' && remainingAmount > 0 && (
                 <button
                   onClick={() => setShowCheckoutModal(true)}
                   disabled={updating}
@@ -475,16 +494,9 @@ export default function BookingDetailPage() {
                   Thanh toán tại quầy
                 </button>
               )}
-              {booking.status === 'IN_PROGRESS' && remainingAmount === 0 && (
-                <button
-                  onClick={() => handleUpdateStatus('COMPLETED')}
-                  disabled={updating}
-                  className="w-full px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 shadow-sm"
-                >
-                  Hoàn tất & Lưu lại
-                </button>
-              )}
-              {!['CANCELLED', 'COMPLETED', 'NO_SHOW'].includes(booking.status) && (
+
+              {/* Huỷ lịch: chỉ hiển thị khi PENDING, CONFIRMED, hoặc IN_PROGRESS */}
+              {['PENDING', 'CONFIRMED', 'IN_PROGRESS'].includes(booking.status) && (
                 <button
                   onClick={() => handleUpdateStatus('CANCELLED')}
                   disabled={updating}
@@ -494,6 +506,7 @@ export default function BookingDetailPage() {
                   Hủy lịch
                 </button>
               )}
+
             </div>
           </div>
         </div>
