@@ -88,7 +88,10 @@ export default function Header(): React.ReactElement {
                 </Link>
               ) : (
                 <div className="pl-6 ml-2 border-l border-[#E8E0D4]">
-                  <Link href="/login" className="text-sm font-bold text-[#8B7355] hover:text-[#C8A97E] transition-colors">
+                  <Link
+                    href={`/login?callbackUrl=${encodeURIComponent(pathname || '/')}`}
+                    className="text-sm font-bold text-[#8B7355] hover:text-[#C8A97E] transition-colors"
+                  >
                     Đăng nhập
                   </Link>
                 </div>
@@ -169,7 +172,7 @@ export default function Header(): React.ReactElement {
           {!isLoggedIn && (
             <div className="pt-4 border-t border-[#E8E0D4] space-y-4">
               <Link
-                href="/login"
+                href={`/login?callbackUrl=${encodeURIComponent(pathname || '/')}`}
                 className="flex items-center gap-4 px-4 py-4 rounded-2xl text-base font-bold text-[#5C4A32] hover:bg-[#F0EBE3] transition-all"
               >
                 <User className="w-5 h-5 text-[#C8A97E]" />

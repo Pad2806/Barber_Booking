@@ -5,7 +5,13 @@ import compression from 'compression';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Disable built-in body parser so Multer has full control over multipart/form-data
+  // (default 100kb bodyParser limit was blocking large video uploads before they reached Multer)
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
+
+  // Re-enable body parser only for JSON/urlencoded — raw body for upload handled by Multer
+  app.use(require('express').json({ limit: '10mb' }));
+  app.use(require('express').urlencoded({ extended: true, limit: '10mb' }));
 
   // Gzip compression — reduces response sizes by ~60-80%
   app.use(compression());
@@ -19,7 +25,7 @@ async function bootstrap() {
   app.enableCors({
     origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-    allowedHeaders: ['Content-Type', 'Accept', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Accept', 'Authorization', 'X-Requested-With', 'Cache-Control'],
   });
 
   // Validation

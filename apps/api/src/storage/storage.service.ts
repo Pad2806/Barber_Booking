@@ -18,8 +18,10 @@ export class StorageService {
     private readonly bucketName: string;
     private readonly publicDomain: string;
 
+    private readonly isConfigured: boolean;
+
     constructor(private readonly config: ConfigService) {
-        const sanitize = (val: string | undefined) => val?.replace(/['"]/g, '').trim();
+        const sanitize = (val: string | undefined) => val?.replace(/['\"]/g, '').trim();
 
         const accountId = sanitize(this.config.get<string>('R2_ACCOUNT_ID'));
         const accessKeyId = sanitize(this.config.get<string>('R2_ACCESS_KEY'));
@@ -31,12 +33,15 @@ export class StorageService {
         this.logger.debug(`R2 Config - AccountID length: ${accountId?.length}, AccessKey length: ${accessKeyId?.length}`);
         
         if (!accountId || !accessKeyId || !secretAccessKey) {
-            this.logger.error('CRITICAL: R2 Credentials missing in Environment Variables!');
+            this.logger.error('CRITICAL: R2 Credentials missing! Set R2_ACCOUNT_ID, R2_ACCESS_KEY, R2_SECRET_KEY in your .env file.');
+            this.isConfigured = false;
+        } else {
+            this.isConfigured = true;
         }
 
         this.s3Client = new S3Client({
             region: 'auto', // Cloudflare R2 works best with 'auto'
-            endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+            endpoint: `https://${accountId || 'MISSING'}.r2.cloudflarestorage.com`,
             credentials: {
                 accessKeyId: accessKeyId || '',
                 secretAccessKey: secretAccessKey || '',
@@ -49,6 +54,13 @@ export class StorageService {
         file: Express.Multer.File,
         folder: UploadFolder = 'avatars',
     ): Promise<{ url: string; publicId: string }> {
+        // Guard: fail early with clear error if storage is not configured
+        if (!this.isConfigured) {
+            throw new BadRequestException(
+                'Storage service is not configured. Please set R2_ACCOUNT_ID, R2_ACCESS_KEY, R2_SECRET_KEY, R2_BUCKET_NAME, and R2_PUBLIC_DOMAIN in your environment variables.'
+            );
+        }
+
         // Technically this serves for both video and image as long as we validate based on mime
         if (file.mimetype.startsWith('video/')) {
             this.validateVideoFile(file);
@@ -96,8 +108,16 @@ export class StorageService {
         } catch (error) {
             this.logger.error('Upload failed with detailed error:');
             console.error(error);
+            // Detect 403 from R2 specifically (wrong credentials or bucket permissions)
+            const is403 = error?.['$metadata']?.httpStatusCode === 403 || error?.message?.includes('403');
+            if (is403) {
+                throw new BadRequestException(
+                    'File upload rejected by storage (403). Check that R2_ACCESS_KEY and R2_SECRET_KEY are correct and the API token has write permission on the bucket.'
+                );
+            }
             throw new BadRequestException(`File upload failed: ${error.message}`);
         }
+
     }
 
     async uploadMultiple(

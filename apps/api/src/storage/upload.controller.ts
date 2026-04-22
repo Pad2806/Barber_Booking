@@ -8,21 +8,27 @@ import {
     Query,
     Param,
     UseGuards,
+    Logger,
+    BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiConsumes, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { StorageService, UploadFolder } from './storage.service';
 
+const MB = 1024 * 1024;
+
 @ApiTags('Upload')
 @Controller('upload')
 export class UploadController {
+    private readonly logger = new Logger(UploadController.name);
+
     constructor(private readonly storageService: StorageService) { }
 
     @Post()
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
+    @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * MB } }))
     @ApiConsumes('multipart/form-data')
     @ApiBody({
         schema: {
@@ -37,6 +43,8 @@ export class UploadController {
         @UploadedFile() file: Express.Multer.File,
         @Query('folder') folder: UploadFolder = 'avatars',
     ) {
+        if (!file) throw new BadRequestException('No file provided');
+        this.logger.log(`Upload image: ${file.originalname} (${file.size} bytes) → ${folder}`);
         const result = await this.storageService.uploadFile(file, folder);
         return result; // returns { url, publicId }
     }
@@ -44,7 +52,7 @@ export class UploadController {
     @Post('multiple')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    @UseInterceptors(FilesInterceptor('files', 5, { limits: { fileSize: 10 * 1024 * 1024 } }))
+    @UseInterceptors(FilesInterceptor('files', 5, { limits: { fileSize: 10 * MB } }))
     @ApiConsumes('multipart/form-data')
     @ApiBody({
         schema: {
@@ -59,6 +67,8 @@ export class UploadController {
         @UploadedFiles() files: Express.Multer.File[],
         @Query('folder') folder: UploadFolder = 'avatars',
     ) {
+        if (!files?.length) throw new BadRequestException('No files provided');
+        this.logger.log(`Upload ${files.length} images → ${folder}`);
         const results = await this.storageService.uploadMultiple(files, folder);
         return results;
     }
@@ -66,7 +76,8 @@ export class UploadController {
     @Post('video')
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 50 * 1024 * 1024 } }))
+    // Allow up to 100MB at Multer level (StorageService validates the final 50MB cap)
+    @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 100 * MB } }))
     @ApiConsumes('multipart/form-data')
     @ApiBody({
         schema: {
@@ -81,6 +92,8 @@ export class UploadController {
         @UploadedFile() file: Express.Multer.File,
         @Query('folder') folder: UploadFolder = 'services',
     ) {
+        if (!file) throw new BadRequestException('No video file provided');
+        this.logger.log(`Upload video: ${file.originalname} (${(file.size / MB).toFixed(1)}MB) → ${folder}`);
         const result = await this.storageService.uploadFile(file, folder);
         return result;
     }
