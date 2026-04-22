@@ -540,11 +540,13 @@ export const paymentApi = {
       bankCode: string;
       bankAccount: string;
       bankName: string;
+      transferContent?: string;
     }>('/payments', { bookingId, method: 'VIETQR' });
 
     return {
       ...response.data,
       qrCode: response.data.qrCodeUrl || '',
+      transferContent: response.data.transferContent,
     };
   },
   getStatus: async (bookingId: string) => {

@@ -39,6 +39,7 @@ export default function PaymentModalContent({
     bankCode: string;
     bankAccount: string;
     bankName: string;
+    transferContent?: string;
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [paymentStatus, setPaymentStatus] = useState<Status>('PENDING');
@@ -421,7 +422,12 @@ export default function PaymentModalContent({
             {[
               { label: 'Ngân hàng', value: qrData?.bankName || qrData?.bankCode || '—', field: 'bank', extraClass: 'uppercase', noCopy: true },
               { label: 'Số tài khoản', value: qrData?.bankAccount || '—', field: 'account' },
-              { label: 'Nội dung (bắt buộc)', value: booking?.bookingCode || '—', field: 'content', highlight: true },
+              {
+                label: 'Nội dung (bắt buộc)',
+                value: qrData?.transferContent || booking?.bookingCode || '—',
+                field: 'content',
+                highlight: true,
+              },
               { label: 'Số tiền', value: formatPrice(depositAmount), field: 'amount', rawValue: String(depositAmount) },
             ].map(({ label, value, field, extraClass, noCopy, highlight, rawValue }, i, arr) => (
               <div

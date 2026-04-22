@@ -29,11 +29,7 @@ export class PaymentsController {
     return this.paymentsService.createPayment(dto);
   }
 
-  @Get('booking/:bookingId')
-  @ApiOperation({ summary: 'Get all payments for a booking' })
-  getPaymentsByBooking(@Param('bookingId') bookingId: string) {
-    return this.paymentsService.getPaymentsByBooking(bookingId);
-  }
+  // ── Specific booking routes MUST come before the generic :id wildcard ──
 
   @Get('booking/:bookingId/summary')
   @ApiOperation({ summary: 'Get payment summary (deposit, remaining, total)' })
@@ -41,21 +37,10 @@ export class PaymentsController {
     return this.paymentsService.getBookingPaymentSummary(bookingId);
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get payment by ID' })
-  getPayment(@Param('id') id: string) {
-    return this.paymentsService.getPayment(id);
-  }
-
-  @Post(':id/confirm')
-  @UseGuards(RolesGuard)
-  @Roles(Role.STAFF)
-  @ApiOperation({ summary: 'Manually confirm payment (Staff+)' })
-  confirmPayment(
-    @Param('id') id: string,
-    @Body('transactionId') transactionId?: string,
-  ) {
-    return this.paymentsService.confirmPayment(id, transactionId);
+  @Get('booking/:bookingId')
+  @ApiOperation({ summary: 'Get all payments for a booking' })
+  getPaymentsByBooking(@Param('bookingId') bookingId: string) {
+    return this.paymentsService.getPaymentsByBooking(bookingId);
   }
 
   @Post('booking/:bookingId/checkout')
@@ -79,5 +64,24 @@ export class PaymentsController {
     @Query('period') period: 'day' | 'week' | 'month' = 'day',
   ) {
     return this.paymentsService.getPaymentStats(salonId, period);
+  }
+
+  // ── Generic :id wildcard MUST be LAST ────────────────────────────────
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get payment by ID' })
+  getPayment(@Param('id') id: string) {
+    return this.paymentsService.getPayment(id);
+  }
+
+  @Post(':id/confirm')
+  @UseGuards(RolesGuard)
+  @Roles(Role.STAFF)
+  @ApiOperation({ summary: 'Manually confirm payment (Staff+)' })
+  confirmPayment(
+    @Param('id') id: string,
+    @Body('transactionId') transactionId?: string,
+  ) {
+    return this.paymentsService.confirmPayment(id, transactionId);
   }
 }
