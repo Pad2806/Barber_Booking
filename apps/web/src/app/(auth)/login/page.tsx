@@ -31,7 +31,10 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   const getRedirectUrl = (role: string, roles?: string[]): string => {
-    if (callbackUrl) return callbackUrl;
+    // Không bao giờ redirect ngược lại trang auth
+    if (callbackUrl && !callbackUrl.includes('/login') && !callbackUrl.includes('/register')) {
+      return callbackUrl;
+    }
     
     // Ưu tiên roles[] (multi-role RBAC) nếu có
     const allRoles = roles?.length ? roles : [role];
