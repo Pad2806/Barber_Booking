@@ -748,7 +748,9 @@ export class ManagerService {
 
         const customerBookingCounts = new Map<string, number>();
         allSalonBookings.forEach(b => {
-            customerBookingCounts.set(b.customerId, (customerBookingCounts.get(b.customerId) || 0) + 1);
+            if (b.customerId) {
+                customerBookingCounts.set(b.customerId, (customerBookingCounts.get(b.customerId) || 0) + 1);
+            }
         });
 
         const totalCustomers = customerBookingCounts.size;

@@ -1016,7 +1016,8 @@ export class StaffService extends BaseQueryService {
       const bookingTime = nowVietnam.hour(h).minute(m);
       const diffMins = bookingTime.diff(nowVietnam, 'minute');
       if (diffMins > 0 && diffMins <= 60) {
-        nextCustomerAlert = `Khách tiếp theo (${nextBooking.customer.name}) sẽ đến trong ${diffMins} phút nữa.`;
+        const cName = nextBooking.customer?.name || (nextBooking as any).customerName || 'Khách';
+        nextCustomerAlert = `Khách tiếp theo (${cName}) sẽ đến trong ${diffMins} phút nữa.`;
       }
     }
 
