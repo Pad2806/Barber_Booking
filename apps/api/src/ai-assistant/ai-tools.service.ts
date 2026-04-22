@@ -20,18 +20,20 @@ export class AIToolsService {
     phone?: string;
     service_id?: string;
     barber_id?: string;
+    salon_id?: string;
     date?: string;
     time?: string;
   }) {
     this.logger.log(`[AIToolsService] Updating booking state for session ${sessionId}: ${JSON.stringify(data)}`);
-    const prismaData = {
-      customerName: data.customer_name,
-      phone: data.phone,
-      serviceId: data.service_id,
-      barberId: data.barber_id,
-      date: data.date,
-      time: data.time,
-    };
+    const prismaData: any = {};
+    if (data.customer_name !== undefined) prismaData.customerName = data.customer_name;
+    if (data.phone !== undefined) prismaData.phone = data.phone;
+    if (data.service_id !== undefined) prismaData.serviceId = data.service_id;
+    if (data.barber_id !== undefined) prismaData.barberId = data.barber_id;
+    if (data.salon_id !== undefined) prismaData.salonId = data.salon_id;
+    if (data.date !== undefined) prismaData.date = data.date;
+    if (data.time !== undefined) prismaData.time = data.time;
+
     return await (this.prisma.bookingRequest as any).upsert({
       where: { sessionId },
       create: { sessionId, ...prismaData },
@@ -43,20 +45,93 @@ export class AIToolsService {
     this.logger.log(`Executing tool: ${name} with args: ${JSON.stringify(args)}`);
 
     try {
+      // ── get_salons: Trả về danh sách cơ sở đang hoạt động ──
+      if (name === 'get_salons') {
+        const salons = await this.prisma.salon.findMany({
+          where: { isActive: true },
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            city: true,
+            district: true,
+            phone: true,
+          },
+          orderBy: { name: 'asc' },
+        });
+
+        if (salons.length === 0) {
+          return { content: 'Hiện tại chưa có cơ sở nào đang hoạt động.' };
+        }
+
+        const list = salons
+          .map((s, i) => {
+            const addr = [s.address, s.district, s.city].filter(Boolean).join(', ');
+            return `${i + 1}. ID: ${s.id} | Tên: ${s.name} | Địa chỉ: ${addr || 'Chưa cập nhật'} | SĐT: ${s.phone || 'N/A'}`;
+          })
+          .join('\n');
+
+        return { content: `Danh sách cơ sở Reetro Barber:\n${list}` };
+      }
+
+      // ── get_services: Lấy dịch vụ theo salon ──
       if (name === 'get_services') {
-        const result = await this.servicesService.findAll({ limit: 50 } as any);
+        const session = await (this.prisma.bookingRequest as any).findUnique({ where: { sessionId } });
+        const salonId = args.salon_id || session?.salonId;
+
+        let services: any[];
+        if (salonId) {
+          services = await this.prisma.service.findMany({
+            where: { salonId, isActive: true },
+            select: { id: true, name: true, price: true, duration: true },
+            orderBy: { order: 'asc' },
+          });
+        } else {
+          const result = await this.servicesService.findAll({ limit: 50 } as any);
+          services = result.data;
+        }
+
+        if (services.length === 0) {
+          return { content: 'Cơ sở này chưa có dịch vụ nào được kích hoạt.' };
+        }
+
         return {
-          content: result.data
+          content: services
             .map((s: any) => `ID: ${s.id}, Tên: ${s.name}, Giá: ${s.price}đ, Thời gian: ${s.duration} phút`)
             .join('\n'),
         };
       }
 
+      // ── get_barbers: Lấy thợ theo salon_id từ args hoặc session ──
       if (name === 'get_barbers') {
-        const result = await this.staffService.findAll({} as any);
+        const session = await (this.prisma.bookingRequest as any).findUnique({ where: { sessionId } });
+        const salonId = args.salon_id || session?.salonId;
+
+        const BARBER_POSITIONS = ['BARBER', 'STYLIST', 'SENIOR_STYLIST', 'MASTER_STYLIST'];
+
+        const where: any = {
+          isActive: true,
+          position: { in: BARBER_POSITIONS },
+        };
+        if (salonId) where.salonId = salonId;
+
+        const barbers = await this.prisma.staff.findMany({
+          where,
+          include: { user: { select: { name: true } } },
+          orderBy: { rating: 'desc' },
+        });
+
+        if (barbers.length === 0) {
+          return {
+            content: salonId
+              ? 'Cơ sở này hiện chưa có thợ cắt tóc nào. Anh vui lòng chọn cơ sở khác hoặc thử lại sau nhé!'
+              : 'Hiện chưa có thợ cắt tóc nào trong hệ thống.',
+          };
+        }
+
         return {
-          content: result.data
-            .map((b: any) => `ID: ${b.id}, Tên: ${b.user.name}, Đánh giá: ${b.rating} sao`)
+          content: barbers
+            .map(b => `ID: ${b.id}, Tên: ${b.user.name}, Đánh giá: ${b.rating} sao`)
             .join('\n'),
         };
       }
@@ -100,13 +175,11 @@ export class AIToolsService {
   }
 
   private async handleCreateBooking(args: any, sessionId: string) {
-    // Validate required fields
     const required = ['customer_name', 'phone', 'service_id', 'barber_id', 'date', 'time'];
     for (const field of required) {
       if (!args[field]) return { content: `Lỗi: Thiếu thông tin ${field}.` };
     }
 
-    // Validate barber exists
     const barber = await this.prisma.staff.findUnique({
       where: { id: args.barber_id },
       include: { user: true },
@@ -116,16 +189,12 @@ export class AIToolsService {
     // --- Cross-branch service resolution + name-based fallback ---
     let finalServiceId: string = args.service_id;
     const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(finalServiceId);
-
     let svc: any = null;
 
     if (isUUID) {
-      // Try exact ID match in barber's salon first
       svc = await this.prisma.service.findFirst({
         where: { id: finalServiceId, salonId: barber.salonId },
       });
-
-      // If not found in this salon, resolve by name from original service
       if (!svc) {
         const originalSvc = await this.prisma.service.findUnique({ where: { id: finalServiceId } });
         if (originalSvc) {
@@ -135,7 +204,6 @@ export class AIToolsService {
         }
       }
     } else {
-      // service_id is a name — find by name in barber's salon
       svc = await this.prisma.service.findFirst({
         where: { salonId: barber.salonId, name: { contains: finalServiceId, mode: 'insensitive' }, isActive: true },
       });
@@ -146,9 +214,7 @@ export class AIToolsService {
     }
 
     finalServiceId = svc.id;
-    // ------------------------------------------------------------
 
-    // Calculate booking totals
     const totalDuration: number = svc.duration;
     const totalAmount: number = Number(svc.price);
     const [h, m] = args.time.split(':').map(Number);
@@ -157,11 +223,9 @@ export class AIToolsService {
     const bookingCode = `RB${Date.now().toString(36).toUpperCase()}${crypto.randomUUID().split('-')[0].toUpperCase()}`.substring(0, 12);
     const dateObj = new Date(args.date + 'T00:00:00.000Z');
 
-    // Direct Prisma create — AI bookings have no authenticated user, customerId=undefined
     const booking = await (this.prisma.booking as any).create({
       data: {
         bookingCode,
-        // customerId is intentionally omitted — AI-assisted walk-in booking
         customerName: args.customer_name,
         customerPhone: args.phone,
         salonId: barber.salonId,
@@ -178,7 +242,6 @@ export class AIToolsService {
       },
     });
 
-    // Update booking request status (non-fatal)
     await (this.prisma.bookingRequest as any).update({
       where: { sessionId },
       data: { status: 'COMPLETED' },

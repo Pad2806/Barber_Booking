@@ -580,6 +580,7 @@ model BookingRequest {
   sessionId     String
   customerName  String?
   phone         String?
+  salonId       String?
   serviceId     String?
   barberId      String?
   date          String?

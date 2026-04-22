@@ -17,17 +17,36 @@ const GROQ_TOOLS = [
   {
     type: 'function',
     function: {
-      name: 'get_services',
-      description: 'Lấy danh sách các dịch vụ của salon.',
+      name: 'get_salons',
+      description: 'Lấy danh sách tất cả cơ sở / chi nhánh Reetro Barber đang hoạt động, kèm tên và địa chỉ. Gọi TRƯỚC KHI hỏi chọn thợ.',
       parameters: { type: 'object', properties: {} },
     },
   },
   {
     type: 'function',
     function: {
+      name: 'get_services',
+      description: 'Lấy danh sách các dịch vụ của salon.',
+      parameters: {
+        type: 'object',
+        properties: {
+          salon_id: { type: 'string', description: 'UUID của cơ sở (tuỳ chọn). Nếu có sẽ lọc theo cơ sở đó.' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function',
+    function: {
       name: 'get_barbers',
-      description: 'Lấy danh sách thợ cắt tóc.',
-      parameters: { type: 'object', properties: {} },
+      description: 'Lấy danh sách thợ cắt tóc (BARBER/STYLIST) của một cơ sở cụ thể. Phải gọi get_salons và khách chọn cơ sở TRƯỚC khi gọi tool này.',
+      parameters: {
+        type: 'object',
+        properties: {
+          salon_id: { type: 'string', description: 'UUID của cơ sở mà khách đã chọn. BẮT BUỘC để lọc đúng thợ.' },
+        },
+        required: ['salon_id'],
+      },
     },
   },
   {
@@ -68,12 +87,13 @@ const GROQ_TOOLS = [
     type: 'function',
     function: {
       name: 'update_booking_state',
-      description: 'Lưu hoặc cập nhật thông tin khách hàng cung cấp (Tên, SĐT, Dịch vụ, Thợ, Ngày, Giờ) để duy trì ngữ cảnh.',
+      description: 'Lưu hoặc cập nhật thông tin khách hàng cung cấp (Tên, SĐT, Cơ sở, Dịch vụ, Thợ, Ngày, Giờ) để duy trì ngữ cảnh.',
       parameters: {
         type: 'object',
         properties: {
           customer_name: { type: ['string', 'null'] },
           phone: { type: ['string', 'null'] },
+          salon_id: { type: ['string', 'null'], description: 'MÃ UUID của cơ sở khách đã chọn' },
           service_id: { type: ['string', 'null'], description: 'MÃ UUID/Tên của dịch vụ' },
           barber_id: { type: ['string', 'null'], description: 'MÃ UUID của thợ' },
           date: { type: ['string', 'null'], description: 'YYYY-MM-DD' },
