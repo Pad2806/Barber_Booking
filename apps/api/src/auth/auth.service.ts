@@ -29,6 +29,7 @@ export interface TokenResponse {
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
   private resend: Resend;
+  private rotatedTokenCache = new Map<string, TokenResponse>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -249,13 +250,31 @@ export class AuthService {
     });
 
     if (!storedToken || storedToken.expiresAt < new Date()) {
+      // ── Grace period: check if this is a recently-rotated token ──
+      // When a token is rotated, the old one is deleted and we store a mapping
+      // old → new for 30 seconds to handle concurrent requests.
+      const cachedReplacement = this.rotatedTokenCache?.get(refreshToken);
+      if (cachedReplacement) {
+        this.logger.log('[Auth] Serving cached tokens for rotated refresh token (race condition handled)');
+        return cachedReplacement;
+      }
+
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    // Delete old refresh token (use deleteMany to avoid errors if already deleted by concurrent request)
+    // Delete old refresh token
     await this.prisma.refreshToken.deleteMany({ where: { id: storedToken.id } });
 
-    return this.generateTokens(storedToken.user);
+    // Generate new tokens
+    const newTokens = await this.generateTokens(storedToken.user);
+
+    // Cache old→new mapping for 30s to handle concurrent requests
+    this.rotatedTokenCache.set(refreshToken, newTokens);
+    setTimeout(() => {
+      this.rotatedTokenCache.delete(refreshToken);
+    }, 30_000);
+
+    return newTokens;
   }
 
   async logout(refreshToken: string): Promise<void> {
