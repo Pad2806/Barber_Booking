@@ -282,19 +282,37 @@ export default function BarberBookingsPage() {
                             </Button>
                           )}
                           {booking.status === 'IN_PROGRESS' && (
-                            <Button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                updateStatusMutation.mutate({
-                                  id: booking.id,
-                                  status: 'COMPLETED',
-                                });
-                              }}
-                              disabled={updateStatusMutation.isPending}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-9 px-4 text-xs font-semibold shadow-sm"
-                            >
-                              <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Hoàn tất
-                            </Button>
+                            <>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  updateStatusMutation.mutate({
+                                    id: booking.id,
+                                    status: 'COMPLETED',
+                                  });
+                                }}
+                                disabled={updateStatusMutation.isPending}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-9 px-4 text-xs font-semibold shadow-sm"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Hoàn tất
+                              </Button>
+                              <Button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (confirm('Huỷ lịch này? (Dùng khi nhấn nhầm Bắt đầu)')) {
+                                    updateStatusMutation.mutate({
+                                      id: booking.id,
+                                      status: 'CANCELLED',
+                                    });
+                                  }
+                                }}
+                                disabled={updateStatusMutation.isPending}
+                                variant="outline"
+                                className="rounded-xl border-rose-200 text-rose-500 hover:bg-rose-50 h-9 px-3 text-xs font-semibold"
+                              >
+                                <XCircle className="w-3.5 h-3.5" />
+                              </Button>
+                            </>
                           )}
                           <Button
                             onClick={() => {
@@ -535,25 +553,50 @@ export default function BarberBookingsPage() {
               )}
 
               {selectedBooking?.status === 'IN_PROGRESS' && (
-                <Button
-                  onClick={() => {
-                    updateStatusMutation.mutate(
-                      { id: selectedBooking.id, status: 'COMPLETED' },
-                      {
-                        onSuccess: () => {
-                          setSelectedBooking((prev: any) =>
-                            prev ? { ...prev, status: 'COMPLETED' } : prev
-                          );
-                        },
+                <>
+                  <Button
+                    onClick={() => {
+                      updateStatusMutation.mutate(
+                        { id: selectedBooking.id, status: 'COMPLETED' },
+                        {
+                          onSuccess: () => {
+                            setSelectedBooking((prev: any) =>
+                              prev ? { ...prev, status: 'COMPLETED' } : prev
+                            );
+                          },
+                        }
+                      );
+                    }}
+                    disabled={updateStatusMutation.isPending}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-11 flex-1 font-semibold text-sm shadow-sm"
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Đã hoàn thành
+                  </Button>
+                  {/* Huỷ khi nhấn nhầm Bắt đầu */}
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      if (confirm('Huỷ lịch này? (Dùng khi nhấn nhầm Bắt đầu phục vụ)')) {
+                        updateStatusMutation.mutate(
+                          { id: selectedBooking.id, status: 'CANCELLED' },
+                          {
+                            onSuccess: () => {
+                              setSelectedBooking((prev: any) =>
+                                prev ? { ...prev, status: 'CANCELLED' } : prev
+                              );
+                            },
+                          }
+                        );
                       }
-                    );
-                  }}
-                  disabled={updateStatusMutation.isPending}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-11 flex-1 font-semibold text-sm shadow-sm"
-                >
-                  <CheckCircle2 className="w-4 h-4 mr-2" />
-                  Đã hoàn tất — Xong
-                </Button>
+                    }}
+                    disabled={updateStatusMutation.isPending}
+                    className="text-rose-500 hover:text-rose-600 hover:bg-rose-50 rounded-xl h-11 font-medium text-sm"
+                  >
+                    <XCircle className="w-4 h-4 mr-2" />
+                    Hủy lịch
+                  </Button>
+                </>
               )}
 
               {selectedBooking?.status === 'PENDING' && (

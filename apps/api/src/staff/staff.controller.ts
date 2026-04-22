@@ -301,4 +301,27 @@ export class StaffController {
     return this.staffService.registerDayOffImproved(staff.id, dto.date, dto.reason);
   }
 
+  @Post('me/leave-request')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.BARBER, Role.SKINNER, Role.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Submit a leave request (date range)' })
+  async submitLeaveRequest(
+    @Body() dto: { startDate: string; endDate: string; reason?: string },
+    @CurrentUser() user: User,
+  ) {
+    const staff = await this.staffService.getStaffByUserId(user.id);
+    return this.staffService.registerLeave(staff.id, dto, user);
+  }
+
+  @Get('me/leaves')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.BARBER, Role.SKINNER, Role.STAFF)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get own leave requests' })
+  async getMyLeaves(@CurrentUser() user: User) {
+    const staff = await this.staffService.getStaffByUserId(user.id);
+    return this.staffService.getLeaves(staff.id);
+  }
+
 }

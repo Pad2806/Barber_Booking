@@ -263,6 +263,14 @@ export const staffApi = {
     const response = await apiClient.post('/staff/me/day-off', { date, reason });
     return response.data;
   },
+  requestLeave: async (data: { startDate: string; endDate: string; reason?: string }) => {
+    const response = await apiClient.post('/staff/me/leave-request', data);
+    return response.data;
+  },
+  getMyLeaves: async () => {
+    const response = await apiClient.get('/staff/me/leaves');
+    return response.data;
+  },
 
   // --- STAFF PROFILE & ACHIEVEMENTS ---
   getProfile: async (staffId: string) => {

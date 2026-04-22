@@ -304,13 +304,23 @@ export class CashierService {
       throw new BadRequestException('Vui lòng chọn ít nhất 1 dịch vụ');
     }
 
-    // Find or create customer
+    // ── 1. Find or upsert customer ──────────────────────────────
     let customer;
     if (data.phone) {
+      // Find by phone first
       customer = await this.prisma.user.findUnique({
         where: { phone: data.phone },
       });
-      if (!customer) {
+      if (customer) {
+        // Update name if it differs (e.g. cashier corrected the name)
+        if (customer.name !== data.customerName) {
+          customer = await this.prisma.user.update({
+            where: { id: customer.id },
+            data: { name: data.customerName },
+          });
+        }
+      } else {
+        // New customer with phone
         customer = await this.prisma.user.create({
           data: {
             phone: data.phone,
@@ -321,6 +331,7 @@ export class CashierService {
         });
       }
     } else {
+      // Guest without phone — create anonymous customer
       customer = await this.prisma.user.create({
         data: {
           name: data.customerName,
@@ -330,6 +341,7 @@ export class CashierService {
       });
     }
 
+    // ── 2. Validate services ────────────────────────────────────
     const services = await this.prisma.service.findMany({
       where: { id: { in: data.serviceIds }, salonId },
     });
@@ -342,16 +354,86 @@ export class CashierService {
     const totalDuration = services.reduce((acc, s) => acc + s.duration, 0);
 
     const now = dayjs().tz(VIETNAM_TZ);
+    const todayDate = this.toDateOnly(now.format('YYYY-MM-DD'));
+    const currentTimeSlot = now.format('HH:mm');
+
+    // ── 3. Auto-assign available barber if none selected ────────
+    let resolvedStaffId: string | null = data.staffId || null;
+    let autoAssigned = false;
+
+    if (!resolvedStaffId) {
+      const barberPositions = [
+        StaffPosition.BARBER,
+        StaffPosition.STYLIST,
+        StaffPosition.SENIOR_STYLIST,
+        StaffPosition.MASTER_STYLIST,
+      ];
+
+      // Get all active barbers with their today's load
+      const candidates = await this.prisma.staff.findMany({
+        where: {
+          salonId,
+          isActive: true,
+          position: { in: barberPositions as any },
+        },
+        include: {
+          shifts: { where: { date: todayDate } },
+          leaves: {
+            where: {
+              startDate: { lte: todayDate },
+              endDate: { gte: todayDate },
+              status: 'APPROVED',
+            },
+          },
+          // Check bookings at current time slot to determine availability
+          bookings: {
+            where: {
+              date: todayDate,
+              timeSlot: currentTimeSlot,
+              status: { in: ['CONFIRMED', 'IN_PROGRESS'] },
+            },
+          },
+        },
+      });
+
+      // Filter to only truly available barbers (has shift, no leave, not busy at slot)
+      const available = candidates.filter(
+        (s) => s.shifts.length > 0 && s.leaves.length === 0 && s.bookings.length === 0,
+      );
+
+      if (available.length > 0) {
+        // Pick the one with fewest CONFIRMED/IN_PROGRESS bookings today (least loaded)
+        const withLoad = await Promise.all(
+          available.map(async (s) => {
+            const todayLoad = await this.prisma.booking.count({
+              where: {
+                staffId: s.id,
+                date: todayDate,
+                status: { in: ['CONFIRMED', 'IN_PROGRESS'] },
+              },
+            });
+            return { ...s, todayLoad };
+          }),
+        );
+
+        const leastLoaded = withLoad.sort((a, b) => a.todayLoad - b.todayLoad)[0];
+        resolvedStaffId = leastLoaded.id;
+        autoAssigned = true;
+      }
+      // If no available barber found → proceed with null (cashier will assign later)
+    }
+
+    // ── 4. Create booking ───────────────────────────────────────
     const endTime = now.add(totalDuration, 'minute');
 
-    return this.prisma.booking.create({
+    const booking = await this.prisma.booking.create({
       data: {
         bookingCode: `WLK-${now.format('YYMMDD')}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
         customerId: customer.id,
         salonId,
-        staffId: data.staffId || null,
-        date: this.toDateOnly(now.format('YYYY-MM-DD')),
-        timeSlot: now.format('HH:mm'),
+        staffId: resolvedStaffId,
+        date: todayDate,
+        timeSlot: currentTimeSlot,
         endTime: endTime.format('HH:mm'),
         status: 'CONFIRMED',
         totalAmount,
@@ -371,6 +453,12 @@ export class CashierService {
         staff: { include: { user: { select: { name: true } } } },
       },
     });
+
+    return {
+      ...booking,
+      autoAssigned,
+      assignedStaffName: booking.staff?.user?.name || null,
+    };
   }
 
   // ─── 5. ADD SERVICES TO BOOKING ────────────────────────────

@@ -471,20 +471,9 @@ export default function BookingDetailPage() {
                 </button>
               )}
 
-              {/* IN_PROGRESS: Đã hoàn thành (không cần remainingAmount = 0) */}
-              {booking.status === 'IN_PROGRESS' && (
-                <button
-                  onClick={() => handleUpdateStatus('COMPLETED')}
-                  disabled={updating}
-                  className="w-full px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 shadow-sm flex items-center justify-center gap-2"
-                >
-                  <CheckCircle className="w-4 h-4" />
-                  Đã hoàn thành
-                </button>
-              )}
-
-              {/* COMPLETED: Thanh toán tại quầy (chỉ xuất hiện sau khi hoàn thành và còn tiền) */}
-              {booking.status === 'COMPLETED' && remainingAmount > 0 && (
+              {/* IN_PROGRESS + còn tiền: Thanh toán tại quầy
+                  Backend sẽ tự chuyển booking sang COMPLETED sau khi thu tiền */}
+              {booking.status === 'IN_PROGRESS' && remainingAmount > 0 && (
                 <button
                   onClick={() => setShowCheckoutModal(true)}
                   disabled={updating}
@@ -495,7 +484,20 @@ export default function BookingDetailPage() {
                 </button>
               )}
 
-              {/* Huỷ lịch: chỉ hiển thị khi PENDING, CONFIRMED, hoặc IN_PROGRESS */}
+              {/* IN_PROGRESS + đã đủ tiền (cọc = 100% hoặc walk-in không cọc):
+                  Chỉ cần đánh dấu hoàn thành thủ công */}
+              {booking.status === 'IN_PROGRESS' && remainingAmount === 0 && (
+                <button
+                  onClick={() => handleUpdateStatus('COMPLETED')}
+                  disabled={updating}
+                  className="w-full px-4 py-2.5 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium disabled:opacity-50 shadow-sm flex items-center justify-center gap-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Đã hoàn thành
+                </button>
+              )}
+
+              {/* Huỷ lịch: chỉ khi PENDING, CONFIRMED, IN_PROGRESS */}
               {['PENDING', 'CONFIRMED', 'IN_PROGRESS'].includes(booking.status) && (
                 <button
                   onClick={() => handleUpdateStatus('CANCELLED')}
