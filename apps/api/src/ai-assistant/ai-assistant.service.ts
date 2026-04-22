@@ -418,10 +418,14 @@ export class AIAssistantService implements OnModuleInit {
     }
 
     // ── Step 2: Cache (0 API calls) ──
-    const cachedResponse = this.getCachedResponse(message);
-    if (cachedResponse) {
-      await this.storeConversation(sessionId, userId, message, cachedResponse, startTime, false);
-      return { response: cachedResponse, source: 'cache' };
+    // Skip cache for booking-intent messages to avoid stale booking responses
+    const isBookingIntent = /đặt lịch|book|cắt tóc|dịch vụ|thợ|barber|xác nhận|ok|yes|được|đúng|rồi/i.test(message);
+    if (!isBookingIntent) {
+      const cachedResponse = this.getCachedResponse(message);
+      if (cachedResponse) {
+        await this.storeConversation(sessionId, userId, message, cachedResponse, startTime, false);
+        return { response: cachedResponse, source: 'cache' };
+      }
     }
 
     try {
@@ -526,14 +530,25 @@ export class AIAssistantService implements OnModuleInit {
         let localMessages = [...messages];
         bookingCreated = false;
         toolCallsLog = [];
+        const loopDeadline = Date.now() + 30_000; // 30s hard cap
         
         while (true) {
-          const completion = await this.groq.chat.completions.create({
-            model: modelName,
-            messages: localMessages,
-            tools: GROQ_TOOLS as any,
-            tool_choice: 'auto',
-          });
+          if (Date.now() > loopDeadline) {
+            throw new Error('TIMEOUT');
+          }
+
+          const completion = await Promise.race([
+            this.groq.chat.completions.create({
+              model: modelName,
+              messages: localMessages,
+              tools: GROQ_TOOLS as any,
+              tool_choice: 'auto',
+              max_tokens: 1024,
+            }),
+            new Promise<never>((_, reject) =>
+              setTimeout(() => reject(new Error('TIMEOUT')), 25_000)
+            ),
+          ]);
 
           const responseMessage = completion.choices[0].message;
           localMessages.push(responseMessage);
@@ -575,7 +590,7 @@ export class AIAssistantService implements OnModuleInit {
               }
               
               const toolResult = await this.toolsService.handleToolCall(functionName, functionArgs, sessionId);
-              if (toolResult.isBooking) bookingCreated = true;
+              if ((toolResult as any).isBooking) bookingCreated = true;
               
               toolCallsLog.push({ name: functionName, args: functionArgs, output: toolResult.content });
               
@@ -694,7 +709,7 @@ export class AIAssistantService implements OnModuleInit {
       const toolResponses: any[] = [];
       for (const call of calls) {
         const result = await this.toolsService.handleToolCall(call.name, call.args, sessionId);
-        if (result.isBooking) bookingCreated = true;
+        if ((result as any).isBooking) bookingCreated = true;
 
         toolCallsLog.push({ name: call.name, args: call.args, output: result.content });
         toolResponses.push({

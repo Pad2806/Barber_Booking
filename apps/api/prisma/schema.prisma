@@ -364,8 +364,13 @@ model Booking {
   id              String          @id @default(uuid())
   bookingCode     String          @unique
 
-  customerId      String
-  customer        User            @relation(fields: [customerId], references: [id])
+  // Registered customer (optional — AI/walk-in bookings may not have one)
+  customerId      String?
+  customer        User?           @relation(fields: [customerId], references: [id])
+
+  // Guest info for walk-in / AI-assisted bookings (used when customerId is null)
+  customerName    String?
+  customerPhone   String?
 
   salonId         String
   salon           Salon           @relation(fields: [salonId], references: [id])
