@@ -7,7 +7,6 @@ import { systemPrompt } from './prompts/system.prompt';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
-import * as salonKnowledge from './data/salon_knowledge.json';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -122,13 +121,20 @@ const GROQ_TOOLS = [
 const VALID_TOOL_NAMES = new Set(GROQ_TOOLS.map(t => t.function.name));
 
 // ═══ Groq model fallback order ═══
-const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
+// PRIMARY: llama3-groq-8b-tool-use — specifically fine-tuned for tool/function calling, low token usage
+// FALLBACK1: llama-3.1-70b-versatile — stable, rarely times out
+// FALLBACK2: llama-3.3-70b-versatile — most capable, highest quota consumption
+const GROQ_MODELS = [
+  'llama3-groq-8b-8192-tool-use-preview',
+  'llama-3.1-70b-versatile',
+  'llama-3.3-70b-versatile',
+];
 
 // ═══ Vietnamese day of week map ═══
 const VIET_DAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
 
 // ═══ Booking-intent keywords — if message contains ANY of these, skip FAQ ═══
-const BOOKING_INTENT_RE = /(\d{10}|\d{4}[\s-]?\d{3}[\s-]?\d{3}|\d+h|sáng|chiều|trưa|tối|hôm nay|ngày mai|cắt tóc|nhuộm|uốn|gội|combo|cat toc|nhuom|uon|goi|hot toc|hớt)/i;
+const BOOKING_INTENT_RE = /(\d{10}|\d{4}[\s-]?\d{3}[\s-]?\d{3}|\d+h|sáng|chiều|trưa|tối|hôm nay|ngày mai|cắt tóc|nhuộm|uốn|gội|combo|cat toc|nhuom|uon|goi|hot toc|hớt|cơ sở|chi nhánh|quận|cs[0-9]|số [0-9])/i;
 
 // ═══ FAQ Router ═══
 const FAQ_PATTERNS: { keywords: string[]; response: string | (() => string) }[] = [
@@ -193,6 +199,8 @@ export class AIAssistantService implements OnModuleInit {
   private groq: Groq;
   private readonly logger = new Logger(AIAssistantService.name);
   private responseCache = new Map<string, CachedResponse>();
+  // Rate limit tracker: model → timestamp until which it is blocked
+  private rateLimitedUntil = new Map<string, number>();
 
   constructor(
     private configService: ConfigService,
@@ -310,9 +318,9 @@ export class AIAssistantService implements OnModuleInit {
 
       let errorMessage: string;
       if (errMsg === 'TIMEOUT') {
-        errorMessage = "Xin lỗi, em đang xử lý hơi chậm. Anh thử gửi lại nhé! ⏱️";
+        errorMessage = '⏱️ Hệ thống hơi chậm, anh thử gửi lại tin nhắn vừa rồi được không ạ?';
       } else if (errMsg.includes('429') || errMsg.includes('rate_limit') || errMsg.includes('quota')) {
-        errorMessage = "⏳ Hệ thống AI đang quá tải. Anh vui lòng thử lại sau 1 phút nhé!";
+        errorMessage = '⏳ Em đang xử lý nhiều yêu cầu quá, anh vui lòng thử lại sau 1-2 phút nhé! 😊';
       } else {
         errorMessage = 'Xin lỗi, em gặp sự cố. Anh thử lại sau nhé! 🙏';
       }
@@ -323,6 +331,9 @@ export class AIAssistantService implements OnModuleInit {
 
   // ═══ Validate tool args — reject garbage from dumb models ═══
   private isGarbageArgs(functionName: string, args: Record<string, any>): boolean {
+    // P0 FIX: Guard for tools with no params (get_salons) or null args from model
+    if (!args || typeof args !== 'object' || Array.isArray(args)) return false;
+
     const values = Object.values(args);
     // All values are "Unknown" or empty → garbage
     if (values.length > 0 && values.every(v => v === 'Unknown' || v === 'unknown' || v === '' || v === null)) {
@@ -343,15 +354,15 @@ export class AIAssistantService implements OnModuleInit {
 
   // ═══ Groq Implementation ═══
   private async chatWithGroq(message: string, sessionId: string, userId: string | undefined, startTime: number) {
-    // ── Guardrail constants ──
-    const MAX_TOOL_LOOPS = 5;       // Max rounds of tool calls before forcing text
-    const MAX_TOOLS_PER_RESPONSE = 4; // Max tool calls to process per AI response
-    const API_TIMEOUT_MS = 15_000;  // 15s timeout per API call
-    const LOOP_DEADLINE_MS = 25_000; // 25s total deadline
+    // ══ Guardrail constants ══
+    const MAX_TOOL_LOOPS = 5;
+    const MAX_TOOLS_PER_RESPONSE = 4;
+    const API_TIMEOUT_MS = 12_000;  // 12s (reduced from 15s — tool-use model is faster)
+    const LOOP_DEADLINE_MS = 20_000; // 20s total deadline
 
     let conversation = await this.prisma.chatConversation.findUnique({
       where: { sessionId },
-      include: { messages: { orderBy: { createdAt: 'desc' }, take: 10 } },
+      include: { messages: { orderBy: { createdAt: 'desc' }, take: 6 } }, // P2: reduced from 10 to 6
     });
     if (conversation && conversation.messages) {
       conversation.messages.reverse();
@@ -373,14 +384,16 @@ export class AIAssistantService implements OnModuleInit {
         where: { sessionId },
         create: { sessionId },
         update: {
+          // P4: Also reset salonId when starting a new booking session
           status: 'PENDING', customerName: null, phone: null,
-          serviceId: null, barberId: null, date: null, time: null,
+          salonId: null, serviceId: null, barberId: null, date: null, time: null,
         },
       });
     }
 
     const now = dayjs().tz('Asia/Ho_Chi_Minh');
-    const sysInstruction = systemPrompt(now.format('dddd, DD/MM/YYYY HH:mm'), salonKnowledge, bookingRequest);
+    // P2: No longer pass salonKnowledge JSON — AI uses get_salons tool instead (saves ~600 tokens)
+    const sysInstruction = systemPrompt(now.format('dddd, DD/MM/YYYY HH:mm'), bookingRequest);
 
     const messages: any[] = [
       { role: 'system', content: sysInstruction },
@@ -402,6 +415,13 @@ export class AIAssistantService implements OnModuleInit {
     let isSuccess = false;
 
     for (const modelName of GROQ_MODELS) {
+      // P3: Skip models that are currently rate-limited
+      const blockedUntil = this.rateLimitedUntil.get(modelName) ?? 0;
+      if (blockedUntil > Date.now()) {
+        this.logger.warn(`[Groq] Skipping ${modelName} — rate-limited for ${Math.ceil((blockedUntil - Date.now()) / 1000)}s more`);
+        continue;
+      }
+
       try {
         this.logger.log(`[Groq] Trying model: ${modelName}`);
         let localMessages = [...messages];
@@ -443,7 +463,7 @@ export class AIAssistantService implements OnModuleInit {
                 messages: localMessages,
                 tools: GROQ_TOOLS as any,
                 tool_choice: 'auto',
-                max_tokens: 1024,
+                max_tokens: 512, // P2: reduced from 1024 — sufficient for booking flow
               }),
               new Promise<never>((_, reject) =>
                 setTimeout(() => reject(new Error('TIMEOUT')), API_TIMEOUT_MS),
@@ -452,13 +472,18 @@ export class AIAssistantService implements OnModuleInit {
           } catch (apiError: any) {
             const status = apiError?.status || apiError?.error?.code;
             if (status === 429 || apiError?.message?.includes('429')) {
-              this.logger.warn(`[Groq 429] model=${modelName} — waiting 2s before fallback`);
-              await new Promise(r => setTimeout(r, 2000));
+              // P3: Block this model for 90 seconds instead of just waiting 2s
+              this.rateLimitedUntil.set(modelName, Date.now() + 90_000);
+              this.logger.warn(`[Groq 429] model=${modelName} — blocked for 90s, trying next model`);
             }
             throw apiError;
           }
 
           const responseMessage = completion.choices[0].message;
+          // P5: Log token usage for monitoring
+          if (completion.usage) {
+            this.logger.log(`[Token] model=${modelName} prompt=${completion.usage.prompt_tokens} completion=${completion.usage.completion_tokens} total=${completion.usage.total_tokens}`);
+          }
           localMessages.push(responseMessage);
 
           let extractedToolCalls: any[] = [];
@@ -540,9 +565,13 @@ export class AIAssistantService implements OnModuleInit {
 
               let functionArgs: Record<string, any> = {};
               try {
-                functionArgs = typeof toolCall.args === 'string' ? JSON.parse(toolCall.args) : toolCall.args;
+                // P1 FIX: Robust args parsing — handle null, empty string, 'null' string
+                const raw = (typeof toolCall.args === 'string' ? toolCall.args : '{}').trim();
+                const parsed = raw && raw !== 'null' ? JSON.parse(raw) : {};
+                functionArgs = (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
               } catch (e) {
                 this.logger.warn(`Could not parse JSON args for ${functionName}: ${toolCall.args}`);
+                functionArgs = {};
               }
 
               // ── GUARDRAIL 4: Validate args — reject garbage ──
@@ -588,7 +617,7 @@ export class AIAssistantService implements OnModuleInit {
         if (!lastError || errStatus === 429 || lastError?.status !== 429) {
           lastError = error;
         }
-        this.logger.warn(`[Groq Error] model=${modelName} status=${errStatus} msg=${error.message.substring(0, 150)}`);
+        this.logger.warn(`[Groq Error] model=${modelName} status=${errStatus} msg=${(error.message || '').substring(0, 150)}`);
       }
 
       if (isSuccess) break;

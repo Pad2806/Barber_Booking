@@ -64,6 +64,14 @@ export class AIToolsService {
           return { content: 'Hiện tại chưa có cơ sở nào đang hoạt động.' };
         }
 
+        // P4 Task 4.1: Auto-select if only one salon
+        if (salons.length === 1) {
+          const s = salons[0];
+          await this.update_booking_state(sessionId, { salon_id: s.id });
+          const addr = [s.address, s.district, s.city].filter(Boolean).join(', ');
+          return { content: `Cơ sở duy nhất: ID: ${s.id} | Tên: ${s.name} | Địa chỉ: ${addr}. Đã tự động chọn cơ sở này.` };
+        }
+
         const list = salons
           .map((s, i) => {
             const addr = [s.address, s.district, s.city].filter(Boolean).join(', ');
