@@ -98,11 +98,17 @@ const GROQ_TOOLS = [
   },
 ];
 
+// Valid tool names for sanitization
+const VALID_TOOL_NAMES = new Set(GROQ_TOOLS.map(t => t.function.name));
+
 // ═══ Groq model fallback order ═══
 const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'];
 
 // ═══ Vietnamese day of week map ═══
 const VIET_DAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7'];
+
+// ═══ Booking-intent keywords — if message contains ANY of these, skip FAQ ═══
+const BOOKING_INTENT_RE = /(\d{10}|\d{4}[\s-]?\d{3}[\s-]?\d{3}|\d+h|sáng|chiều|trưa|tối|hôm nay|ngày mai|cắt tóc|nhuộm|uốn|gội|combo|cat toc|nhuom|uon|goi|hot toc|hớt)/i;
 
 // ═══ FAQ Router ═══
 const FAQ_PATTERNS: { keywords: string[]; response: string | (() => string) }[] = [
@@ -186,12 +192,16 @@ export class AIAssistantService implements OnModuleInit {
     if (!this.groq) {
       this.logger.error('❌ Groq not initialized. AI chat disabled.');
     }
-    // Clean cache every 10 min
     setInterval(() => this.cleanCache(), 10 * 60 * 1000);
   }
 
   // ═══ FAQ Router ═══
   private matchFAQ(message: string): string | null {
+    // If message contains booking-actionable info (phone, time, service), skip FAQ entirely
+    if (BOOKING_INTENT_RE.test(message)) {
+      return null;
+    }
+
     const normalizedBytes = ' ' + message.toLowerCase().trim().replace(/[.,!?;()]/g, '') + ' ';
     for (const faq of FAQ_PATTERNS) {
       if (faq.keywords.some(kw => normalizedBytes.includes(' ' + kw + ' '))) {
@@ -231,11 +241,22 @@ export class AIAssistantService implements OnModuleInit {
     }
   }
 
+  // ═══ Sanitize tool name (strip trailing slashes and whitespace from Llama hallucinations) ═══
+  private sanitizeToolName(name: string): string {
+    const cleaned = name.replace(/[\s\/]+$/g, '').trim();
+    if (VALID_TOOL_NAMES.has(cleaned)) return cleaned;
+    // Fuzzy match: try stripping common suffixes
+    for (const valid of VALID_TOOL_NAMES) {
+      if (cleaned.startsWith(valid)) return valid;
+    }
+    return cleaned;
+  }
+
   // ═══ Main Chat Method ═══
   async chat(message: string, sessionId: string, userId?: string) {
     const startTime = Date.now();
 
-    // ── Step 1: FAQ (0 API calls) ──
+    // ── Step 1: FAQ (0 API calls) — skipped if message has booking-actionable data ──
     const faqResponse = this.matchFAQ(message);
     if (faqResponse) {
       this.logger.log(`[FAQ HIT] "${message.substring(0, 50)}"`);
@@ -244,7 +265,8 @@ export class AIAssistantService implements OnModuleInit {
     }
 
     // ── Step 2: Cache (0 API calls) ──
-    const isBookingIntent = /(đặt lịch|\bbook\b|cắt tóc|dịch vụ|thợ|barber|xác nhận|\bok\b|\byes\b|được|đúng|rồi)/i.test(message);
+    const isBookingIntent = BOOKING_INTENT_RE.test(message)
+      || /(đặt lịch|\bbook\b|dịch vụ|thợ|barber|xác nhận|\bok\b|\byes\b|được|đúng|rồi)/i.test(message);
     if (!isBookingIntent) {
       const cachedResponse = this.getCachedResponse(message);
       if (cachedResponse) {
@@ -346,18 +368,29 @@ export class AIAssistantService implements OnModuleInit {
             throw new Error('TIMEOUT');
           }
 
-          const completion = await Promise.race([
-            this.groq.chat.completions.create({
-              model: modelName,
-              messages: localMessages,
-              tools: GROQ_TOOLS as any,
-              tool_choice: 'auto',
-              max_tokens: 1024,
-            }),
-            new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new Error('TIMEOUT')), 25_000),
-            ),
-          ]);
+          let completion: any;
+          try {
+            completion = await Promise.race([
+              this.groq.chat.completions.create({
+                model: modelName,
+                messages: localMessages,
+                tools: GROQ_TOOLS as any,
+                tool_choice: 'auto',
+                max_tokens: 1024,
+              }),
+              new Promise<never>((_, reject) =>
+                setTimeout(() => reject(new Error('TIMEOUT')), 25_000),
+              ),
+            ]);
+          } catch (apiError: any) {
+            // Handle 429 at API call level — wait 2s and let model loop handle retry/fallback
+            const status = apiError?.status || apiError?.error?.code;
+            if (status === 429 || apiError?.message?.includes('429')) {
+              this.logger.warn(`[Groq 429] model=${modelName} — waiting 2s before fallback`);
+              await new Promise(r => setTimeout(r, 2000));
+            }
+            throw apiError;
+          }
 
           const responseMessage = completion.choices[0].message;
           localMessages.push(responseMessage);
@@ -369,7 +402,7 @@ export class AIAssistantService implements OnModuleInit {
             for (const toolCall of responseMessage.tool_calls) {
               extractedToolCalls.push({
                 id: toolCall.id,
-                name: toolCall.function.name,
+                name: this.sanitizeToolName(toolCall.function.name),
                 args: toolCall.function.arguments || '{}',
               });
             }
@@ -387,7 +420,7 @@ export class AIAssistantService implements OnModuleInit {
             let match;
             for (const re of [reA, reB, reC]) {
               while ((match = re.exec(contentText)) !== null) {
-                const name = match[1].trim();
+                const name = this.sanitizeToolName(match[1]);
                 let args = match[2].trim();
                 if (args.startsWith('"') && args.endsWith('"')) {
                   args = args.slice(1, -1);
@@ -408,6 +441,13 @@ export class AIAssistantService implements OnModuleInit {
           if (extractedToolCalls.length > 0) {
             for (const toolCall of extractedToolCalls) {
               const functionName = toolCall.name;
+
+              // Skip invalid/unknown tool names
+              if (!VALID_TOOL_NAMES.has(functionName)) {
+                this.logger.warn(`[Groq] Skipping unknown tool: ${functionName}`);
+                continue;
+              }
+
               let functionArgs = {};
               try {
                 functionArgs = typeof toolCall.args === 'string' ? JSON.parse(toolCall.args) : toolCall.args;
