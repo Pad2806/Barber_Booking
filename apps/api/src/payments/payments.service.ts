@@ -500,13 +500,9 @@ export class PaymentsService {
       }
 
       let bookingCode = match[0];
+      // Fix duplicate prefix that can appear in some QR templates (e.g. "RBRB..." → "RB...")
       if (bookingCode.startsWith('RBRB')) {
         bookingCode = bookingCode.substring(2);
-      }
-      // Strip trailing F for FINAL payment QR descriptions
-      const isFinalPayment = bookingCode.endsWith('F');
-      if (isFinalPayment) {
-        bookingCode = bookingCode.slice(0, -1);
       }
 
       const booking = await this.prisma.booking.findUnique({
