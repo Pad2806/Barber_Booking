@@ -31,25 +31,43 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   const getRedirectUrl = (role: string, roles?: string[]): string => {
-    // Không bao giờ redirect ngược lại trang auth
-    if (callbackUrl && !callbackUrl.includes('/login') && !callbackUrl.includes('/register')) {
-      return callbackUrl;
-    }
-    
     // Ưu tiên roles[] (multi-role RBAC) nếu có
     const allRoles = roles?.length ? roles : [role];
-    
-    if (allRoles.includes('CUSTOMER')) return '/';
-    // BARBER/SKINNER-only (không có MANAGER hay admin role) → barber dashboard
-    const isBarberOnly = (allRoles.includes('BARBER') || allRoles.includes('SKINNER')) &&
-      !allRoles.includes('MANAGER') &&
-      !allRoles.includes('SUPER_ADMIN') &&
-      !allRoles.includes('SALON_OWNER') &&
-      !allRoles.includes('CASHIER');
-    if (isBarberOnly) return '/barber/dashboard';
-    
-    // Mọi role khác (MANAGER, CASHIER, SUPER_ADMIN, multi-role) → unified dashboard
-    return '/dashboard';
+
+    // ── Non-customer roles → luôn về dashboard, bỏ qua callbackUrl ──
+    // callbackUrl thường là '/' (trang chủ) khi user bấm Đăng nhập từ header.
+    // Không nên dùng callbackUrl đó để gửi nhân viên về trang chủ thay vì dashboard.
+    const isStaffRole = allRoles.some(r =>
+      ['BARBER', 'SKINNER', 'CASHIER', 'MANAGER', 'SUPER_ADMIN', 'SALON_OWNER'].includes(r)
+    );
+
+    if (isStaffRole) {
+      // BARBER/SKINNER-only (không có MANAGER hay admin role) → barber dashboard
+      const isBarberOnly = (allRoles.includes('BARBER') || allRoles.includes('SKINNER')) &&
+        !allRoles.includes('MANAGER') &&
+        !allRoles.includes('SUPER_ADMIN') &&
+        !allRoles.includes('SALON_OWNER') &&
+        !allRoles.includes('CASHIER');
+      if (isBarberOnly) return '/barber/dashboard';
+
+      // Mọi role khác (MANAGER, CASHIER, SUPER_ADMIN, multi-role) → unified dashboard
+      return '/dashboard';
+    }
+
+    // ── CUSTOMER: honoring callbackUrl nếu hợp lệ ────────────────────
+    // Chỉ dùng callbackUrl khi nó trỏ đến trang thực sự cần auth
+    // (không phải trang chủ '/', không phải trang auth)
+    const PUBLIC_PATHS = ['/', '/salons', '/login', '/register'];
+    const isPublicCallbackUrl = !callbackUrl ||
+      PUBLIC_PATHS.includes(callbackUrl) ||
+      callbackUrl.includes('/login') ||
+      callbackUrl.includes('/register');
+
+    if (!isPublicCallbackUrl) {
+      return callbackUrl!;
+    }
+
+    return '/';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
