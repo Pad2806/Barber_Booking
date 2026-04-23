@@ -32,11 +32,7 @@ const ResponsiveContainer = dynamicImport(() => import('recharts').then(m => m.R
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function fmt(n: number) {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}K`;
-  return n.toLocaleString('vi-VN');
-}
+
 
 function GrowthBadge({ value }: { value: number | null }) {
   if (value === null) return <span className="text-xs text-slate-400">—</span>;
@@ -96,8 +92,8 @@ function BranchDetailPanel({ salonId, onClose }: { salonId: string; onClose: () 
           <div className="grid grid-cols-3 gap-3">
             {[
               { label: 'Tổng doanh thu', value: formatPrice(data.totalRevenue || 0), color: 'emerald' },
-              { label: 'Tiền mặt', value: `${fmt(data.byMethod?.cash || 0)} (${cashPct}%)`, color: 'blue' },
-              { label: 'Chuyển khoản', value: `${fmt(data.byMethod?.transfer || 0)} (${100 - cashPct}%)`, color: 'indigo' },
+              { label: 'Tiền mặt', value: `${formatPrice(data.byMethod?.cash || 0)} (${cashPct}%)`, color: 'blue' },
+              { label: 'Chuyển khoản', value: `${formatPrice(data.byMethod?.transfer || 0)} (${100 - cashPct}%)`, color: 'indigo' },
             ].map(s => (
               <div key={s.label} className={cn(
                 'p-4 rounded-2xl',
@@ -116,22 +112,25 @@ function BranchDetailPanel({ salonId, onClose }: { salonId: string; onClose: () 
           {data.dailyBreakdown?.length > 0 && (
             <div>
               <p className="text-xs font-bold text-slate-600 mb-3">Doanh thu theo ngày (tháng này)</p>
-              <div className="flex items-end gap-1 h-28 px-1">
-                {data.dailyBreakdown.map((d: any, i: number) => {
-                  const h = maxDaily > 0 ? Math.max((d.revenue / maxDaily) * 100, 2) : 2;
-                  return (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-                      <div
-                        className="w-full bg-gradient-to-t from-primary to-primary/60 rounded-t-sm transition-all hover:from-primary/80"
-                        style={{ height: `${h}%` }}
-                        title={`${d.date}: ${formatPrice(d.revenue)}`}
-                      />
-                      {data.dailyBreakdown.length <= 15 && (
-                        <span className="text-[7px] text-slate-400">{d.date.slice(8)}</span>
-                      )}
-                    </div>
-                  );
-                })}
+              <div className="relative flex items-end gap-0.5 h-28 px-1">
+                {(() => {
+                  const safeMax = Math.max(maxDaily, 1);
+                  return data.dailyBreakdown.map((d: any, i: number) => {
+                    const pct = Math.max((d.revenue / safeMax) * 100, 2);
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center justify-end gap-0.5 h-full">
+                        <div
+                          className="w-full bg-gradient-to-t from-primary to-primary/60 rounded-t-sm transition-all duration-300 hover:opacity-80"
+                          style={{ height: `${pct}%` }}
+                          title={`${d.date}: ${formatPrice(d.revenue)}`}
+                        />
+                        {data.dailyBreakdown.length <= 15 && (
+                          <span className="text-[7px] text-slate-400 mt-0.5">{d.date.slice(8)}</span>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </div>
           )}
@@ -377,7 +376,6 @@ export default function AdminRevenuePage(): React.ReactElement {
               <option value="">Tất cả PT</option>
               <option value="CASH">Tiền mặt</option>
               <option value="VIETQR">VietQR</option>
-              <option value="BANK_TRANSFER">Chuyển khoản</option>
             </select>
 
             {/* Granularity */}
@@ -615,7 +613,7 @@ export default function AdminRevenuePage(): React.ReactElement {
                   ) : bd.byMethod.map((m: any) => (
                     <div key={m.method} className={cn('rounded-2xl p-5', METHOD_COLORS[m.method] || 'bg-slate-100 text-slate-700')}>
                       <p className="text-xs font-bold uppercase tracking-wider opacity-70">{METHOD_LABELS[m.method] || m.method}</p>
-                      <p className="text-2xl font-black mt-2">{fmt(m.revenue)}đ</p>
+                      <p className="text-xl font-black mt-2">{formatPrice(m.revenue)}</p>
                       <p className="text-xs opacity-60 mt-1">{m.count} giao dịch</p>
                     </div>
                   ))}
@@ -638,7 +636,7 @@ export default function AdminRevenuePage(): React.ReactElement {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 value={txSearch}
-                onChange={e => setTxSearch(e.target.value)}
+                onChange={e => { setTxSearch(e.target.value); setTxPage(1); }}
                 placeholder="Tìm khách, chi nhánh..."
                 className="pl-9 rounded-xl h-9 text-sm"
               />
@@ -694,46 +692,54 @@ export default function AdminRevenuePage(): React.ReactElement {
                 </table>
               </div>
 
-              {/* Pagination */}
-              {txMeta.lastPage > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100">
-                  <p className="text-xs text-slate-400">
-                    Trang {txMeta.page} / {txMeta.lastPage} ({txMeta.total} giao dịch)
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setTxPage(p => Math.max(1, p - 1))}
-                      disabled={txPage <= 1}
-                      className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    {Array.from({ length: Math.min(5, txMeta.lastPage) }, (_, i) => {
-                      const p = txPage <= 3 ? i + 1 : txPage + i - 2;
-                      if (p < 1 || p > txMeta.lastPage) return null;
-                      return (
-                        <button
-                          key={p}
-                          onClick={() => setTxPage(p)}
-                          className={cn(
-                            'w-7 h-7 rounded-lg text-xs font-bold transition-all',
-                            p === txPage ? 'bg-primary text-white' : 'border border-slate-200 hover:bg-slate-50 text-slate-600'
-                          )}
-                        >
-                          {p}
-                        </button>
-                      );
-                    })}
-                    <button
-                      onClick={() => setTxPage(p => Math.min(txMeta.lastPage, p + 1))}
-                      disabled={txPage >= txMeta.lastPage}
-                      className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
+              {/* Pagination — dùng filteredTx.length để tính đúng số trang khi đang search */}
+              {(() => {
+                const searchLastPage = txSearch
+                  ? Math.max(1, Math.ceil(filteredTx.length / TX_LIMIT))
+                  : txMeta.lastPage;
+                const displayPage = txSearch ? txPage : txMeta.page;
+                const totalShown = txSearch ? filteredTx.length : txMeta.total;
+                if (searchLastPage <= 1) return null;
+                return (
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-slate-100">
+                    <p className="text-xs text-slate-400">
+                      Trang {displayPage} / {searchLastPage} ({totalShown} giao dịch)
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setTxPage(p => Math.max(1, p - 1))}
+                        disabled={txPage <= 1}
+                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      {Array.from({ length: Math.min(5, searchLastPage) }, (_, i) => {
+                        const p = txPage <= 3 ? i + 1 : txPage + i - 2;
+                        if (p < 1 || p > searchLastPage) return null;
+                        return (
+                          <button
+                            key={p}
+                            onClick={() => setTxPage(p)}
+                            className={cn(
+                              'w-7 h-7 rounded-lg text-xs font-bold transition-all',
+                              p === txPage ? 'bg-primary text-white' : 'border border-slate-200 hover:bg-slate-50 text-slate-600'
+                            )}
+                          >
+                            {p}
+                          </button>
+                        );
+                      })}
+                      <button
+                        onClick={() => setTxPage(p => Math.min(searchLastPage, p + 1))}
+                        disabled={txPage >= searchLastPage}
+                        className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </>
           )}
         </CardContent>
