@@ -274,11 +274,13 @@ export class PaymentsService {
         },
       });
     } else {
-      // FINAL or FULL payment → mark as fully PAID
+      // FINAL or FULL payment → mark as fully PAID + record payment method
       await this.prisma.booking.update({
         where: { id: payment.bookingId },
         data: {
           paymentStatus: PaymentStatus.PAID,
+          status: BookingStatus.COMPLETED,
+          paymentMethod: payment.method,
         },
       });
     }
@@ -410,6 +412,7 @@ export class PaymentsService {
         data: {
           paymentStatus: PaymentStatus.PAID,
           status: BookingStatus.COMPLETED,
+          paymentMethod: method,
         },
       });
 
@@ -559,12 +562,13 @@ export class PaymentsService {
           },
         });
       } else {
-        // FINAL payment confirmed → COMPLETED
+        // FINAL payment confirmed → COMPLETED + record paymentMethod
         await this.prisma.booking.update({
           where: { id: booking.id },
           data: {
             paymentStatus: PaymentStatus.PAID,
             status: BookingStatus.COMPLETED,
+            paymentMethod: pendingPayment.method,
           },
         });
       }

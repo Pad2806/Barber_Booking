@@ -430,6 +430,9 @@ export class CashierService {
       data: {
         bookingCode: `WLK-${now.format('YYMMDD')}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`,
         customerId: customer.id,
+        // Denormalize for quick display without join
+        customerName: data.customerName,
+        customerPhone: data.phone || null,
         salonId,
         staffId: resolvedStaffId,
         date: todayDate,
@@ -453,6 +456,7 @@ export class CashierService {
         staff: { include: { user: { select: { name: true } } } },
       },
     });
+
 
     return {
       ...booking,
@@ -526,14 +530,14 @@ export class CashierService {
         salonId,
         date: { gte: sevenDaysAgo },
         OR: [
-          // Walk-in or bookings in progress (not yet paid)
+          // Walk-in or bookings in progress/done (not yet paid)
           {
-            status: { in: ['CONFIRMED', 'IN_PROGRESS'] },
+            status: { in: ['CONFIRMED', 'IN_PROGRESS', 'DONE'] },
             paymentStatus: { in: ['UNPAID', 'PENDING'] },
           },
-          // Online bookings: barber marked done but only deposit paid (75% remaining)
+          // Online bookings: only deposit paid
           {
-            status: { in: ['CONFIRMED', 'IN_PROGRESS', 'COMPLETED'] },
+            status: { in: ['CONFIRMED', 'IN_PROGRESS', 'DONE', 'COMPLETED'] },
             paymentStatus: 'DEPOSIT_PAID',
           },
         ],

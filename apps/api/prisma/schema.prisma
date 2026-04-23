@@ -55,6 +55,7 @@ enum BookingStatus {
   PENDING
   CONFIRMED
   IN_PROGRESS
+  DONE
   COMPLETED
   CANCELLED
   NO_SHOW
@@ -398,7 +399,6 @@ model Booking {
 
   // Customer notes
   note            String?
-  staffNote       String?         @db.Text
 
   // Cancellation
   cancelReason    String?

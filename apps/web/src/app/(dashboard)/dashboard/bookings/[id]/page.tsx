@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
 import {
   ArrowLeft,
   Calendar,
@@ -15,7 +14,6 @@ import {
   CreditCard,
   Loader2,
   AlertCircle,
-  CheckCircle,
   XCircle,
   Plus,
   DollarSign,
@@ -44,9 +42,6 @@ export default function BookingDetailPage() {
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [checkoutMethod, setCheckoutMethod] = useState<'CASH' | 'VIETQR'>('CASH');
   const [checkingOut, setCheckingOut] = useState(false);
-  const [checkoutResponse, setCheckoutResponse] = useState<any>(null); // To store QR info
-  const [showQRCode, setShowQRCode] = useState(false);
-  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
 
   const fetchBooking = useCallback(async () => {
     try {
@@ -70,34 +65,7 @@ export default function BookingDetailPage() {
     void fetchBooking();
   }, [fetchBooking]);
 
-  // Poll for payment status when QR is showing
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-
-    if (showQRCode && bookingId) {
-      interval = setInterval(async () => {
-        try {
-          const summary = await paymentApi.getSummary(bookingId);
-          // If the most recent payment is PAID, it was hit by webhook
-          const hasNewPaid = summary.payments.some(p => 
-            p.type === 'FINAL' && p.status === 'PAID'
-          );
-          
-          if (hasNewPaid) {
-            toast.success('Hệ thống đã nhận được tiền! Đang cập nhật...');
-            setShowQRCode(false);
-            setCheckoutResponse(null);
-            setShowCheckoutModal(false);
-            await fetchBooking();
-          }
-        } catch (error) {
-          console.error('Polling payment status error:', error);
-        }
-      }, 5000); // Check every 5 seconds
-    }
-
-    return () => clearInterval(interval);
-  }, [showQRCode, bookingId, fetchBooking]);
+  // Poll for payment status — removed: VIETQR is now handled inline like CASH
 
   const handleUpdateStatus = async (newStatus: string) => {
     if (!booking) return;
@@ -135,22 +103,20 @@ export default function BookingDetailPage() {
   const handleCheckout = async () => {
     try {
       setCheckingOut(true);
+      // For both CASH and VIETQR: call checkout to create the payment record,
+      // then immediately confirm it (staff verifies payment in person).
       const response = await paymentApi.checkout(bookingId, checkoutMethod);
       
-      if (checkoutMethod === 'VIETQR') {
-        if (!response.qrCodeUrl) {
-          toast.error('Salon chưa thiết lập ngân hàng để nhận chuyển khoản!');
-          setCheckingOut(false);
-          return;
-        }
-        setCheckoutResponse(response);
-        setShowQRCode(true);
-        toast.success('Đã tạo mã QR chuyển khoản!');
-      } else {
-        toast.success('Thanh toán tiền mặt thành công!');
-        setShowCheckoutModal(false);
-        await fetchBooking();
+      // If checkout itself already marked as PAID (CASH path in backend), we're done.
+      // For VIETQR, confirm the pending payment immediately (staff confirms receipt).
+      if (response?.id && response?.status !== 'PAID') {
+        await paymentApi.confirm(response.id);
       }
+
+      const methodLabel = checkoutMethod === 'CASH' ? 'tiền mặt' : 'chuyển khoản';
+      toast.success(`Thanh toán ${methodLabel} thành công!`);
+      setShowCheckoutModal(false);
+      await fetchBooking();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Lỗi khi thanh toán');
     } finally {
@@ -158,28 +124,8 @@ export default function BookingDetailPage() {
     }
   };
 
-  const handleManualConfirm = async () => {
-    if (!checkoutResponse?.id) return;
-    try {
-      setIsConfirmingPayment(true);
-      await paymentApi.confirm(checkoutResponse.id);
-      toast.success('Xác nhận thanh toán thủ công thành công!');
-      setShowQRCode(false);
-      setCheckoutResponse(null);
-      setShowCheckoutModal(false);
-      await fetchBooking();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Không thể xác nhận');
-    } finally {
-      setIsConfirmingPayment(false);
-    }
-  };
+  // handleManualConfirm is no longer needed — inline confirm above handles it
 
-  const handleCloseCheckout = () => {
-    setShowCheckoutModal(false);
-    setShowQRCode(false);
-    setCheckoutResponse(null);
-  };
 
   const toggleSelectService = (serviceId: string) => {
     setSelectedServices(prev =>
@@ -447,7 +393,7 @@ export default function BookingDetailPage() {
             <h2 className="text-lg font-semibold mb-4">Hành động</h2>
             <div className="space-y-3">
 
-              {/* PENDING: Xác nhận khách tới */}
+              {/* PENDING → CONFIRMED */}
               {booking.status === 'PENDING' && (
                 <button
                   onClick={() => handleUpdateStatus('CONFIRMED')}
@@ -459,7 +405,7 @@ export default function BookingDetailPage() {
                 </button>
               )}
 
-              {/* CONFIRMED: Bắt đầu làm dịch vụ */}
+              {/* CONFIRMED → IN_PROGRESS */}
               {booking.status === 'CONFIRMED' && (
                 <button
                   onClick={() => handleUpdateStatus('IN_PROGRESS')}
@@ -471,9 +417,20 @@ export default function BookingDetailPage() {
                 </button>
               )}
 
-              {/* IN_PROGRESS + còn tiền: Thanh toán tại quầy
-                  Backend sẽ tự chuyển booking sang COMPLETED sau khi thu tiền */}
-              {booking.status === 'IN_PROGRESS' && remainingAmount > 0 && (
+              {/* IN_PROGRESS → DONE (barber/admin đánh dấu xong dịch vụ) */}
+              {booking.status === 'IN_PROGRESS' && (
+                <button
+                  onClick={() => handleUpdateStatus('DONE')}
+                  disabled={updating}
+                  className="w-full px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium disabled:opacity-50 shadow-sm flex items-center justify-center gap-2"
+                >
+                  <CheckCircle className="w-4 h-4" />
+                  Xong dịch vụ
+                </button>
+              )}
+
+              {/* DONE + còn tiền → Thanh toán tại quầy */}
+              {booking.status === 'DONE' && remainingAmount > 0 && (
                 <button
                   onClick={() => setShowCheckoutModal(true)}
                   disabled={updating}
@@ -484,9 +441,8 @@ export default function BookingDetailPage() {
                 </button>
               )}
 
-              {/* IN_PROGRESS + đã đủ tiền (cọc = 100% hoặc walk-in không cọc):
-                  Chỉ cần đánh dấu hoàn thành thủ công */}
-              {booking.status === 'IN_PROGRESS' && remainingAmount === 0 && (
+              {/* DONE + đủ tiền rồi → Hoàn thành */}
+              {booking.status === 'DONE' && remainingAmount === 0 && (
                 <button
                   onClick={() => handleUpdateStatus('COMPLETED')}
                   disabled={updating}
@@ -497,8 +453,20 @@ export default function BookingDetailPage() {
                 </button>
               )}
 
-              {/* Huỷ lịch: chỉ khi PENDING, CONFIRMED, IN_PROGRESS */}
-              {['PENDING', 'CONFIRMED', 'IN_PROGRESS'].includes(booking.status) && (
+              {/* Admin bypass: IN_PROGRESS + còn tiền → Thu tiền ngay (không cần DONE) */}
+              {booking.status === 'IN_PROGRESS' && remainingAmount > 0 && (
+                <button
+                  onClick={() => setShowCheckoutModal(true)}
+                  disabled={updating}
+                  className="w-full px-4 py-2.5 bg-accent/70 text-white rounded-lg hover:bg-accent/80 transition-colors font-medium flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 text-sm"
+                >
+                  <DollarSign className="w-4 h-4" />
+                  Thu tiền ngay
+                </button>
+              )}
+
+              {/* Huỷ lịch */}
+              {['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'DONE'].includes(booking.status) && (
                 <button
                   onClick={() => handleUpdateStatus('CANCELLED')}
                   disabled={updating}
@@ -513,6 +481,7 @@ export default function BookingDetailPage() {
           </div>
         </div>
       </div>
+
 
       {/* Add Services Modal */}
       {showAddServiceModal && (
@@ -578,136 +547,66 @@ export default function BookingDetailPage() {
       {/* Checkout Modal */}
       {showCheckoutModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseCheckout} />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowCheckoutModal(false)} />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col">
             <div className="flex justify-between items-center p-5 border-b">
-              <h3 className="text-xl font-bold text-gray-800">
-                {showQRCode ? 'Mã QR Thanh Toán' : 'Thanh Toán (Checkout)'}
-              </h3>
+              <h3 className="text-xl font-bold text-gray-800">Thanh Toán (Checkout)</h3>
               <button 
-                onClick={handleCloseCheckout} 
+                onClick={() => setShowCheckoutModal(false)} 
                 className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
             
-            <div className="p-6 overflow-y-auto">
-              {!showQRCode ? (
-                <>
-                  <div className="mb-6 bg-accent/5 p-4 rounded-xl border border-accent/10">
-                    <p className="text-sm text-gray-500 mb-1">Số tiền khách cần trả hiện tại:</p>
-                    <p className="text-3xl font-black text-accent">{formatPrice(remainingAmount)}</p>
-                  </div>
+            <div className="p-6">
+              <div className="mb-6 bg-accent/5 p-4 rounded-xl border border-accent/10">
+                <p className="text-sm text-gray-500 mb-1">Số tiền khách cần trả hiện tại:</p>
+                <p className="text-3xl font-black text-accent">{formatPrice(remainingAmount)}</p>
+              </div>
 
-                  <div className="space-y-4 mb-8">
-                    <p className="font-semibold text-gray-800 text-sm uppercase tracking-wider">Phương thức thanh toán</p>
-                    <div className="grid grid-cols-2 gap-4">
-                      <button
-                        type="button"
-                        onClick={() => setCheckoutMethod('CASH')}
-                        className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all duration-200 ${
-                          checkoutMethod === 'CASH' 
-                            ? 'border-accent bg-accent/5 shadow-md shadow-accent/10' 
-                            : 'border-gray-100 hover:border-gray-300 bg-white'
-                        }`}
-                      >
-                        <div className={`p-2 rounded-xl ${checkoutMethod === 'CASH' ? 'bg-accent text-white' : 'bg-gray-100 text-gray-400'}`}>
-                          <DollarSign className="w-6 h-6" />
-                        </div>
-                        <span className={`font-bold text-sm ${checkoutMethod === 'CASH' ? 'text-accent' : 'text-gray-500'}`}>Tiền mặt</span>
-                      </button>
-                      
-                      <button
-                        type="button"
-                        onClick={() => setCheckoutMethod('VIETQR')}
-                        className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all duration-200 ${
-                          checkoutMethod === 'VIETQR' 
-                            ? 'border-accent bg-accent/5 shadow-md shadow-accent/10' 
-                            : 'border-gray-100 hover:border-gray-300 bg-white'
-                        }`}
-                      >
-                        <div className={`p-2 rounded-xl ${checkoutMethod === 'VIETQR' ? 'bg-accent text-white' : 'bg-gray-100 text-gray-400'}`}>
-                          <CreditCard className="w-6 h-6" />
-                        </div>
-                        <span className={`font-bold text-sm ${checkoutMethod === 'VIETQR' ? 'text-accent' : 'text-gray-500'}`}>Chuyển khoản</span>
-                      </button>
-                    </div>
-                  </div>
-
+              <div className="space-y-4 mb-8">
+                <p className="font-semibold text-gray-800 text-sm uppercase tracking-wider">Phương thức thanh toán</p>
+                <div className="grid grid-cols-2 gap-4">
                   <button
-                    onClick={handleCheckout}
-                    disabled={checkingOut}
-                    className="w-full py-4 bg-accent text-white rounded-2xl font-bold text-lg shadow-lg shadow-accent/20 hover:bg-accent/90 transform active:scale-[0.98] transition-all disabled:opacity-50 flex justify-center items-center gap-2"
+                    type="button"
+                    onClick={() => setCheckoutMethod('CASH')}
+                    className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all duration-200 ${
+                      checkoutMethod === 'CASH' 
+                        ? 'border-accent bg-accent/5 shadow-md shadow-accent/10' 
+                        : 'border-gray-100 hover:border-gray-300 bg-white'
+                    }`}
                   >
-                    {checkingOut ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Bấm để thu tiền'}
+                    <div className={`p-2 rounded-xl ${checkoutMethod === 'CASH' ? 'bg-accent text-white' : 'bg-gray-100 text-gray-400'}`}>
+                      <DollarSign className="w-6 h-6" />
+                    </div>
+                    <span className={`font-bold text-sm ${checkoutMethod === 'CASH' ? 'text-accent' : 'text-gray-500'}`}>Tiền mặt</span>
                   </button>
-                </>
-              ) : (
-                <div className="flex flex-col items-center text-center">
-                  <div className="mb-4 bg-green-50 text-green-700 px-4 py-2 rounded-full text-xs font-bold uppercase tracking-tight flex items-center gap-2">
-                    <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    Đang chờ webhook xác nhận tiền...
-                  </div>
                   
-                  {checkoutResponse?.qrCodeUrl ? (
-                    <div className="relative group mb-6">
-                      <div className="absolute -inset-1 bg-gradient-to-r from-accent to-blue-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-                      <div className="relative bg-white p-3 rounded-2xl border-2 border-dashed border-gray-200">
-                        <Image 
-                          src={checkoutResponse.qrCodeUrl} 
-                          alt="QR Code" 
-                          width={240} 
-                          height={240}
-                          unoptimized
-                          className="w-full h-auto rounded-lg"
-                        />
-                      </div>
+                  <button
+                    type="button"
+                    onClick={() => setCheckoutMethod('VIETQR')}
+                    className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all duration-200 ${
+                      checkoutMethod === 'VIETQR' 
+                        ? 'border-accent bg-accent/5 shadow-md shadow-accent/10' 
+                        : 'border-gray-100 hover:border-gray-300 bg-white'
+                    }`}
+                  >
+                    <div className={`p-2 rounded-xl ${checkoutMethod === 'VIETQR' ? 'bg-accent text-white' : 'bg-gray-100 text-gray-400'}`}>
+                      <CreditCard className="w-6 h-6" />
                     </div>
-                  ) : (
-                    <div className="py-12 flex flex-col items-center text-gray-500">
-                      <Loader2 className="w-10 h-10 animate-spin mb-4" />
-                      <p>Đang khởi tạo mã QR...</p>
-                    </div>
-                  )}
-
-                  <div className="w-full space-y-3 p-4 bg-gray-50 rounded-2xl border border-gray-100 text-left mb-6">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 text-xs">Số tiền:</span>
-                      <span className="font-bold text-accent">{formatPrice(checkoutResponse?.amount || remainingAmount)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500 text-xs">Nội dung:</span>
-                      <span className="font-bold font-mono text-gray-800">{booking?.bookingCode}F</span>
-                    </div>
-                    <div className="pt-2 border-t border-gray-200 italic text-[10px] text-gray-400 text-center">
-                      Mẹo: Hệ thống sẽ tự động hoàn tất sau khi nhận được tiền.
-                    </div>
-                  </div>
-
-                  <div className="w-full space-y-3">
-                    <button
-                      onClick={handleManualConfirm}
-                      disabled={isConfirmingPayment}
-                      className="w-full py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-gray-50 transition-all disabled:opacity-50"
-                    >
-                      {isConfirmingPayment ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                        <>
-                          <CheckCircle className="w-5 h-5 text-green-500" />
-                          Xác nhận đã nhận tiền tay
-                        </>
-                      )}
-                    </button>
-                    
-                    <button
-                      onClick={() => setShowQRCode(false)}
-                      className="w-full py-2 text-gray-400 text-xs font-medium hover:text-gray-600 transition-colors"
-                    >
-                      Quay lại chọn phương thức khác
-                    </button>
-                  </div>
+                    <span className={`font-bold text-sm ${checkoutMethod === 'VIETQR' ? 'text-accent' : 'text-gray-500'}`}>Chuyển khoản</span>
+                  </button>
                 </div>
-              )}
+              </div>
+
+              <button
+                onClick={handleCheckout}
+                disabled={checkingOut}
+                className="w-full py-4 bg-accent text-white rounded-2xl font-bold text-lg shadow-lg shadow-accent/20 hover:bg-accent/90 transform active:scale-[0.98] transition-all disabled:opacity-50 flex justify-center items-center gap-2"
+              >
+                {checkingOut ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Bấm để thu tiền'}
+              </button>
             </div>
           </div>
         </div>

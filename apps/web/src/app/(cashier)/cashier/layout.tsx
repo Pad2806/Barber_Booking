@@ -13,6 +13,7 @@ import {
   ClipboardList,
   CreditCard,
   BarChart3,
+  CalendarOff,
   Menu,
   X,
   LogOut,
@@ -34,6 +35,7 @@ const NAV_ITEMS = [
   { key: 'appointments', href: '/cashier/appointments', label: 'Lịch hẹn', icon: ClipboardList },
   { key: 'checkout', href: '/cashier/checkout', label: 'Thanh toán', icon: CreditCard },
   { key: 'revenue', href: '/cashier/revenue', label: 'Doanh thu', icon: BarChart3 },
+  { key: 'leave-requests', href: '/cashier/leave-requests', label: 'Nghỉ phép', icon: CalendarOff },
 ];
 
 export default function CashierLayout({ children }: { children: React.ReactNode }) {

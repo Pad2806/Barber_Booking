@@ -59,8 +59,20 @@ export default function WalkInPage() {
       staffId: selectedStaffId || undefined,
       note: note || undefined,
     }),
-    onSuccess: () => {
-      toast.success('Đã tạo booking thành công!');
+    onSuccess: (result: any) => {
+      if (result?.autoAssigned && result?.assignedStaffName) {
+        toast.success(
+          `Đã tạo booking! → Tự động gán: ${result.assignedStaffName}`,
+          { duration: 5000, icon: '✂️' }
+        );
+      } else if (!result?.staffId) {
+        toast(
+          'Booking đã tạo, nhưng không có thợ nào rảnh. Hãy phân công sau!',
+          { icon: '⚠️', duration: 6000 }
+        );
+      } else {
+        toast.success('Đã tạo booking thành công!');
+      }
       resetForm();
       queryClient.invalidateQueries({ queryKey: ['cashier'] });
     },
@@ -217,6 +229,9 @@ export default function WalkInPage() {
                     <User className="w-5 h-5 text-slate-400" />
                   </div>
                   <p className="text-xs font-semibold text-slate-600">Bất kỳ</p>
+                  <p className="text-[10px] text-slate-400 text-center leading-tight">
+                    Hệ thống tự chọn thợ rảnh
+                  </p>
                 </div>
                 {barbers?.filter((b: any) => b.isAvailable).map((barber: any) => (
                   <div
@@ -278,6 +293,15 @@ export default function WalkInPage() {
                     ))}
                   </div>
                   <div className="h-px bg-slate-100" />
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span>Thợ cắt</span>
+                    <span className="font-semibold">
+                      {selectedStaffId
+                        ? barbers?.find((b: any) => b.id === selectedStaffId)?.name || 'Không rõ'
+                        : <span className="italic text-slate-400">Tự động chọn</span>
+                      }
+                    </span>
+                  </div>
                   <div className="flex items-center justify-between text-xs text-slate-400">
                     <span>Thời gian ước tính</span>
                     <span>{totalDuration} phút</span>

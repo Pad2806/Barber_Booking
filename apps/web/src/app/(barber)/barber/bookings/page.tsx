@@ -95,6 +95,8 @@ export default function BarberBookingsPage() {
         return { label: 'Đã xác nhận', class: 'bg-blue-50 text-blue-700 border-blue-200' };
       case 'IN_PROGRESS':
         return { label: 'Đang phục vụ', class: 'bg-amber-50 text-amber-700 border-amber-200' };
+      case 'DONE':
+        return { label: 'Xong dịch vụ • Chờ thu ngân', class: 'bg-teal-50 text-teal-700 border-teal-200' };
       case 'COMPLETED':
         return { label: 'Hoàn tất', class: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
       case 'CANCELLED':
@@ -108,6 +110,7 @@ export default function BarberBookingsPage() {
     { key: 'ALL', label: 'Tất cả', count: allBookings.length },
     { key: 'CONFIRMED', label: 'Đã xác nhận', count: allBookings.filter((b: any) => b.status === 'CONFIRMED').length },
     { key: 'IN_PROGRESS', label: 'Đang phục vụ', count: allBookings.filter((b: any) => b.status === 'IN_PROGRESS').length },
+    { key: 'DONE', label: 'Xong dịch vụ', count: allBookings.filter((b: any) => b.status === 'DONE').length },
     { key: 'COMPLETED', label: 'Hoàn tất', count: allBookings.filter((b: any) => b.status === 'COMPLETED').length },
     { key: 'CANCELLED', label: 'Đã hủy', count: allBookings.filter((b: any) => b.status === 'CANCELLED').length },
   ];
@@ -286,15 +289,12 @@ export default function BarberBookingsPage() {
                               <Button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  updateStatusMutation.mutate({
-                                    id: booking.id,
-                                    status: 'COMPLETED',
-                                  });
+                                  updateStatusMutation.mutate({ id: booking.id, status: 'DONE' });
                                 }}
                                 disabled={updateStatusMutation.isPending}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-9 px-4 text-xs font-semibold shadow-sm"
+                                className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl h-9 px-4 text-xs font-semibold shadow-sm"
                               >
-                                <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Hoàn tất
+                                <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Xong dịch vụ
                               </Button>
                               <Button
                                 onClick={(e) => {
@@ -557,21 +557,22 @@ export default function BarberBookingsPage() {
                   <Button
                     onClick={() => {
                       updateStatusMutation.mutate(
-                        { id: selectedBooking.id, status: 'COMPLETED' },
+                        { id: selectedBooking.id, status: 'DONE' },
                         {
                           onSuccess: () => {
                             setSelectedBooking((prev: any) =>
-                              prev ? { ...prev, status: 'COMPLETED' } : prev
+                              prev ? { ...prev, status: 'DONE' } : prev
                             );
+                            toast.success('Xong dịch vụ! Khách đang được hướng tới quầy thu ngân.');
                           },
                         }
                       );
                     }}
                     disabled={updateStatusMutation.isPending}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl h-11 flex-1 font-semibold text-sm shadow-sm"
+                    className="bg-teal-600 hover:bg-teal-700 text-white rounded-xl h-11 flex-1 font-semibold text-sm shadow-sm"
                   >
                     <CheckCircle2 className="w-4 h-4 mr-2" />
-                    Đã hoàn thành
+                    Xong dịch vụ → Thu ngân
                   </Button>
                   {/* Huỷ khi nhấn nhầm Bắt đầu */}
                   <Button

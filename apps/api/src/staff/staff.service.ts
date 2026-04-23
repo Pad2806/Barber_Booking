@@ -1139,6 +1139,7 @@ export class StaffService extends BaseQueryService {
       where: {
         staffId,
         date: today,
+        // Only auto-complete IN_PROGRESS — DONE bookings wait for cashier payment
         status: { in: ['IN_PROGRESS', 'CONFIRMED'] },
       },
     });

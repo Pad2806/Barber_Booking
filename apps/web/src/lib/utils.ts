@@ -51,6 +51,7 @@ export const BOOKING_STATUS: Record<string, { label: string; color: string }> = 
   PENDING: { label: 'Chờ xác nhận', color: 'bg-yellow-100 text-yellow-800' },
   CONFIRMED: { label: 'Đã xác nhận', color: 'bg-blue-100 text-blue-800' },
   IN_PROGRESS: { label: 'Đang thực hiện', color: 'bg-indigo-100 text-indigo-800' },
+  DONE: { label: 'Xong dịch vụ', color: 'bg-teal-100 text-teal-800' },
   COMPLETED: { label: 'Hoàn thành', color: 'bg-green-100 text-green-800' },
   CANCELLED: { label: 'Đã hủy', color: 'bg-red-100 text-red-800' },
   NO_SHOW: { label: 'Không đến', color: 'bg-gray-100 text-gray-800' },
