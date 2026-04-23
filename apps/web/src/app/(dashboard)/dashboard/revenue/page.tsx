@@ -1,7 +1,9 @@
 'use client';
 
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { cashierApi } from '@/lib/api';
+import { useSalonScope } from '@/hooks/use-salon-scope';
 import {
   DollarSign,
   TrendingUp,
@@ -26,10 +28,12 @@ const ResponsiveContainer = dynamicImport(() => import('recharts').then(mod => m
 const BarChart = dynamicImport(() => import('recharts').then(mod => mod.BarChart), { ssr: false });
 const Bar = dynamicImport(() => import('recharts').then(mod => mod.Bar), { ssr: false });
 
-export default function RevenuePage() {
+export default function RevenuePage(): React.ReactElement {
+  const { isSuperAdmin } = useSalonScope();
+
   const { data: revenue, isLoading } = useQuery({
-    queryKey: ['cashier', 'revenue'],
-    queryFn: cashierApi.getRevenue,
+    queryKey: ['cashier', 'revenue', isSuperAdmin ? 'ALL' : undefined],
+    queryFn: () => cashierApi.getRevenue(isSuperAdmin ? 'ALL' : undefined),
     refetchInterval: 60000,
   });
 
@@ -57,7 +61,7 @@ export default function RevenuePage() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-slate-900 font-heading italic">Doanh thu</h1>
-        <p className="text-slate-500 mt-1">Tổng quan doanh thu tại chi nhánh</p>
+        <p className="text-slate-500 mt-1">{isSuperAdmin ? 'Tổng quan doanh thu toàn hệ thống' : 'Tổng quan doanh thu tại chi nhánh'}</p>
       </div>
 
       {/* Stats */}

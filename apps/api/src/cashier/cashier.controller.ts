@@ -22,7 +22,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 @Roles(Role.CASHIER, Role.MANAGER, Role.SALON_OWNER, Role.SUPER_ADMIN)
 @Controller('cashier')
 export class CashierController {
-  constructor(private readonly cashierService: CashierService) {}
+  constructor(private readonly cashierService: CashierService) { }
 
   // ─── DASHBOARD ───────────────────────────────────────────
 
@@ -165,8 +165,11 @@ export class CashierController {
 
   @Get('revenue')
   @ApiOperation({ summary: 'Get revenue stats with trends' })
-  getRevenue(@CurrentUser('id') userId: string) {
-    return this.cashierService.getRevenue(userId);
+  getRevenue(
+    @CurrentUser('id') userId: string,
+    @Query('salonId') salonId?: string,
+  ) {
+    return this.cashierService.getRevenue(userId, salonId);
   }
 
   // ─── QUEUE ──────────────────────────────────────────────

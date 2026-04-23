@@ -56,7 +56,7 @@ export default function AdminCustomersPage() {
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'customers', { page, limit, search }],
-    queryFn: () => adminApi.getAllUsers({ skip: (page - 1) * limit, take: limit, search, role: 'CUSTOMER' }),
+    queryFn: () => adminApi.getAllUsers({ page, limit, search, role: 'CUSTOMER' }),
   });
 
   const { data: customerDetail, isLoading: isDetailLoading } = useQuery({

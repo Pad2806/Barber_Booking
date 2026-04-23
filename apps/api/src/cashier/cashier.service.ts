@@ -22,7 +22,7 @@ const VIETNAM_TZ = 'Asia/Ho_Chi_Minh';
 
 @Injectable()
 export class CashierService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // ─── AUTH HELPER ────────────────────────────────────────────
 
@@ -667,14 +667,27 @@ export class CashierService {
 
   // ─── 7. REVENUE ────────────────────────────────────────────
 
-  async getRevenue(userId: string) {
-    const salonId = await this.getSalonId(userId);
+  async getRevenue(userId: string, requestedSalonId?: string) {
+    let salonId = null;
+    let isGlobal = false;
+
+    if (requestedSalonId === 'ALL') {
+      isGlobal = true;
+    } else if (requestedSalonId) {
+      salonId = requestedSalonId;
+    } else {
+      salonId = await this.getSalonId(userId);
+    }
+
     const now = dayjs().tz(VIETNAM_TZ);
     const today = this.toDateOnly(now.format('YYYY-MM-DD'));
     const startOfWeek = this.toDateOnly(now.startOf('week').format('YYYY-MM-DD'));
     const startOfMonth = this.toDateOnly(now.startOf('month').format('YYYY-MM-DD'));
 
-    const completedWhere = { salonId, status: BookingStatus.COMPLETED };
+    const completedWhere: any = { status: BookingStatus.COMPLETED };
+    if (!isGlobal && salonId) {
+      completedWhere.salonId = salonId;
+    }
 
     const [todayRev, weekRev, monthRev, todayCount, byMethod] =
       await Promise.all([
@@ -696,7 +709,11 @@ export class CashierService {
         this.prisma.payment.groupBy({
           by: ['method'],
           where: {
-            booking: { salonId, status: 'COMPLETED', date: today },
+            booking: {
+              ...(isGlobal || !salonId ? {} : { salonId: salonId as string }),
+              status: 'COMPLETED',
+              date: today
+            },
             status: 'PAID',
           },
           _sum: { amount: true },
@@ -707,7 +724,11 @@ export class CashierService {
     // Revenue by service (today)
     const byService = await this.prisma.bookingService.findMany({
       where: {
-        booking: { salonId, status: 'COMPLETED', date: today },
+        booking: {
+          ...(isGlobal || !salonId ? {} : { salonId: salonId as string }),
+          status: 'COMPLETED',
+          date: today
+        },
       },
       include: { service: { select: { name: true } } },
     });
@@ -716,7 +737,7 @@ export class CashierService {
     for (const bs of byService) {
       const key = bs.serviceId;
       if (!serviceMap[key]) {
-        serviceMap[key] = { name: bs.service.name, revenue: 0, count: 0 };
+        serviceMap[key] = { name: (bs as any).service?.name || 'Dịch vụ', revenue: 0, count: 0 };
       }
       serviceMap[key].revenue += Number(bs.price);
       serviceMap[key].count += 1;
@@ -769,10 +790,10 @@ export class CashierService {
         month: Number(monthRev._sum.totalAmount || 0),
         todayTransactions: todayCount,
       },
-      byMethod: byMethod.map((m) => ({
+      byMethod: byMethod.map((m: any) => ({
         method: m.method,
-        amount: Number(m._sum.amount || 0),
-        count: m._count._all,
+        amount: Number(m._sum?.amount || 0),
+        count: m._count?._all ?? 0,
       })),
       byService: Object.values(serviceMap).sort((a, b) => b.revenue - a.revenue),
       byStaff: Object.values(staffMap).sort((a, b) => b.revenue - a.revenue),

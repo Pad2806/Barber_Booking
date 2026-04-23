@@ -466,8 +466,8 @@ export const cashierApi = {
   },
 
   // Revenue
-  getRevenue: async () => {
-    const response = await apiClient.get('/cashier/revenue');
+  getRevenue: async (salonId?: string) => {
+    const response = await apiClient.get('/cashier/revenue', { params: { salonId } });
     return response.data;
   },
 
@@ -610,8 +610,8 @@ export const adminApi = {
     return response.data;
   },
   getAllUsers: async (params?: {
-    skip?: number;
-    take?: number;
+    page?: number;
+    limit?: number;
     role?: string;
     search?: string;
   }) => {
