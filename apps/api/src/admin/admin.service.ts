@@ -1356,24 +1356,36 @@ export class AdminService extends BaseQueryService {
 
   async getBranchRevenueDetail(salonId: string, params: {
     period?: 'week' | 'month' | 'quarter' | 'year';
+    dateFrom?: string;
+    dateTo?: string;
   }) {
     const now = dayjs().tz(VIETNAM_TZ);
     let startDate: Date;
+    let endDate: Date;
 
-    switch (params.period || 'month') {
-      case 'week':
-        startDate = now.subtract(7, 'day').startOf('day').toDate();
-        break;
-      case 'month':
-        startDate = now.startOf('month').toDate();
-        break;
-      case 'quarter':
-        startDate = now.subtract(3, 'month').startOf('month').toDate();
-        break;
-      case 'year':
-        startDate = now.startOf('year').toDate();
-        break;
+    // Ưu tiên dateFrom/dateTo nếu được truyền vào (sync với main page filter)
+    if (params.dateFrom && params.dateTo) {
+      startDate = dayjs(params.dateFrom).tz(VIETNAM_TZ).startOf('day').toDate();
+      endDate = dayjs(params.dateTo).tz(VIETNAM_TZ).endOf('day').toDate();
+    } else {
+      endDate = now.endOf('day').toDate();
+      switch (params.period || 'month') {
+        case 'week':
+          startDate = now.subtract(7, 'day').startOf('day').toDate();
+          break;
+        case 'quarter':
+          startDate = now.subtract(3, 'month').startOf('month').toDate();
+          break;
+        case 'year':
+          startDate = now.startOf('year').toDate();
+          break;
+        case 'month':
+        default:
+          startDate = now.startOf('month').toDate();
+          break;
+      }
     }
+
 
     const salon = await this.prisma.salon.findUnique({
       where: { id: salonId },
@@ -1385,7 +1397,7 @@ export class AdminService extends BaseQueryService {
     const payments = await this.prisma.payment.findMany({
       where: {
         status: PaymentStatus.PAID,
-        paidAt: { gte: startDate },
+        paidAt: { gte: startDate, lte: endDate },
         booking: { salonId },
       },
       select: {
@@ -1396,7 +1408,7 @@ export class AdminService extends BaseQueryService {
         booking: {
           select: {
             bookingCode: true,
-            customer: { select: { name: true } },
+            customer: { select: { name: true, phone: true } },
             services: {
               select: { service: { select: { name: true } } },
             },
@@ -1439,7 +1451,7 @@ export class AdminService extends BaseQueryService {
       },
       transactions: payments.slice(0, 50).map(p => ({
         bookingCode: p.booking.bookingCode,
-        customerName: p.booking.customer?.name || 'N/A',
+        customerName: p.booking.customer?.name || p.booking.customer?.phone || 'Khách vãng lai',
         services: p.booking.services.map(s => s.service.name).join(', '),
         amount: Number(p.amount),
         method: p.method,
@@ -1448,6 +1460,7 @@ export class AdminService extends BaseQueryService {
       })),
     };
   }
+
 
   // ============== USER ROLES (RBAC) ==============
 

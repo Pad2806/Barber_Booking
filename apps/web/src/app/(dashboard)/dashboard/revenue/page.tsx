@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { adminApi, cashierApi } from '@/lib/api';
 import { useSalonScope } from '@/hooks/use-salon-scope';
+import dynamicImport from 'next/dynamic';
 import {
   DollarSign, TrendingUp, TrendingDown, BarChart3,
   CreditCard, Banknote, QrCode, Search, Download,
@@ -11,7 +12,6 @@ import {
   CalendarRange, ChevronLeft, ChevronRight, X,
   ArrowLeft, Trophy,
 } from 'lucide-react';
-import dynamicImport from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +19,14 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn, formatPrice } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+
+// Lazy-load trang cashier riêng để tree-shake khi không cần
+const CashierRevenuePage = dynamicImport(
+  () => import('@/app/(cashier)/cashier/revenue/page'),
+  { ssr: false, loading: () => <div className="flex items-center justify-center h-40"><div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div> }
+);
+
+
 
 const AreaChart = dynamicImport(() => import('recharts').then(m => m.AreaChart), { ssr: false });
 const Area = dynamicImport(() => import('recharts').then(m => m.Area), { ssr: false });
@@ -50,10 +58,26 @@ function GrowthBadge({ value }: { value: number | null }) {
 
 // ─── Branch Drill-Down Panel (reused from existing code) ─────────────────────
 
-function BranchDetailPanel({ salonId, onClose }: { salonId: string; onClose: () => void }) {
+const PERIOD_OPTIONS = [
+  { value: 'week' as const, label: '7 ngày' },
+  { value: 'month' as const, label: 'Tháng này' },
+  { value: 'quarter' as const, label: 'Quý này' },
+  { value: 'year' as const, label: 'Năm nay' },
+];
+
+function BranchDetailPanel({
+  salonId, onClose, dateFrom, dateTo, rangeLabel,
+}: {
+  salonId: string;
+  onClose: () => void;
+  dateFrom: string;
+  dateTo: string;
+  rangeLabel: string;
+}) {
   const { data, isLoading } = useQuery({
-    queryKey: ['branch-revenue-detail', salonId, 'month'],
-    queryFn: () => adminApi.getBranchRevenueDetail(salonId, { period: 'month' }),
+    queryKey: ['branch-revenue-detail', salonId, dateFrom, dateTo],
+    queryFn: () => adminApi.getBranchRevenueDetail(salonId, { dateFrom, dateTo }),
+    staleTime: 30_000,
   });
 
   if (isLoading) return (
@@ -66,6 +90,7 @@ function BranchDetailPanel({ salonId, onClose }: { salonId: string; onClose: () 
   );
   if (!data) return null;
 
+  const hasData = (data.transactionCount || 0) > 0;
   const maxDaily = Math.max(...(data.dailyBreakdown?.map((d: any) => d.revenue) || [0]));
   const methodTotal = (data.byMethod?.cash || 0) + (data.byMethod?.transfer || 0);
   const cashPct = methodTotal > 0 ? Math.round(((data.byMethod?.cash || 0) / methodTotal) * 100) : 0;
@@ -73,6 +98,7 @@ function BranchDetailPanel({ salonId, onClose }: { salonId: string; onClose: () 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center animate-in fade-in" onClick={onClose}>
       <div className="bg-white rounded-3xl max-w-2xl w-full mx-4 shadow-2xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        {/* Header */}
         <div className="sticky top-0 bg-white/95 backdrop-blur-md rounded-t-3xl border-b p-5 flex items-center justify-between z-10">
           <div className="flex items-center gap-3">
             <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 transition-colors">
@@ -80,7 +106,9 @@ function BranchDetailPanel({ salonId, onClose }: { salonId: string; onClose: () 
             </button>
             <div>
               <h2 className="text-lg font-bold text-slate-900">{data.salon?.name}</h2>
-              <p className="text-xs text-slate-500">{data.transactionCount} giao dịch tháng này</p>
+              <p className="text-xs text-slate-500">
+                {hasData ? `${data.transactionCount} giao dịch` : 'Không có dữ liệu'} · {rangeLabel}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100">
@@ -89,69 +117,85 @@ function BranchDetailPanel({ salonId, onClose }: { salonId: string; onClose: () 
         </div>
 
         <div className="p-6 space-y-5">
-          <div className="grid grid-cols-3 gap-3">
-            {[
-              { label: 'Tổng doanh thu', value: formatPrice(data.totalRevenue || 0), color: 'emerald' },
-              { label: 'Tiền mặt', value: `${formatPrice(data.byMethod?.cash || 0)} (${cashPct}%)`, color: 'blue' },
-              { label: 'Chuyển khoản', value: `${formatPrice(data.byMethod?.transfer || 0)} (${100 - cashPct}%)`, color: 'indigo' },
-            ].map(s => (
-              <div key={s.label} className={cn(
-                'p-4 rounded-2xl',
-                s.color === 'emerald' ? 'bg-emerald-50' : s.color === 'blue' ? 'bg-blue-50' : 'bg-indigo-50'
-              )}>
-                <p className={cn('text-[10px] uppercase font-bold tracking-wider',
-                  s.color === 'emerald' ? 'text-emerald-600' : s.color === 'blue' ? 'text-blue-600' : 'text-indigo-600'
-                )}>{s.label}</p>
-                <p className={cn('text-lg font-black mt-1',
-                  s.color === 'emerald' ? 'text-emerald-900' : s.color === 'blue' ? 'text-blue-900' : 'text-indigo-900'
-                )}>{s.value}</p>
-              </div>
-            ))}
-          </div>
-
-          {data.dailyBreakdown?.length > 0 && (
-            <div>
-              <p className="text-xs font-bold text-slate-600 mb-3">Doanh thu theo ngày (tháng này)</p>
-              <div className="relative flex items-end gap-0.5 h-28 px-1">
-                {(() => {
-                  const safeMax = Math.max(maxDaily, 1);
-                  return data.dailyBreakdown.map((d: any, i: number) => {
-                    const pct = Math.max((d.revenue / safeMax) * 100, 2);
-                    return (
-                      <div key={i} className="flex-1 flex flex-col items-center justify-end gap-0.5 h-full">
-                        <div
-                          className="w-full bg-gradient-to-t from-primary to-primary/60 rounded-t-sm transition-all duration-300 hover:opacity-80"
-                          style={{ height: `${pct}%` }}
-                          title={`${d.date}: ${formatPrice(d.revenue)}`}
-                        />
-                        {data.dailyBreakdown.length <= 15 && (
-                          <span className="text-[7px] text-slate-400 mt-0.5">{d.date.slice(8)}</span>
-                        )}
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-          )}
-
-          {data.transactions?.length > 0 && (
-            <div>
-              <p className="text-xs font-bold text-slate-600 mb-2">Giao dịch gần đây</p>
-              <div className="space-y-1.5 max-h-52 overflow-y-auto">
-                {data.transactions.map((tx: any, i: number) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl text-sm">
-                    <div className="min-w-0">
-                      <p className="font-bold text-slate-800 truncate">{tx.customerName}</p>
-                      <p className="text-[10px] text-slate-500 truncate">{tx.services}</p>
-                    </div>
-                    <div className="text-right ml-3 flex-shrink-0">
-                      <p className="font-bold text-slate-900">{formatPrice(tx.amount)}</p>
-                      <p className="text-[10px] text-slate-400">{tx.paidAt ? new Date(tx.paidAt).toLocaleDateString('vi-VN') : '—'}</p>
-                    </div>
+          {hasData ? (
+            <>
+              {/* KPI Cards — chỉ hiện khi có dữ liệu */}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { label: 'Tổng doanh thu', value: formatPrice(data.totalRevenue || 0), color: 'emerald' },
+                  { label: 'Tiền mặt', value: `${formatPrice(data.byMethod?.cash || 0)} (${cashPct}%)`, color: 'blue' },
+                  { label: 'Chuyển khoản', value: `${formatPrice(data.byMethod?.transfer || 0)} (${100 - cashPct}%)`, color: 'indigo' },
+                ].map(s => (
+                  <div key={s.label} className={cn(
+                    'p-4 rounded-2xl',
+                    s.color === 'emerald' ? 'bg-emerald-50' : s.color === 'blue' ? 'bg-blue-50' : 'bg-indigo-50'
+                  )}>
+                    <p className={cn('text-[10px] uppercase font-bold tracking-wider',
+                      s.color === 'emerald' ? 'text-emerald-600' : s.color === 'blue' ? 'text-blue-600' : 'text-indigo-600'
+                    )}>{s.label}</p>
+                    <p className={cn('text-base font-black mt-1 leading-tight',
+                      s.color === 'emerald' ? 'text-emerald-900' : s.color === 'blue' ? 'text-blue-900' : 'text-indigo-900'
+                    )}>{s.value}</p>
                   </div>
                 ))}
               </div>
+
+              {/* Daily chart */}
+              <div>
+                <p className="text-xs font-bold text-slate-600 mb-3">Doanh thu theo ngày</p>
+                <div className="relative flex items-end gap-0.5 h-28 px-1">
+                  {(() => {
+                    const safeMax = Math.max(maxDaily, 1);
+                    return data.dailyBreakdown.map((d: any, i: number) => {
+                      const pct = Math.max((d.revenue / safeMax) * 100, 2);
+                      return (
+                        <div key={i} className="flex-1 flex flex-col items-center justify-end gap-0.5 h-full">
+                          <div
+                            className="w-full bg-gradient-to-t from-primary to-primary/60 rounded-t-sm transition-all duration-300 hover:opacity-80"
+                            style={{ height: `${pct}%` }}
+                            title={`${d.date}: ${formatPrice(d.revenue)}`}
+                          />
+                          {data.dailyBreakdown.length <= 20 && (
+                            <span className="text-[7px] text-slate-400 mt-0.5">{d.date.slice(8)}</span>
+                          )}
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+
+              {/* Transactions */}
+              <div>
+                <p className="text-xs font-bold text-slate-600 mb-2">Giao dịch gần đây</p>
+                <div className="space-y-1.5 max-h-52 overflow-y-auto">
+                  {data.transactions.map((tx: any, i: number) => (
+                    <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl text-sm">
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-800 truncate">{tx.customerName}</p>
+                        <p className="text-[10px] text-slate-500 truncate">{tx.services}</p>
+                      </div>
+                      <div className="text-right ml-3 flex-shrink-0">
+                        <p className="font-bold text-slate-900">{formatPrice(tx.amount)}</p>
+                        <p className="text-[10px] text-slate-400">{tx.paidAt ? new Date(tx.paidAt).toLocaleDateString('vi-VN') : '—'}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            /* Empty state khi không có giao dịch nào */
+            <div className="py-12 flex flex-col items-center gap-3 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
+                <BarChart3 className="w-7 h-7 text-slate-300" />
+              </div>
+              <p className="font-bold text-slate-600">Chưa có doanh thu</p>
+              <p className="text-xs text-slate-400 max-w-xs">
+                Chi nhánh <span className="font-semibold">{data.salon?.name}</span> không có giao dịch nào
+                trong khoảng <span className="font-semibold">{rangeLabel}</span>.
+              </p>
+              <p className="text-[11px] text-slate-300">Hãy thay đổi bộ lọc ngày ở trang chính để xem kỳ khác.</p>
             </div>
           )}
         </div>
@@ -159,6 +203,8 @@ function BranchDetailPanel({ salonId, onClose }: { salonId: string; onClose: () 
     </div>
   );
 }
+
+
 
 // ─── Breakdown Tabs ───────────────────────────────────────────────────────────
 
@@ -191,23 +237,43 @@ function toDateStr(d: Date) {
 }
 
 export default function AdminRevenuePage(): React.ReactElement {
-  const { isSuperAdmin } = useSalonScope();
+  const { isSuperAdmin, isCashier, isLoading: scopeLoading, salonId: mySalonId } = useSalonScope();
+
+  // ── Route cashier sang UI riêng của họ ──
+  if (isCashier && !isSuperAdmin) {
+    return <CashierRevenuePage />;
+  }
 
   // ── Filters ──
   const [granularity, setGranularity] = useState<'day' | 'week' | 'month'>('day');
   const [dateFrom, setDateFrom] = useState(() => toDateStr(new Date(Date.now() - 29 * 86400000)));
   const [dateTo, setDateTo] = useState(() => toDateStr(new Date()));
-  const [salonId, setSalonId] = useState<string>('');
+  // SuperAdmin: có thể chọn bất kỳ chi nhánh qua dropdown
+  // Manager:    bị lock vào chi nhánh của họ (mySalonId), không thể thay đổi
+  const [salonId, setSalonId] = useState<string>(() => isSuperAdmin ? '' : (mySalonId ?? ''));
   const [method, setMethod] = useState<string>('');
   const [txSearch, setTxSearch] = useState('');
   const [txPage, setTxPage] = useState(1);
   const TX_LIMIT = 15;
 
-  // ── Breakdown tab ──
-  const [tab, setTab] = useState<BreakdownTab>('salon');
+  // ── Breakdown tab — Manager kh\u00f4ng c\u00f3 tab salon \u2192 default l\u00e0 staff ──
+  const [tab, setTab] = useState<BreakdownTab>(() => isSuperAdmin ? 'salon' : 'staff');
 
   // ── Drill-down ──
   const [selectedSalon, setSelectedSalon] = useState<string | null>(null);
+  // Label hiển thị trong panel chi tiết — sync với bộ lọc ngày hiện tại
+  const rangeLabel = useMemo(() => {
+    const from = new Date(dateFrom).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+    const to = new Date(dateTo).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+    return `${from} – ${to}`;
+  }, [dateFrom, dateTo]);
+
+  // Khi scope đã load xong (mySalonId từ API): lock manager vào chi nhánh của họ
+  useEffect(() => {
+    if (!isSuperAdmin && mySalonId) {
+      setSalonId(mySalonId);
+    }
+  }, [isSuperAdmin, mySalonId]);
 
   const applyQuickRange = useCallback((days: number) => {
     const end = new Date();
@@ -466,8 +532,8 @@ export default function AdminRevenuePage(): React.ReactElement {
                   <YAxis
                     axisLine={false} tickLine={false}
                     tick={{ fill: '#64748b', fontSize: 11 }}
-                    tickFormatter={v => `${v / 1000}k`}
-                    width={50}
+                    tickFormatter={v => v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}tr` : v >= 1_000 ? `${(v / 1_000).toFixed(0)}k` : v}
+                    width={55}
                   />
                   <Tooltip
                     formatter={(val: any) => [formatPrice(val), 'Doanh thu']}
@@ -488,11 +554,12 @@ export default function AdminRevenuePage(): React.ReactElement {
             <CardTitle className="text-lg font-bold">Phân tích chi tiết</CardTitle>
             <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
               {([
-                { key: 'salon', label: 'Chi nhánh', icon: Store },
-                { key: 'staff', label: 'Nhân viên', icon: Users },
-                { key: 'service', label: 'Dịch vụ', icon: Scissors },
-                { key: 'method', label: 'PT TT', icon: CreditCard },
-              ] as const).map(t => (
+                // Manager chỉ có 1 chi nhánh → ẩn tab "Chi nhánh" để khỏi nhiễu
+                ...(isSuperAdmin ? [{ key: 'salon' as const, label: 'Chi nhánh', icon: Store }] : []),
+                { key: 'staff' as const, label: 'Nhân viên', icon: Users },
+                { key: 'service' as const, label: 'Dịch vụ', icon: Scissors },
+                { key: 'method' as const, label: 'PT TT', icon: CreditCard },
+              ]).map(t => (
                 <button
                   key={t.key}
                   onClick={() => setTab(t.key)}
@@ -745,10 +812,13 @@ export default function AdminRevenuePage(): React.ReactElement {
         </CardContent>
       </Card>
 
-      {/* Branch Drill-down Panel */}
+      {/* Branch Drill-down Panel — sync với dateFrom/dateTo của trang chính */}
       {selectedSalon && (
         <BranchDetailPanel
           salonId={selectedSalon}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          rangeLabel={rangeLabel}
           onClose={() => setSelectedSalon(null)}
         />
       )}

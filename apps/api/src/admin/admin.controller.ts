@@ -470,12 +470,17 @@ export class AdminController {
   @ApiOperation({ summary: 'Get revenue detail for a branch' })
   @ApiParam({ name: 'salonId', description: 'Salon ID' })
   @ApiQuery({ name: 'period', required: false, enum: ['week', 'month', 'quarter', 'year'] })
+  @ApiQuery({ name: 'dateFrom', required: false })
+  @ApiQuery({ name: 'dateTo', required: false })
   getBranchRevenueDetail(
     @Param('salonId') salonId: string,
     @Query('period') period?: 'week' | 'month' | 'quarter' | 'year',
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
   ) {
-    return this.adminService.getBranchRevenueDetail(salonId, { period });
+    return this.adminService.getBranchRevenueDetail(salonId, { period, dateFrom, dateTo });
   }
+
 
   // ============== USER ROLES (RBAC) ==============
 

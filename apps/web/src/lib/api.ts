@@ -852,10 +852,11 @@ export const adminApi = {
     const response = await apiClient.get<any>('/admin/branch-revenue', { params });
     return response.data;
   },
-  getBranchRevenueDetail: async (salonId: string, params?: { period?: string }) => {
+  getBranchRevenueDetail: async (salonId: string, params?: { period?: string; dateFrom?: string; dateTo?: string }) => {
     const response = await apiClient.get<any>(`/admin/branch-revenue/${salonId}`, { params });
     return response.data;
   },
+
   getAdminRevenue: async (params?: {
     dateFrom?: string;
     dateTo?: string;
