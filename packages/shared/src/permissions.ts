@@ -276,6 +276,7 @@ export const DASHBOARD_MENU_ITEMS = [
     // ── Barber / Skinner section ──
     { key: 'my-schedule', href: '/dashboard/my-schedule', label: 'Lịch làm việc', permission: Permission.VIEW_OWN_SCHEDULE, section: 'barber', roles: [Role.BARBER, Role.SKINNER] },
     { key: 'my-bookings', href: '/dashboard/my-bookings', label: 'Lịch phân công', permission: Permission.VIEW_OWN_BOOKINGS, section: 'barber', roles: [Role.BARBER, Role.SKINNER] },
+    { key: 'leave-requests-barber', href: '/dashboard/my-leaves', label: 'Nghỉ phép', permission: Permission.VIEW_DASHBOARD, section: 'barber', roles: [Role.BARBER, Role.SKINNER] },
 
     // ── Cashier section ──
     { key: 'online-bookings', href: '/dashboard/online-bookings', label: 'Duyệt Online', permission: Permission.VIEW_ONLINE_BOOKINGS, section: 'cashier', roles: [Role.CASHIER] },
@@ -283,6 +284,7 @@ export const DASHBOARD_MENU_ITEMS = [
     { key: 'appointments', href: '/dashboard/appointments', label: 'Lịch hẹn', permission: Permission.VIEW_ALL_BOOKINGS, section: 'cashier', roles: [Role.CASHIER] },
     { key: 'checkout', href: '/dashboard/checkout', label: 'Thanh toán', permission: Permission.MANAGE_CHECKOUT, section: 'cashier', roles: [Role.CASHIER] },
     { key: 'cashier-revenue', href: '/dashboard/revenue', label: 'Doanh thu', permission: Permission.VIEW_REVENUE, section: 'cashier', roles: [Role.CASHIER] },
+    { key: 'leave-requests-cashier', href: '/dashboard/my-leaves', label: 'Nghỉ phép', permission: Permission.VIEW_DASHBOARD, section: 'cashier', roles: [Role.CASHIER] },
 
     // ── Management section (Manager only) ──
     { key: 'dashboard', href: '/dashboard', label: 'Tổng quan', permission: Permission.VIEW_DASHBOARD, section: 'management', roles: [Role.MANAGER] },
@@ -319,7 +321,7 @@ export const DASHBOARD_MENU_ITEMS = [
  */
 export function getVisibleDashboardMenuItems(userRoles: Role[]) {
     const perms = getUserMultiRolePermissions(userRoles);
-    
+
     const visibleItems = DASHBOARD_MENU_ITEMS.filter(item =>
         perms.includes(item.permission as Permission) &&
         item.roles.some(r => userRoles.includes(r)),
@@ -349,7 +351,7 @@ export function getVisibleDashboardMenuItems(userRoles: Role[]) {
     }
 
     // Restore original ordering defined in DASHBOARD_MENU_ITEMS
-    return Array.from(deduplicated.values()).sort((a, b) => 
+    return Array.from(deduplicated.values()).sort((a, b) =>
         DASHBOARD_MENU_ITEMS.indexOf(a) - DASHBOARD_MENU_ITEMS.indexOf(b)
     );
 }
@@ -392,6 +394,7 @@ export const DASHBOARD_ROUTE_PERMISSION_MAP: Record<string, Permission> = {
     '/dashboard/online-bookings': Permission.VIEW_ONLINE_BOOKINGS,
     '/dashboard/my-schedule': Permission.VIEW_OWN_SCHEDULE,
     '/dashboard/my-bookings': Permission.VIEW_OWN_BOOKINGS,
+    '/dashboard/my-leaves': Permission.VIEW_DASHBOARD,
     '/dashboard': Permission.VIEW_DASHBOARD,
 };
 
