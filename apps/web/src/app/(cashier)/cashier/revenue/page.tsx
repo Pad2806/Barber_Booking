@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn, formatPrice } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 
 const AreaChart = dynamicImport(() => import('recharts').then(m => m.AreaChart), { ssr: false });
 const Area = dynamicImport(() => import('recharts').then(m => m.Area), { ssr: false });
@@ -131,7 +131,7 @@ export default function CashierRevenuePage() {
   // Live revenue stats (today, week, month) — auto-refresh 60s
   const { data: revenue, isLoading: loadingRevenue, refetch: refetchRevenue } = useQuery({
     queryKey: ['cashier', 'revenue'],
-    queryFn: cashierApi.getRevenue,
+    queryFn: () => cashierApi.getRevenue(),
     refetchInterval: 60_000,
   });
 
@@ -149,11 +149,12 @@ export default function CashierRevenuePage() {
     refetchInterval: 30_000,
   });
 
-  const stats = revenue?.stats || { today: 0, week: 0, month: 0, todayTransactions: 0 };
-  const trend = revenue?.trend || [];
-  const byMethod = revenue?.byMethod || [];
-  const byStaff = revenue?.byStaff || [];
-  const byService = revenue?.byService || [];
+  const rev = revenue as any;
+  const stats = rev?.stats || { today: 0, week: 0, month: 0, todayTransactions: 0 };
+  const trend = rev?.trend || [];
+  const byMethod = rev?.byMethod || [];
+  const byStaff = rev?.byStaff || [];
+  const byService = rev?.byService || [];
 
   const pending: any[] = pendingPayments || [];
 
