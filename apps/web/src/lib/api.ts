@@ -502,6 +502,12 @@ export const cashierApi = {
     const response = await apiClient.get('/cashier/customers/search', { params: { q: query } });
     return response.data;
   },
+
+  // Pending Payments (bookings done but not yet paid)
+  getPendingPayments: async () => {
+    const response = await apiClient.get('/cashier/pending-payments');
+    return response.data;
+  },
 };
 
 // Booking APIs
@@ -848,6 +854,18 @@ export const adminApi = {
   },
   getBranchRevenueDetail: async (salonId: string, params?: { period?: string }) => {
     const response = await apiClient.get<any>(`/admin/branch-revenue/${salonId}`, { params });
+    return response.data;
+  },
+  getAdminRevenue: async (params?: {
+    dateFrom?: string;
+    dateTo?: string;
+    salonId?: string;
+    granularity?: 'day' | 'week' | 'month';
+    method?: string;
+    page?: number;
+    limit?: number;
+  }) => {
+    const response = await apiClient.get<any>('/admin/revenue', { params });
     return response.data;
   },
 };

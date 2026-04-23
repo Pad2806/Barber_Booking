@@ -665,10 +665,37 @@ export class CashierService {
     };
   }
 
+  async getPendingPayments(userId: string) {
+    const salonId = await this.getSalonId(userId);
+    // Bookings that are DONE / COMPLETED but have not been fully paid
+    const bookings = await this.prisma.booking.findMany({
+      where: {
+        salonId,
+        status: { in: ['DONE', 'COMPLETED'] as any },
+        paymentStatus: { in: ['PENDING', 'DEPOSIT_PAID'] as any },
+      },
+      include: {
+        customer: { select: { id: true, name: true, phone: true, avatar: true } },
+        staff: { include: { user: { select: { name: true, avatar: true } } } },
+        services: { include: { service: { select: { id: true, name: true, price: true } } } },
+        payments: { select: { id: true, amount: true, method: true, status: true, type: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: 20,
+    });
+
+    return bookings.map(b => ({
+      ...b,
+      depositPaid: b.payments
+        .filter((p: any) => p.status === 'PAID')
+        .reduce((sum: number, p: any) => sum + Number(p.amount), 0),
+    }));
+  }
+
   // ─── 7. REVENUE ────────────────────────────────────────────
 
   async getRevenue(userId: string, requestedSalonId?: string) {
-    let salonId = null;
+    let salonId: string | null = null;
     let isGlobal = false;
 
     if (requestedSalonId === 'ALL') {
@@ -680,114 +707,126 @@ export class CashierService {
     }
 
     const now = dayjs().tz(VIETNAM_TZ);
-    const today = this.toDateOnly(now.format('YYYY-MM-DD'));
-    const startOfWeek = this.toDateOnly(now.startOf('week').format('YYYY-MM-DD'));
-    const startOfMonth = this.toDateOnly(now.startOf('month').format('YYYY-MM-DD'));
 
-    const completedWhere: any = { status: BookingStatus.COMPLETED };
-    if (!isGlobal && salonId) {
-      completedWhere.salonId = salonId;
-    }
+    // Use payment.paidAt for accurate "when money was actually collected" reporting
+    const todayStr = now.format('YYYY-MM-DD');
+    const tomorrowStr = now.add(1, 'day').format('YYYY-MM-DD');
+    const weekStr = now.startOf('week').format('YYYY-MM-DD');
+    const monthStr = now.startOf('month').format('YYYY-MM-DD');
 
-    const [todayRev, weekRev, monthRev, todayCount, byMethod] =
-      await Promise.all([
-        this.prisma.booking.aggregate({
-          where: { ...completedWhere, date: today },
-          _sum: { totalAmount: true },
-        }),
-        this.prisma.booking.aggregate({
-          where: { ...completedWhere, date: { gte: startOfWeek } },
-          _sum: { totalAmount: true },
-        }),
-        this.prisma.booking.aggregate({
-          where: { ...completedWhere, date: { gte: startOfMonth } },
-          _sum: { totalAmount: true },
-        }),
-        this.prisma.booking.count({
-          where: { ...completedWhere, date: today },
-        }),
-        this.prisma.payment.groupBy({
-          by: ['method'],
-          where: {
-            booking: {
-              ...(isGlobal || !salonId ? {} : { salonId: salonId as string }),
-              status: 'COMPLETED',
-              date: today
-            },
-            status: 'PAID',
-          },
-          _sum: { amount: true },
-          _count: { _all: true },
-        }),
-      ]);
+    const todayStart = new Date(todayStr + 'T00:00:00+07:00');
+    const tomorrowStart = new Date(tomorrowStr + 'T00:00:00+07:00');
+    const weekStart = new Date(weekStr + 'T00:00:00+07:00');
+    const monthStart = new Date(monthStr + 'T00:00:00+07:00');
 
-    // Revenue by service (today)
-    const byService = await this.prisma.bookingService.findMany({
-      where: {
+    // Salon scoping for payment queries
+    const bookingScope: any = isGlobal || !salonId ? {} : { salonId: salonId as string };
+    const baseWhere = { status: 'PAID' as const, booking: bookingScope };
+
+    const [todayRev, weekRev, monthRev, todayCount, byMethod] = await Promise.all([
+      this.prisma.payment.aggregate({
+        where: { ...baseWhere, paidAt: { gte: todayStart, lt: tomorrowStart } },
+        _sum: { amount: true },
+      }),
+      this.prisma.payment.aggregate({
+        where: { ...baseWhere, paidAt: { gte: weekStart } },
+        _sum: { amount: true },
+      }),
+      this.prisma.payment.aggregate({
+        where: { ...baseWhere, paidAt: { gte: monthStart } },
+        _sum: { amount: true },
+      }),
+      this.prisma.payment.count({
+        where: { ...baseWhere, paidAt: { gte: todayStart, lt: tomorrowStart } },
+      }),
+      this.prisma.payment.groupBy({
+        by: ['method'],
+        where: { ...baseWhere, paidAt: { gte: todayStart, lt: tomorrowStart } },
+        _sum: { amount: true },
+        _count: { _all: true },
+      }),
+    ]);
+
+    // Revenue by service (today) — via payments paid today
+    const todayPayments = await this.prisma.payment.findMany({
+      where: { ...baseWhere, paidAt: { gte: todayStart, lt: tomorrowStart } },
+      select: {
         booking: {
-          ...(isGlobal || !salonId ? {} : { salonId: salonId as string }),
-          status: 'COMPLETED',
-          date: today
+          select: {
+            services: {
+              select: {
+                serviceId: true,
+                price: true,
+                service: { select: { name: true } },
+              },
+            },
+          },
         },
       },
-      include: { service: { select: { name: true } } },
     });
 
     const serviceMap: Record<string, { name: string; revenue: number; count: number }> = {};
-    for (const bs of byService) {
-      const key = bs.serviceId;
-      if (!serviceMap[key]) {
-        serviceMap[key] = { name: (bs as any).service?.name || 'Dịch vụ', revenue: 0, count: 0 };
+    for (const p of todayPayments) {
+      for (const bs of (p.booking as any)?.services || []) {
+        const key = bs.serviceId;
+        if (!serviceMap[key]) {
+          serviceMap[key] = { name: bs.service?.name || 'Dịch vụ', revenue: 0, count: 0 };
+        }
+        serviceMap[key].revenue += Number(bs.price);
+        serviceMap[key].count += 1;
       }
-      serviceMap[key].revenue += Number(bs.price);
-      serviceMap[key].count += 1;
     }
 
     // Revenue by staff (today)
-    const byStaff = await this.prisma.booking.findMany({
-      where: { ...completedWhere, date: today, staffId: { not: null } },
+    const todayStaffPayments = await this.prisma.payment.findMany({
+      where: { ...baseWhere, paidAt: { gte: todayStart, lt: tomorrowStart } },
       select: {
-        staffId: true,
-        totalAmount: true,
-        staff: { select: { id: true, user: { select: { name: true, avatar: true } } } },
+        booking: {
+          select: {
+            staffId: true,
+            totalAmount: true,
+            staff: { select: { id: true, user: { select: { name: true, avatar: true } } } },
+          },
+        },
       },
     });
 
     const staffMap: Record<string, { name: string; avatar: string | null; revenue: number; count: number }> = {};
-    for (const b of byStaff) {
-      const s = b as any;
-      if (!s.staffId || !s.staff) continue;
-      if (!staffMap[s.staffId]) {
-        staffMap[s.staffId] = {
-          name: s.staff.user?.name || 'N/A',
-          avatar: s.staff.user?.avatar || null,
+    for (const p of todayStaffPayments) {
+      const b = (p.booking as any);
+      if (!b?.staffId || !b.staff) continue;
+      if (!staffMap[b.staffId]) {
+        staffMap[b.staffId] = {
+          name: b.staff.user?.name || 'N/A',
+          avatar: b.staff.user?.avatar || null,
           revenue: 0,
           count: 0,
         };
       }
-      staffMap[s.staffId].revenue += Number(s.totalAmount);
-      staffMap[s.staffId].count += 1;
+      staffMap[b.staffId].revenue += Number(b.totalAmount);
+      staffMap[b.staffId].count += 1;
     }
 
-    // 7-day trend
+    // 7-day trend — grouped by paidAt (Vietnam timezone)
     const trend: { date: string; amount: number }[] = [];
     for (let i = 6; i >= 0; i--) {
-      const d = this.toDateOnly(now.subtract(i, 'day').format('YYYY-MM-DD'));
-      const rev = await this.prisma.booking.aggregate({
-        where: { ...completedWhere, date: d },
-        _sum: { totalAmount: true },
+      const dayStr = now.subtract(i, 'day').format('YYYY-MM-DD');
+      const nextStr = now.subtract(i - 1, 'day').format('YYYY-MM-DD');
+      const dayStart = new Date(dayStr + 'T00:00:00+07:00');
+      const dayEnd = new Date(nextStr + 'T00:00:00+07:00');
+
+      const rev = await this.prisma.payment.aggregate({
+        where: { ...baseWhere, paidAt: { gte: dayStart, lt: dayEnd } },
+        _sum: { amount: true },
       });
-      trend.push({
-        date: dayjs(d).format('YYYY-MM-DD'),
-        amount: Number(rev._sum.totalAmount || 0),
-      });
+      trend.push({ date: dayStr, amount: Number(rev._sum.amount || 0) });
     }
 
     return {
       stats: {
-        today: Number(todayRev._sum.totalAmount || 0),
-        week: Number(weekRev._sum.totalAmount || 0),
-        month: Number(monthRev._sum.totalAmount || 0),
+        today: Number(todayRev._sum.amount || 0),
+        week: Number(weekRev._sum.amount || 0),
+        month: Number(monthRev._sum.amount || 0),
         todayTransactions: todayCount,
       },
       byMethod: byMethod.map((m: any) => ({

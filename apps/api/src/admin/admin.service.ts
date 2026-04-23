@@ -369,7 +369,7 @@ export class AdminService extends BaseQueryService {
       where,
       include: {
         staff: {
-          include: { 
+          include: {
             user: { select: { name: true, avatar: true } },
             salon: { select: { name: true } }
           }
@@ -412,7 +412,7 @@ export class AdminService extends BaseQueryService {
 
       while (current.isBefore(end) || current.isSame(end, 'day')) {
         const date = current.toDate();
-        
+
         // Delete existing shifts for this day
         await (this.prisma as any).staffShift.deleteMany({
           where: { staffId: leave.staffId, date }
@@ -577,6 +577,207 @@ export class AdminService extends BaseQueryService {
       timeline,
     };
   }
+
+  async getAdminRevenueDashboard(params: {
+    dateFrom?: string;
+    dateTo?: string;
+    salonId?: string;
+    granularity: 'day' | 'week' | 'month';
+    method?: string;
+    page: number;
+    limit: number;
+  }) {
+    const { dateFrom, dateTo, salonId, granularity, method, page, limit } = params;
+    const VN_TZ = 'Asia/Ho_Chi_Minh';
+    const now = dayjs().tz(VN_TZ);
+
+    // Resolve date range
+    const endDate = dateTo ? dayjs(dateTo).tz(VN_TZ).endOf('day').toDate()
+      : now.endOf('day').toDate();
+    const startDate = dateFrom ? dayjs(dateFrom).tz(VN_TZ).startOf('day').toDate()
+      : now.subtract(29, 'day').startOf('day').toDate();
+
+    // Compute previous period (same length) for % comparison
+    const periodMs = endDate.getTime() - startDate.getTime();
+    const prevEnd = new Date(startDate.getTime() - 1);
+    const prevStart = new Date(startDate.getTime() - periodMs);
+
+    // Build WHERE for payments
+    const paymentWhere: any = {
+      status: 'PAID',
+      paidAt: { gte: startDate, lte: endDate },
+    };
+    if (salonId) paymentWhere.booking = { salonId };
+    if (method) paymentWhere.method = method;
+
+    const prevPaymentWhere: any = {
+      status: 'PAID',
+      paidAt: { gte: prevStart, lte: prevEnd },
+      ...(salonId ? { booking: { salonId } } : {}),
+    };
+
+    // KPI queries
+    const [currentAgg, prevAgg, txCount, prevTxCount] = await Promise.all([
+      this.prisma.payment.aggregate({ where: paymentWhere, _sum: { amount: true }, _count: true }),
+      this.prisma.payment.aggregate({ where: prevPaymentWhere, _sum: { amount: true }, _count: true }),
+      this.prisma.payment.count({ where: paymentWhere }),
+      this.prisma.payment.count({ where: prevPaymentWhere }),
+    ]);
+
+    const totalRevenue = Number(currentAgg._sum.amount || 0);
+    const prevRevenue = Number(prevAgg._sum.amount || 0);
+    const revenueGrowth = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : null;
+    const txGrowth = prevTxCount > 0 ? ((txCount - prevTxCount) / prevTxCount) * 100 : null;
+    const avgOrder = txCount > 0 ? totalRevenue / txCount : 0;
+    const prevAvgOrder = prevTxCount > 0 ? Number(prevAgg._sum.amount || 0) / prevTxCount : 0;
+    const avgOrderGrowth = prevAvgOrder > 0 ? ((avgOrder - prevAvgOrder) / prevAvgOrder) * 100 : null;
+
+    // Chart — timeline grouped by granularity
+    const allPayments = await this.prisma.payment.findMany({
+      where: paymentWhere,
+      select: { paidAt: true, amount: true },
+      orderBy: { paidAt: 'asc' },
+    });
+
+    const chartMap: Record<string, { date: string; amount: number; count: number }> = {};
+    for (const p of allPayments) {
+      if (!p.paidAt) continue;
+      const d = dayjs(p.paidAt).tz(VN_TZ);
+      let key: string;
+      if (granularity === 'month') key = d.format('YYYY-MM');
+      else if (granularity === 'week') {
+        const startOfYear = dayjs(p.paidAt).tz(VN_TZ).startOf('year');
+        const weekNum = Math.ceil(d.diff(startOfYear, 'day') / 7) + 1;
+        key = `${d.year()}-W${String(weekNum).padStart(2, '0')}`;
+      }
+      else key = d.format('YYYY-MM-DD');
+
+      if (!chartMap[key]) chartMap[key] = { date: key, amount: 0, count: 0 };
+      chartMap[key].amount += Number(p.amount);
+      chartMap[key].count++;
+    }
+    const chart = Object.values(chartMap);
+
+    // Breakdown by method
+    const byMethod = await this.prisma.payment.groupBy({
+      by: ['method'],
+      where: paymentWhere,
+      _sum: { amount: true },
+      _count: { _all: true },
+    });
+
+    // Breakdown by salon
+    const bySalonRaw = await this.prisma.payment.findMany({
+      where: paymentWhere,
+      select: {
+        amount: true,
+        booking: { select: { salonId: true, salon: { select: { name: true, city: true } } } }
+      },
+    });
+    const salonMap: Record<string, { salonId: string; name: string; city?: string; revenue: number; count: number }> = {};
+    for (const p of bySalonRaw) {
+      const b = (p.booking as any);
+      if (!b?.salonId) continue;
+      if (!salonMap[b.salonId]) salonMap[b.salonId] = { salonId: b.salonId, name: b.salon?.name || 'N/A', city: b.salon?.city, revenue: 0, count: 0 };
+      salonMap[b.salonId].revenue += Number(p.amount);
+      salonMap[b.salonId].count++;
+    }
+
+    // Breakdown by staff
+    const byStaffRaw = await this.prisma.payment.findMany({
+      where: paymentWhere,
+      select: {
+        amount: true,
+        booking: { select: { staffId: true, staff: { select: { user: { select: { name: true, avatar: true } } } } } }
+      },
+    });
+    const staffMap: Record<string, { staffId: string; name: string; avatar?: string; revenue: number; count: number }> = {};
+    for (const p of byStaffRaw) {
+      const b = (p.booking as any);
+      if (!b?.staffId) continue;
+      if (!staffMap[b.staffId]) staffMap[b.staffId] = { staffId: b.staffId, name: b.staff?.user?.name || 'N/A', avatar: b.staff?.user?.avatar, revenue: 0, count: 0 };
+      staffMap[b.staffId].revenue += Number(p.amount);
+      staffMap[b.staffId].count++;
+    }
+
+    // Breakdown by service
+    const byServiceRaw = await this.prisma.bookingService.findMany({
+      where: { booking: { payments: { some: { ...paymentWhere } } } },
+      select: { serviceId: true, price: true, service: { select: { name: true, category: true } } },
+    });
+    const serviceMap: Record<string, { serviceId: string; name: string; category?: string; revenue: number; count: number }> = {};
+    for (const bs of byServiceRaw) {
+      if (!serviceMap[bs.serviceId]) serviceMap[bs.serviceId] = { serviceId: bs.serviceId, name: (bs as any).service?.name || 'N/A', category: (bs as any).service?.category, revenue: 0, count: 0 };
+      serviceMap[bs.serviceId].revenue += Number(bs.price);
+      serviceMap[bs.serviceId].count++;
+    }
+
+    // Paginated transactions
+    const skip = (page - 1) * limit;
+    const txWhere = { ...paymentWhere };
+    const [transactions, totalTx] = await Promise.all([
+      this.prisma.payment.findMany({
+        where: txWhere,
+        skip,
+        take: limit,
+        orderBy: { paidAt: 'desc' },
+        select: {
+          id: true,
+          amount: true,
+          method: true,
+          type: true,
+          paidAt: true,
+          booking: {
+            select: {
+              id: true,
+              timeSlot: true,
+              customer: { select: { name: true, phone: true } },
+              staff: { select: { user: { select: { name: true } } } },
+              salon: { select: { name: true } },
+              services: { select: { service: { select: { name: true } } } },
+            }
+          }
+        }
+      }),
+      this.prisma.payment.count({ where: txWhere }),
+    ]);
+
+    return {
+      kpi: {
+        totalRevenue,
+        revenueGrowth,
+        transactionCount: txCount,
+        txGrowth,
+        avgOrderValue: avgOrder,
+        avgOrderGrowth,
+        period: { from: startDate.toISOString(), to: endDate.toISOString() },
+      },
+      chart,
+      breakdown: {
+        byMethod: byMethod.map((m: any) => ({ method: m.method, revenue: Number(m._sum?.amount || 0), count: m._count?._all ?? 0 })),
+        bySalon: Object.values(salonMap).sort((a, b) => b.revenue - a.revenue),
+        byStaff: Object.values(staffMap).sort((a, b) => b.revenue - a.revenue),
+        byService: Object.values(serviceMap).sort((a, b) => b.revenue - a.revenue),
+      },
+      transactions: {
+        data: transactions.map(tx => ({
+          id: tx.id,
+          amount: Number(tx.amount),
+          method: tx.method,
+          type: tx.type,
+          paidAt: tx.paidAt,
+          customerName: (tx.booking as any)?.customer?.name,
+          customerPhone: (tx.booking as any)?.customer?.phone,
+          staffName: (tx.booking as any)?.staff?.user?.name,
+          salonName: (tx.booking as any)?.salon?.name,
+          services: (tx.booking as any)?.services?.map((s: any) => s.service?.name).join(', '),
+          bookingTime: (tx.booking as any)?.timeSlot,
+        })),
+        meta: { total: totalTx, page, lastPage: Math.ceil(totalTx / limit), limit },
+      },
+    };
+  }
+
 
   private async getRevenueTimeline(startDate: Date) {
     const payments = await this.prisma.payment.findMany({

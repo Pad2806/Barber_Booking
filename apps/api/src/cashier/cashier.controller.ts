@@ -161,6 +161,12 @@ export class CashierController {
     return this.cashierService.getPaymentHistory(userId, { date });
   }
 
+  @Get('pending-payments')
+  @ApiOperation({ summary: 'Get bookings done but not fully paid yet' })
+  getPendingPayments(@CurrentUser('id') userId: string) {
+    return this.cashierService.getPendingPayments(userId);
+  }
+
   // ─── REVENUE ────────────────────────────────────────────
 
   @Get('revenue')

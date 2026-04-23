@@ -253,6 +253,36 @@ export class AdminController {
     return this.adminService.getRevenueStats(period);
   }
 
+  @Get('revenue')
+  @RequirePermissions(Permission.VIEW_REVENUE)
+  @ApiOperation({ summary: 'Admin full revenue dashboard with filters' })
+  @ApiQuery({ name: 'dateFrom', required: false })
+  @ApiQuery({ name: 'dateTo', required: false })
+  @ApiQuery({ name: 'salonId', required: false })
+  @ApiQuery({ name: 'granularity', required: false, enum: ['day', 'week', 'month'] })
+  @ApiQuery({ name: 'method', required: false })
+  @ApiQuery({ name: 'page', required: false })
+  @ApiQuery({ name: 'limit', required: false })
+  getAdminRevenue(
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('salonId') salonId?: string,
+    @Query('granularity') granularity?: 'day' | 'week' | 'month',
+    @Query('method') method?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.adminService.getAdminRevenueDashboard({
+      dateFrom,
+      dateTo,
+      salonId,
+      granularity: granularity || 'day',
+      method,
+      page: page ? parseInt(page) : 1,
+      limit: limit ? parseInt(limit) : 20,
+    });
+  }
+
   @Get('staff/:id')
   @RequirePermissions(Permission.VIEW_STAFF)
   @ApiOperation({ summary: 'Get staff detail' })
@@ -384,8 +414,8 @@ export class AdminController {
   @RequirePermissions(Permission.VIEW_STAFF)
   @ApiOperation({ summary: 'Get all staff schedules' })
   getSchedules(
-    @CurrentUser() user: User, 
-    @Query('salonId') salonId: string, 
+    @CurrentUser() user: User,
+    @Query('salonId') salonId: string,
     @Query('date') date?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string
