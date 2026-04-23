@@ -39,6 +39,7 @@ const STATUS_CONFIG: Record<string, { label: string, variant: 'warning' | 'info'
   PENDING: { label: 'Chờ xác nhận', variant: 'warning' },
   CONFIRMED: { label: 'Đã xác nhận', variant: 'info' },
   IN_PROGRESS: { label: 'Đang làm', variant: 'secondary' },
+  DONE: { label: 'Xong dịch vụ', variant: 'info' },
   COMPLETED: { label: 'Hoàn thành', variant: 'success' },
   CANCELLED: { label: 'Đã hủy', variant: 'destructive' },
   NO_SHOW: { label: 'Vắng mặt', variant: 'outline' },
@@ -47,8 +48,8 @@ const STATUS_CONFIG: Record<string, { label: string, variant: 'warning' | 'info'
 export default function AdminBookingsPage(): React.ReactElement {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
-  
+  const [limit, setLimit] = useState(10);
+
   // Filters
   const [status, setStatus] = useState<string>('');
   const [salonId, setSalonId] = useState<string>('');
@@ -86,11 +87,11 @@ export default function AdminBookingsPage(): React.ReactElement {
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'bookings', { page, limit, status, salonId, staffId, serviceId, dateFrom, dateTo, search: debouncedSearch }],
-    queryFn: () => adminApi.getAllBookings({ 
-      page, 
-      limit, 
-      status: status || undefined, 
-      salonId: salonId || undefined, 
+    queryFn: () => adminApi.getAllBookings({
+      page,
+      limit,
+      status: status || undefined,
+      salonId: salonId || undefined,
       staffId: staffId || undefined,
       serviceId: serviceId || undefined,
       dateFrom: dateFrom || undefined,
@@ -120,15 +121,15 @@ export default function AdminBookingsPage(): React.ReactElement {
   const handleExport = async () => {
     try {
       toast.loading('Đang khởi tạo file export...', { id: 'export' });
-      const blob = await adminApi.exportBookings({ 
-        status: status || undefined, 
-        salonId: salonId || undefined, 
+      const blob = await adminApi.exportBookings({
+        status: status || undefined,
+        salonId: salonId || undefined,
         staffId: staffId || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
         search: debouncedSearch || undefined,
       });
-      
+
       const url = window.URL.createObjectURL(new Blob([blob]));
       const link = document.createElement('a');
       link.href = url;
@@ -272,7 +273,7 @@ export default function AdminBookingsPage(): React.ReactElement {
                 </Link>
               </DropdownMenuItem>
               {booking.status === 'PENDING' && (
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="text-green-600"
                   onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'CONFIRMED' })}
                 >
@@ -280,7 +281,7 @@ export default function AdminBookingsPage(): React.ReactElement {
                 </DropdownMenuItem>
               )}
               {['PENDING', 'CONFIRMED'].includes(booking.status) && (
-                <DropdownMenuItem 
+                <DropdownMenuItem
                   className="text-destructive"
                   onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'CANCELLED' })}
                 >
@@ -310,9 +311,9 @@ export default function AdminBookingsPage(): React.ReactElement {
 
       {isError && (
         <Card className="p-6">
-          <ErrorState 
-            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách đặt lịch'} 
-            onRetry={() => refetch()} 
+          <ErrorState
+            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách đặt lịch'}
+            onRetry={() => refetch()}
           />
         </Card>
       )}
@@ -334,7 +335,7 @@ export default function AdminBookingsPage(): React.ReactElement {
                 ))}
               </select>
             </div>
-            
+
             <select
               title="Salon Filter"
               className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
@@ -397,26 +398,26 @@ export default function AdminBookingsPage(): React.ReactElement {
         {selectedBookings.length > 0 && (
           <div className="p-3 bg-primary/5 border-b flex items-center justify-between animate-in slide-in-from-top-2 duration-300">
             <span className="text-sm font-medium text-primary ml-3">
-               Đã chọn <strong>{selectedBookings.length}</strong> booking
+              Đã chọn <strong>{selectedBookings.length}</strong> booking
             </span>
             <div className="flex items-center gap-2">
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 variant="default"
                 className="bg-green-600 hover:bg-green-700 h-8"
                 onClick={() => bulkStatusMutation.mutate({ ids: selectedBookings.map(b => b.id), status: 'CONFIRMED' })}
                 disabled={bulkStatusMutation.isPending}
               >
-                 <CheckCircle className="w-4 h-4 mr-1.5" /> Xác nhận hàng loạt
+                <CheckCircle className="w-4 h-4 mr-1.5" /> Xác nhận hàng loạt
               </Button>
-              <Button 
-                size="sm" 
+              <Button
+                size="sm"
                 variant="destructive"
                 className="h-8"
                 onClick={() => bulkStatusMutation.mutate({ ids: selectedBookings.map(b => b.id), status: 'CANCELLED' })}
                 disabled={bulkStatusMutation.isPending}
               >
-                 <Trash2 className="w-4 h-4 mr-1.5" /> Hủy hàng loạt
+                <Trash2 className="w-4 h-4 mr-1.5" /> Hủy hàng loạt
               </Button>
               <Button
                 size="sm"
@@ -441,8 +442,11 @@ export default function AdminBookingsPage(): React.ReactElement {
               pageCount: data?.meta?.lastPage || 1,
               onPageChange: (p) => setPage(p),
               pageIndex: page,
-              pageSize: limit,
-            }}
+              pageSize: limit,  onPageSizeChange: (s) => {
+    setLimit(s);
+    setPage(1);
+  }
+}}
           />
         </CardContent>
       </Card>

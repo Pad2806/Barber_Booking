@@ -79,10 +79,10 @@ export default function BookingDetailPage() {
         try {
           const summary = await paymentApi.getSummary(bookingId);
           // If the most recent payment is PAID, it was hit by webhook
-          const hasNewPaid = summary.payments.some(p => 
+          const hasNewPaid = summary.payments.some(p =>
             p.type === 'FINAL' && p.status === 'PAID'
           );
-          
+
           if (hasNewPaid) {
             toast.success('Hệ thống đã nhận được tiền! Đang cập nhật...');
             setShowQRCode(false);
@@ -136,7 +136,7 @@ export default function BookingDetailPage() {
     try {
       setCheckingOut(true);
       const response = await paymentApi.checkout(bookingId, checkoutMethod);
-      
+
       if (checkoutMethod === 'VIETQR') {
         if (!response.qrCodeUrl) {
           toast.error('Salon chưa thiết lập ngân hàng để nhận chuyển khoản!');
@@ -326,7 +326,7 @@ export default function BookingDetailPage() {
           <div className="bg-white rounded-xl shadow-sm p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">Khách dùng dịch vụ</h2>
-              {['CONFIRMED', 'IN_PROGRESS'].includes(booking.status) && (
+              {['CONFIRMED', 'IN_PROGRESS', 'DONE'].includes(booking.status) && (
                 <button
                   onClick={() => setShowAddServiceModal(true)}
                   className="text-sm text-accent font-medium hover:underline flex items-center gap-1"
@@ -336,7 +336,7 @@ export default function BookingDetailPage() {
                 </button>
               )}
             </div>
-            
+
             <div className="space-y-3">
               {booking.services && booking.services.length > 0 ? (
                 booking.services.map((bs, index) => (
@@ -403,7 +403,7 @@ export default function BookingDetailPage() {
                   {pStatusConfig.label}
                 </span>
               </div>
-              
+
               <div className="flex justify-between border-t border-gray-100 pt-2">
                 <span className="text-gray-500 text-sm">Tổng tiền:</span>
                 <span className="font-medium text-gray-800">{formatPrice(booking.totalAmount)}</span>
@@ -465,7 +465,7 @@ export default function BookingDetailPage() {
                   Bắt đầu làm dịch vụ
                 </button>
               )}
-              {remainingAmount > 0 && ['IN_PROGRESS', 'CONFIRMED'].includes(booking.status) && (
+              {remainingAmount > 0 && ['IN_PROGRESS', 'CONFIRMED', 'DONE'].includes(booking.status) && (
                 <button
                   onClick={() => setShowCheckoutModal(true)}
                   disabled={updating}
@@ -475,7 +475,16 @@ export default function BookingDetailPage() {
                   Thanh toán tại quầy
                 </button>
               )}
-              {booking.status === 'IN_PROGRESS' && remainingAmount === 0 && (
+              {booking.status === 'IN_PROGRESS' && (
+                <button
+                  onClick={() => handleUpdateStatus('DONE')}
+                  disabled={updating}
+                  className="w-full px-4 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors font-medium disabled:opacity-50 shadow-sm"
+                >
+                  Xong dịch vụ
+                </button>
+              )}
+              {booking.status === 'DONE' && remainingAmount === 0 && (
                 <button
                   onClick={() => handleUpdateStatus('COMPLETED')}
                   disabled={updating}
@@ -510,7 +519,7 @@ export default function BookingDetailPage() {
                 <X className="w-6 h-6" />
               </button>
             </div>
-            
+
             <div className="flex-1 overflow-y-auto space-y-2 pr-2 mb-4">
               {salonServices.length > 0 ? (
                 salonServices.map(service => {
@@ -523,9 +532,8 @@ export default function BookingDetailPage() {
                     <div
                       key={service.id}
                       onClick={() => toggleSelectService(service.id)}
-                      className={`p-3 border rounded-lg cursor-pointer flex justify-between items-center transition-all ${
-                        isSelected ? 'border-accent bg-accent/5 ring-1 ring-accent' : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      className={`p-3 border rounded-lg cursor-pointer flex justify-between items-center transition-all ${isSelected ? 'border-accent bg-accent/5 ring-1 ring-accent' : 'border-gray-200 hover:border-gray-300'
+                        }`}
                     >
                       <div>
                         <p className="font-semibold text-gray-800">{service.name}</p>
@@ -539,15 +547,15 @@ export default function BookingDetailPage() {
                 <p className="text-center text-gray-500 py-6">Không tải được danh sách dịch vụ.</p>
               )}
             </div>
-            
+
             <div className="pt-4 border-t flex justify-end gap-3">
-              <button 
+              <button
                 onClick={() => setShowAddServiceModal(false)}
                 className="px-4 py-2 border rounded-lg font-medium hover:bg-gray-50"
               >
                 Hủy
               </button>
-              <button 
+              <button
                 onClick={handleAddServices}
                 disabled={addingService || selectedServices.length === 0}
                 className="px-6 py-2 bg-accent text-white rounded-lg font-medium hover:bg-accent/90 disabled:opacity-50 flex items-center gap-2"
@@ -569,14 +577,14 @@ export default function BookingDetailPage() {
               <h3 className="text-xl font-bold text-gray-800">
                 {showQRCode ? 'Mã QR Thanh Toán' : 'Thanh Toán (Checkout)'}
               </h3>
-              <button 
-                onClick={handleCloseCheckout} 
+              <button
+                onClick={handleCloseCheckout}
                 className="p-1 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto">
               {!showQRCode ? (
                 <>
@@ -591,26 +599,24 @@ export default function BookingDetailPage() {
                       <button
                         type="button"
                         onClick={() => setCheckoutMethod('CASH')}
-                        className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all duration-200 ${
-                          checkoutMethod === 'CASH' 
-                            ? 'border-accent bg-accent/5 shadow-md shadow-accent/10' 
+                        className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all duration-200 ${checkoutMethod === 'CASH'
+                            ? 'border-accent bg-accent/5 shadow-md shadow-accent/10'
                             : 'border-gray-100 hover:border-gray-300 bg-white'
-                        }`}
+                          }`}
                       >
                         <div className={`p-2 rounded-xl ${checkoutMethod === 'CASH' ? 'bg-accent text-white' : 'bg-gray-100 text-gray-400'}`}>
                           <DollarSign className="w-6 h-6" />
                         </div>
                         <span className={`font-bold text-sm ${checkoutMethod === 'CASH' ? 'text-accent' : 'text-gray-500'}`}>Tiền mặt</span>
                       </button>
-                      
+
                       <button
                         type="button"
                         onClick={() => setCheckoutMethod('VIETQR')}
-                        className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all duration-200 ${
-                          checkoutMethod === 'VIETQR' 
-                            ? 'border-accent bg-accent/5 shadow-md shadow-accent/10' 
+                        className={`p-4 border-2 rounded-2xl flex flex-col items-center justify-center gap-3 transition-all duration-200 ${checkoutMethod === 'VIETQR'
+                            ? 'border-accent bg-accent/5 shadow-md shadow-accent/10'
                             : 'border-gray-100 hover:border-gray-300 bg-white'
-                        }`}
+                          }`}
                       >
                         <div className={`p-2 rounded-xl ${checkoutMethod === 'VIETQR' ? 'bg-accent text-white' : 'bg-gray-100 text-gray-400'}`}>
                           <CreditCard className="w-6 h-6" />
@@ -634,15 +640,15 @@ export default function BookingDetailPage() {
                     <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                     Đang chờ webhook xác nhận tiền...
                   </div>
-                  
+
                   {checkoutResponse?.qrCodeUrl ? (
                     <div className="relative group mb-6">
                       <div className="absolute -inset-1 bg-gradient-to-r from-accent to-blue-500 rounded-2xl blur opacity-25 group-hover:opacity-40 transition duration-1000 group-hover:duration-200"></div>
                       <div className="relative bg-white p-3 rounded-2xl border-2 border-dashed border-gray-200">
-                        <Image 
-                          src={checkoutResponse.qrCodeUrl} 
-                          alt="QR Code" 
-                          width={240} 
+                        <Image
+                          src={checkoutResponse.qrCodeUrl}
+                          alt="QR Code"
+                          width={240}
                           height={240}
                           unoptimized
                           className="w-full h-auto rounded-lg"
@@ -683,7 +689,7 @@ export default function BookingDetailPage() {
                         </>
                       )}
                     </button>
-                    
+
                     <button
                       onClick={() => setShowQRCode(false)}
                       className="w-full py-2 text-gray-400 text-xs font-medium hover:text-gray-600 transition-colors"

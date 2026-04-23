@@ -39,20 +39,20 @@ import { toast } from 'react-hot-toast';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogDescription,
-  DialogFooter 
+  DialogFooter
 } from '@/components/ui/dialog';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
 import dayjs from 'dayjs';
 
@@ -60,6 +60,7 @@ const STATUS_CONFIG: Record<string, { label: string, variant: 'warning' | 'info'
   PENDING: { label: 'Chờ xác nhận', variant: 'warning' },
   CONFIRMED: { label: 'Đã xác nhận', variant: 'info' },
   IN_PROGRESS: { label: 'Đang làm', variant: 'secondary' },
+  DONE: { label: 'Xong dịch vụ', variant: 'info' },
   COMPLETED: { label: 'Hoàn thành', variant: 'success' },
   CANCELLED: { label: 'Đã hủy', variant: 'destructive' },
 };
@@ -67,8 +68,8 @@ const STATUS_CONFIG: Record<string, { label: string, variant: 'warning' | 'info'
 export default function ManagerBookingsPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
-  
+  const [limit, setLimit] = useState(10);
+
   // Filters
   const [status, setStatus] = useState<string>('ALL');
   const [staffId, setStaffId] = useState<string>('ALL');
@@ -114,13 +115,13 @@ export default function ManagerBookingsPage() {
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['manager', 'bookings', { status, staffId, serviceId, dateFrom, dateTo, search: debouncedSearch }],
-    queryFn: () => managerApi.getBookings({ 
-        status: status === 'ALL' ? undefined : status as any, 
-        staffId: staffId === 'ALL' ? undefined : staffId,
-        serviceId: serviceId === 'ALL' ? undefined : serviceId,
-        dateFrom: dateFrom || undefined,
-        dateTo: dateTo || undefined,
-        search: debouncedSearch || undefined
+    queryFn: () => managerApi.getBookings({
+      status: status === 'ALL' ? undefined : status as any,
+      staffId: staffId === 'ALL' ? undefined : staffId,
+      serviceId: serviceId === 'ALL' ? undefined : serviceId,
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
+      search: debouncedSearch || undefined
     }),
   });
 
@@ -202,7 +203,7 @@ export default function ManagerBookingsPage() {
         const pendingRows = table.getRowModel().rows.filter(row => row.original.status === 'PENDING');
         const allPendingSelected = pendingRows.length > 0 && pendingRows.every(row => row.getIsSelected());
         const somePendingSelected = pendingRows.some(row => row.getIsSelected());
-        
+
         return (
           <Checkbox
             checked={allPendingSelected ? true : somePendingSelected ? 'indeterminate' : false}
@@ -328,7 +329,7 @@ export default function ManagerBookingsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 rounded-xl shadow-xl">
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="font-medium text-xs uppercase"
                 onClick={() => {
                   setSelectedBooking(booking);
@@ -343,29 +344,29 @@ export default function ManagerBookingsPage() {
                 <Calendar className="w-4 h-4 mr-3 text-primary" /> Dời lịch hẹn
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="font-medium text-xs uppercase"
                 onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'CONFIRMED' })}
                 disabled={booking.status === 'CONFIRMED' || booking.status === 'COMPLETED' || booking.status === 'CANCELLED'}
               >
                 <CheckCircle className="w-4 h-4 mr-3 text-emerald-500" /> Xác nhận
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="font-medium text-xs uppercase"
                 onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'IN_PROGRESS' })}
                 disabled={booking.status === 'IN_PROGRESS' || booking.status === 'COMPLETED' || booking.status === 'CANCELLED'}
               >
                 <Clock3 className="w-4 h-4 mr-3 text-indigo-500" /> Bắt đầu làm
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="font-medium text-xs uppercase"
-                onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'COMPLETED' })}
-                disabled={booking.status === 'COMPLETED' || booking.status === 'CANCELLED'}
+                onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'DONE' })}
+                disabled={booking.status === 'DONE' || booking.status === 'COMPLETED' || booking.status === 'CANCELLED'}
               >
-                <Award className="w-4 h-4 mr-3 text-blue-500" /> Hoàn thành
+                <Award className="w-4 h-4 mr-3 text-blue-500" /> Xong dịch vụ
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="font-medium text-xs uppercase text-rose-500 hover:bg-rose-50 hover:text-rose-600"
                 onClick={() => updateStatusMutation.mutate({ id: booking.id, status: 'CANCELLED' })}
                 disabled={booking.status === 'CANCELLED' || booking.status === 'COMPLETED'}
@@ -427,7 +428,7 @@ export default function ManagerBookingsPage() {
             >
               <option value="ALL">Tất cả nhân viên ({staffList.length})</option>
               {staffList.map((s: any) => (
-                <option key={s.id} value={s.id}>{s.user?.name || s.name || `Staff ${s.id?.slice(0,6)}`}</option>
+                <option key={s.id} value={s.id}>{s.user?.name || s.name || `Staff ${s.id?.slice(0, 6)}`}</option>
               ))}
             </select>
 
@@ -493,8 +494,8 @@ export default function ManagerBookingsPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   className="bg-emerald-600 hover:bg-emerald-700 h-9 px-4 font-bold rounded-lg gap-1.5 shadow-sm shadow-emerald-200 transition-all hover:shadow-md hover:shadow-emerald-200"
                   onClick={() => bulkStatusMutation.mutate('CONFIRMED')}
                   disabled={bulkStatusMutation.isPending}
@@ -506,8 +507,8 @@ export default function ManagerBookingsPage() {
                   )}
                   Xác nhận tất cả
                 </Button>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   variant="outline"
                   className="h-9 px-4 font-bold rounded-lg gap-1.5 border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-700 transition-all"
                   onClick={() => bulkStatusMutation.mutate('CANCELLED')}
@@ -543,76 +544,76 @@ export default function ManagerBookingsPage() {
 
       {/* Reschedule Modal */}
       <Dialog open={isRescheduleOpen} onOpenChange={setIsRescheduleOpen}>
-         <DialogContent className="sm:max-w-[450px] rounded-3xl border-none shadow-premium p-0 overflow-hidden bg-white">
-            <DialogHeader className="p-8 pb-0">
-               <DialogTitle className="text-2xl font-bold font-heading italic uppercase tracking-tighter">
-                  Dời lịch <span className="text-primary">Hẹn</span>
-               </DialogTitle>
-               <DialogDescription className="font-medium text-slate-500">
-                  Thay đổi ngày hoặc khung giờ phục vụ cho khách hàng.
-               </DialogDescription>
-            </DialogHeader>
+        <DialogContent className="sm:max-w-[450px] rounded-3xl border-none shadow-premium p-0 overflow-hidden bg-white">
+          <DialogHeader className="p-8 pb-0">
+            <DialogTitle className="text-2xl font-bold font-heading italic uppercase tracking-tighter">
+              Dời lịch <span className="text-primary">Hẹn</span>
+            </DialogTitle>
+            <DialogDescription className="font-medium text-slate-500">
+              Thay đổi ngày hoặc khung giờ phục vụ cho khách hàng.
+            </DialogDescription>
+          </DialogHeader>
 
-            <div className="p-8 space-y-6">
-               <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Chọn ngày mới</label>
-                  <Input 
-                    type="date"
-                    value={rescheduleData.date}
-                    onChange={(e) => setRescheduleData({ ...rescheduleData, date: e.target.value })}
-                    className="border-slate-100 bg-slate-50 h-10 rounded-xl font-bold focus-visible:ring-primary/20"
-                  />
-               </div>
-
-               <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Khung giờ</label>
-                  <Select 
-                    value={rescheduleData.timeSlot} 
-                    onValueChange={(val) => setRescheduleData({ ...rescheduleData, timeSlot: val })}
-                  >
-                     <SelectTrigger className="h-10 border-slate-100 bg-slate-50 rounded-xl font-bold focus:ring-primary/20">
-                        <SelectValue placeholder="Chọn giờ phục vụ" />
-                     </SelectTrigger>
-                     <SelectContent className="rounded-xl border-slate-100">
-                        {['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'].map((time) => (
-                          <SelectItem key={time} value={time} className="font-bold">{time}</SelectItem>
-                        ))}
-                     </SelectContent>
-                  </Select>
-               </div>
-
-               <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Nhân viên phục vụ</label>
-                  <Select 
-                    value={rescheduleData.staffId} 
-                    onValueChange={(val) => setRescheduleData({ ...rescheduleData, staffId: val })}
-                  >
-                     <SelectTrigger className="h-10 border-slate-100 bg-slate-50 rounded-xl font-bold focus:ring-primary/20">
-                        <SelectValue placeholder="Chọn nhân viên" />
-                     </SelectTrigger>
-                     <SelectContent className="rounded-xl border-slate-100">
-                        {staffList.map((s: any) => (
-                           <SelectItem key={s.id} value={s.id} className="font-bold">
-                              {s.user?.name}
-                           </SelectItem>
-                        ))}
-                     </SelectContent>
-                  </Select>
-               </div>
+          <div className="p-8 space-y-6">
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Chọn ngày mới</label>
+              <Input
+                type="date"
+                value={rescheduleData.date}
+                onChange={(e) => setRescheduleData({ ...rescheduleData, date: e.target.value })}
+                className="border-slate-100 bg-slate-50 h-10 rounded-xl font-bold focus-visible:ring-primary/20"
+              />
             </div>
 
-            <DialogFooter className="p-8 pt-0 flex gap-3">
-               <Button variant="outline" onClick={() => setIsRescheduleOpen(false)} className="flex-1 h-10 rounded-xl font-bold uppercase text-xs">Quay lại</Button>
-               <Button 
-                onClick={() => rescheduleMutation.mutate(rescheduleData)}
-                disabled={rescheduleMutation.isPending}
-                className="flex-1 bg-slate-900 hover:bg-slate-800 text-white rounded-xl h-10 font-bold uppercase text-xs shadow-xl"
-               >
-                  {rescheduleMutation.isPending ? 'Đang lưu...' : 'Cập nhật lịch'}
-                  <ArrowRight className="w-4 h-4 ml-2" />
-               </Button>
-            </DialogFooter>
-         </DialogContent>
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Khung giờ</label>
+              <Select
+                value={rescheduleData.timeSlot}
+                onValueChange={(val) => setRescheduleData({ ...rescheduleData, timeSlot: val })}
+              >
+                <SelectTrigger className="h-10 border-slate-100 bg-slate-50 rounded-xl font-bold focus:ring-primary/20">
+                  <SelectValue placeholder="Chọn giờ phục vụ" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-slate-100">
+                  {['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30'].map((time) => (
+                    <SelectItem key={time} value={time} className="font-bold">{time}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-slate-400">Nhân viên phục vụ</label>
+              <Select
+                value={rescheduleData.staffId}
+                onValueChange={(val) => setRescheduleData({ ...rescheduleData, staffId: val })}
+              >
+                <SelectTrigger className="h-10 border-slate-100 bg-slate-50 rounded-xl font-bold focus:ring-primary/20">
+                  <SelectValue placeholder="Chọn nhân viên" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl border-slate-100">
+                  {staffList.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id} className="font-bold">
+                      {s.user?.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter className="p-8 pt-0 flex gap-3">
+            <Button variant="outline" onClick={() => setIsRescheduleOpen(false)} className="flex-1 h-10 rounded-xl font-bold uppercase text-xs">Quay lại</Button>
+            <Button
+              onClick={() => rescheduleMutation.mutate(rescheduleData)}
+              disabled={rescheduleMutation.isPending}
+              className="flex-1 bg-slate-900 hover:bg-slate-800 text-white rounded-xl h-10 font-bold uppercase text-xs shadow-xl"
+            >
+              {rescheduleMutation.isPending ? 'Đang lưu...' : 'Cập nhật lịch'}
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       </Dialog>
     </div>
   );

@@ -53,7 +53,7 @@ export default function AdminStaffPage() {
   const router = useRouter();
   const { isGlobalAdmin, isSuperAdmin, isManager, salonId: mySalonId } = useSalonScope();
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   // Admin có thể filter theo chi nhánh; Manager chỉ thấy chi nhánh của mình
   const [salonId, setSalonId] = useState<string | undefined>(undefined);
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
@@ -414,8 +414,11 @@ export default function AdminStaffPage() {
               pageCount: data?.meta?.lastPage || 1,
               onPageChange: (p) => setPage(p),
               pageIndex: page,
-              pageSize: limit,
-            }}
+              pageSize: limit,  onPageSizeChange: (s) => {
+    setLimit(s);
+    setPage(1);
+  }
+}}
           />
         </CardContent>
       </Card>

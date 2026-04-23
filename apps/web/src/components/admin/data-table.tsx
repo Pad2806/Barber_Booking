@@ -16,6 +16,14 @@ import {
 import { ChevronLeft, ChevronRight, Search } from "lucide-react"
 
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+
+import {
   Table,
   TableBody,
   TableCell,
@@ -38,6 +46,7 @@ interface DataTableProps<TData, TValue> {
     onPageChange: (page: number) => void
     pageIndex: number
     pageSize: number
+    onPageSizeChange?: (size: number) => void
   }
 }
 
@@ -72,6 +81,7 @@ export function DataTable<TData, TValue>({
     onRowSelectionChange: setRowSelection,
     globalFilterFn: 'includesString' as any,
     onGlobalFilterChange: setGlobalFilter,
+    autoResetPageIndex: false,
     state: {
       sorting,
       columnFilters,
@@ -111,6 +121,15 @@ export function DataTable<TData, TValue>({
     }
   };
 
+  const handlePageSizeChange = (value: string) => {
+    const size = Number(value);
+    if (pagination?.onPageSizeChange) {
+      pagination.onPageSizeChange(size);
+    } else {
+      table.setPageSize(size);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2 px-6 pt-4">
@@ -136,7 +155,7 @@ export function DataTable<TData, TValue>({
           </div>
         )}
       </div>
-      
+
       <div className="rounded-md border bg-white overflow-hidden mx-6">
         <Table>
           <TableHeader className="bg-muted/30">
@@ -148,9 +167,9 @@ export function DataTable<TData, TValue>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   )
                 })}
@@ -199,6 +218,24 @@ export function DataTable<TData, TValue>({
           {table.getFilteredRowModel().rows.length} dòng được chọn.
         </div>
         <div className="flex items-center space-x-6 lg:space-x-8">
+          <div className="flex items-center space-x-2">
+            <p className="text-sm font-medium">Số dòng</p>
+            <Select
+              value={`${pagination ? pagination.pageSize : table.getState().pagination.pageSize}`}
+              onValueChange={handlePageSizeChange}
+            >
+              <SelectTrigger className="h-8 w-[70px]">
+                <SelectValue placeholder={pagination ? pagination.pageSize : table.getState().pagination.pageSize} />
+              </SelectTrigger>
+              <SelectContent side="top">
+                {[10, 20, 30, 40, 50].map((pageSize) => (
+                  <SelectItem key={pageSize} value={`${pageSize}`}>
+                    {pageSize}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex items-center space-x-2">
             <p className="text-sm font-medium">Trang</p>
             <div className="flex w-[100px] items-center justify-center text-sm font-medium">

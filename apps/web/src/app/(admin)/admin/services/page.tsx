@@ -40,7 +40,7 @@ const STATUS_CONFIG: any = {
 export default function AdminServicesPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [category, setCategory] = useState<string | undefined>(undefined);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -285,8 +285,11 @@ export default function AdminServicesPage() {
               pageCount: data?.meta?.lastPage || 1,
               onPageChange: (p) => setPage(p),
               pageIndex: page,
-              pageSize: limit,
-            }}
+              pageSize: limit,  onPageSizeChange: (s) => {
+    setLimit(s);
+    setPage(1);
+  }
+}}
           />
         </CardContent>
       </Card>

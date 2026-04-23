@@ -45,7 +45,7 @@ const STATUS_CONFIG: any = {
 export default function AdminSalonsPage(): React.JSX.Element {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [search] = useState('');
 
   const { data, isLoading, isError, error, refetch } = useQuery({
@@ -266,8 +266,11 @@ export default function AdminSalonsPage(): React.JSX.Element {
               pageCount: data?.meta?.lastPage || 1,
               onPageChange: (p) => setPage(p),
               pageIndex: page,
-              pageSize: limit,
-            }}
+              pageSize: limit,  onPageSizeChange: (s) => {
+    setLimit(s);
+    setPage(1);
+  }
+}}
           />
         </CardContent>
       </Card>

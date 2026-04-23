@@ -53,7 +53,7 @@ export default function ManagerStaffPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
@@ -393,8 +393,11 @@ export default function ManagerStaffPage() {
               pageCount: data?.meta?.lastPage || 1,
               onPageChange: (p) => setPage(p),
               pageIndex: page,
-              pageSize: limit,
-            }}
+              pageSize: limit,  onPageSizeChange: (s) => {
+    setLimit(s);
+    setPage(1);
+  }
+}}
           />
         </CardContent>
       </Card>

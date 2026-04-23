@@ -48,8 +48,8 @@ const VISIBILITY_CONFIG: any = {
 
 export default function AdminReviewsPage() {
   const queryClient = useQueryClient();
-  const [page] = useState(1);
-  const [limit] = useState(10);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [search] = useState('');
   const [rating, setRating] = useState<number | undefined>(undefined);
   const [salonId, setSalonId] = useState<string | undefined>(undefined);
@@ -67,11 +67,11 @@ export default function AdminReviewsPage() {
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['admin', 'reviews', { page, limit, search, rating, salonId, dateFrom, dateTo }],
-    queryFn: () => adminApi.getAllReviews({ 
-      page, 
-      limit, 
-      search, 
-      rating, 
+    queryFn: () => adminApi.getAllReviews({
+      page,
+      limit,
+      search,
+      rating,
       salonId,
       dateFrom: dateFrom || undefined,
       dateTo: dateTo || undefined,
@@ -105,17 +105,17 @@ export default function AdminReviewsPage() {
   // Use meta stats from API
   const stats = useMemo(() => {
     if (!data?.meta) return { avg: 0, positive: 0, negative: 0, total: 0 };
-    
+
     // Distribution can be used to calculate positive (4-5) and negative (1-2) accurately
     const dist = data.meta.distribution || {};
     const positive = (dist[4] || 0) + (dist[5] || 0);
     const negative = (dist[1] || 0) + (dist[2] || 0);
-    
-    return { 
-      avg: data.meta.averageRating || 0, 
-      positive, 
-      negative, 
-      total: data.meta.total 
+
+    return {
+      avg: data.meta.averageRating || 0,
+      positive,
+      negative,
+      total: data.meta.total
     };
   }, [data]);
 
@@ -198,7 +198,7 @@ export default function AdminReviewsPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[180px] p-1 shadow-xl border-slate-200">
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => {
                   setSelectedReview(review);
                   setReplyText(review.reply || '');
@@ -206,10 +206,10 @@ export default function AdminReviewsPage() {
                 }}
                 className="rounded-md focus:bg-slate-50 cursor-pointer"
               >
-                <MessageCircle className="w-4 h-4 mr-2 text-slate-400" /> 
+                <MessageCircle className="w-4 h-4 mr-2 text-slate-400" />
                 {review.reply ? 'Sửa phản hồi' : 'Phản hồi'}
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-destructive focus:bg-destructive/5 focus:text-destructive rounded-md cursor-pointer"
                 onClick={() => {
                   if (confirm(`Bạn có chắc muốn xóa đánh giá của ${review.customer?.name}?`)) {
@@ -230,9 +230,9 @@ export default function AdminReviewsPage() {
     return (
       <Card className="m-8 border-none shadow-premium">
         <CardContent className="pt-12 pb-12 flex flex-col items-center justify-center">
-          <ErrorState 
-            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách đánh giá'} 
-            onRetry={() => refetch()} 
+          <ErrorState
+            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách đánh giá'}
+            onRetry={() => refetch()}
           />
         </CardContent>
       </Card>
@@ -347,9 +347,9 @@ export default function AdminReviewsPage() {
             </div>
 
             {(salonId || rating || dateFrom || dateTo) && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   setSalonId(undefined);
                   setRating(undefined);
@@ -369,6 +369,16 @@ export default function AdminReviewsPage() {
             data={data?.data || []}
             searchKey="comment"
             loading={isLoading}
+            pagination={{
+              pageCount: data?.meta?.lastPage || 1,
+              onPageChange: (p) => setPage(p),
+              pageIndex: page,
+              pageSize: limit,
+              onPageSizeChange: (s) => {
+                setLimit(s);
+                setPage(1);
+              }
+            }}
           />
         </CardContent>
       </Card>
@@ -405,7 +415,7 @@ export default function AdminReviewsPage() {
 
           <DialogFooter className="gap-2 pt-4">
             <Button variant="outline" onClick={() => setReplyDialogOpen(false)} className="rounded-xl px-6">Hủy</Button>
-            <Button 
+            <Button
               className="rounded-xl px-8 font-bold"
               disabled={replyMutation.isPending || !replyText.trim()}
               onClick={() => replyMutation.mutate({ id: selectedReview.id, reply: replyText })}

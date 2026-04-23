@@ -31,7 +31,7 @@ export class ManagerService {
     async getManagerSalonId(userId: string): Promise<string> {
         const user = await this.prisma.user.findUnique({
             where: { id: userId },
-            include: { 
+            include: {
                 staff: {
                     select: {
                         salonId: true,
@@ -40,7 +40,7 @@ export class ManagerService {
                 },
                 ownedSalons: {
                     select: { id: true }
-                } 
+                }
             },
         });
 
@@ -147,7 +147,7 @@ export class ManagerService {
     }) {
         const salonId = await this.getManagerSalonId(userId);
         const { search, minRating, sortBy = 'createdAt', sortOrder = 'desc' } = query;
-        
+
         // Safe number parsing — NestJS @Query returns strings or undefined
         const pageNum = Math.max(1, parseInt(String(query.page), 10) || 1);
         const limitNum = Math.max(1, parseInt(String(query.limit), 10) || 10);
@@ -248,13 +248,13 @@ export class ManagerService {
 
     async getStaffDetail(userId: string, staffId: string) {
         const salonId = await this.getManagerSalonId(userId);
-        
+
         const staff = await this.prisma.staff.findUnique({
             where: { id: staffId },
             include: {
                 user: { select: { name: true, avatar: true, email: true, phone: true } },
                 salon: { select: { name: true } },
-                shifts: { 
+                shifts: {
                     where: { date: { gte: dayjs().tz(VIETNAM_TZ).startOf('week').toDate() } },
                     orderBy: { date: 'asc' }
                 },
@@ -283,7 +283,7 @@ export class ManagerService {
 
     async getStaffPerformance(userId: string, staffId: string) {
         const salonId = await this.getManagerSalonId(userId);
-        
+
         const staff = await this.prisma.staff.findUnique({
             where: { id: staffId },
             include: {
@@ -364,7 +364,7 @@ export class ManagerService {
 
     async createStaff(userId: string, dto: CreateStaffDto) {
         const managerSalonId = await this.getManagerSalonId(userId);
-        
+
         // Force salonId to be the manager's salon
         const staffDto = {
             ...dto,
@@ -376,7 +376,7 @@ export class ManagerService {
 
     async updateStaff(userId: string, staffUserId: string, dto: UpdateStaffDto) {
         const managerSalonId = await this.getManagerSalonId(userId);
-        
+
         // Verify staff belongs to manager's salon
         const staff = await this.prisma.staff.findUnique({
             where: { userId: staffUserId }
@@ -397,7 +397,7 @@ export class ManagerService {
 
     async deleteStaff(userId: string, staffUserId: string) {
         const managerSalonId = await this.getManagerSalonId(userId);
-        
+
         // Verify staff belongs to manager's salon
         const staff = await this.prisma.staff.findUnique({
             where: { userId: staffUserId }
@@ -460,7 +460,7 @@ export class ManagerService {
 
             while (current.isBefore(end) || current.isSame(end, 'day')) {
                 const date = current.toDate();
-                
+
                 // Delete existing shifts for this day to avoid duplicates/conflicts
                 await this.prisma.staffShift.deleteMany({
                     where: { staffId: leave.staffId, date }
@@ -524,7 +524,7 @@ export class ManagerService {
                 where.date.lte = dayjs.tz(filters.dateTo, VIETNAM_TZ).endOf('day').toDate();
             }
         }
-        
+
         if (filters.staffId) where.staffId = filters.staffId;
         if (filters.status && filters.status !== ('ALL' as any)) where.status = filters.status;
         if (filters.serviceId) where.services = { some: { serviceId: filters.serviceId } };
@@ -539,9 +539,10 @@ export class ManagerService {
         return this.prisma.booking.findMany({
             where,
             include: {
-                customer: { select: { id: true, name: true, phone: true } },
-                staff: { include: { user: { select: { name: true } } } },
-                services: { include: { service: { select: { name: true } } } }
+                salon: { select: { id: true, name: true } },
+                customer: { select: { id: true, name: true, phone: true, avatar: true } },
+                staff: { include: { user: { select: { id: true, name: true, avatar: true } } } },
+                services: { include: { service: { select: { id: true, name: true, price: true, duration: true } } } }
             },
             orderBy: [{ date: 'desc' }, { timeSlot: 'asc' }]
         });
@@ -658,7 +659,7 @@ export class ManagerService {
 
     async bulkUpdateBookingStatus(userId: string, ids: string[], status: BookingStatus) {
         const salonId = await this.getManagerSalonId(userId);
-        
+
         // Only update bookings that belong to this salon
         return this.prisma.booking.updateMany({
             where: {

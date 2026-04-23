@@ -47,10 +47,10 @@ const BOOKING_STATUS_COLORS: Record<string, string> = {
 };
 
 export default function AdminCustomersPage() {
-  const [page] = useState(1);
-  const [limit] = useState(10);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   const [search] = useState('');
-  
+
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
@@ -70,7 +70,7 @@ export default function AdminCustomersPage() {
     if (!data?.data) return { totalUsers: 0, activeUsers: 0, newUsers: 0 };
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
+
     return {
       totalUsers: data?.meta?.total || 0,
       activeUsers: data?.data?.filter((u: any) => u.isActive).length || 0,
@@ -153,9 +153,9 @@ export default function AdminCustomersPage() {
     {
       id: 'actions',
       cell: ({ row }) => (
-        <Button 
-          variant="ghost" 
-          size="icon" 
+        <Button
+          variant="ghost"
+          size="icon"
           className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-full"
           onClick={() => {
             setSelectedCustomerId(row.original.id);
@@ -172,9 +172,9 @@ export default function AdminCustomersPage() {
     return (
       <Card className="m-8 border-none shadow-premium">
         <CardContent className="pt-12 pb-12 flex flex-col items-center justify-center">
-          <ErrorState 
-            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách khách hàng'} 
-            onRetry={() => refetch()} 
+          <ErrorState
+            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách khách hàng'}
+            onRetry={() => refetch()}
           />
         </CardContent>
       </Card>
@@ -228,14 +228,24 @@ export default function AdminCustomersPage() {
 
       <Card className="border-none shadow-premium bg-white/50 backdrop-blur-sm">
         <CardHeader>
-           <CardTitle className="text-xl font-bold font-heading italic">Danh sách khách hàng</CardTitle>
-           <CardDescription>Tìm kiếm và quản lý chi tiết khách hàng.</CardDescription>
+          <CardTitle className="text-xl font-bold font-heading italic">Danh sách khách hàng</CardTitle>
+          <CardDescription>Tìm kiếm và quản lý chi tiết khách hàng.</CardDescription>
         </CardHeader>
         <DataTable
           columns={columns}
           data={data?.data || []}
           searchKey="name"
           loading={isLoading}
+          pagination={{
+            pageCount: data?.meta?.lastPage || 1,
+            onPageChange: (p) => setPage(p),
+            pageIndex: page,
+            pageSize: limit,
+            onPageSizeChange: (s) => {
+              setLimit(s);
+              setPage(1);
+            }
+          }}
         />
       </Card>
 
@@ -257,15 +267,15 @@ export default function AdminCustomersPage() {
                       </AvatarFallback>
                     </Avatar>
                     <div className="space-y-2">
-                       <SheetTitle className="text-2xl font-bold text-slate-900">{customerDetail.name}</SheetTitle>
-                       <div className="flex flex-wrap gap-2">
-                          <Badge className={cn('', customerDetail.isActive ? 'bg-emerald-500' : 'bg-slate-400')}>
-                            {customerDetail.isActive ? 'Bình thường' : 'Đã khóa'}
-                          </Badge>
-                          <Badge variant="outline" className="border-slate-200 text-slate-500">
-                            {customerDetail.role}
-                          </Badge>
-                       </div>
+                      <SheetTitle className="text-2xl font-bold text-slate-900">{customerDetail.name}</SheetTitle>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge className={cn('', customerDetail.isActive ? 'bg-emerald-500' : 'bg-slate-400')}>
+                          {customerDetail.isActive ? 'Bình thường' : 'Đã khóa'}
+                        </Badge>
+                        <Badge variant="outline" className="border-slate-200 text-slate-500">
+                          {customerDetail.role}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                 </SheetHeader>
@@ -301,23 +311,23 @@ export default function AdminCustomersPage() {
                   <div className="space-y-3">
                     {customerDetail.bookings?.length > 0 ? (
                       customerDetail.bookings.map((booking: any) => (
-                          <div key={booking.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between hover:border-primary/20 transition-all group">
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:bg-primary/5 group-hover:text-primary transition-colors">
-                                <ShoppingBag className="w-5 h-5" />
-                              </div>
-                              <div>
-                                <p className="text-sm font-bold text-slate-800 line-clamp-1">{booking.salon?.name}</p>
-                                <p className="text-[xs] text-slate-400">{formatDateTime(booking.date)}</p>
-                              </div>
+                        <div key={booking.id} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex items-center justify-between hover:border-primary/20 transition-all group">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400 group-hover:bg-primary/5 group-hover:text-primary transition-colors">
+                              <ShoppingBag className="w-5 h-5" />
                             </div>
-                            <div className="text-right">
-                              <p className="text-sm font-bold text-slate-900">{formatPrice(booking.totalAmount)}</p>
-                              <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full uppercase', BOOKING_STATUS_COLORS[booking.status])}>
-                                {booking.status}
-                              </span>
+                            <div>
+                              <p className="text-sm font-bold text-slate-800 line-clamp-1">{booking.salon?.name}</p>
+                              <p className="text-[xs] text-slate-400">{formatDateTime(booking.date)}</p>
                             </div>
                           </div>
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-slate-900">{formatPrice(booking.totalAmount)}</p>
+                            <span className={cn('text-[10px] font-bold px-2 py-0.5 rounded-full uppercase', BOOKING_STATUS_COLORS[booking.status])}>
+                              {booking.status}
+                            </span>
+                          </div>
+                        </div>
                       ))
                     ) : (
                       <div className="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200">
@@ -329,10 +339,10 @@ export default function AdminCustomersPage() {
               </div>
             </div>
           ) : (
-             <div className="h-full flex flex-col items-center justify-center p-8 text-center gap-4">
-               <AlertCircle className="h-12 w-12 text-slate-300" />
-               <p className="text-slate-500">Không tìm thấy thông tin khách hàng này.</p>
-             </div>
+            <div className="h-full flex flex-col items-center justify-center p-8 text-center gap-4">
+              <AlertCircle className="h-12 w-12 text-slate-300" />
+              <p className="text-slate-500">Không tìm thấy thông tin khách hàng này.</p>
+            </div>
           )}
         </SheetContent>
       </Sheet>

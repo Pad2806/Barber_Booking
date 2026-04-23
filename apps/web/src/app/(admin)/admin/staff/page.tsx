@@ -51,7 +51,7 @@ export default function AdminStaffPage() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const [page, setPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [salonId, setSalonId] = useState<string | undefined>(undefined);
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
   const [sortBy, setSortBy] = useState<string>('createdAt');
@@ -400,8 +400,11 @@ export default function AdminStaffPage() {
               pageCount: data?.meta?.lastPage || 1,
               onPageChange: (p) => setPage(p),
               pageIndex: page,
-              pageSize: limit,
-            }}
+              pageSize: limit,  onPageSizeChange: (s) => {
+    setLimit(s);
+    setPage(1);
+  }
+}}
           />
         </CardContent>
       </Card>

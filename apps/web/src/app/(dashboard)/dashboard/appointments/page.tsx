@@ -32,11 +32,12 @@ const STATUS_CONFIG: Record<string, { label: string; style: string }> = {
   PENDING: { label: 'Chờ duyệt', style: 'bg-amber-50 text-amber-700 border-amber-200' },
   CONFIRMED: { label: 'Đã xác nhận', style: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
   IN_PROGRESS: { label: 'Đang phục vụ', style: 'bg-blue-50 text-blue-700 border-blue-200' },
+  DONE: { label: 'Xong dịch vụ', style: 'bg-teal-50 text-teal-700 border-teal-200' },
   COMPLETED: { label: 'Hoàn thành', style: 'bg-slate-50 text-slate-600 border-slate-200' },
   CANCELLED: { label: 'Đã hủy', style: 'bg-rose-50 text-rose-600 border-rose-200' },
 };
 
-const FILTER_TABS = ['ALL', 'PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'];
+const FILTER_TABS = ['ALL', 'PENDING', 'CONFIRMED', 'IN_PROGRESS', 'DONE', 'COMPLETED', 'CANCELLED'];
 
 export default function AppointmentsPage() {
   const queryClient = useQueryClient();
@@ -252,16 +253,16 @@ export default function AppointmentsPage() {
                       Bắt đầu phục vụ
                     </Button>
                   )}
-                  {(selectedBooking.status === 'CONFIRMED' || selectedBooking.status === 'IN_PROGRESS') && (
+                  {selectedBooking.status === 'IN_PROGRESS' && (
                     <Button
-                      className="rounded-xl bg-emerald-600 hover:bg-emerald-700"
-                      onClick={() => statusMutation.mutate({ id: selectedBooking.id, status: 'COMPLETED' })}
+                      className="rounded-xl bg-teal-600 hover:bg-teal-700"
+                      onClick={() => statusMutation.mutate({ id: selectedBooking.id, status: 'DONE' })}
                       disabled={statusMutation.isPending}
                     >
-                      Hoàn thành
+                      Xong dịch vụ
                     </Button>
                   )}
-                  {selectedBooking.status !== 'COMPLETED' && selectedBooking.status !== 'CANCELLED' && (
+                  {selectedBooking.status !== 'COMPLETED' && selectedBooking.status !== 'DONE' && selectedBooking.status !== 'CANCELLED' && (
                     <Button
                       variant="outline"
                       className="rounded-xl text-rose-600 border-rose-200 hover:bg-rose-50"
