@@ -43,7 +43,7 @@ const BARBER_MENU_ITEMS = [
   { key: 'dashboard', href: '/barber/dashboard', label: 'Tổng quan', icon: LayoutDashboard },
   { key: 'schedule', href: '/barber/schedule', label: 'Lịch làm việc', icon: Clock },
   { key: 'bookings', href: '/barber/bookings', label: 'Lịch phân công', icon: Calendar },
-  { key: 'leave-requests', href: '/barber/leave-requests', label: 'Nghỉ phép', icon: CalendarOff },
+  { key: 'leave-requests', href: '/barber/leave-requests', label: 'Đăng ký nghỉ phép', icon: CalendarOff },
 ];
 
 export default function BarberLayout({ children }: BarberLayoutProps) {
