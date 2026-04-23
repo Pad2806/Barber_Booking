@@ -593,7 +593,7 @@ export class BookingsService extends BaseQueryService {
     const dateStr = typeof date === 'string' ? date : dayjs(date).format('YYYY-MM-DD');
     const searchDate = dayjs.utc(dateStr).toDate();
     const vDate = dayjs.tz(dateStr, VIETNAM_TZ).startOf('day');
-    
+
     const [startH, startM] = timeSlot.split(':').map(Number);
     const requestStart = vDate.set('hour', startH).set('minute', startM).set('second', 0).set('millisecond', 0);
     const requestEnd = requestStart.add(duration, 'minute');
@@ -681,7 +681,8 @@ export class BookingsService extends BaseQueryService {
         BookingStatus.CANCELLED,
         BookingStatus.NO_SHOW,
       ],
-      [BookingStatus.IN_PROGRESS]: [BookingStatus.COMPLETED, BookingStatus.CANCELLED],
+      [BookingStatus.IN_PROGRESS]: [BookingStatus.DONE, BookingStatus.COMPLETED, BookingStatus.CANCELLED],
+      [BookingStatus.DONE]: [BookingStatus.COMPLETED, BookingStatus.CANCELLED],
       [BookingStatus.COMPLETED]: [],
       [BookingStatus.CANCELLED]: [],
       [BookingStatus.NO_SHOW]: [],
