@@ -71,8 +71,8 @@ export class StaffController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all staff schedules for a salon' })
   getSalonSchedules(
-    @CurrentUser() user: User, 
-    @Query('salonId') salonId: string, 
+    @CurrentUser() user: User,
+    @Query('salonId') salonId: string,
     @Query('date') date?: string,
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string
@@ -137,7 +137,7 @@ export class StaffController {
   @ApiQuery({ name: 'date', required: true, description: 'Date in YYYY-MM-DD format' })
   @ApiQuery({ name: 'salonId', required: false, description: 'Optional salon ID filter' })
   getAvailableSlots(
-    @Param('id') id: string, 
+    @Param('id') id: string,
     @Query('date') dateStr: string,
     @Query('salonId') salonId?: string,
     @Query('duration') duration?: string,
@@ -303,7 +303,7 @@ export class StaffController {
 
   @Post('me/leave-request')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.BARBER, Role.SKINNER, Role.STAFF)
+  @Roles(Role.BARBER, Role.SKINNER, Role.STAFF, Role.CASHIER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Submit a leave request (date range)' })
   async submitLeaveRequest(
@@ -316,7 +316,7 @@ export class StaffController {
 
   @Get('me/leaves')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.BARBER, Role.SKINNER, Role.STAFF)
+  @Roles(Role.BARBER, Role.SKINNER, Role.STAFF, Role.CASHIER)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get own leave requests' })
   async getMyLeaves(@CurrentUser() user: User) {

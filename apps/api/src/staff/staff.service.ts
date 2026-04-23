@@ -536,8 +536,8 @@ export class StaffService extends BaseQueryService {
 
     const primaryRole = remainingRoles.length > 0
       ? remainingRoles.reduce((best, ur) =>
-          (ROLE_PRIORITY[ur.role] ?? 0) >= (ROLE_PRIORITY[best.role] ?? 0) ? ur : best
-        ).role
+        (ROLE_PRIORITY[ur.role] ?? 0) >= (ROLE_PRIORITY[best.role] ?? 0) ? ur : best
+      ).role
       : Role.CUSTOMER;
 
     await this.prisma.user.update({
@@ -601,7 +601,7 @@ export class StaffService extends BaseQueryService {
           totalRevenue: 0,
           avgRating: "5.0",
           totalReviews: 0,
-         },
+        },
         monthlyRevenue: [],
       };
     }
@@ -610,7 +610,13 @@ export class StaffService extends BaseQueryService {
   async registerLeave(staffId: string, dto: { startDate: string | Date; endDate: string | Date; reason?: string }, user: User) {
     try {
       const staff = await this.findOne(staffId);
-      await this.verifySalonOwnership(staff.salonId, user);
+
+      // Only verify salon ownership when admin/manager registers leave on behalf of staff
+      // Staff submitting their own leave should skip this check
+      const isSelf = staff.userId === user.id;
+      if (!isSelf) {
+        await this.verifySalonOwnership(staff.salonId, user);
+      }
 
       // Ensure we have valid Date objects for Prisma
       const startDate = new Date(dto.startDate);
@@ -726,14 +732,14 @@ export class StaffService extends BaseQueryService {
       while (current.add(duration, 'minute').isBefore(slotRange.end) || current.add(duration, 'minute').isSame(slotRange.end)) {
         const timeStr = current.format('HH:mm');
         const endTimeStr = current.add(duration, 'minute').format('HH:mm');
-        
+
         // Check if ANY booking overlaps with the requested duration
         const isOverlap = bookings.some(b => {
-            // A booking overlaps if it starts before our requested end time 
-            // AND ends after our requested start time
-            return (timeStr < b.endTime && endTimeStr > b.timeSlot);
+          // A booking overlaps if it starts before our requested end time 
+          // AND ends after our requested start time
+          return (timeStr < b.endTime && endTimeStr > b.timeSlot);
         });
-        
+
         if (!isOverlap) {
           finalSlots.push(timeStr);
         }
@@ -898,9 +904,9 @@ export class StaffService extends BaseQueryService {
 
     const dateToUse = dto.date || dayjs(shift.date).format('YYYY-MM-DD');
     const shiftTimes = await this.calculateShiftTimes(
-      dateToUse, 
-      dto.type || shift.type, 
-      dto.shiftStart, 
+      dateToUse,
+      dto.type || shift.type,
+      dto.shiftStart,
       dto.shiftEnd
     );
 
@@ -1075,7 +1081,7 @@ export class StaffService extends BaseQueryService {
 
     return this.prisma.booking.update({
       where: { id: bookingId },
-      data: { 
+      data: {
         status,
         ...(shouldAutoPay ? { paymentStatus: 'PAID' } : {}),
       },
@@ -1153,7 +1159,7 @@ export class StaffService extends BaseQueryService {
         const shouldAutoPay = b.paymentStatus === 'UNPAID';
         await this.prisma.booking.update({
           where: { id: b.id },
-          data: { 
+          data: {
             status: 'COMPLETED',
             ...(shouldAutoPay ? { paymentStatus: 'PAID' } : {}),
           },
