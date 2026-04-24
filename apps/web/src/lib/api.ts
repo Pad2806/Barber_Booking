@@ -628,6 +628,10 @@ export const adminApi = {
     const response = await apiClient.get(`/admin/users/${userId}`);
     return response.data;
   },
+  toggleUserStatus: async (userId: string) => {
+    const response = await apiClient.patch(`/admin/users/${userId}/toggle-status`);
+    return response.data;
+  },
   getBookingStats: async (period: 'week' | 'month' | 'year' = 'month') => {
     const response = await apiClient.get<BookingStats>('/admin/bookings/stats', {
       params: { period },

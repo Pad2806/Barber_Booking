@@ -162,6 +162,27 @@ export class AdminController {
       );
     }
   }
+  @Patch('users/:id/toggle-status')
+  @RequirePermissions(Permission.MANAGE_USERS)
+  @ApiOperation({ summary: 'Block or unblock a user account' })
+  @ApiParam({ name: 'id', description: 'User ID' })
+  async toggleUserStatus(
+    @Param('id') id: string,
+    @CurrentUser() admin: User,
+  ) {
+    try {
+      return await this.adminService.toggleUserStatus(id, admin.id);
+    } catch (error: any) {
+      if (error.message?.includes('không tồn tại') || error.message === 'User not found') {
+        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
+      }
+      if (error.message?.includes('chính mình')) {
+        throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
+      }
+      throw new HttpException('Unexpected server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
   @Get('salons')
   @RequirePermissions(Permission.VIEW_SALONS)
   @ApiOperation({ summary: 'Get all salons (paginated)' })

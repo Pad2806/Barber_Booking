@@ -917,6 +917,31 @@ export class AdminService extends BaseQueryService {
     };
   }
 
+  async toggleUserStatus(userId: string, adminId: string): Promise<{ id: string; isActive: boolean; name: string | null }> {
+    if (userId === adminId) {
+      throw new Error('Không thể tự khóa tài khoản của chính mình.');
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, isActive: true, name: true, role: true },
+    });
+
+    if (!user) {
+      throw new Error('Người dùng không tồn tại.');
+    }
+
+    const updated = await this.prisma.user.update({
+      where: { id: userId },
+      data: { isActive: !user.isActive },
+      select: { id: true, isActive: true, name: true },
+    });
+
+    this.logger.log(`Admin ${adminId} ${updated.isActive ? 'unblocked' : 'blocked'} user ${userId} (${user.name})`);
+
+    return updated;
+  }
+
   async getAllSalons(params: {
     page?: number;
     limit?: number;
