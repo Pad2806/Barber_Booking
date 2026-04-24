@@ -256,19 +256,19 @@ export default function AdminStaffPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[180px] p-1 shadow-xl border-slate-200">
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => router.push(`/admin/staff/${staff.id}`)}
                 className="rounded-md focus:bg-slate-50 cursor-pointer flex items-center"
               >
                 <Eye className="w-4 h-4 mr-2 text-slate-400" /> Xem chi tiết
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => { setSelectedStaffId(staff.id); setPanelMode('edit'); setPanelOpen(true); }}
                 className="rounded-md focus:bg-slate-50 cursor-pointer flex items-center"
               >
                 <Edit className="w-4 h-4 mr-2 text-slate-400" /> Chỉnh sửa
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-destructive focus:bg-destructive/5 focus:text-destructive rounded-md cursor-pointer flex items-center"
                 onClick={() => {
                   if (confirm(`Bạn có chắc muốn xóa nhân viên ${staff.user?.name}?`)) {
@@ -289,9 +289,9 @@ export default function AdminStaffPage() {
     return (
       <Card className="m-8 border-none shadow-premium">
         <CardContent className="pt-12 pb-12 flex flex-col items-center justify-center">
-          <ErrorState 
-            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách nhân viên'} 
-            onRetry={() => refetch()} 
+          <ErrorState
+            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách nhân viên'}
+            onRetry={() => refetch()}
           />
         </CardContent>
       </Card>
@@ -314,7 +314,7 @@ export default function AdminStaffPage() {
         <Card className="bg-primary/5 border-none shadow-none ring-1 ring-primary/10 transition-all hover:ring-primary/20">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-inner">
-               <Users className="w-6 h-6" />
+              <Users className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Tổng nhân sự</p>
@@ -325,7 +325,7 @@ export default function AdminStaffPage() {
         <Card className="bg-amber-50/50 border-none shadow-none ring-1 ring-amber-200/50 transition-all hover:ring-amber-300">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="p-4 bg-amber-100 rounded-2xl text-amber-600 shadow-inner">
-               <Award className="w-6 h-6" />
+              <Award className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Stylist nổi bật</p>
@@ -338,7 +338,7 @@ export default function AdminStaffPage() {
         <Card className="bg-emerald-50/50 border-none shadow-none ring-1 ring-emerald-200/50 transition-all hover:ring-emerald-300">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="p-4 bg-emerald-100 rounded-2xl text-emerald-600 shadow-inner">
-               <Activity className="w-6 h-6" />
+              <Activity className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Đang hoạt động</p>
@@ -414,11 +414,13 @@ export default function AdminStaffPage() {
               pageCount: data?.meta?.lastPage || 1,
               onPageChange: (p) => setPage(p),
               pageIndex: page,
-              pageSize: limit,  onPageSizeChange: (s) => {
-    setLimit(s);
-    setPage(1);
-  }
-}}
+              pageSize: limit,
+              total: data?.meta?.total,
+              onPageSizeChange: (s) => {
+                setLimit(s);
+                setPage(1);
+              }
+            }}
           />
         </CardContent>
       </Card>
@@ -436,7 +438,7 @@ export default function AdminStaffPage() {
               {panelMode === 'create' ? 'Tạo hồ sơ nhân sự mới và thiết lập quyền truy cập cho hệ thống.' : 'Xem hoặc cập nhật thông tin chi tiết và quyền hạn của nhân viên.'}
             </SheetDescription>
           </SheetHeader>
-          
+
           <div className="flex-1 overflow-y-auto px-8 py-8">
             <form id="staff-form" onSubmit={handleSubmit} className="space-y-8 pb-4">
               <div className="grid grid-cols-1 gap-8">
@@ -450,7 +452,7 @@ export default function AdminStaffPage() {
                     disabled={panelMode === 'view'}
                   />
                   <p className="text-xs text-slate-400 mt-4 text-center font-medium">
-                    Tải lên ảnh chân dung chuyên nghiệp.<br/>
+                    Tải lên ảnh chân dung chuyên nghiệp.<br />
                     Định dạng JPG, PNG tối đa 10MB.
                   </p>
                 </div>
@@ -558,20 +560,20 @@ export default function AdminStaffPage() {
           </div>
 
           <div className="px-8 py-6 border-t border-slate-100 bg-white flex justify-end gap-3 shrink-0">
-             <Button type="button" variant="outline" onClick={() => setPanelOpen(false)} className="rounded-xl px-8 h-12 min-w-[100px]">Hủy</Button>
-             {panelMode !== 'view' && (
-               <Button 
+            <Button type="button" variant="outline" onClick={() => setPanelOpen(false)} className="rounded-xl px-8 h-12 min-w-[100px]">Hủy</Button>
+            {panelMode !== 'view' && (
+              <Button
                 form="staff-form"
-                type="submit" 
+                type="submit"
                 className="rounded-xl px-12 h-12 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all"
                 disabled={createMutation.isPending || updateMutation.isPending}
-               >
-                 {createMutation.isPending || updateMutation.isPending ? (
-                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                 ) : null}
-                 {panelMode === 'create' ? 'Tạo nhân viên' : 'Lưu thay đổi'}
-               </Button>
-             )}
+              >
+                {createMutation.isPending || updateMutation.isPending ? (
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                ) : null}
+                {panelMode === 'create' ? 'Tạo nhân viên' : 'Lưu thay đổi'}
+              </Button>
+            )}
           </div>
         </SheetContent>
       </Sheet>

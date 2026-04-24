@@ -47,6 +47,8 @@ interface DataTableProps<TData, TValue> {
     pageIndex: number
     pageSize: number
     onPageSizeChange?: (size: number) => void
+    /** Tổng số dòng thực tế từ server (dùng để hiển thị đúng ở footer) */
+    total?: number
   }
 }
 
@@ -213,10 +215,14 @@ export function DataTable<TData, TValue>({
       </div>
 
       <div className="flex items-center justify-between px-6 pb-4">
-        <div className="flex-1 text-sm text-muted-foreground">
-          {table.getFilteredSelectedRowModel().rows.length} trong{" "}
-          {table.getFilteredRowModel().rows.length} dòng được chọn.
-        </div>
+        {onRowSelectionChange ? (
+          <div className="flex-1 text-sm text-muted-foreground">
+            {table.getFilteredSelectedRowModel().rows.length} trong{" "}
+            {table.getRowModel().rows.length} dòng được chọn.
+          </div>
+        ) : (
+          <div className="flex-1" />
+        )}
         <div className="flex items-center space-x-6 lg:space-x-8">
           <div className="flex items-center space-x-2">
             <p className="text-sm font-medium">Số dòng</p>

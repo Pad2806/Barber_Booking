@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { cashierApi } from '@/lib/api';
 import {
@@ -8,6 +8,7 @@ import {
   Calendar,
   Clock,
   Loader2,
+  ChevronLeft,
   ChevronRight,
   Eye,
 } from 'lucide-react';
@@ -45,15 +46,24 @@ export default function AppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [dateFilter, setDateFilter] = useState(dayjs().format('YYYY-MM-DD'));
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
+  const [apptPage, setApptPage] = useState(1);
+  const APPT_LIMIT = 15;
 
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['cashier', 'bookings', { status: statusFilter, date: dateFilter, search: searchTerm }],
     queryFn: () => cashierApi.getBookings({
       status: statusFilter === 'ALL' ? undefined : statusFilter,
-      date: dateFilter,
+      date: dateFilter || undefined,
       search: searchTerm || undefined,
     }),
   });
+
+  const allBookings: any[] = Array.isArray(bookings) ? bookings : [];
+  const totalApptPages = Math.ceil(allBookings.length / APPT_LIMIT);
+  const pagedBookings = useMemo(
+    () => allBookings.slice((apptPage - 1) * APPT_LIMIT, apptPage * APPT_LIMIT),
+    [allBookings, apptPage]
+  );
 
   const statusMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: string }) => cashierApi.updateBookingStatus(id, status),
@@ -85,13 +95,13 @@ export default function AppointmentsPage() {
           <Input
             type="date"
             value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
+            onChange={(e) => { setDateFilter(e.target.value); setApptPage(1); }}
             className="w-40 rounded-xl h-10 border-slate-200"
           />
         </div>
       </div>
 
-      <Tabs value={statusFilter} onValueChange={setStatusFilter}>
+      <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setApptPage(1); }}>
         <TabsList className="bg-slate-100/50 p-1 rounded-xl h-10 border border-slate-100">
           {FILTER_TABS.map((s) => (
             <TabsTrigger
@@ -118,7 +128,7 @@ export default function AppointmentsPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {bookings.map((b: any) => (
+          {pagedBookings.map((b: any) => (
             <Card key={b.id} className="border-none shadow-sm hover:shadow-md transition-shadow bg-white">
               <CardContent className="p-0">
                 <div className="flex items-stretch">
@@ -181,6 +191,47 @@ export default function AppointmentsPage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalApptPages > 1 && (
+        <div className="flex items-center justify-between px-2 py-1">
+          <p className="text-xs text-slate-400">
+            Trang {apptPage}/{totalApptPages} ({allBookings.length} lịch hẹn)
+          </p>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setApptPage(p => Math.max(1, p - 1))}
+              disabled={apptPage <= 1}
+              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            {Array.from({ length: Math.min(5, totalApptPages) }, (_, i) => {
+              const p = apptPage <= 3 ? i + 1 : apptPage + i - 2;
+              if (p < 1 || p > totalApptPages) return null;
+              return (
+                <button
+                  key={p}
+                  onClick={() => setApptPage(p)}
+                  className={cn(
+                    'w-7 h-7 rounded-lg text-xs font-bold',
+                    p === apptPage ? 'bg-primary text-white' : 'border border-slate-200 hover:bg-slate-50 text-slate-600'
+                  )}
+                >
+                  {p}
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setApptPage(p => Math.min(totalApptPages, p + 1))}
+              disabled={apptPage >= totalApptPages}
+              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 disabled:opacity-40 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 

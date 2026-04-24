@@ -135,11 +135,12 @@ export default function CashierRevenuePage() {
     refetchInterval: 60_000,
   });
 
-  // Payment history for selected date
+  // Payment history for selected date — chỉ fetch khi có date hợp lệ
   const { data: historyData, isLoading: loadingHistory } = useQuery({
     queryKey: ['cashier', 'payment-history', historyDate],
     queryFn: () => cashierApi.getPaymentHistory(historyDate),
     staleTime: 30_000,
+    enabled: !!historyDate,
   });
 
   // Pending payments — auto-refresh 30s
@@ -566,6 +567,11 @@ export default function CashierRevenuePage() {
           {loadingHistory ? (
             <div className="p-6 space-y-3">
               {[1, 2, 3].map(i => <Skeleton key={i} className="h-14 rounded-xl" />)}
+            </div>
+          ) : !historyDate ? (
+            <div className="py-14 text-center">
+              <Clock className="w-10 h-10 text-slate-200 mx-auto" />
+              <p className="text-sm text-slate-400 mt-2">Chọn ngày để xem lịch sử giao dịch</p>
             </div>
           ) : pagedHistory.length === 0 ? (
             <div className="py-14 text-center">

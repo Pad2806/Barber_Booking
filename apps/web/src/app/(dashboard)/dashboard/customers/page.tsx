@@ -241,6 +241,7 @@ export default function AdminCustomersPage() {
             onPageChange: (p) => setPage(p),
             pageIndex: page,
             pageSize: limit,
+            total: data?.meta?.total,
             onPageSizeChange: (s) => {
               setLimit(s);
               setPage(1);

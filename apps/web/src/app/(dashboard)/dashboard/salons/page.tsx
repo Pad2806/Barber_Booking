@@ -74,10 +74,10 @@ export default function AdminSalonsPage(): React.JSX.Element {
           <div className="flex items-center gap-3">
             <div className="h-12 w-12 rounded-xl bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 relative">
               {salon.coverImage ? (
-                <Image 
-                  src={salon.coverImage} 
-                  alt={salon.name} 
-                  fill 
+                <Image
+                  src={salon.coverImage}
+                  alt={salon.name}
+                  fill
                   className="object-cover"
                 />
               ) : (
@@ -165,7 +165,7 @@ export default function AdminSalonsPage(): React.JSX.Element {
                   <Edit className="w-4 h-4 mr-2 text-slate-400" /> Chỉnh sửa
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-destructive focus:bg-destructive/5 focus:text-destructive rounded-md cursor-pointer flex items-center"
                 onClick={() => {
                   if (confirm(`Bạn có chắc muốn xóa chi nhánh ${salon.name}? Mọi dữ liệu liên quan sẽ bị xóa sạch!`)) {
@@ -186,9 +186,9 @@ export default function AdminSalonsPage(): React.JSX.Element {
     return (
       <Card className="m-8 border-none shadow-premium">
         <CardContent className="pt-12 pb-12 flex flex-col items-center justify-center">
-          <ErrorState 
-            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách chi nhánh'} 
-            onRetry={() => refetch()} 
+          <ErrorState
+            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách chi nhánh'}
+            onRetry={() => refetch()}
           />
         </CardContent>
       </Card>
@@ -213,7 +213,7 @@ export default function AdminSalonsPage(): React.JSX.Element {
         <Card className="bg-primary/5 border-none shadow-none ring-1 ring-primary/10 transition-all hover:ring-primary/20">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-inner">
-               <Store className="w-6 h-6" />
+              <Store className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Tổng chi nhánh</p>
@@ -224,7 +224,7 @@ export default function AdminSalonsPage(): React.JSX.Element {
         <Card className="bg-emerald-50/50 border-none shadow-none ring-1 ring-emerald-200/50 transition-all hover:ring-emerald-300">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="p-4 bg-emerald-100 rounded-2xl text-emerald-600 shadow-inner">
-               <Activity className="w-6 h-6" />
+              <Activity className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Đang hoạt động</p>
@@ -237,7 +237,7 @@ export default function AdminSalonsPage(): React.JSX.Element {
         <Card className="bg-amber-50/50 border-none shadow-none ring-1 ring-amber-200/50 transition-all hover:ring-amber-300">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="p-4 bg-amber-100 rounded-2xl text-amber-600 shadow-inner">
-               <Users className="w-6 h-6" />
+              <Users className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Tổng nhân sự</p>
@@ -266,11 +266,13 @@ export default function AdminSalonsPage(): React.JSX.Element {
               pageCount: data?.meta?.lastPage || 1,
               onPageChange: (p) => setPage(p),
               pageIndex: page,
-              pageSize: limit,  onPageSizeChange: (s) => {
-    setLimit(s);
-    setPage(1);
-  }
-}}
+              pageSize: limit,
+              total: data?.meta?.total,
+              onPageSizeChange: (s) => {
+                setLimit(s);
+                setPage(1);
+              }
+            }}
           />
         </CardContent>
       </Card>

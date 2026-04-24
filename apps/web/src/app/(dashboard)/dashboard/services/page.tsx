@@ -74,10 +74,10 @@ export default function AdminServicesPage() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 relative">
               {service.image ? (
-                <OptimizedImage 
-                  src={service.image} 
-                  alt={service.name} 
-                  fill 
+                <OptimizedImage
+                  src={service.image}
+                  alt={service.name}
+                  fill
                   className="object-cover"
                   enableBlur
                 />
@@ -151,7 +151,7 @@ export default function AdminServicesPage() {
                   <Edit className="w-4 h-4" /> Chỉnh sửa
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-destructive focus:text-destructive flex items-center"
                 onClick={() => {
                   if (confirm('Bạn có chắc muốn xóa dịch vụ này?')) {
@@ -172,9 +172,9 @@ export default function AdminServicesPage() {
     return (
       <Card className="m-8">
         <CardContent className="pt-6">
-          <ErrorState 
-            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách dịch vụ'} 
-            onRetry={() => refetch()} 
+          <ErrorState
+            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách dịch vụ'}
+            onRetry={() => refetch()}
           />
         </CardContent>
       </Card>
@@ -285,11 +285,13 @@ export default function AdminServicesPage() {
               pageCount: data?.meta?.lastPage || 1,
               onPageChange: (p) => setPage(p),
               pageIndex: page,
-              pageSize: limit,  onPageSizeChange: (s) => {
-    setLimit(s);
-    setPage(1);
-  }
-}}
+              pageSize: limit,
+              total: data?.meta?.total,
+              onPageSizeChange: (s) => {
+                setLimit(s);
+                setPage(1);
+              }
+            }}
           />
         </CardContent>
       </Card>
