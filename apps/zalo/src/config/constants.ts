@@ -9,7 +9,7 @@ const apiBaseUrlFromEnv = (import.meta.env.VITE_API_BASE_URL as string | undefin
 //   to your computer's LAN IP (e.g. http://192.168.1.10:3001/api).
 export const API_BASE_URL = apiBaseUrlFromEnv
   ? apiBaseUrlFromEnv
-  : 'https://barber-api.paduy.tech/api';
+  : 'https://barber-api.paduy.dev/api';
 
 // Zalo App Configuration
 // Note: Vite exposes env vars via import.meta.env.
@@ -23,7 +23,7 @@ export const BRAND_CONFIG = {
   appName: 'REETRO BARBER',
   tagline: 'PHONG CÁCH CỔ ĐIỂN - ĐẲNG CẤP THĂNG HOA',
   phone: '09XX XXX XXX',
-  logoUrl: 'https://barber-api.paduy.tech/favicon.png',
+  logoUrl: 'https://barber-api.paduy.dev/favicon.png',
   zaloOAId: ZALO_OA_ID,
   colors: {
     primary: '#a57c52', /* Gold/Bronze */

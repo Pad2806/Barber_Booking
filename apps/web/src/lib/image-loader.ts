@@ -12,7 +12,7 @@ export default function coollabsImageLoader({ src, width, quality }: { src: stri
 
   // Priority 1: Use direct links for reliable sources that don't need proxying or are known to block it.
   if (
-    src.includes('r2.dev') || 
+    src.includes('r2.dev') ||
     src.includes('cloudflarestorage.com') ||
     src.includes('cloudinary.com') ||
     src.includes('googleusercontent.com') ||
@@ -23,7 +23,7 @@ export default function coollabsImageLoader({ src, width, quality }: { src: stri
 
   // Priority 2: For local/relative paths, we need to prefix with base URL for Coollabs
   if (src.startsWith('/')) {
-    const baseUrl = process.env.NEXT_PUBLIC_WEB_URL || 'https://reetrobarber.paduy.tech';
+    const baseUrl = process.env.NEXT_PUBLIC_WEB_URL || '';
     return `${optimizeDomain}/image/${baseUrl}${src}?${query.toString()}`;
   }
 
