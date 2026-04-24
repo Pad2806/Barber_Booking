@@ -53,27 +53,30 @@ interface DataTableProps<TData, TValue> {
   }
 }
 
-/** Tạo mảng số trang để hiển thị (có dấu "..." khi nhiều trang) */
+/**
+ * Tạo mảng số trang: luôn hiển thị tối đa 5 nút số.
+ * Luôn có trang đầu & cuối, dùng "..." để giảm bớt.
+ */
 function getPageNumbers(current: number, total: number): (number | '...')[] {
-  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+  if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1)
 
+  // Always show: first, last, current, and 1 neighbor on each side
   const pages: (number | '...')[] = []
 
-  pages.push(1)
-
-  if (current > 4) pages.push('...')
-
-  const start = Math.max(2, current - 2)
-  const end = Math.min(total - 1, current + 2)
-
-  for (let i = start; i <= end; i++) {
-    pages.push(i)
+  // If current is near the start
+  if (current <= 3) {
+    pages.push(1, 2, 3, 4, '...', total)
+    return pages
   }
 
-  if (current < total - 3) pages.push('...')
+  // If current is near the end
+  if (current >= total - 2) {
+    pages.push(1, '...', total - 3, total - 2, total - 1, total)
+    return pages
+  }
 
-  pages.push(total)
-
+  // Middle: show current ± 1 with ellipsis on both sides
+  pages.push(1, '...', current - 1, current, current + 1, '...', total)
   return pages
 }
 
@@ -257,25 +260,33 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      <div className="flex items-center justify-between px-6 pb-4">
-        {onRowSelectionChange ? (
-          <div className="flex-1 text-sm text-muted-foreground">
-            {table.getFilteredSelectedRowModel().rows.length} trong{" "}
-            {table.getRowModel().rows.length} dòng được chọn.
-          </div>
-        ) : (
-          <div className="flex-1" />
-        )}
-        <div className="flex items-center space-x-6 lg:space-x-8">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-6 pb-4">
+        {/* Left: row counts or selection info */}
+        <div className="text-sm text-muted-foreground">
+          {onRowSelectionChange ? (
+            <span>
+              {table.getFilteredSelectedRowModel().rows.length} trong{" "}
+              {table.getRowModel().rows.length} dòng được chọn.
+            </span>
+          ) : (
+            pageCount > 0 && (
+              <span className="tabular-nums">
+                Trang <strong>{currentPage}</strong> / <strong>{pageCount}</strong>
+              </span>
+            )
+          )}
+        </div>
+
+        <div className="flex items-center gap-4">
           {/* Page size selector */}
-          <div className="flex items-center space-x-2">
-            <p className="text-sm font-medium">Số dòng</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm font-medium text-muted-foreground">Hiển thị</p>
             <Select
               value={`${pagination ? pagination.pageSize : table.getState().pagination.pageSize}`}
               onValueChange={handlePageSizeChange}
             >
-              <SelectTrigger className="h-8 w-[70px]">
-                <SelectValue placeholder={pagination ? pagination.pageSize : table.getState().pagination.pageSize} />
+              <SelectTrigger className="h-8 w-[64px] text-sm">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent side="top">
                 {[10, 20, 30, 40, 50].map((pageSize) => (
@@ -285,51 +296,57 @@ export function DataTable<TData, TValue>({
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-sm font-medium text-muted-foreground">dòng</p>
           </div>
 
           {/* Numbered pagination */}
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 p-0"
-              onClick={handlePreviousPage}
-              disabled={!canPreviousPage}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
+          {pageCount > 1 && (
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground"
+                onClick={handlePreviousPage}
+                disabled={!canPreviousPage}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
 
-            {pageNumbers.map((page, idx) =>
-              page === '...' ? (
-                <span key={`ellipsis-${idx}`} className="px-1 text-sm text-muted-foreground select-none">
-                  …
-                </span>
-              ) : (
-                <Button
-                  key={page}
-                  variant={page === currentPage ? "default" : "outline"}
-                  size="icon"
-                  className={cn(
-                    "h-8 w-8 p-0 text-sm font-medium transition-all",
-                    page === currentPage && "shadow-sm"
-                  )}
-                  onClick={() => handlePageChange(page as number)}
-                >
-                  {page}
-                </Button>
-              )
-            )}
+              {pageNumbers.map((page, idx) =>
+                page === '...' ? (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="flex h-8 w-6 items-center justify-center text-xs text-muted-foreground select-none"
+                  >
+                    ···
+                  </span>
+                ) : (
+                  <button
+                    key={page}
+                    onClick={() => handlePageChange(page as number)}
+                    className={cn(
+                      'h-8 min-w-[32px] px-2 rounded-md text-sm font-medium transition-colors',
+                      page === currentPage
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                    )}
+                  >
+                    {page}
+                  </button>
+                )
+              )}
 
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 p-0"
-              onClick={handleNextPage}
-              disabled={!canNextPage}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-md text-muted-foreground hover:text-foreground"
+                onClick={handleNextPage}
+                disabled={!canNextPage}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
