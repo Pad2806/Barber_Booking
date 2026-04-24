@@ -668,11 +668,12 @@ export class CashierService {
   async getPendingPayments(userId: string) {
     const salonId = await this.getSalonId(userId);
     // Bookings that are DONE / COMPLETED but have not been fully paid
+    // paymentStatus includes UNPAID to match getCheckoutEligibleBookings logic
     const bookings = await this.prisma.booking.findMany({
       where: {
         salonId,
         status: { in: ['DONE', 'COMPLETED'] as any },
-        paymentStatus: { in: ['PENDING', 'DEPOSIT_PAID'] as any },
+        paymentStatus: { in: ['UNPAID', 'PENDING', 'DEPOSIT_PAID'] as any },
       },
       include: {
         customer: { select: { id: true, name: true, phone: true, avatar: true } },
