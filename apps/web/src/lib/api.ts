@@ -651,6 +651,7 @@ export const adminApi = {
     salonId?: string;
     staffId?: string;
     serviceId?: string;
+    serviceName?: string;
     search?: string;
     dateFrom?: string;
     dateTo?: string;

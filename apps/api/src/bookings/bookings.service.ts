@@ -158,6 +158,7 @@ export class BookingsService extends BaseQueryService {
       dateTo,
       search,
       serviceId,
+      serviceName,
       sortBy,
       sortOrder = 'desc',
     } = query;
@@ -168,7 +169,9 @@ export class BookingsService extends BaseQueryService {
     if (customerId) where.customerId = customerId;
     if (staffId) where.staffId = staffId;
     if (status) where.status = status;
+    // serviceId: filter by specific ID; serviceName: filter by name across all salons
     if (serviceId) where.services = { some: { serviceId } };
+    if (serviceName) where.services = { some: { service: { name: { contains: serviceName, mode: 'insensitive' } } } };
 
     if (dateFrom || dateTo) {
       where.date = {};

@@ -56,7 +56,8 @@ export default function AdminBookingsPage(): React.ReactElement {
   const [status, setStatus] = useState<string>('');
   const [salonId, setSalonId] = useState<string>('');
   const [staffId, setStaffId] = useState<string>('');
-  const [serviceId, setServiceId] = useState<string>('');
+  const [serviceId, setServiceId] = useState<string>(''); // kept for backwards compat
+  const [serviceName, setServiceName] = useState<string>('');;
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [search, setSearch] = useState<string>('');
@@ -115,15 +116,15 @@ export default function AdminBookingsPage(): React.ReactElement {
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: isSuperAdmin
-      ? ['admin', 'bookings', { page, limit, status, salonId, staffId, serviceId, dateFrom, dateTo, search: debouncedSearch }]
-      : ['manager', 'bookings', { page, limit, status, staffId, serviceId, dateFrom, dateTo, search: debouncedSearch }],
+      ? ['admin', 'bookings', { page, limit, status, salonId, staffId, serviceName, dateFrom, dateTo, search: debouncedSearch }]
+      : ['manager', 'bookings', { page, limit, status, staffId, serviceName, dateFrom, dateTo, search: debouncedSearch }],
     queryFn: () => isSuperAdmin
       ? adminApi.getAllBookings({
         page, limit,
         status: status || undefined,
         salonId: salonId || undefined,
         staffId: staffId || undefined,
-        serviceId: serviceId || undefined,
+        serviceName: serviceName || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
         search: debouncedSearch || undefined,
@@ -132,7 +133,7 @@ export default function AdminBookingsPage(): React.ReactElement {
         page, limit,
         status: (status || undefined) as any,
         staffId: staffId || undefined,
-        serviceId: serviceId || undefined,
+        serviceName: serviceName || undefined,
         dateFrom: dateFrom || undefined,
         dateTo: dateTo || undefined,
         search: debouncedSearch || undefined,
@@ -425,12 +426,12 @@ export default function AdminBookingsPage(): React.ReactElement {
             <select
               title="Service Filter"
               className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
-              value={serviceId}
-              onChange={(e) => setServiceId(e.target.value)}
+              value={serviceName}
+              onChange={(e) => { setServiceName(e.target.value); setPage(1); }}
             >
               <option value="">Tất cả dịch vụ</option>
               {uniqueServices.map((s: any) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
+                <option key={s.name} value={s.name}>{s.name}</option>
               ))}
             </select>
 
