@@ -225,50 +225,53 @@ export default function MyLeavesPage() {
                                     <div
                                         key={leave.id}
                                         className={cn(
-                                            'bg-white border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center gap-4',
+                                            'bg-white border rounded-2xl p-5 flex flex-col gap-3',
                                             leave.status === 'APPROVED' && 'border-emerald-200',
                                             leave.status === 'REJECTED' && 'border-rose-200',
                                             leave.status === 'PENDING' && 'border-[#E8E0D4]',
                                         )}
                                     >
-                                        {/* Date info */}
-                                        <div className="flex items-center gap-4 flex-1 min-w-0">
-                                            <div className="w-12 h-12 rounded-xl bg-[#FAF8F5] flex flex-col items-center justify-center shrink-0 border border-[#E8E0D4]">
-                                                <span className="text-lg font-bold text-[#C8A97E] leading-none">{days}</span>
-                                                <span className="text-[9px] font-semibold text-[#8B7355] uppercase">ngày</span>
-                                            </div>
-                                            <div className="min-w-0">
-                                                <p className="text-sm font-bold text-[#2C1E12]">
-                                                    {start.isSame(end, 'day')
-                                                        ? start.format('DD/MM/YYYY')
-                                                        : `${start.format('DD/MM')} → ${end.format('DD/MM/YYYY')}`}
-                                                </p>
-                                                {leave.reason && (
-                                                    <p className="text-xs text-[#8B7355] mt-0.5 flex items-center gap-1 truncate">
-                                                        <FileText className="w-3 h-3 shrink-0" />
-                                                        {leave.reason}
+                                        {/* Main row: date info + status */}
+                                        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                                            {/* Date info */}
+                                            <div className="flex items-center gap-4 flex-1 min-w-0">
+                                                <div className="w-12 h-12 rounded-xl bg-[#FAF8F5] flex flex-col items-center justify-center shrink-0 border border-[#E8E0D4]">
+                                                    <span className="text-lg font-bold text-[#C8A97E] leading-none">{days}</span>
+                                                    <span className="text-[9px] font-semibold text-[#8B7355] uppercase">ngày</span>
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-bold text-[#2C1E12]">
+                                                        {start.isSame(end, 'day')
+                                                            ? start.format('DD/MM/YYYY')
+                                                            : `${start.format('DD/MM')} → ${end.format('DD/MM/YYYY')}`}
                                                     </p>
-                                                )}
-                                                <p className="text-[10px] text-[#C4B9A8] mt-0.5">
-                                                    Gửi: {dayjs(leave.createdAt).format('HH:mm DD/MM/YYYY')}
-                                                </p>
+                                                    {leave.reason && (
+                                                        <p className="text-xs text-[#8B7355] mt-0.5 flex items-center gap-1 truncate">
+                                                            <FileText className="w-3 h-3 shrink-0" />
+                                                            {leave.reason}
+                                                        </p>
+                                                    )}
+                                                    <p className="text-[10px] text-[#C4B9A8] mt-0.5">
+                                                        Gửi: {dayjs(leave.createdAt).format('HH:mm DD/MM/YYYY')}
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            {/* Status */}
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <Badge
+                                                    variant="outline"
+                                                    className={cn('rounded-xl text-xs font-semibold px-3 py-1.5 flex items-center gap-1.5', statusInfo.cls)}
+                                                >
+                                                    {statusInfo.icon}
+                                                    {statusInfo.label}
+                                                </Badge>
                                             </div>
                                         </div>
 
-                                        {/* Status */}
-                                        <div className="flex items-center gap-2">
-                                            <Badge
-                                                variant="outline"
-                                                className={cn('rounded-xl text-xs font-semibold px-3 py-1.5 flex items-center gap-1.5', statusInfo.cls)}
-                                            >
-                                                {statusInfo.icon}
-                                                {statusInfo.label}
-                                            </Badge>
-                                        </div>
-
-                                        {/* Reject reason */}
+                                        {/* Reject reason — always below main row */}
                                         {leave.status === 'REJECTED' && (
-                                            <div className="w-full sm:mt-0 mt-2 p-3 bg-rose-50 border border-rose-100 rounded-xl">
+                                            <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl">
                                                 <p className="text-xs text-rose-700 font-medium">
                                                     Lý do từ chối:{' '}
                                                     {leave.rejectReason
