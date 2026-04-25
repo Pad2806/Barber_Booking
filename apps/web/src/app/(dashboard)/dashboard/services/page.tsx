@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import OptimizedImage from '@/components/OptimizedImage';
 import {
@@ -42,10 +42,27 @@ export default function AdminServicesPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [category, setCategory] = useState<string | undefined>(undefined);
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [isActive, setIsActive] = useState<string>('ALL');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin', 'services', { page, limit, category }],
-    queryFn: () => adminApi.getAllServices({ page, limit, category: category === 'ALL' ? undefined : category }),
+    queryKey: ['admin', 'services', { page, limit, category, search: debouncedSearch, isActive, minPrice, maxPrice }],
+    queryFn: () => adminApi.getAllServices({
+      page, limit,
+      category: category === 'ALL' ? undefined : category,
+      search: debouncedSearch || undefined,
+      isActive: isActive === 'ALL' ? undefined : isActive === 'true',
+      minPrice: minPrice ? Number(minPrice) : undefined,
+      maxPrice: maxPrice ? Number(maxPrice) : undefined,
+    }),
   });
 
   const { data: analytics } = useQuery({
@@ -259,27 +276,62 @@ export default function AdminServicesPage() {
       <Card className="border-none shadow-sm bg-slate-50/50">
         <CardHeader className="px-0 flex flex-row items-center justify-between space-y-0 pb-4 pr-6 text-left">
           <CardTitle className="text-lg font-semibold px-6">Bảng giá dịch vụ</CardTitle>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {/* Search */}
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                placeholder="Tìm tên dịch vụ..."
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                className="h-9 pl-9 pr-4 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 w-44"
+              />
+            </div>
+            {/* Category */}
             <select
               title="Category Filter"
               value={category || 'ALL'}
-              onChange={e => setCategory(e.target.value === 'ALL' ? undefined : e.target.value)}
+              onChange={e => { setCategory(e.target.value === 'ALL' ? undefined : e.target.value); setPage(1); }}
               className="px-3 py-1.5 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer font-medium"
             >
               <option value="ALL">Tất cả danh mục</option>
               {Object.entries(SERVICE_CATEGORIES).map(([key, value]) => (
-                <option key={key} value={key}>
-                  {value.label}
-                </option>
+                <option key={key} value={key}>{value.label}</option>
               ))}
             </select>
+            {/* isActive filter */}
+            <select
+              title="Status Filter"
+              value={isActive}
+              onChange={e => { setIsActive(e.target.value); setPage(1); }}
+              className="px-3 py-1.5 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer font-medium"
+            >
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="true">Đang hoạt động</option>
+              <option value="false">Đã ẩn</option>
+            </select>
+            {/* Price range */}
+            <input
+              type="number" placeholder="Giá từ" title="Min Price"
+              value={minPrice}
+              onChange={e => { setMinPrice(e.target.value); setPage(1); }}
+              className="h-9 w-24 px-3 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            <span className="text-slate-400 flex items-center text-xs">→</span>
+            <input
+              type="number" placeholder="đến" title="Max Price"
+              value={maxPrice}
+              onChange={e => { setMaxPrice(e.target.value); setPage(1); }}
+              className="h-9 w-24 px-3 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
           </div>
         </CardHeader>
         <CardContent className="px-0 sm:px-6">
           <DataTable
             columns={columns}
             data={data?.data || []}
-            searchKey="name"
             loading={isLoading}
             pagination={{
               pageCount: data?.meta?.lastPage || 1,

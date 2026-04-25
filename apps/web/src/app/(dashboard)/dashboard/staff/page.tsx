@@ -54,11 +54,13 @@ export default function AdminStaffPage() {
   const { isGlobalAdmin, isSuperAdmin, isManager, salonId: mySalonId } = useSalonScope();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  // Admin có thể filter theo chi nhánh; Manager chỉ thấy chi nhánh của mình
   const [salonId, setSalonId] = useState<string | undefined>(undefined);
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [position, setPosition] = useState('');
 
   // Sheet states
   const [panelOpen, setPanelOpen] = useState(false);
@@ -76,14 +78,18 @@ export default function AdminStaffPage() {
     isActive: true,
   });
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: isSuperAdmin
-      ? ['admin', 'staff', { page, limit, salonId, minRating, sortBy, sortOrder }]
-      : ['manager', 'staff', { page, limit, search: '', minRating, sortBy, sortOrder }],
+      ? ['admin', 'staff', { page, limit, salonId, minRating, sortBy, sortOrder, search: debouncedSearch, position }]
+      : ['manager', 'staff', { page, limit, minRating, sortBy, sortOrder, search: debouncedSearch, position }],
     queryFn: () => isSuperAdmin
-      ? adminApi.getAllStaff({ page, limit, salonId, minRating, sortBy, sortOrder })
+      ? adminApi.getAllStaff({ page, limit, salonId, minRating, sortBy, sortOrder, search: debouncedSearch || undefined, position: position || undefined })
       : managerApi.getStaff({ page, limit, minRating, sortBy, sortOrder }),
-    // Chỉ fetch khi scope đã được resolve (tránh gọi sai API lúc đầu)
     enabled: isSuperAdmin !== undefined,
   });
 
@@ -358,6 +364,32 @@ export default function AdminStaffPage() {
               {data?.meta?.total || 0} nhân viên
             </Badge>
 
+            {/* Search box */}
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                placeholder="Tìm tên, email, SĐT..."
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                className="h-9 pl-9 pr-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all w-48"
+              />
+            </div>
+
+            {/* Position filter */}
+            <select
+              title="Position Filter"
+              value={position}
+              onChange={e => { setPosition(e.target.value); setPage(1); }}
+              className="h-9 px-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer font-medium"
+            >
+              <option value="">Tất cả vị trí</option>
+              {Object.entries(STAFF_POSITIONS).map(([key, value]) => (
+                <option key={key} value={key}>{value as string}</option>
+              ))}
+            </select>
+
             {/* Dropdown chi nhánh chỉ hiển thị cho SUPER_ADMIN */}
             {isSuperAdmin && (
               <select
@@ -408,7 +440,6 @@ export default function AdminStaffPage() {
           <DataTable
             columns={columns}
             data={data?.data || []}
-            searchKey="user.name"
             loading={isLoading}
             pagination={{
               pageCount: data?.meta?.lastPage || 1,

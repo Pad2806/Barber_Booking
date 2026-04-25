@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   Users,
   Calendar,
@@ -61,14 +61,28 @@ export default function AdminCustomersPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [search] = useState('');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [isActiveFilter, setIsActiveFilter] = useState('ALL');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin', 'customers', { page, limit, search }],
-    queryFn: () => adminApi.getAllUsers({ page, limit, search, role: 'CUSTOMER' }),
+    queryKey: ['admin', 'customers', { page, limit, search: debouncedSearch, isActiveFilter, dateFrom, dateTo }],
+    queryFn: () => adminApi.getAllUsers({
+      page,
+      limit,
+      search: debouncedSearch || undefined,
+      role: 'CUSTOMER',
+    }),
   });
 
   const { data: customerDetail, isLoading: isDetailLoading } = useQuery({
@@ -295,13 +309,48 @@ export default function AdminCustomersPage() {
 
       <Card className="border-none shadow-premium bg-white/50 backdrop-blur-sm">
         <CardHeader>
-          <CardTitle className="text-xl font-bold font-heading italic">Danh sách khách hàng</CardTitle>
-          <CardDescription>Tìm kiếm và quản lý chi tiết khách hàng.</CardDescription>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <CardTitle className="text-xl font-bold font-heading italic">Danh sách khách hàng</CardTitle>
+              <CardDescription>Tìm kiếm và quản lý chi tiết khách hàng.</CardDescription>
+            </div>
+            <div className="flex flex-wrap gap-2 items-center">
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  placeholder="Tìm tên, email, SĐT..."
+                  value={search}
+                  onChange={e => { setSearch(e.target.value); setPage(1); }}
+                  className="h-9 pl-9 pr-4 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all w-48"
+                />
+              </div>
+              <select
+                title="Status Filter"
+                value={isActiveFilter}
+                onChange={e => { setIsActiveFilter(e.target.value); setPage(1); }}
+                className="h-9 px-3 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+              >
+                <option value="ALL">Tất cả trạng thái</option>
+                <option value="true">Đang hoạt động</option>
+                <option value="false">Đã khóa</option>
+              </select>
+              <input type="date" title="From date" value={dateFrom}
+                onChange={e => { setDateFrom(e.target.value); setPage(1); }}
+                className="h-9 px-3 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+              <span className="text-slate-400 text-xs">→</span>
+              <input type="date" title="To date" value={dateTo}
+                onChange={e => { setDateTo(e.target.value); setPage(1); }}
+                className="h-9 px-3 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+          </div>
         </CardHeader>
         <DataTable
           columns={columns}
           data={data?.data || []}
-          searchKey="name"
           loading={isLoading}
           pagination={{
             pageCount: data?.meta?.lastPage || 1,

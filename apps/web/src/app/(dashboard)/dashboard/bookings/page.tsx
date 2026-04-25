@@ -59,13 +59,12 @@ export default function AdminBookingsPage(): React.ReactElement {
   const [serviceId, setServiceId] = useState<string>('');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
-  const [search] = useState<string>('');
+  const [search, setSearch] = useState<string>('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Selection
   const [selectedBookings, setSelectedBookings] = useState<Booking[]>([]);
 
-  // Debounce search
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 500);
     return () => clearTimeout(timer);
@@ -355,6 +354,18 @@ export default function AdminBookingsPage(): React.ReactElement {
       <Card className="border shadow-sm overflow-hidden bg-white">
         <div className="p-4 border-b bg-slate-50/50">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {/* Search box: mã booking, tên khách, SĐT */}
+            <div className="relative lg:col-span-2">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                placeholder="Tìm mã booking, tên hoặc SĐT khách..."
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                className="w-full h-9 pl-9 pr-4 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
             <div className="relative">
               <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <select
@@ -472,7 +483,6 @@ export default function AdminBookingsPage(): React.ReactElement {
           <DataTable
             columns={columns}
             data={Array.isArray(data) ? data : data?.data || []}
-            searchKey="bookingCode"
             loading={isLoading}
             onRowSelectionChange={setSelectedBookings}
             pagination={{
