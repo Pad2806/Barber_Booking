@@ -448,7 +448,11 @@ export class AdminService extends BaseQueryService {
 
     return (this.prisma as any).staffLeave.update({
       where: { id: leaveId },
-      data: { status, updatedAt: new Date() }
+      data: {
+        status,
+        rejectReason: status === 'REJECTED' ? (reason || null) : null,
+        updatedAt: new Date()
+      }
     });
   }
 

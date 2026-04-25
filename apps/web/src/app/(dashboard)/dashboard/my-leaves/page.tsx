@@ -267,10 +267,14 @@ export default function MyLeavesPage() {
                                         </div>
 
                                         {/* Reject reason */}
-                                        {leave.status === 'REJECTED' && leave.rejectReason && (
+                                        {leave.status === 'REJECTED' && (
                                             <div className="w-full sm:mt-0 mt-2 p-3 bg-rose-50 border border-rose-100 rounded-xl">
                                                 <p className="text-xs text-rose-700 font-medium">
-                                                    Lý do từ chối: <span className="italic">"{leave.rejectReason}"</span>
+                                                    Lý do từ chối:{' '}
+                                                    {leave.rejectReason
+                                                        ? <span className="italic">"{leave.rejectReason}"</span>
+                                                        : <span className="italic text-rose-400">Quản lý không ghi lý do</span>
+                                                    }
                                                 </p>
                                             </div>
                                         )}
