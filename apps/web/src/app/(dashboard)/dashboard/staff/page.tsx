@@ -100,6 +100,16 @@ export default function AdminStaffPage() {
     enabled: isSuperAdmin,
   });
 
+  // Global stats — NOT affected by search/filter — for the summary cards
+  const { data: globalData } = useQuery({
+    queryKey: isSuperAdmin ? ['admin', 'staff', 'global-stats'] : ['manager', 'staff', 'global-stats'],
+    queryFn: () => isSuperAdmin
+      ? adminApi.getAllStaff({ page: 1, limit: 500 })
+      : managerApi.getStaff({ page: 1, limit: 500 }),
+    enabled: isSuperAdmin !== undefined,
+    staleTime: 2 * 60 * 1000, // cache 2 minutes
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (id: string) => isSuperAdmin ? adminApi.deleteStaff(id) : managerApi.deleteStaff(id),
     onSuccess: () => {
@@ -324,7 +334,7 @@ export default function AdminStaffPage() {
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Tổng nhân sự</p>
-              <p className="text-3xl font-bold text-slate-900 tracking-tight">{data?.meta?.total || 0}</p>
+              <p className="text-3xl font-bold text-slate-900 tracking-tight">{globalData?.meta?.total ?? data?.meta?.total ?? 0}</p>
             </div>
           </CardContent>
         </Card>
@@ -336,7 +346,7 @@ export default function AdminStaffPage() {
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Stylist nổi bật</p>
               <p className="text-3xl font-bold text-slate-900 tracking-tight">
-                {data?.data?.filter((s: any) => s.rating >= 4.5).length || 0}
+                {globalData?.data?.filter((s: any) => s.rating >= 4.5).length ?? 0}
               </p>
             </div>
           </CardContent>
@@ -349,7 +359,7 @@ export default function AdminStaffPage() {
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Đang hoạt động</p>
               <p className="text-3xl font-bold text-slate-900 tracking-tight">
-                {data?.data?.filter((s: any) => s.isActive).length || 0}
+                {globalData?.data?.filter((s: any) => s.isActive).length ?? 0}
               </p>
             </div>
           </CardContent>
