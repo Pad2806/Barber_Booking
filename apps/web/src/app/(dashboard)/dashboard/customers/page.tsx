@@ -13,10 +13,13 @@ import {
   User,
   AlertCircle,
   Loader2,
+  ShieldOff,
+  Shield,
+  MoreVertical,
 } from 'lucide-react';
 import { adminApi } from '@/lib/api';
 import { formatPrice, formatDateTime, cn } from '@/lib/utils';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DataTable } from '@/components/admin/data-table';
 import { StatusBadge } from '@/components/admin/status-badge';
 import { Button } from '@/components/ui/button';
@@ -31,6 +34,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import toast from 'react-hot-toast';
 
 const STATUS_CONFIG: any = {
   true: { label: 'Hoạt động', variant: 'success' },
@@ -47,6 +58,7 @@ const BOOKING_STATUS_COLORS: Record<string, string> = {
 };
 
 export default function AdminCustomersPage() {
+  const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [search] = useState('');
@@ -63,6 +75,18 @@ export default function AdminCustomersPage() {
     queryKey: ['admin', 'customer', selectedCustomerId],
     queryFn: () => adminApi.getUserById(selectedCustomerId!),
     enabled: !!selectedCustomerId && isDetailOpen,
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: (userId: string) => adminApi.toggleUserStatus(userId),
+    onSuccess: (result: any) => {
+      const action = result.isActive ? 'Đã mở khóa' : 'Đã khóa';
+      toast.success(`${action} tài khoản ${result.name || ''} thành công.`);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'customers'] });
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || 'Không thể thực hiện thao tác này.');
+    },
   });
 
   // Calculate metrics at top level to avoid hook violation
@@ -152,21 +176,64 @@ export default function AdminCustomersPage() {
     },
     {
       id: 'actions',
-      cell: ({ row }) => (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-full"
-          onClick={() => {
-            setSelectedCustomerId(row.original.id);
-            setIsDetailOpen(true);
-          }}
-        >
-          <ArrowRight className="h-4 w-4" />
-        </Button>
-      ),
+      cell: ({ row }) => {
+        const user = row.original;
+        const isBlocked = !user.isActive;
+        const isPending = toggleMutation.isPending && toggleMutation.variables === user.id;
+
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full"
+              >
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[185px] p-1 shadow-xl border-slate-200">
+              <DropdownMenuItem
+                onClick={() => {
+                  setSelectedCustomerId(user.id);
+                  setIsDetailOpen(true);
+                }}
+                className="rounded-md focus:bg-slate-50 cursor-pointer flex items-center gap-2"
+              >
+                <ArrowRight className="w-4 h-4 text-slate-400" />
+                Xem chi tiết
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                disabled={isPending}
+                onClick={() => {
+                  const action = isBlocked ? 'mở khóa' : 'khóa';
+                  if (confirm(`Bạn có chắc muốn ${action} tài khoản của "${user.name}"?`)) {
+                    toggleMutation.mutate(user.id);
+                  }
+                }}
+                className={cn(
+                  'rounded-md cursor-pointer flex items-center gap-2 font-medium',
+                  isBlocked
+                    ? 'text-emerald-600 focus:bg-emerald-50 focus:text-emerald-700'
+                    : 'text-rose-600 focus:bg-rose-50 focus:text-rose-700',
+                )}
+              >
+                {isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : isBlocked ? (
+                  <Shield className="w-4 h-4" />
+                ) : (
+                  <ShieldOff className="w-4 h-4" />
+                )}
+                {isBlocked ? 'Mở khóa tài khoản' : 'Khóa tài khoản'}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
-  ], []);
+  ], [toggleMutation]);
 
   if (isError) {
     return (
