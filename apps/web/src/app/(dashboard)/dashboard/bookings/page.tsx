@@ -102,6 +102,17 @@ export default function AdminBookingsPage(): React.ReactElement {
     enabled: !isSuperAdmin,
   });
 
+  // Deduplicate services by name for the filter dropdown
+  const uniqueServices = useMemo(() => {
+    const raw = (isSuperAdmin ? servicesData?.data : myServicesData) || [];
+    const seen = new Set<string>();
+    return raw.filter((s: any) => {
+      if (seen.has(s.name)) return false;
+      seen.add(s.name);
+      return true;
+    });
+  }, [isSuperAdmin, servicesData, myServicesData]);
+
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: isSuperAdmin
       ? ['admin', 'bookings', { page, limit, status, salonId, staffId, serviceId, dateFrom, dateTo, search: debouncedSearch }]
@@ -418,7 +429,7 @@ export default function AdminBookingsPage(): React.ReactElement {
               onChange={(e) => setServiceId(e.target.value)}
             >
               <option value="">Tất cả dịch vụ</option>
-              {(isSuperAdmin ? servicesData?.data : myServicesData)?.map((s: any) => (
+              {uniqueServices.map((s: any) => (
                 <option key={s.id} value={s.id}>{s.name}</option>
               ))}
             </select>
