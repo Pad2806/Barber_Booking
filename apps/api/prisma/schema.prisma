@@ -313,17 +313,18 @@ model StaffPerformance {
 }
 
 model StaffLeave {
-  id          String   @id @default(uuid())
-  staffId     String
-  staff       Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  id            String   @id @default(uuid())
+  staffId       String
+  staff         Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
 
-  startDate   DateTime @db.Date
-  endDate     DateTime @db.Date
-  reason      String?
-  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  startDate     DateTime @db.Date
+  endDate       DateTime @db.Date
+  reason        String?
+  rejectReason  String?  // Reason when status is REJECTED, filled by manager/admin
+  status        String   @default("PENDING") // PENDING, APPROVED, REJECTED
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   @@map("staff_leaves")
 }

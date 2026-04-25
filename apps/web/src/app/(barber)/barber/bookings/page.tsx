@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -41,22 +41,40 @@ import toast from 'react-hot-toast';
 export default function BarberBookingsPage() {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const { data: me } = useQuery({
     queryKey: ['users', 'me'],
     queryFn: () => usersApi.getMe(),
   });
 
+  // Debounce search 500ms
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const { data: response, isLoading } = useQuery({
-    queryKey: ['bookings', 'barber', me?.staff?.id, search],
+    queryKey: ['bookings', 'barber', me?.staff?.id, debouncedSearch, statusFilter, page, limit, dateFrom, dateTo],
     queryFn: () =>
       bookingApi.getAll({
         staffId: me?.staff?.id,
-        search: search || undefined,
-        limit: 50,
+        search: debouncedSearch || undefined,
+        status: statusFilter === 'ALL' ? undefined : statusFilter as any,
+        page,
+        limit,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
       }),
     enabled: !!me?.staff?.id,
   });
@@ -81,11 +99,11 @@ export default function BarberBookingsPage() {
   });
 
   const allBookings = response?.data || [];
+  const totalPages = response?.meta?.lastPage || 1;
+  const totalCount = response?.meta?.total || 0;
 
-  // Filter bookings by status
-  const bookings = statusFilter === 'ALL'
-    ? allBookings
-    : allBookings.filter((b: any) => b.status === statusFilter);
+  // bookings is directly the paginated result from server
+  const bookings = allBookings;
 
   const getStatusInfo = (status: string) => {
     switch (status) {
@@ -107,12 +125,12 @@ export default function BarberBookingsPage() {
   };
 
   const statusFilters = [
-    { key: 'ALL', label: 'Tất cả', count: allBookings.length },
-    { key: 'CONFIRMED', label: 'Đã xác nhận', count: allBookings.filter((b: any) => b.status === 'CONFIRMED').length },
-    { key: 'IN_PROGRESS', label: 'Đang phục vụ', count: allBookings.filter((b: any) => b.status === 'IN_PROGRESS').length },
-    { key: 'DONE', label: 'Xong dịch vụ', count: allBookings.filter((b: any) => b.status === 'DONE').length },
-    { key: 'COMPLETED', label: 'Hoàn tất', count: allBookings.filter((b: any) => b.status === 'COMPLETED').length },
-    { key: 'CANCELLED', label: 'Đã hủy', count: allBookings.filter((b: any) => b.status === 'CANCELLED').length },
+    { key: 'ALL', label: 'Tất cả' },
+    { key: 'CONFIRMED', label: 'Đã xác nhận' },
+    { key: 'IN_PROGRESS', label: 'Đang phục vụ' },
+    { key: 'DONE', label: 'Xong dịch vụ' },
+    { key: 'COMPLETED', label: 'Hoàn tất' },
+    { key: 'CANCELLED', label: 'Đã hủy' },
   ];
 
   if (isLoading) {
@@ -151,13 +169,39 @@ export default function BarberBookingsPage() {
               className="pl-10 h-11 rounded-xl border-[#E8E0D4] bg-white focus:ring-[#C8A97E]/20 focus:border-[#C8A97E] text-sm font-medium"
             />
           </div>
+          {/* Date range filter */}
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              title="Từ ngày"
+              value={dateFrom}
+              onChange={e => { setDateFrom(e.target.value); setPage(1); }}
+              className="h-11 px-3 text-sm border border-[#E8E0D4] rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#C8A97E]/20 focus:border-[#C8A97E]"
+            />
+            <span className="text-[#8B7355] text-xs">→</span>
+            <input
+              type="date"
+              title="Đến ngày"
+              value={dateTo}
+              onChange={e => { setDateTo(e.target.value); setPage(1); }}
+              className="h-11 px-3 text-sm border border-[#E8E0D4] rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#C8A97E]/20 focus:border-[#C8A97E]"
+            />
+            {(dateFrom || dateTo) && (
+              <button
+                onClick={() => { setDateFrom(''); setDateTo(''); setPage(1); }}
+                className="h-11 px-3 text-[#8B7355] hover:text-rose-500 text-xs font-medium rounded-xl border border-[#E8E0D4] bg-white hover:border-rose-200 transition-colors"
+              >
+                Xóa
+              </button>
+            )}
+          </div>
         </div>
         {/* Status filter tabs */}
         <div className="flex flex-wrap gap-2">
           {statusFilters.map((f) => (
             <button
               key={f.key}
-              onClick={() => setStatusFilter(f.key)}
+              onClick={() => { setStatusFilter(f.key); setPage(1); }}
               className={cn(
                 'px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all border',
                 statusFilter === f.key
@@ -166,14 +210,6 @@ export default function BarberBookingsPage() {
               )}
             >
               {f.label}
-              {f.count > 0 && (
-                <span className={cn(
-                  'ml-1.5 text-[10px] px-1.5 py-0.5 rounded-md',
-                  statusFilter === f.key ? 'bg-white/20' : 'bg-[#FAF8F5]'
-                )}>
-                  {f.count}
-                </span>
-              )}
             </button>
           ))}
         </div>
@@ -346,6 +382,33 @@ export default function BarberBookingsPage() {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <p className="text-xs text-[#8B7355]">
+            Trang <span className="font-bold text-[#2C1E12]">{page}</span> / {totalPages}
+            {' '}·{' '}
+            <span className="font-bold text-[#2C1E12]">{totalCount}</span> booking
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="h-9 px-4 text-xs font-semibold rounded-xl border border-[#E8E0D4] bg-white text-[#8B7355] hover:border-[#C8A97E] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              ← Trước
+            </button>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="h-9 px-4 text-xs font-semibold rounded-xl border border-[#E8E0D4] bg-white text-[#8B7355] hover:border-[#C8A97E] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            >
+              Tiếp →
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Booking Detail Dialog */}
       <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
