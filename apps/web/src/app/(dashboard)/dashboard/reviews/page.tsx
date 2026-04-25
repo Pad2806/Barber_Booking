@@ -350,22 +350,6 @@ export default function AdminReviewsPage() {
                 className="h-9 px-3 text-xs border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               />
             </div>
-
-            {(salonId || rating || dateFrom || dateTo) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSalonId(undefined);
-                  setRating(undefined);
-                  setDateFrom('');
-                  setDateTo('');
-                }}
-                className="text-xs text-slate-500 hover:text-primary"
-              >
-                Xóa lọc
-              </Button>
-            )}
           </div>
         </CardHeader>
 

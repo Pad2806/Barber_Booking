@@ -103,7 +103,7 @@ export default function AdminStaffPage() {
       : ['manager', 'staff', { page, limit, minRating, sortBy, sortOrder, search: debouncedSearch, position }],
     queryFn: () => isSuperAdmin
       ? adminApi.getAllStaff({ page, limit, salonId, minRating, sortBy, sortOrder, search: debouncedSearch || undefined, position: position || undefined })
-      : managerApi.getStaff({ page, limit, minRating, sortBy, sortOrder }),
+      : managerApi.getStaff({ page, limit, minRating, sortBy, sortOrder, search: debouncedSearch || undefined, position: position || undefined }),
     enabled: isSuperAdmin !== undefined,
   });
 
@@ -238,14 +238,18 @@ export default function AdminStaffPage() {
       },
     },
     {
-      accessorKey: 'salon.name',
-      header: 'Chi nhánh',
-      cell: ({ row }) => (
-        <div className="flex items-center gap-1.5 text-slate-600">
-          <Calendar className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-sm font-medium line-clamp-1">{row.original.salon?.name || '-'}</span>
-        </div>
-      ),
+      id: 'phone',
+      header: 'Số điện thoại',
+      cell: ({ row }) => {
+        const phone = row.original.user?.phone;
+        return phone ? (
+          <a href={`tel:${phone}`} className="text-sm font-medium text-slate-700 hover:text-primary transition-colors">
+            {phone}
+          </a>
+        ) : (
+          <span className="text-slate-400 text-sm">Chưa có</span>
+        );
+      },
     },
     {
       id: 'stats',
