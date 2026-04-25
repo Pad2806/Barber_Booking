@@ -1110,7 +1110,7 @@ export class AdminService extends BaseQueryService {
       if (maxPrice !== undefined) where.price.lte = maxPrice;
     }
     if (search) {
-      Object.assign(where, this.buildSearchWhere(search, ['name', 'category']));
+      Object.assign(where, this.buildSearchWhere(search, ['name', 'description']));
     }
 
     const [services, total] = await Promise.all([
