@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { bookingApi, staffApi, usersApi } from '@/lib/api';
 import {
   MapPin,
@@ -77,6 +77,9 @@ export default function BarberBookingsPage() {
         dateTo: dateTo || undefined,
       }),
     enabled: !!me?.staff?.id,
+    // Keep previous data while fetching new data
+    // This prevents isLoading=true+data=undefined which causes skeleton→unmount→focus loss
+    placeholderData: keepPreviousData,
   });
 
   const updateStatusMutation = useMutation({
