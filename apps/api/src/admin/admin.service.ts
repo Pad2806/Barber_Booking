@@ -1037,12 +1037,14 @@ export class AdminService extends BaseQueryService {
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
     search?: string;
+    position?: string;
   }) {
-    const { salonId, search, minRating, sortBy, sortOrder = 'desc' } = params;
+    const { salonId, search, minRating, sortBy, sortOrder = 'desc', position } = params;
 
     const where: any = {};
     if (salonId) where.salonId = salonId;
     if (minRating) where.rating = { gte: minRating };
+    if (position) where.position = position;
     if (search) {
       Object.assign(where, this.buildSearchWhere(search, ['user.name', 'user.phone', 'user.email']));
     }
@@ -1092,12 +1094,21 @@ export class AdminService extends BaseQueryService {
     salonId?: string;
     category?: string;
     search?: string;
+    isActive?: boolean;
+    minPrice?: number;
+    maxPrice?: number;
   }) {
-    const { salonId, category, search } = params;
+    const { salonId, category, search, isActive, minPrice, maxPrice } = params;
 
     const where: any = {};
     if (salonId) where.salonId = salonId;
     if (category) where.category = category;
+    if (typeof isActive === 'boolean') where.isActive = isActive;
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      where.price = {};
+      if (minPrice !== undefined) where.price.gte = minPrice;
+      if (maxPrice !== undefined) where.price.lte = maxPrice;
+    }
     if (search) {
       Object.assign(where, this.buildSearchWhere(search, ['name', 'category']));
     }

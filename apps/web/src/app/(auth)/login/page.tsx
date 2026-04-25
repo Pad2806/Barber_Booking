@@ -14,13 +14,13 @@ function LoginForm() {
   // Sanitize: only allow same-origin paths (strip any full URL to just pathname)
   const callbackUrl = rawCallbackUrl
     ? (() => {
-        try {
-          const url = new URL(rawCallbackUrl, 'http://localhost');
-          return url.pathname + url.search;
-        } catch {
-          return rawCallbackUrl.startsWith('/') ? rawCallbackUrl : '/dashboard';
-        }
-      })()
+      try {
+        const url = new URL(rawCallbackUrl, 'http://localhost');
+        return url.pathname + url.search;
+      } catch {
+        return rawCallbackUrl.startsWith('/') ? rawCallbackUrl : '/dashboard';
+      }
+    })()
     : null;
 
   const { update: updateSession } = useSession();
@@ -82,7 +82,14 @@ function LoginForm() {
       });
 
       if (result?.error) {
-        toast.error('Email hoặc mật khẩu không đúng');
+        if (result.error === 'ACCOUNT_BLOCKED' || result.error?.includes('ACCOUNT_BLOCKED')) {
+          toast.error('Tài khoản của bạn đã bị khoá. Vui lòng liên hệ quản trị viên để biết thêm thông tin.', {
+            duration: 5000,
+            icon: '🔒',
+          });
+        } else {
+          toast.error('Email hoặc mật khẩu không đúng');
+        }
       } else {
         toast.success('Đăng nhập thành công!');
 
@@ -194,7 +201,7 @@ function LoginForm() {
             <Loader2 className="w-5 h-5 animate-spin" />
           ) : (
             <div className="flex items-center gap-2">
-               Đăng nhập <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              Đăng nhập <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </div>
           )}
         </button>
@@ -240,10 +247,10 @@ function LoginForm() {
       </div>
 
       <div className="pt-6 text-center text-sm font-medium text-[#5C4A32]">
-         Chưa có tài khoản?{' '}
-         <Link href="/register" className="text-[#C8A97E] font-bold hover:text-[#B8975E] transition-colors">
-           Đăng ký ngay
-         </Link>
+        Chưa có tài khoản?{' '}
+        <Link href="/register" className="text-[#C8A97E] font-bold hover:text-[#B8975E] transition-colors">
+          Đăng ký ngay
+        </Link>
       </div>
     </div>
   );

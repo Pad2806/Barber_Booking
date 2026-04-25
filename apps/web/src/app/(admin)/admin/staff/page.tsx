@@ -56,6 +56,9 @@ export default function AdminStaffPage() {
   const [minRating, setMinRating] = useState<number | undefined>(undefined);
   const [sortBy, setSortBy] = useState<string>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [search, setSearch] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [position, setPosition] = useState<string>('');
 
   // Sheet states
   const [panelOpen, setPanelOpen] = useState(false);
@@ -73,9 +76,15 @@ export default function AdminStaffPage() {
     isActive: true,
   });
 
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin', 'staff', { page, limit, salonId, minRating, sortBy, sortOrder }],
-    queryFn: () => adminApi.getAllStaff({ page, limit, salonId, minRating, sortBy, sortOrder }),
+    queryKey: ['admin', 'staff', { page, limit, salonId, minRating, sortBy, sortOrder, search: debouncedSearch, position }],
+    queryFn: () => adminApi.getAllStaff({ page, limit, salonId, minRating, sortBy, sortOrder, search: debouncedSearch || undefined, position: position || undefined }),
   });
 
   const { data: salonsData } = useQuery({
@@ -245,19 +254,19 @@ export default function AdminStaffPage() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[180px] p-1 shadow-xl border-slate-200">
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => router.push(`/admin/staff/${staff.id}`)}
                 className="rounded-md focus:bg-slate-50 cursor-pointer flex items-center"
               >
                 <Eye className="w-4 h-4 mr-2 text-slate-400" /> Xem chi tiết
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => { setSelectedStaffId(staff.id); setPanelMode('edit'); setPanelOpen(true); }}
                 className="rounded-md focus:bg-slate-50 cursor-pointer flex items-center"
               >
                 <Edit className="w-4 h-4 mr-2 text-slate-400" /> Chỉnh sửa
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-destructive focus:bg-destructive/5 focus:text-destructive rounded-md cursor-pointer flex items-center"
                 onClick={() => {
                   if (confirm(`Bạn có chắc muốn xóa nhân viên ${staff.user?.name}?`)) {
@@ -278,9 +287,9 @@ export default function AdminStaffPage() {
     return (
       <Card className="m-8 border-none shadow-premium">
         <CardContent className="pt-12 pb-12 flex flex-col items-center justify-center">
-          <ErrorState 
-            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách nhân viên'} 
-            onRetry={() => refetch()} 
+          <ErrorState
+            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách nhân viên'}
+            onRetry={() => refetch()}
           />
         </CardContent>
       </Card>
@@ -303,7 +312,7 @@ export default function AdminStaffPage() {
         <Card className="bg-primary/5 border-none shadow-none ring-1 ring-primary/10 transition-all hover:ring-primary/20">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="p-4 bg-primary/10 rounded-2xl text-primary shadow-inner">
-               <Users className="w-6 h-6" />
+              <Users className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Tổng nhân sự</p>
@@ -314,7 +323,7 @@ export default function AdminStaffPage() {
         <Card className="bg-amber-50/50 border-none shadow-none ring-1 ring-amber-200/50 transition-all hover:ring-amber-300">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="p-4 bg-amber-100 rounded-2xl text-amber-600 shadow-inner">
-               <Award className="w-6 h-6" />
+              <Award className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Stylist nổi bật</p>
@@ -327,7 +336,7 @@ export default function AdminStaffPage() {
         <Card className="bg-emerald-50/50 border-none shadow-none ring-1 ring-emerald-200/50 transition-all hover:ring-emerald-300">
           <CardContent className="p-6 flex items-center gap-5">
             <div className="p-4 bg-emerald-100 rounded-2xl text-emerald-600 shadow-inner">
-               <Activity className="w-6 h-6" />
+              <Activity className="w-6 h-6" />
             </div>
             <div>
               <p className="text-sm font-medium text-slate-500 uppercase tracking-wider">Đang hoạt động</p>
@@ -342,10 +351,36 @@ export default function AdminStaffPage() {
       <Card className="border-none shadow-premium bg-white/50 backdrop-blur-sm">
         <CardHeader className="px-6 flex flex-row items-center justify-between space-y-0 pb-6 border-b border-slate-100 text-left">
           <CardTitle className="text-xl font-bold text-slate-800">Danh sách nhân sự</CardTitle>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Badge variant="outline" className="h-9 px-3 border-slate-200 bg-white font-medium text-slate-600 hidden lg:flex">
               {data?.meta?.total || 0} nhân viên
             </Badge>
+
+            {/* Server-side search */}
+            <div className="relative">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <input
+                placeholder="Tìm tên, email, SĐT..."
+                value={search}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
+                className="h-9 pl-9 pr-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all w-48"
+              />
+            </div>
+
+            {/* Position filter */}
+            <select
+              title="Position Filter"
+              value={position}
+              onChange={e => { setPosition(e.target.value); setPage(1); }}
+              className="h-9 px-4 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer font-medium"
+            >
+              <option value="">Tất cả vị trí</option>
+              {Object.entries(STAFF_POSITIONS).map(([key, value]) => (
+                <option key={key} value={key}>{value as string}</option>
+              ))}
+            </select>
 
             <select
               title="Salon Filter"
@@ -394,17 +429,17 @@ export default function AdminStaffPage() {
           <DataTable
             columns={columns}
             data={data?.data || []}
-            searchKey="user.name"
             loading={isLoading}
             pagination={{
               pageCount: data?.meta?.lastPage || 1,
               onPageChange: (p) => setPage(p),
               pageIndex: page,
-              pageSize: limit,  onPageSizeChange: (s) => {
-    setLimit(s);
-    setPage(1);
-  }
-}}
+              pageSize: limit,
+              onPageSizeChange: (s) => {
+                setLimit(s);
+                setPage(1);
+              }
+            }}
           />
         </CardContent>
       </Card>
@@ -422,7 +457,7 @@ export default function AdminStaffPage() {
               {panelMode === 'create' ? 'Tạo hồ sơ nhân sự mới và thiết lập quyền truy cập cho hệ thống.' : 'Xem hoặc cập nhật thông tin chi tiết và quyền hạn của nhân viên.'}
             </SheetDescription>
           </SheetHeader>
-          
+
           <div className="flex-1 overflow-y-auto px-8 py-8">
             <form id="staff-form" onSubmit={handleSubmit} className="space-y-8 pb-4">
               <div className="grid grid-cols-1 gap-8">
@@ -436,7 +471,7 @@ export default function AdminStaffPage() {
                     disabled={panelMode === 'view'}
                   />
                   <p className="text-xs text-slate-400 mt-4 text-center font-medium">
-                    Tải lên ảnh chân dung chuyên nghiệp.<br/>
+                    Tải lên ảnh chân dung chuyên nghiệp.<br />
                     Định dạng JPG, PNG tối đa 10MB.
                   </p>
                 </div>
@@ -544,20 +579,20 @@ export default function AdminStaffPage() {
           </div>
 
           <div className="px-8 py-6 border-t border-slate-100 bg-white flex justify-end gap-3 shrink-0">
-             <Button type="button" variant="outline" onClick={() => setPanelOpen(false)} className="rounded-xl px-8 h-12 min-w-[100px]">Hủy</Button>
-             {panelMode !== 'view' && (
-               <Button 
+            <Button type="button" variant="outline" onClick={() => setPanelOpen(false)} className="rounded-xl px-8 h-12 min-w-[100px]">Hủy</Button>
+            {panelMode !== 'view' && (
+              <Button
                 form="staff-form"
-                type="submit" 
+                type="submit"
                 className="rounded-xl px-12 h-12 font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all"
                 disabled={createMutation.isPending || updateMutation.isPending}
-               >
-                 {createMutation.isPending || updateMutation.isPending ? (
-                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                 ) : null}
-                 {panelMode === 'create' ? 'Tạo nhân viên' : 'Lưu thay đổi'}
-               </Button>
-             )}
+              >
+                {createMutation.isPending || updateMutation.isPending ? (
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                ) : null}
+                {panelMode === 'create' ? 'Tạo nhân viên' : 'Lưu thay đổi'}
+              </Button>
+            )}
           </div>
         </SheetContent>
       </Sheet>

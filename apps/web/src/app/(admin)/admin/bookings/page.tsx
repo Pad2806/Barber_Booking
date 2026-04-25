@@ -45,7 +45,7 @@ const STATUS_CONFIG: Record<string, { label: string, variant: 'warning' | 'info'
   NO_SHOW: { label: 'Vắng mặt', variant: 'outline' },
 };
 
-export default function AdminBookingsPage(): React.ReactElement {
+export default function AdminBookingsPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -57,7 +57,7 @@ export default function AdminBookingsPage(): React.ReactElement {
   const [serviceId, setServiceId] = useState<string>('');
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
-  const [search] = useState<string>('');
+  const [search, setSearch] = useState<string>('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Selection
@@ -320,77 +320,92 @@ export default function AdminBookingsPage(): React.ReactElement {
 
       <Card className="border shadow-sm overflow-hidden bg-white">
         <div className="p-4 border-b bg-slate-50/50">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <div className="flex flex-col gap-3">
+            {/* Search bar - server-side, searches bookingCode + customer name/phone */}
+            <div className="relative w-full max-w-md">
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <Input
+                placeholder="Tìm theo mã booking, tên hoặc SĐT khách..."
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                className="pl-9 h-9 bg-white"
+              />
+            </div>
+            {/* Filter row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <select
+                  title="Status Filter"
+                  className="w-full h-9 pl-9 pr-4 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                >
+                  <option value="">Tất cả trạng thái</option>
+                  {Object.entries(STATUS_CONFIG).map(([key, value]: any) => (
+                    <option key={key} value={key}>{value.label}</option>
+                  ))}
+                </select>
+              </div>
+
               <select
-                title="Status Filter"
-                className="w-full h-9 pl-9 pr-4 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
+                title="Salon Filter"
+                className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+                value={salonId}
+                onChange={(e) => {
+                  setSalonId(e.target.value);
+                  setStaffId('');
+                }}
               >
-                <option value="">Tất cả trạng thái</option>
-                {Object.entries(STATUS_CONFIG).map(([key, value]: any) => (
-                  <option key={key} value={key}>{value.label}</option>
+                <option value="">Tất cả chi nhánh</option>
+                {salonsData?.data?.map((s: any) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
-            </div>
 
-            <select
-              title="Salon Filter"
-              className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
-              value={salonId}
-              onChange={(e) => {
-                setSalonId(e.target.value);
-                setStaffId('');
-              }}
-            >
-              <option value="">Tất cả chi nhánh</option>
-              {salonsData?.data?.map((s: any) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
+              <select
+                title="Staff Filter"
+                className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+                value={staffId}
+                onChange={(e) => setStaffId(e.target.value)}
+              >
+                <option value="">Tất cả nhân viên</option>
+                {staffData?.data?.map((s: any) => (
+                  <option key={s.id} value={s.id}>{s.user?.name}</option>
+                ))}
+              </select>
 
-            <select
-              title="Staff Filter"
-              className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
-              value={staffId}
-              onChange={(e) => setStaffId(e.target.value)}
-            >
-              <option value="">Tất cả nhân viên</option>
-              {staffData?.data?.map((s: any) => (
-                <option key={s.id} value={s.id}>{s.user?.name}</option>
-              ))}
-            </select>
+              <select
+                title="Service Filter"
+                className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
+                value={serviceId}
+                onChange={(e) => setServiceId(e.target.value)}
+              >
+                <option value="">Tất cả dịch vụ</option>
+                {servicesData?.data?.map((s: any) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
 
-            <select
-              title="Service Filter"
-              className="w-full h-9 px-3 rounded-md border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none cursor-pointer"
-              value={serviceId}
-              onChange={(e) => setServiceId(e.target.value)}
-            >
-              <option value="">Tất cả dịch vụ</option>
-              {servicesData?.data?.map((s: any) => (
-                <option key={s.id} value={s.id}>{s.name}</option>
-              ))}
-            </select>
-
-            <div className="flex items-center gap-2 lg:col-span-2">
-              <Input
-                type="date"
-                title="From date"
-                className="h-9"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-              />
-              <span className="text-slate-400">→</span>
-              <Input
-                type="date"
-                title="To date"
-                className="h-9"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-              />
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  title="From date"
+                  className="h-9"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                />
+                <span className="text-slate-400">→</span>
+                <Input
+                  type="date"
+                  title="To date"
+                  className="h-9"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -435,22 +450,21 @@ export default function AdminBookingsPage(): React.ReactElement {
           <DataTable
             columns={columns}
             data={data?.data || []}
-            searchKey="bookingCode"
             loading={isLoading}
             onRowSelectionChange={setSelectedBookings}
             pagination={{
               pageCount: data?.meta?.lastPage || 1,
               onPageChange: (p) => setPage(p),
               pageIndex: page,
-              pageSize: limit,  onPageSizeChange: (s) => {
-    setLimit(s);
-    setPage(1);
-  }
-}}
+              pageSize: limit,
+              onPageSizeChange: (s) => {
+                setLimit(s);
+                setPage(1);
+              }
+            }}
           />
         </CardContent>
       </Card>
-
     </div>
   );
 }

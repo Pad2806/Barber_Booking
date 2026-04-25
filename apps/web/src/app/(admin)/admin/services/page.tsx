@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import OptimizedImage from '@/components/OptimizedImage';
 import {
@@ -42,10 +42,29 @@ export default function AdminServicesPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [category, setCategory] = useState<string | undefined>(undefined);
+  const [search, setSearch] = useState<string>('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [isActiveFilter, setIsActiveFilter] = useState<string>('ALL');
+  const [minPrice, setMinPrice] = useState<string>('');
+  const [maxPrice, setMaxPrice] = useState<string>('');
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin', 'services', { page, limit, category }],
-    queryFn: () => adminApi.getAllServices({ page, limit, category: category === 'ALL' ? undefined : category }),
+    queryKey: ['admin', 'services', { page, limit, category, search: debouncedSearch, isActiveFilter, minPrice, maxPrice }],
+    queryFn: () => adminApi.getAllServices({
+      page,
+      limit,
+      category: category === 'ALL' ? undefined : category,
+      search: debouncedSearch || undefined,
+      isActive: isActiveFilter === 'ALL' ? undefined : isActiveFilter === 'true',
+      minPrice: minPrice ? parseInt(minPrice) : undefined,
+      maxPrice: maxPrice ? parseInt(maxPrice) : undefined,
+    }),
   });
 
   const { data: analytics } = useQuery({
@@ -74,10 +93,10 @@ export default function AdminServicesPage() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center overflow-hidden border border-slate-200 relative">
               {service.image ? (
-                <OptimizedImage 
-                  src={service.image} 
-                  alt={service.name} 
-                  fill 
+                <OptimizedImage
+                  src={service.image}
+                  alt={service.name}
+                  fill
                   className="object-cover"
                   enableBlur
                 />
@@ -151,7 +170,7 @@ export default function AdminServicesPage() {
                   <Edit className="w-4 h-4" /> Chỉnh sửa
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-destructive focus:text-destructive flex items-center"
                 onClick={() => {
                   if (confirm('Bạn có chắc muốn xóa dịch vụ này?')) {
@@ -172,9 +191,9 @@ export default function AdminServicesPage() {
     return (
       <Card className="m-8">
         <CardContent className="pt-6">
-          <ErrorState 
-            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách dịch vụ'} 
-            onRetry={() => refetch()} 
+          <ErrorState
+            message={(error as any)?.response?.data?.message || 'Không thể tải danh sách dịch vụ'}
+            onRetry={() => refetch()}
           />
         </CardContent>
       </Card>
@@ -257,39 +276,79 @@ export default function AdminServicesPage() {
       </div>
 
       <Card className="border-none shadow-sm bg-slate-50/50">
-        <CardHeader className="px-0 flex flex-row items-center justify-between space-y-0 pb-4 pr-6 text-left">
-          <CardTitle className="text-lg font-semibold px-6">Bảng giá dịch vụ</CardTitle>
-          <div className="flex gap-2">
-            <select
-              title="Category Filter"
-              value={category || 'ALL'}
-              onChange={e => setCategory(e.target.value === 'ALL' ? undefined : e.target.value)}
-              className="px-3 py-1.5 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer font-medium"
-            >
-              <option value="ALL">Tất cả danh mục</option>
-              {Object.entries(SERVICE_CATEGORIES).map(([key, value]) => (
-                <option key={key} value={key}>
-                  {value.label}
-                </option>
-              ))}
-            </select>
+        <CardHeader className="px-0 flex flex-col space-y-3 pb-4 pr-6 text-left">
+          <div className="flex items-center justify-between px-6">
+            <CardTitle className="text-lg font-semibold">Bảng giá dịch vụ</CardTitle>
+            <div className="flex flex-wrap gap-2 items-center">
+              {/* Server-side search */}
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  placeholder="Tìm tên dịch vụ..."
+                  value={search}
+                  onChange={e => { setSearch(e.target.value); setPage(1); }}
+                  className="h-9 pl-9 pr-4 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all w-44"
+                />
+              </div>
+              <select
+                title="Category Filter"
+                value={category || 'ALL'}
+                onChange={e => setCategory(e.target.value === 'ALL' ? undefined : e.target.value)}
+                className="px-3 py-1.5 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer font-medium"
+              >
+                <option value="ALL">Tất cả danh mục</option>
+                {Object.entries(SERVICE_CATEGORIES).map(([key, value]) => (
+                  <option key={key} value={key}>{value.label}</option>
+                ))}
+              </select>
+              {/* Status filter */}
+              <select
+                title="Status Filter"
+                value={isActiveFilter}
+                onChange={e => { setIsActiveFilter(e.target.value); setPage(1); }}
+                className="px-3 py-1.5 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer font-medium"
+              >
+                <option value="ALL">Tất cả trạng thái</option>
+                <option value="true">Đang hoạt động</option>
+                <option value="false">Đã ẩn</option>
+              </select>
+              {/* Price range */}
+              <input
+                type="number"
+                placeholder="Giá tối thiểu"
+                value={minPrice}
+                onChange={e => { setMinPrice(e.target.value); setPage(1); }}
+                min={0}
+                className="w-32 px-3 py-1.5 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              />
+              <input
+                type="number"
+                placeholder="Giá tối đa"
+                value={maxPrice}
+                onChange={e => { setMaxPrice(e.target.value); setPage(1); }}
+                min={0}
+                className="w-32 px-3 py-1.5 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="px-0 sm:px-6">
           <DataTable
             columns={columns}
             data={data?.data || []}
-            searchKey="name"
             loading={isLoading}
             pagination={{
               pageCount: data?.meta?.lastPage || 1,
               onPageChange: (p) => setPage(p),
               pageIndex: page,
-              pageSize: limit,  onPageSizeChange: (s) => {
-    setLimit(s);
-    setPage(1);
-  }
-}}
+              pageSize: limit,
+              onPageSizeChange: (s) => {
+                setLimit(s);
+                setPage(1);
+              }
+            }}
           />
         </CardContent>
       </Card>

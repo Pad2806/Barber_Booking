@@ -322,6 +322,7 @@ export class AdminController {
   @ApiQuery({ name: 'sortBy', required: false })
   @ApiQuery({ name: 'sortOrder', required: false })
   @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'position', required: false })
   getAllStaff(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -330,6 +331,7 @@ export class AdminController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'asc' | 'desc',
     @Query('search') search?: string,
+    @Query('position') position?: string,
   ) {
     return this.adminService.getAllStaff({
       page: page ? parseInt(page) : undefined,
@@ -339,6 +341,7 @@ export class AdminController {
       sortBy,
       sortOrder,
       search,
+      position,
     });
   }
 
@@ -350,12 +353,18 @@ export class AdminController {
   @ApiQuery({ name: 'salonId', required: false })
   @ApiQuery({ name: 'category', required: false })
   @ApiQuery({ name: 'search', required: false })
+  @ApiQuery({ name: 'isActive', required: false })
+  @ApiQuery({ name: 'minPrice', required: false })
+  @ApiQuery({ name: 'maxPrice', required: false })
   getAllServices(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('salonId') salonId?: string,
     @Query('category') category?: string,
     @Query('search') search?: string,
+    @Query('isActive') isActive?: string,
+    @Query('minPrice') minPrice?: string,
+    @Query('maxPrice') maxPrice?: string,
   ) {
     return this.adminService.getAllServices({
       page: page ? parseInt(page) : undefined,
@@ -363,6 +372,9 @@ export class AdminController {
       salonId,
       category,
       search,
+      isActive: isActive !== undefined ? isActive === 'true' : undefined,
+      minPrice: minPrice ? parseInt(minPrice) : undefined,
+      maxPrice: maxPrice ? parseInt(maxPrice) : undefined,
     });
   }
 

@@ -763,6 +763,7 @@ export const adminApi = {
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    position?: string;
   }) => {
     const response = await apiClient.get<PaginatedResponse<Staff>>('/admin/staff', { params });
     return response.data;
@@ -792,6 +793,8 @@ export const adminApi = {
     search?: string;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    minPrice?: number;
+    maxPrice?: number;
   }) => {
     const response = await apiClient.get<PaginatedResponse<Service>>('/admin/services', { params });
     return response.data;

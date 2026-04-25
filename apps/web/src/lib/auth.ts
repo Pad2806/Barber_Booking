@@ -60,7 +60,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
           return null;
         } catch (error: any) {
-          console.error("NextAuth Login Error:", error?.response?.data || error?.message || error);
+          const message: string = error?.response?.data?.message || error?.message || '';
+          console.error("NextAuth Login Error:", message);
+          // Distinguish blocked account from wrong credentials
+          if (
+            error?.response?.status === 401 &&
+            (
+              message.toLowerCase().includes('deactivated') ||
+              message.toLowerCase().includes('blocked') ||
+              message.toLowerCase().includes('khóa') ||
+              message.toLowerCase().includes('khoa')
+            )
+          ) {
+            throw new Error('ACCOUNT_BLOCKED');
+          }
           return null;
         }
       },
@@ -119,7 +132,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // Update basic info
         if (updateData?.name) token.name = updateData.name;
         if (updateData?.image) token.picture = updateData.image;
-        
+
         // Update roles/position
         if (updateData?.roles || updateData?.role) {
           if (updateData.roles) token.roles = updateData.roles;
