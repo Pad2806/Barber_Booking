@@ -75,6 +75,41 @@ function LoginForm() {
     setIsLoading(true);
 
     try {
+      // Pre-check: Call API directly to get exact error message before NextAuth absorbs it.
+      // NextAuth v5 collapses all authorize() errors into 'CredentialsSignin', losing the
+      // specific 'Account is deactivated' message. By pre-checking, we can show the right toast.
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+      try {
+        await fetch(`${apiUrl}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        }).then(async (res) => {
+          if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            const msg: string = data?.message || '';
+            if (
+              res.status === 401 &&
+              (msg.toLowerCase().includes('deactivated') ||
+                msg.toLowerCase().includes('blocked') ||
+                msg.toLowerCase().includes('khóa') ||
+                msg.toLowerCase().includes('khoa'))
+            ) {
+              throw new Error('ACCOUNT_BLOCKED');
+            }
+          }
+        });
+      } catch (preCheckErr: any) {
+        if (preCheckErr?.message === 'ACCOUNT_BLOCKED') {
+          toast.error('Tài khoản của bạn đã bị khoá. Vui lòng liên hệ quản trị viên để biết thêm thông tin.', {
+            duration: 5000,
+            icon: '🔒',
+          });
+          return;
+        }
+        // Other pre-check errors (network etc.) — fall through to signIn
+      }
+
       const result = await signIn('credentials', {
         email,
         password,
@@ -82,14 +117,7 @@ function LoginForm() {
       });
 
       if (result?.error) {
-        if (result.error === 'ACCOUNT_BLOCKED' || result.error?.includes('ACCOUNT_BLOCKED')) {
-          toast.error('Tài khoản của bạn đã bị khoá. Vui lòng liên hệ quản trị viên để biết thêm thông tin.', {
-            duration: 5000,
-            icon: '🔒',
-          });
-        } else {
-          toast.error('Email hoặc mật khẩu không đúng');
-        }
+        toast.error('Email hoặc mật khẩu không đúng');
       } else {
         toast.success('Đăng nhập thành công!');
 
@@ -105,18 +133,12 @@ function LoginForm() {
         const roles = (session?.user as any)?.roles || [];
         const redirectUrl = getRedirectUrl(role, roles);
 
-        // Clear the cached session in axios interceptor so next API calls
-        // use the fresh token from the new session
         if (typeof window !== 'undefined') {
           (window as any).__clearSessionCache?.();
         }
 
-        // Use router.push (client-side nav) instead of window.location.href
-        // to avoid full HTTP reload that can cause ERR_TOO_MANY_REDIRECTS
-        // when the session cookie isn't fully propagated yet
         router.push(redirectUrl);
         router.refresh();
-
       }
     } catch (error) {
       toast.error('Đã có lỗi xảy ra');
