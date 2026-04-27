@@ -13,7 +13,7 @@ export class AIToolsService {
     private prisma: PrismaService,
     private servicesService: ServicesService,
     private staffService: StaffService,
-  ) {}
+  ) { }
 
   async update_booking_state(sessionId: string, data: {
     customer_name?: string;
@@ -85,7 +85,10 @@ export class AIToolsService {
       // ── get_services: Lấy dịch vụ theo salon ──
       if (name === 'get_services') {
         const session = await (this.prisma.bookingRequest as any).findUnique({ where: { sessionId } });
-        const salonId = args.salon_id || session?.salonId;
+        let salonId = args.salon_id || session?.salonId;
+
+        // Fix: resolve numeric selection ("2", "3") to actual salon UUID
+        salonId = await this.resolveNumericSalonId(salonId, sessionId);
 
         let services: any[];
         if (salonId) {
@@ -113,7 +116,10 @@ export class AIToolsService {
       // ── get_barbers: Lấy thợ theo salon_id từ args hoặc session ──
       if (name === 'get_barbers') {
         const session = await (this.prisma.bookingRequest as any).findUnique({ where: { sessionId } });
-        const salonId = args.salon_id || session?.salonId;
+        let salonId = args.salon_id || session?.salonId;
+
+        // Fix: resolve numeric selection ("2", "3") to actual salon UUID
+        salonId = await this.resolveNumericSalonId(salonId, sessionId);
 
         const BARBER_POSITIONS = ['BARBER', 'STYLIST', 'SENIOR_STYLIST', 'MASTER_STYLIST'];
 
@@ -180,6 +186,36 @@ export class AIToolsService {
       this.logger.error(`Tool error (${name}): ${error.message}`);
       return { content: `Có lỗi xảy ra khi thực hiện tác vụ: ${error.message}` };
     }
+  }
+
+  // ═══ Resolve numeric salon selection ("2") to actual UUID from DB ═══
+  // Fixes: model passes salon_id="2" when user typed a number instead of UUID
+  private async resolveNumericSalonId(
+    value: string | null | undefined,
+    sessionId: string,
+  ): Promise<string | null | undefined> {
+    if (!value) return value;
+    const isNumeric = /^\d+$/.test(value.toString().trim());
+    if (!isNumeric) return value; // already a UUID or valid string
+
+    const idx = parseInt(value.trim(), 10) - 1;
+    if (idx < 0) return value;
+
+    const salons = await this.prisma.salon.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    });
+
+    if (salons[idx]) {
+      const resolvedId = salons[idx].id;
+      this.logger.log(`[Resolve] Numeric "${value}" → salon UUID: ${resolvedId} (${salons[idx].name})`);
+      await this.update_booking_state(sessionId, { salon_id: resolvedId });
+      return resolvedId;
+    }
+
+    this.logger.warn(`[Resolve] Numeric "${value}" out of range (${salons.length} salons total)`);
+    return value;
   }
 
   private async handleCreateBooking(args: any, sessionId: string) {

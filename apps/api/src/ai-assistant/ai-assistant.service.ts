@@ -121,13 +121,14 @@ const GROQ_TOOLS = [
 const VALID_TOOL_NAMES = new Set(GROQ_TOOLS.map(t => t.function.name));
 
 // ═══ Groq model fallback chain ═══
-// PRIMARY:   llama3-groq-8b-8192-tool-use-preview — fine-tuned for tool/function calling
-// FALLBACK1: llama-3.1-8b-instant                 — fast & stable, lower quota cost
-// FALLBACK2: llama-3.3-70b-versatile               — most capable, highest accuracy
+// NOTE: llama3-groq-8b-8192-tool-use-preview was DECOMMISSIONED by Groq (April 2026)
+// PRIMARY:   llama-3.3-70b-versatile  — most capable, stable tool-calling (confirmed 2026)
+// FALLBACK1: llama-3.1-8b-instant     — faster, backup for quota exhaustion
+// FALLBACK2: mixtral-8x7b-32768       — alternative with tool support
 const GROQ_MODELS = [
-  'llama3-groq-8b-8192-tool-use-preview',
-  'llama-3.1-8b-instant',
   'llama-3.3-70b-versatile',
+  'llama-3.1-8b-instant',
+  'mixtral-8x7b-32768',
 ];
 
 // ═══ Vietnamese day of week map ═══
@@ -722,6 +723,8 @@ export class AIAssistantService implements OnModuleInit {
       .replace(/<function[\s\S]*?<\/function[^>]*>/gi, '')
       .replace(/<function[:\s]\w+\s+"[^"]*"<\/function>/gi, '')
       .replace(/<\/?function[^>]*>/gi, '')
+      // Strip "function=name..." format without opening ‘<’ (llama-3.1-8b hallucination)
+      .replace(/^function=[\w]+[^\n]*/gim, '')
       // Strip CJK characters (Chinese/Japanese/Korean) — model hallucinations
       .replace(/[\u4E00-\u9FFF\u3400-\u4DBF\u3000-\u303F\uFF00-\uFFEF\u2E80-\u2EFF]/g, '')
       // Clean up extra whitespace left by stripped chars
