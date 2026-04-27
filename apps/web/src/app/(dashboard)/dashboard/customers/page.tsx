@@ -88,6 +88,9 @@ export default function AdminCustomersPage() {
       limit,
       search: debouncedSearch || undefined,
       role: 'CUSTOMER',
+      isActive: isActiveFilter === 'true' ? true : isActiveFilter === 'false' ? false : undefined,
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
     }),
   });
 

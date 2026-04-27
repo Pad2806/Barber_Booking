@@ -48,8 +48,9 @@ export class ManagerController {
         @Query('minRating') minRating?: number,
         @Query('sortBy') sortBy?: string,
         @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+        @Query('position') position?: string,
     ) {
-        return this.managerService.getSalonStaff(userId, { page, limit, search, minRating, sortBy, sortOrder });
+        return this.managerService.getSalonStaff(userId, { page, limit, search, minRating, sortBy, sortOrder, position });
     }
 
     @Get('staff/:id/performance')

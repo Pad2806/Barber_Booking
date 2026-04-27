@@ -620,6 +620,9 @@ export const adminApi = {
     limit?: number;
     role?: string;
     search?: string;
+    isActive?: boolean;
+    dateFrom?: string;
+    dateTo?: string;
   }) => {
     const response = await apiClient.get('/admin/users', { params });
     return response.data;

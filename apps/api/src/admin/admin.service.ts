@@ -818,11 +818,24 @@ export class AdminService extends BaseQueryService {
     limit?: number;
     role?: Role;
     search?: string;
+    isActive?: boolean;
+    dateFrom?: string;
+    dateTo?: string;
   }) {
-    const { role, search } = params;
+    const { role, search, isActive, dateFrom, dateTo } = params;
 
     const where: any = {};
     if (role) where.role = role;
+    if (isActive !== undefined) where.isActive = isActive;
+    if (dateFrom || dateTo) {
+      where.createdAt = {};
+      if (dateFrom) where.createdAt.gte = new Date(dateFrom);
+      if (dateTo) {
+        const end = new Date(dateTo);
+        end.setHours(23, 59, 59, 999);
+        where.createdAt.lte = end;
+      }
+    }
     if (search) {
       Object.assign(where, this.buildSearchWhere(search, ['name', 'email', 'phone']));
     }
@@ -959,7 +972,7 @@ export class AdminService extends BaseQueryService {
     if (city) where.city = city;
     if (isActive !== undefined) where.isActive = isActive;
     if (search) {
-      Object.assign(where, this.buildSearchWhere(search, ['name', 'address']));
+      Object.assign(where, this.buildSearchWhere(search, ['name', 'address', 'phone']));
     }
 
     const [salons, total, averages] = await Promise.all([

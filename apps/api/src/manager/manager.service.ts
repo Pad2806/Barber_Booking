@@ -144,9 +144,10 @@ export class ManagerService {
         minRating?: number;
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
+        position?: string;
     }) {
         const salonId = await this.getManagerSalonId(userId);
-        const { search, minRating, sortBy = 'createdAt', sortOrder = 'desc' } = query;
+        const { search, minRating, sortBy = 'createdAt', sortOrder = 'desc', position } = query;
 
         // Safe number parsing — NestJS @Query returns strings or undefined
         const pageNum = Math.max(1, parseInt(String(query.page), 10) || 1);
@@ -167,6 +168,10 @@ export class ManagerService {
 
         if (minRating) {
             where.rating = { gte: Number(minRating) };
+        }
+
+        if (position) {
+            where.position = position;
         }
 
         // Handle sorting

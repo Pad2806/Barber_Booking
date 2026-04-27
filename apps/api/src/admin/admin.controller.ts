@@ -122,12 +122,18 @@ export class AdminController {
     @Query('limit') limit?: string,
     @Query('role') role?: any,
     @Query('search') search?: string,
+    @Query('isActive') isActive?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
   ) {
     return this.adminService.getAllUsers({
       page: page ? parseInt(page) : undefined,
       limit: limit ? parseInt(limit) : undefined,
       role,
       search,
+      isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
+      dateFrom,
+      dateTo,
     });
   }
 
