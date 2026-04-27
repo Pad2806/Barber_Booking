@@ -94,6 +94,12 @@ export default function AdminCustomersPage() {
     }),
   });
 
+  // Separate stats query — always fetches without filters for accurate KPI cards
+  const { data: statsData } = useQuery({
+    queryKey: ['admin', 'customers', 'stats'],
+    queryFn: () => adminApi.getAllUsers({ page: 1, limit: 9999, role: 'CUSTOMER' }),
+  });
+
   const { data: customerDetail, isLoading: isDetailLoading } = useQuery({
     queryKey: ['admin', 'customer', selectedCustomerId],
     queryFn: () => adminApi.getUserById(selectedCustomerId!),
@@ -112,18 +118,18 @@ export default function AdminCustomersPage() {
     },
   });
 
-  // Calculate metrics at top level to avoid hook violation
+  // Calculate metrics from stats (system-wide, not affected by filter)
   const metrics = useMemo(() => {
-    if (!data?.data) return { totalUsers: 0, activeUsers: 0, newUsers: 0 };
+    const allUsers: any[] = statsData?.data || [];
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
     return {
-      totalUsers: data?.meta?.total || 0,
-      activeUsers: data?.data?.filter((u: any) => u.isActive).length || 0,
-      newUsers: data?.data?.filter((u: any) => new Date(u.createdAt) >= startOfMonth).length || 0,
+      totalUsers: statsData?.meta?.total || allUsers.length,
+      activeUsers: allUsers.filter((u: any) => u.isActive).length,
+      newUsers: allUsers.filter((u: any) => new Date(u.createdAt) >= startOfMonth).length,
     };
-  }, [data]);
+  }, [statsData]);
 
   const columns: ColumnDef<any>[] = useMemo(() => [
     {

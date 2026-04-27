@@ -117,14 +117,17 @@ export class ManagerController {
     @ApiOperation({ summary: 'Get all bookings for the branch with filters' })
     getSalonBookings(
         @CurrentUser('id') userId: string,
+        @Query('page') page?: number,
+        @Query('limit') limit?: number,
         @Query('dateFrom') dateFrom?: string,
         @Query('dateTo') dateTo?: string,
         @Query('staffId') staffId?: string,
         @Query('status') status?: BookingStatus,
         @Query('search') search?: string,
-        @Query('serviceId') serviceId?: string
+        @Query('serviceId') serviceId?: string,
+        @Query('serviceName') serviceName?: string,
     ) {
-        return this.managerService.getSalonBookings(userId, { dateFrom, dateTo, staffId, status, search, serviceId });
+        return this.managerService.getSalonBookings(userId, { page, limit, dateFrom, dateTo, staffId, status, search, serviceId, serviceName });
     }
 
     @Get('services')

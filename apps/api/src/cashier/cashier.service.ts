@@ -621,16 +621,19 @@ export class CashierService {
     filters: { date?: string },
   ) {
     const salonId = await this.getSalonId(userId);
-    const targetDate = filters.date
-      ? this.toDateOnly(filters.date)
-      : this.todayDate();
+
+    const where: any = {
+      salonId,
+      paymentStatus: { in: ['PAID', 'DEPOSIT_PAID'] },
+    };
+
+    // Only filter by specific date if provided; otherwise return all history
+    if (filters.date) {
+      where.date = this.toDateOnly(filters.date);
+    }
 
     const bookings = await this.prisma.booking.findMany({
-      where: {
-        salonId,
-        date: targetDate,
-        paymentStatus: { in: ['PAID', 'DEPOSIT_PAID'] },
-      },
+      where,
       include: {
         customer: { select: { id: true, name: true, phone: true, avatar: true } },
         staff: { include: { user: { select: { name: true } } } },
@@ -640,7 +643,7 @@ export class CashierService {
           orderBy: { paidAt: 'desc' },
         },
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: [{ date: 'desc' }, { updatedAt: 'desc' }],
     });
 
     // Summary stats

@@ -520,6 +520,9 @@ export class ManagerService {
         status?: BookingStatus;
         search?: string;
         serviceId?: string;
+        serviceName?: string;
+        page?: number;
+        limit?: number;
     }) {
         const salonId = await this.getManagerSalonId(userId);
         const where: any = { salonId };
@@ -537,6 +540,7 @@ export class ManagerService {
         if (filters.staffId) where.staffId = filters.staffId;
         if (filters.status && filters.status !== ('ALL' as any)) where.status = filters.status;
         if (filters.serviceId) where.services = { some: { serviceId: filters.serviceId } };
+        if (filters.serviceName) where.services = { some: { service: { name: { contains: filters.serviceName, mode: 'insensitive' } } } };
         if (filters.search) {
             where.OR = [
                 { customer: { name: { contains: filters.search, mode: 'insensitive' } } },
@@ -545,16 +549,39 @@ export class ManagerService {
             ];
         }
 
-        return this.prisma.booking.findMany({
-            where,
-            include: {
-                salon: { select: { id: true, name: true } },
-                customer: { select: { id: true, name: true, phone: true, avatar: true } },
-                staff: { include: { user: { select: { id: true, name: true, avatar: true } } } },
-                services: { include: { service: { select: { id: true, name: true, price: true, duration: true } } } }
-            },
-            orderBy: [{ date: 'desc' }, { timeSlot: 'asc' }]
-        });
+        const include = {
+            salon: { select: { id: true, name: true } },
+            customer: { select: { id: true, name: true, phone: true, avatar: true } },
+            staff: { include: { user: { select: { id: true, name: true, avatar: true } } } },
+            services: { include: { service: { select: { id: true, name: true, price: true, duration: true } } } }
+        };
+
+        const orderBy: any = [{ date: 'desc' }, { timeSlot: 'asc' }];
+
+        // If pagination params provided, return paginated response
+        if (filters.page && filters.limit) {
+            const pageNum = Number(filters.page);
+            const limitNum = Number(filters.limit);
+            const skip = (pageNum - 1) * limitNum;
+
+            const [data, total] = await Promise.all([
+                this.prisma.booking.findMany({ where, include, orderBy, skip, take: limitNum }),
+                this.prisma.booking.count({ where }),
+            ]);
+
+            return {
+                data,
+                meta: {
+                    total,
+                    page: pageNum,
+                    limit: limitNum,
+                    lastPage: Math.ceil(total / limitNum) || 1,
+                }
+            };
+        }
+
+        // No pagination — return plain array (used by Excel export)
+        return this.prisma.booking.findMany({ where, include, orderBy });
     }
 
     async getSalonServices(userId: string) {
@@ -574,7 +601,8 @@ export class ManagerService {
         search?: string;
         serviceId?: string;
     }) {
-        const bookings = await this.getSalonBookings(userId, filters);
+        const bookings = await this.getSalonBookings(userId, filters) as any[];
+
 
         const workbook = new ExcelJS.Workbook();
         const worksheet = workbook.addWorksheet('Bookings');

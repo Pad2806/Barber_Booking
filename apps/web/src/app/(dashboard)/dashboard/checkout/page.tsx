@@ -156,10 +156,10 @@ export default function CheckoutPage() {
     enabled: activeTab === 'checkout',
   });
 
-  // Payment history
+  // Payment history — when historyDate is empty, fetch all without date filter
   const { data: historyData, isLoading: historyLoading } = useQuery({
-    queryKey: ['cashier', 'payment-history', historyDate],
-    queryFn: () => cashierApi.getPaymentHistory(historyDate || dayjs().format('YYYY-MM-DD')),
+    queryKey: ['cashier', 'payment-history', historyDate || 'all'],
+    queryFn: () => cashierApi.getPaymentHistory(historyDate || undefined),
     enabled: activeTab === 'history',
   });
 
@@ -758,7 +758,7 @@ export default function CheckoutPage() {
           <Card className="border-none shadow-sm bg-white">
             <CardHeader className="border-b border-slate-50 pb-4">
               <CardTitle className="text-base font-bold">
-                Lịch sử thanh toán — {historyDate ? dayjs(historyDate).format('DD/MM/YYYY') : dayjs().format('DD/MM/YYYY')}
+                Lịch sử thanh toán — {historyDate ? dayjs(historyDate).format('DD/MM/YYYY') : 'Toàn bộ lịch sử'}
               </CardTitle>
               <CardDescription>Danh sách tất cả giao dịch trong ngày để kết toán ca</CardDescription>
             </CardHeader>
