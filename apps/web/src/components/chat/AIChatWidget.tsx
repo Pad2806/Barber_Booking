@@ -80,7 +80,7 @@ export function AIChatWidget() {
       const response = await axios.post('/api/ai/chat', {
         message: text,
         session_id: sessionId,
-      }, { timeout: 20000 });
+      }, { timeout: 35000 }); // 35s — matches backend LOOP_DEADLINE (40s)
 
       const assistantMsg: Message = {
         id: uuidv4(),
@@ -182,7 +182,7 @@ export function AIChatWidget() {
           </div>
 
           {/* Messages Area */}
-          <div 
+          <div
             ref={scrollRef}
             className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#FAF8F5] scroll-smooth"
           >
@@ -210,7 +210,7 @@ export function AIChatWidget() {
                 </div>
               </div>
             )}
-            
+
             {messages.map((msg) => (
               <div
                 key={msg.id}
@@ -227,8 +227,8 @@ export function AIChatWidget() {
                 </div>
                 <div className={cn(
                   "p-3.5 rounded-2xl text-[13px] leading-relaxed shadow-sm whitespace-pre-wrap transition-all duration-200",
-                  msg.role === 'user' 
-                    ? "bg-[#1A1A1A] text-white rounded-tr-none max-w-[75%]" 
+                  msg.role === 'user'
+                    ? "bg-[#1A1A1A] text-white rounded-tr-none max-w-[75%]"
                     : "bg-white text-gray-800 border border-[#E8E0D4] rounded-tl-none max-w-[80%]"
                 )}>
                   {msg.content.split('\n').map((line, i) => {

@@ -120,13 +120,13 @@ const GROQ_TOOLS = [
 // Valid tool names for sanitization
 const VALID_TOOL_NAMES = new Set(GROQ_TOOLS.map(t => t.function.name));
 
-// ═══ Groq model fallback order ═══
-// PRIMARY: llama3-groq-8b-tool-use — specifically fine-tuned for tool/function calling, low token usage
-// FALLBACK1: llama-3.1-70b-versatile — stable, rarely times out
-// FALLBACK2: llama-3.3-70b-versatile — most capable, highest quota consumption
+// ═══ Groq model fallback chain ═══
+// PRIMARY:   llama3-groq-8b-8192-tool-use-preview — fine-tuned for tool/function calling
+// FALLBACK1: llama-3.1-8b-instant                 — fast & stable, lower quota cost
+// FALLBACK2: llama-3.3-70b-versatile               — most capable, highest accuracy
 const GROQ_MODELS = [
   'llama3-groq-8b-8192-tool-use-preview',
-  'llama-3.1-70b-versatile',
+  'llama-3.1-8b-instant',
   'llama-3.3-70b-versatile',
 ];
 
@@ -135,6 +135,46 @@ const VIET_DAYS = ['Chủ nhật', 'Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', '
 
 // ═══ Booking-intent keywords — if message contains ANY of these, skip FAQ ═══
 const BOOKING_INTENT_RE = /(\d{10}|\d{4}[\s-]?\d{3}[\s-]?\d{3}|\d+h|sáng|chiều|trưa|tối|hôm nay|ngày mai|cắt tóc|nhuộm|uốn|gội|combo|cat toc|nhuom|uon|goi|hot toc|hớt|cơ sở|chi nhánh|quận|cs[0-9]|số [0-9])/i;
+
+// ═══ Out-of-domain detection ═══
+// Topics clearly outside barber/booking domain — checked BEFORE any Groq call
+const OUT_OF_DOMAIN_TOPICS = [
+  // Thời tiết
+  'thời tiết', 'nhiệt độ', 'dự báo thời tiết', 'trời mưa', 'trời nắng', 'bão lũ',
+  // Ăn uống
+  'nấu ăn', 'công thức nấu', 'món ăn', 'nhà hàng', 'quán ăn', 'đặt đồ ăn', 'goi mon',
+  // Giải trí
+  'bóng đá', 'xem phim', 'âm nhạc', 'youtube', 'tiktok', 'chơi game', 'truyện tranh',
+  // Du lịch / giao thông
+  'du lịch', 'vé máy bay', 'vé tàu', 'vé xe', 'khách sạn', 'đặt phòng khách sạn',
+  // Tài chính
+  'cổ phiếu', 'crypto', 'bitcoin', 'ngân hàng', 'vay tiền', 'lãi suất', 'chứng khoán',
+  // Tin tức / chính trị
+  'tin tức', 'chính trị', 'bầu cử', 'chiến tranh', 'quân sự',
+  // Y tế
+  'bệnh viện', 'bác sĩ', 'uống thuốc', 'covid', 'vaccine', 'chữa bệnh', 'triệu chứng',
+  // Học thuật
+  'bài tập toán', 'giải phương trình', 'lịch sử thế giới', 'địa lý', 'vật lý', 'hóa học',
+  // AI / tech khác
+  'chatgpt', 'gemini', 'claude ai', 'lập trình python', 'viết code',
+  // Mua sắm khác
+  'mua điện thoại', 'mua laptop', 'mua quần áo', 'shopping', 'lazada', 'shopee',
+];
+
+// Build regex from topic list (escaped)
+const OUT_OF_DOMAIN_RE = new RegExp(
+  OUT_OF_DOMAIN_TOPICS.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'),
+  'i',
+);
+
+// Barber-domain whitelist — if message matches these, ALWAYS treat as in-domain
+const BARBER_DOMAIN_RE = /tóc|cắt|hớt|gội|nhuộm|uốn|duỗi|barber|thợ|salon|cơ sở|chi nhánh|dịch vụ|đặt lịch|lịch hẹn|booking|combo|stylist|reetro|hớt tóc|cat toc|hot toc/i;
+
+// Out-of-domain response (Option C: từ chối + redirect)
+const OUT_OF_DOMAIN_RESPONSE =
+  'Xin lỗi anh, em chỉ hỗ trợ các vấn đề liên quan đến **dịch vụ hớt tóc và đặt lịch** tại **Reetro Barber** thôi ạ! 💈\n\n' +
+  'Anh có muốn em hỗ trợ:\n• ✂️ Đặt lịch cắt tóc\n• 💰 Xem giá dịch vụ\n• 📍 Xem địa chỉ các salon\n\n' +
+  'Em sẵn sàng giúp ngay! 😊';
 
 // ═══ FAQ Router ═══
 const FAQ_PATTERNS: { keywords: string[]; response: string | (() => string) }[] = [
@@ -223,6 +263,16 @@ export class AIAssistantService implements OnModuleInit {
     setInterval(() => this.cleanCache(), 10 * 60 * 1000);
   }
 
+  // ═══ Out-of-domain guard ═══
+  private isOutOfDomain(message: string): boolean {
+    // Always in-domain if message contains barber/tóc keywords
+    if (BARBER_DOMAIN_RE.test(message)) return false;
+    // Always in-domain if booking-intent
+    if (BOOKING_INTENT_RE.test(message)) return false;
+    // Out-of-domain if matches off-topic patterns
+    return OUT_OF_DOMAIN_RE.test(message);
+  }
+
   // ═══ FAQ Router ═══
   private matchFAQ(message: string): string | null {
     // If message contains booking-actionable info (phone, time, service), skip FAQ entirely
@@ -283,6 +333,13 @@ export class AIAssistantService implements OnModuleInit {
   // ═══ Main Chat Method ═══
   async chat(message: string, sessionId: string, userId?: string) {
     const startTime = Date.now();
+
+    // ── Step 0: Out-of-domain guard (0 API calls) ──
+    if (this.isOutOfDomain(message)) {
+      this.logger.log(`[OOD Guard] "${message.substring(0, 60)}"`);
+      await this.storeConversation(sessionId, userId, message, OUT_OF_DOMAIN_RESPONSE, startTime, false);
+      return { response: OUT_OF_DOMAIN_RESPONSE, source: 'ood_guard' };
+    }
 
     // ── Step 1: FAQ (0 API calls) — skipped if message has booking-actionable data ──
     const faqResponse = this.matchFAQ(message);
@@ -355,10 +412,10 @@ export class AIAssistantService implements OnModuleInit {
   // ═══ Groq Implementation ═══
   private async chatWithGroq(message: string, sessionId: string, userId: string | undefined, startTime: number) {
     // ══ Guardrail constants ══
-    const MAX_TOOL_LOOPS = 5;
-    const MAX_TOOLS_PER_RESPONSE = 4;
-    const API_TIMEOUT_MS = 12_000;  // 12s (reduced from 15s — tool-use model is faster)
-    const LOOP_DEADLINE_MS = 20_000; // 20s total deadline
+    const MAX_TOOL_LOOPS = 4;         // Max tool call iterations per response
+    const MAX_TOOLS_PER_RESPONSE = 3; // Max parallel tools per model response
+    const API_TIMEOUT_MS = 15_000;    // 15s per API call — balanced for all 3 models
+    const LOOP_DEADLINE_MS = 40_000;  // 40s total — covers full booking flow (4+ tool calls)
 
     let conversation = await this.prisma.chatConversation.findUnique({
       where: { sessionId },
@@ -430,6 +487,13 @@ export class AIAssistantService implements OnModuleInit {
         const loopDeadline = Date.now() + LOOP_DEADLINE_MS;
         let toolLoopCount = 0;
 
+        // ══ Option A: Composition context — stores structured list data from DB tools ══
+        const compositionCtx: {
+          salons: Array<{ name: string; addr: string }> | null;
+          barbers: Array<{ name: string; rating: string }> | null;
+          lastListTool: 'salons' | 'barbers' | null;
+        } = { salons: null, barbers: null, lastListTool: null };
+
         while (true) {
           if (Date.now() > loopDeadline) {
             throw new Error('TIMEOUT');
@@ -443,7 +507,7 @@ export class AIAssistantService implements OnModuleInit {
               this.groq.chat.completions.create({
                 model: modelName,
                 messages: localMessages,
-                max_tokens: 512,
+                max_tokens: 380,
               }),
               new Promise<never>((_, reject) =>
                 setTimeout(() => reject(new Error('TIMEOUT')), API_TIMEOUT_MS),
@@ -451,6 +515,7 @@ export class AIAssistantService implements OnModuleInit {
             ]) as any;
             finalResponse = noToolCompletion.choices[0].message.content || '';
             finalResponse = this.sanitizeResponse(finalResponse);
+            finalResponse = this.composeAndGuard(finalResponse, compositionCtx);
             isSuccess = true;
             break;
           }
@@ -463,7 +528,7 @@ export class AIAssistantService implements OnModuleInit {
                 messages: localMessages,
                 tools: GROQ_TOOLS as any,
                 tool_choice: 'auto',
-                max_tokens: 512, // P2: reduced from 1024 — sufficient for booking flow
+                max_tokens: 380, // P2: reduced from 1024 — sufficient for booking flow
               }),
               new Promise<never>((_, reject) =>
                 setTimeout(() => reject(new Error('TIMEOUT')), API_TIMEOUT_MS),
@@ -590,6 +655,15 @@ export class AIAssistantService implements OnModuleInit {
 
               toolCallsLog.push({ name: functionName, args: functionArgs, output: toolResult.content });
 
+              // ══ Option A: Populate compositionCtx from list tools ══
+              if (functionName === 'get_salons') {
+                compositionCtx.salons = this.parseSalonList(toolResult.content);
+                compositionCtx.lastListTool = 'salons';
+              } else if (functionName === 'get_barbers') {
+                compositionCtx.barbers = this.parseBarberList(toolResult.content);
+                compositionCtx.lastListTool = 'barbers';
+              }
+
               localMessages.push({
                 tool_call_id: toolCall.id,
                 role: 'tool',
@@ -609,6 +683,7 @@ export class AIAssistantService implements OnModuleInit {
 
           finalResponse = responseMessage.content || '';
           finalResponse = this.sanitizeResponse(finalResponse);
+          finalResponse = this.composeAndGuard(finalResponse, compositionCtx);
           isSuccess = true;
           break;
         }
@@ -641,12 +716,17 @@ export class AIAssistantService implements OnModuleInit {
     return { response: finalResponse };
   }
 
-  // ═══ Sanitize AI response — strip leaked function tags ═══
+  // ═══ Sanitize AI response — strip leaked function tags + CJK hallucinations ═══
   private sanitizeResponse(text: string): string {
     return text
       .replace(/<function[\s\S]*?<\/function[^>]*>/gi, '')
       .replace(/<function[:\s]\w+\s+"[^"]*"<\/function>/gi, '')
       .replace(/<\/?function[^>]*>/gi, '')
+      // Strip CJK characters (Chinese/Japanese/Korean) — model hallucinations
+      .replace(/[\u4E00-\u9FFF\u3400-\u4DBF\u3000-\u303F\uFF00-\uFFEF\u2E80-\u2EFF]/g, '')
+      // Clean up extra whitespace left by stripped chars
+      .replace(/[ \t]{2,}/g, ' ')
+      .replace(/\n{3,}/g, '\n\n')
       .trim();
   }
 
@@ -676,5 +756,91 @@ export class AIAssistantService implements OnModuleInit {
         toolCalls: [] as any, bookingCreated: booking, latency: Date.now() - startTime,
       },
     });
+  }
+
+  // ═══ Option A: Parse salon list from get_salons tool output ═══
+  private parseSalonList(content: string): Array<{ name: string; addr: string }> {
+    return content
+      .split('\n')
+      .filter(l => l.includes('Tên:'))
+      .map(line => ({
+        name: line.match(/Tên:\s*([^|]+)/)?.[1]?.trim() || '',
+        addr: line.match(/Địa chỉ:\s*([^|]+)/)?.[1]?.trim() || '',
+      }))
+      .filter(s => s.name.length > 0);
+  }
+
+  // ═══ Option A: Parse barber list from get_barbers tool output ═══
+  private parseBarberList(content: string): Array<{ name: string; rating: string }> {
+    return content
+      .split('\n')
+      .filter(l => l.includes('Tên:') && l.includes('ID:'))
+      .map(line => ({
+        name: line.match(/Tên:\s*([^,]+)/)?.[1]?.trim() || '',
+        rating: line.match(/(\d+\.?\d*)\s*sao/)?.[1] || '',
+      }))
+      .filter(b => b.name.length > 0);
+  }
+
+  // ═══ Option A + B: Compose response with service-layer data & hallucination guard ═══
+  private composeAndGuard(
+    response: string,
+    ctx: {
+      salons: Array<{ name: string; addr: string }> | null;
+      barbers: Array<{ name: string; rating: string }> | null;
+      lastListTool: 'salons' | 'barbers' | null;
+    },
+  ): string {
+    // ── Option B: Hallucination guard — detect fake “Thợ A”, “Thợ B”, “Barber 1” ──
+    const HALLUCINATION_RE = /\b(Thợ|Barber|Staff)\s+[A-Z\d]\b/gi;
+    if (ctx.barbers?.length && HALLUCINATION_RE.test(response)) {
+      this.logger.warn('[Guard] Hallucinated barber names detected — injecting real DB data');
+      const cleanedLines = response.split('\n').filter(l => !HALLUCINATION_RE.test(l));
+      const followUp = cleanedLines.join('\n').trim() || 'Anh/chị muốn chọn thợ nào ạ? 😊';
+      const barberList = ctx.barbers
+        .map((b, i) => `${i + 1}. **${b.name}**${b.rating ? ` — ⭐ ${b.rating}/5` : ''}`)
+        .join('\n');
+      return `✂️ **Danh sách thợ cắt tóc:**\n${barberList}\n\n${followUp}`;
+    }
+
+    // ── Option A: Inject salon list if model didn’t display the names ──
+    if (ctx.lastListTool === 'salons' && ctx.salons?.length) {
+      const displayedAny = ctx.salons.some(s =>
+        response.toLowerCase().includes(s.name.toLowerCase().substring(0, 8))
+      );
+      if (!displayedAny) {
+        this.logger.log('[Compose] Injecting salon list — model skipped display');
+        const salonList = ctx.salons
+          .map((s, i) => `${i + 1}. **${s.name}**${s.addr ? ` - ${s.addr}` : ''}`)
+          .join('\n');
+        const followUp = this.extractQuestion(response, 'cơ sở');
+        return `📍 **Danh sách cơ sở Reetro Barber:**\n${salonList}\n\n${followUp}`;
+      }
+    }
+
+    // ── Option A: Inject barber list if model didn’t display the names ──
+    if (ctx.lastListTool === 'barbers' && ctx.barbers?.length) {
+      const displayedAny = ctx.barbers.some(b =>
+        response.toLowerCase().includes(b.name.toLowerCase().substring(0, 5))
+      );
+      if (!displayedAny) {
+        this.logger.log('[Compose] Injecting barber list — model skipped display');
+        const barberList = ctx.barbers
+          .map((b, i) => `${i + 1}. **${b.name}**${b.rating ? ` — ⭐ ${b.rating}/5` : ''}`)
+          .join('\n');
+        const followUp = this.extractQuestion(response, 'thợ');
+        return `✂️ **Danh sách thợ cắt tóc:**\n${barberList}\n\n${followUp}`;
+      }
+    }
+
+    return response;
+  }
+
+  // ═══ Extract follow-up question, stripping hallucinated numbered list lines ═══
+  private extractQuestion(response: string, context: string): string {
+    const FAKE_LIST_LINE_RE = /^\s*\d+\.\s*(Thợ|Barber|Cơ sở|Salon|Reetro|Chi nhánh|Staff).*$/gim;
+    const cleaned = response.replace(FAKE_LIST_LINE_RE, '').replace(/\n{3,}/g, '\n\n').trim();
+    const firstLine = cleaned.split('\n').find(l => l.trim().length > 5) || '';
+    return firstLine.trim() || `Anh/chị muốn chọn ${context} nào ạ? 😊`;
   }
 }

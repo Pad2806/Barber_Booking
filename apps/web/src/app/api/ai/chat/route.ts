@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     return await axios.post(url, {
       message,
       sessionId: session_id,
-    }, { timeout: 25000 });
+    }, { timeout: 38000 }); // 38s — relay timeout (backend max = 40s)
   };
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { 
+      {
         error: 'Failed to communicate with AI Service',
         response: 'Xin lỗi, em đang gặp sự cố. Anh vui lòng thử lại sau nhé! 🙏',
         details: error.response?.data || error.message
