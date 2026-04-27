@@ -87,8 +87,8 @@ export class AIToolsService {
         const session = await (this.prisma.bookingRequest as any).findUnique({ where: { sessionId } });
         let salonId = args.salon_id || session?.salonId;
 
-        // Fix: resolve numeric selection ("2", "3") to actual salon UUID
-        salonId = await this.resolveNumericSalonId(salonId, sessionId);
+        // Resolve: pure number, VN ordinal, or name → actual UUID
+        salonId = await this.resolveSalonId(salonId, sessionId);
 
         let services: any[];
         if (salonId) {
@@ -118,8 +118,8 @@ export class AIToolsService {
         const session = await (this.prisma.bookingRequest as any).findUnique({ where: { sessionId } });
         let salonId = args.salon_id || session?.salonId;
 
-        // Fix: resolve numeric selection ("2", "3") to actual salon UUID
-        salonId = await this.resolveNumericSalonId(salonId, sessionId);
+        // Resolve: pure number, VN ordinal, or name → actual UUID
+        salonId = await this.resolveSalonId(salonId, sessionId);
 
         const BARBER_POSITIONS = ['BARBER', 'STYLIST', 'SENIOR_STYLIST', 'MASTER_STYLIST'];
 
@@ -164,8 +164,12 @@ export class AIToolsService {
       }
 
       if (name === 'update_booking_state') {
+        // Resolve salon_id if it’s not a UUID (numeric or name input)
+        if (args.salon_id) {
+          args.salon_id = await this.resolveSalonId(args.salon_id, sessionId);
+        }
         await this.update_booking_state(sessionId, args);
-        return { content: 'Đã cập nhật trạng thái đặt lịch thành công.' };
+        return { content: 'Cập nhật trạng thái thành công.' };
       }
 
       if (name === 'cancel_booking') {
@@ -188,34 +192,56 @@ export class AIToolsService {
     }
   }
 
-  // ═══ Resolve numeric salon selection ("2") to actual UUID from DB ═══
-  // Fixes: model passes salon_id="2" when user typed a number instead of UUID
-  private async resolveNumericSalonId(
+  // ═══ Resolve salon selection to UUID ═══
+  // Handles: pure number "2", VN ordinal "thứ 2" / "cơ sở thứ 2", name "Reetro Quận 1", UUID passthrough
+  private async resolveSalonId(
     value: string | null | undefined,
     sessionId: string,
   ): Promise<string | null | undefined> {
     if (!value) return value;
-    const isNumeric = /^\d+$/.test(value.toString().trim());
-    if (!isNumeric) return value; // already a UUID or valid string
+    const str = value.toString().trim();
 
-    const idx = parseInt(value.trim(), 10) - 1;
-    if (idx < 0) return value;
-
-    const salons = await this.prisma.salon.findMany({
-      where: { isActive: true },
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-    });
-
-    if (salons[idx]) {
-      const resolvedId = salons[idx].id;
-      this.logger.log(`[Resolve] Numeric "${value}" → salon UUID: ${resolvedId} (${salons[idx].name})`);
-      await this.update_booking_state(sessionId, { salon_id: resolvedId });
-      return resolvedId;
+    // Case 1: Already a UUID — pass through unchanged
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) {
+      return str;
     }
 
-    this.logger.warn(`[Resolve] Numeric "${value}" out of range (${salons.length} salons total)`);
-    return value;
+    // Case 2: Pure number "2" OR Vietnamese ordinal "thứ 2", "cơ sở thứ 2", "số 2", "cơ sở 2"
+    const numMatch = str.match(/(?:thứ|số|cơ\s*sở|chi\s*nhánh)?\s*(\d+)$/i)
+      || str.match(/^(\d+)$/);
+    if (numMatch) {
+      const idx = parseInt(numMatch[1], 10) - 1;
+      if (idx >= 0) {
+        const salons = await this.prisma.salon.findMany({
+          where: { isActive: true },
+          select: { id: true, name: true },
+          orderBy: { name: 'asc' },
+        });
+        if (salons[idx]) {
+          const resolvedId = salons[idx].id;
+          this.logger.log(`[Resolve] "${str}" → salon UUID: ${resolvedId} (${salons[idx].name})`);
+          await this.update_booking_state(sessionId, { salon_id: resolvedId });
+          return resolvedId;
+        }
+        this.logger.warn(`[Resolve] "${str}" out of range`);
+      }
+    }
+
+    // Case 3: Name-based "Reetro Quận 1", "Quận 1", "Nguỵn Văn Linh"
+    const salonByName = await this.prisma.salon.findFirst({
+      where: {
+        isActive: true,
+        name: { contains: str, mode: 'insensitive' },
+      },
+      select: { id: true, name: true },
+    });
+    if (salonByName) {
+      this.logger.log(`[Resolve] Name "${str}" → UUID: ${salonByName.id} (${salonByName.name})`);
+      await this.update_booking_state(sessionId, { salon_id: salonByName.id });
+      return salonByName.id;
+    }
+
+    return str; // return original if nothing matched
   }
 
   private async handleCreateBooking(args: any, sessionId: string) {
