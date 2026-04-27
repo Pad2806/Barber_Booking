@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { cashierApi } from '@/lib/api';
 import {
@@ -142,6 +142,12 @@ export default function CheckoutPage() {
   const [historyDate, setHistoryDate] = useState(dayjs().format('YYYY-MM-DD'));
   const invoiceRef = useRef<HTMLDivElement>(null);
 
+  // Checkout tab: client-side search by customer name/phone
+  const [checkoutSearch, setCheckoutSearch] = useState('');
+  // History tab: search + payment method filter
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyMethod, setHistoryMethod] = useState('ALL');
+
   // Checkout eligible bookings
   const { data: bookings, isLoading } = useQuery({
     queryKey: ['cashier', 'checkout-eligible'],
@@ -153,9 +159,33 @@ export default function CheckoutPage() {
   // Payment history
   const { data: historyData, isLoading: historyLoading } = useQuery({
     queryKey: ['cashier', 'payment-history', historyDate],
-    queryFn: () => cashierApi.getPaymentHistory(historyDate),
+    queryFn: () => cashierApi.getPaymentHistory(historyDate || dayjs().format('YYYY-MM-DD')),
     enabled: activeTab === 'history',
   });
+
+  // Filtered checkout bookings (client-side)
+  const filteredCheckoutBookings = useMemo(() => {
+    if (!bookings?.length) return [];
+    if (!checkoutSearch) return bookings;
+    const s = checkoutSearch.toLowerCase();
+    return bookings.filter((b: any) =>
+      b.customer?.name?.toLowerCase().includes(s) ||
+      b.customer?.phone?.toLowerCase().includes(s)
+    );
+  }, [bookings, checkoutSearch]);
+
+  // Filtered history (client-side)
+  const filteredHistory = useMemo(() => {
+    if (!historyData?.bookings) return [];
+    return historyData.bookings.filter((b: any) => {
+      const matchSearch = !historySearch ||
+        b.customer?.name?.toLowerCase().includes(historySearch.toLowerCase()) ||
+        b.bookingCode?.toLowerCase().includes(historySearch.toLowerCase());
+      const matchMethod = historyMethod === 'ALL' ||
+        b.payments?.some((p: any) => p.method === historyMethod);
+      return matchSearch && matchMethod;
+    });
+  }, [historyData, historySearch, historyMethod]);
 
   const checkoutMutation = useMutation({
     mutationFn: () => cashierApi.checkout(selectedBooking.id, paymentMethod),
@@ -332,14 +362,27 @@ export default function CheckoutPage() {
           <div className="lg:col-span-2 space-y-4">
             <Card className="border-none shadow-sm bg-white">
               <CardHeader className="border-b border-slate-50 pb-4">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-3">
                   <div>
                     <CardTitle className="text-base font-bold">Booking sẵn sàng thanh toán</CardTitle>
                     <CardDescription>Chọn booking để xử lý thanh toán</CardDescription>
                   </div>
-                  {bookings?.length > 0 && (
-                    <Badge className="bg-primary/10 text-primary border-none">{bookings.length}</Badge>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {bookings?.length > 0 && (
+                      <Badge className="bg-primary/10 text-primary border-none">{bookings.length}</Badge>
+                    )}
+                    <div className="relative">
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <input
+                        placeholder="Tìm khách hàng..."
+                        value={checkoutSearch}
+                        onChange={e => setCheckoutSearch(e.target.value)}
+                        className="h-8 pl-8 pr-3 text-xs border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 w-44"
+                      />
+                    </div>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="p-4 space-y-3">
@@ -347,13 +390,13 @@ export default function CheckoutPage() {
                   <div className="flex items-center justify-center py-12">
                     <Loader2 className="w-8 h-8 text-primary animate-spin" />
                   </div>
-                ) : !bookings?.length ? (
+                ) : !filteredCheckoutBookings?.length ? (
                   <div className="flex flex-col items-center py-12 gap-3">
                     <Receipt className="w-12 h-12 text-slate-200" />
-                    <p className="text-slate-400 font-medium">Không có booking nào sẵn sàng thanh toán</p>
+                    <p className="text-slate-400 font-medium">{checkoutSearch ? 'Không tìm thấy khách hàng phù hợp' : 'Không có booking nào sẵn sàng thanh toán'}</p>
                   </div>
                 ) : (
-                  bookings.map((b: any) => {
+                  filteredCheckoutBookings.map((b: any) => {
                     const badge = getStatusBadge(b);
                     const info = getPaymentInfo(b);
                     const isReady = b.status === 'COMPLETED' && b.paymentStatus === 'DEPOSIT_PAID';
@@ -594,33 +637,70 @@ export default function CheckoutPage() {
       {/* ─── HISTORY TAB ───────────────────────────────────────── */}
       {activeTab === 'history' && (
         <div className="space-y-6">
-          {/* Summary Cards + Date Filter */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <Input
-                type="date"
-                value={historyDate}
-                onChange={(e) => setHistoryDate(e.target.value)}
-                className="w-44 rounded-xl h-10 border-slate-200"
-              />
+          {/* Summary Cards + Date Filter + Search/Method */}
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+              <div className="flex items-center gap-3 flex-wrap">
+                <Input
+                  type="date"
+                  value={historyDate}
+                  onChange={(e) => setHistoryDate(e.target.value || dayjs().format('YYYY-MM-DD'))}
+                  className="w-44 rounded-xl h-10 border-slate-200"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-xl h-10 text-xs font-semibold"
+                  onClick={() => setHistoryDate(dayjs().format('YYYY-MM-DD'))}
+                >
+                  Hôm nay
+                </Button>
+              </div>
               <Button
                 variant="outline"
                 size="sm"
                 className="rounded-xl h-10 text-xs font-semibold"
-                onClick={() => setHistoryDate(dayjs().format('YYYY-MM-DD'))}
+                onClick={handleExportSummary}
+                disabled={!historyData?.bookings?.length}
               >
-                Hôm nay
+                <Download className="w-3.5 h-3.5 mr-1.5" /> Xuất CSV
               </Button>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-xl h-10 text-xs font-semibold"
-              onClick={handleExportSummary}
-              disabled={!historyData?.bookings?.length}
-            >
-              <Download className="w-3.5 h-3.5 mr-1.5" /> Xuất CSV
-            </Button>
+            {/* Search + method filter */}
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  placeholder="Tìm tên khách, mã booking..."
+                  value={historySearch}
+                  onChange={e => setHistorySearch(e.target.value)}
+                  className="h-9 pl-8 pr-3 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 w-56"
+                />
+              </div>
+              <select
+                title="Payment method filter"
+                value={historyMethod}
+                onChange={e => setHistoryMethod(e.target.value)}
+                className="h-9 px-3 text-sm border border-slate-200 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+              >
+                <option value="ALL">Tất cả PTTT</option>
+                <option value="CASH">Tiền mặt</option>
+                <option value="VIETQR">Chuyển khoản / QR</option>
+              </select>
+              {(historySearch || historyMethod !== 'ALL') && (
+                <button
+                  onClick={() => { setHistorySearch(''); setHistoryMethod('ALL'); }}
+                  className="text-xs font-semibold text-amber-700 hover:text-rose-600 flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 hover:bg-rose-50 border border-amber-200 transition-colors"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  Xoá lọc
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Summary Stats */}
@@ -678,7 +758,7 @@ export default function CheckoutPage() {
           <Card className="border-none shadow-sm bg-white">
             <CardHeader className="border-b border-slate-50 pb-4">
               <CardTitle className="text-base font-bold">
-                Lịch sử thanh toán — {dayjs(historyDate).format('DD/MM/YYYY')}
+                Lịch sử thanh toán — {historyDate ? dayjs(historyDate).format('DD/MM/YYYY') : dayjs().format('DD/MM/YYYY')}
               </CardTitle>
               <CardDescription>Danh sách tất cả giao dịch trong ngày để kết toán ca</CardDescription>
             </CardHeader>
@@ -687,14 +767,14 @@ export default function CheckoutPage() {
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-8 h-8 text-primary animate-spin" />
                 </div>
-              ) : !historyData?.bookings?.length ? (
+              ) : !filteredHistory?.length ? (
                 <div className="flex flex-col items-center py-12 gap-3">
                   <History className="w-12 h-12 text-slate-200" />
-                  <p className="text-slate-400 font-medium">Không có giao dịch nào trong ngày này</p>
+                  <p className="text-slate-400 font-medium">{historySearch || historyMethod !== 'ALL' ? 'Không tìm thấy giao dịch phù hợp' : 'Không có giao dịch nào trong ngày này'}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {historyData.bookings.map((b: any) => {
+                  {filteredHistory.map((b: any) => {
                     const total = Number(b.totalAmount);
                     const paidPayments = b.payments || [];
                     const totalPaid = paidPayments.reduce((s: number, p: any) => s + Number(p.amount), 0);
