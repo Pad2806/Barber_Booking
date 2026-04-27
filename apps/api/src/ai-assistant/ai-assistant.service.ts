@@ -202,10 +202,6 @@ const FAQ_PATTERNS: { keywords: string[]; response: string | (() => string) }[] 
     response: '📍 **Địa chỉ Reetro Barber:**\n\nAnh có thể xem danh sách các chi nhánh trên trang **Hệ thống Salon** nhé!\n\nAnh cần đặt lịch tại chi nhánh nào ạ? 😊',
   },
   {
-    keywords: ['giá', 'bao nhiêu', 'phí', 'cost', 'price', 'bảng giá'],
-    response: '💰 **Bảng giá dịch vụ Reetro Barber:**\n\nEm có thể tra cứu giá chính xác cho anh! Anh muốn hỏi về dịch vụ nào ạ?\n\n• Cắt tóc\n• Gội đầu\n• Nhuộm tóc\n• Combo\n\nHoặc anh gõ "xem dịch vụ" để em liệt kê tất cả nhé! ✂️',
-  },
-  {
     keywords: ['hủy lịch', 'hủy đặt', 'cancel', 'bỏ lịch'],
     response: '❌ **Hủy lịch hẹn:**\n\nAnh có thể hủy lịch hẹn tại mục **"Lịch hẹn của tôi"** trên trang web.\n\n⚠️ Lưu ý: Vui lòng hủy trước **2 giờ** so với giờ hẹn để nhường chỗ cho khách khác nhé!\n\nAnh cần em hỗ trợ gì thêm không ạ? 😊',
   },
@@ -215,15 +211,7 @@ const FAQ_PATTERNS: { keywords: string[]; response: string | (() => string) }[] 
   },
   {
     keywords: ['xin chào', 'hello', 'hi', 'hey', 'chào'],
-    response: 'Chào anh! 👋 Em là trợ lý ảo của **Reetro Barber**.\n\nEm có thể giúp anh:\n• 📋 Xem dịch vụ & giá\n• 👨‍🦱 Chọn thợ yêu thích\n• 📅 Đặt lịch nhanh\n• ❓ Giải đáp thắc mắc\n\nAnh cần gì ạ? 😊',
-  },
-  {
-    keywords: ['có dịch vụ gì', 'dịch vụ nào', 'xem dịch vụ', 'menu', 'danh sách dịch vụ'],
-    response: '✂️ **Dịch vụ tại Reetro Barber:**\n\nAnh có thể xem đầy đủ bảng dịch vụ và giá trên trang **Hệ thống Salon** → chọn chi nhánh → tab **Dịch vụ** nhé!\n\nHoặc anh cho em biết muốn cắt kiểu gì, em tra cứu giá luôn ạ! 💈',
-  },
-  {
-    keywords: ['đặt lịch', 'book', 'booking', 'đặt hẹn', 'lịch hẹn'],
-    response: '📅 **Đặt lịch tại Reetro Barber:**\n\nAnh có thể đặt lịch bằng 2 cách:\n\n1️⃣ **Trên trang web:** Nhấn **"Đặt lịch ngay"** → Chọn salon → Chọn dịch vụ → Chọn thợ → Chọn ngày giờ\n\n2️⃣ **Qua em:** Cho em biết:\n• Tên anh\n• Số điện thoại\n• Dịch vụ muốn làm\n• Ngày & giờ\n\nEm sẽ đặt cho anh ngay! 😊',
+    response: 'Chào anh! 👋 Em là trợ lý ảo của **Reetro Barber**.\n\nEm có thể giúp anh:\n• 📋 Xem dịch vụ & giá\n• 👨‍🦱 Chọn thợ yêu thích\n• 📅 Đặt lịch nhanh\n\nAnh cần gì ạ? 😊',
   },
 ];
 
@@ -492,8 +480,9 @@ export class AIAssistantService implements OnModuleInit {
         const compositionCtx: {
           salons: Array<{ name: string; addr: string }> | null;
           barbers: Array<{ name: string; rating: string }> | null;
-          lastListTool: 'salons' | 'barbers' | null;
-        } = { salons: null, barbers: null, lastListTool: null };
+          services: Array<{ name: string; price: string; duration: string }> | null;
+          lastListTool: 'salons' | 'barbers' | 'services' | null;
+        } = { salons: null, barbers: null, services: null, lastListTool: null };
 
         while (true) {
           if (Date.now() > loopDeadline) {
@@ -680,6 +669,9 @@ export class AIAssistantService implements OnModuleInit {
               } else if (functionName === 'get_barbers') {
                 compositionCtx.barbers = this.parseBarberList(toolResult.content);
                 compositionCtx.lastListTool = 'barbers';
+              } else if (functionName === 'get_services') {
+                compositionCtx.services = this.parseServiceList(toolResult.content);
+                compositionCtx.lastListTool = 'services';
               }
 
               localMessages.push({
@@ -740,8 +732,10 @@ export class AIAssistantService implements OnModuleInit {
       .replace(/<function[\s\S]*?<\/function[^>]*>/gi, '')
       .replace(/<function[:\s]\w+\s+"[^"]*"<\/function>/gi, '')
       .replace(/<\/?function[^>]*>/gi, '')
-      // Strip "\/function=name>..." format (optional leading slash — all model variants)
+      // Strip "/function=name>..." format (optional leading slash — all model variants)
       .replace(/^\/?function=[\w]+[^\n]*/gim, '')
+      // Strip <cột>, <column>, and other hallucinated HTML-style tags
+      .replace(/<\/?cột>/gi, '').replace(/<\/?column>/gi, '')
       // Strip CJK characters (Chinese/Japanese/Korean) — model hallucinations
       .replace(/[\u4E00-\u9FFF\u3400-\u4DBF\u3000-\u303F\uFF00-\uFFEF\u2E80-\u2EFF]/g, '')
       // Clean up extra whitespace left by stripped chars
@@ -802,19 +796,33 @@ export class AIAssistantService implements OnModuleInit {
       .filter(b => b.name.length > 0);
   }
 
+  // ═══ Option A: Parse service list from get_services tool output ═══
+  private parseServiceList(content: string): Array<{ name: string; price: string; duration: string }> {
+    return content
+      .split('\n')
+      .filter(l => l.includes('Tên:') && l.includes('Giá:'))
+      .map(line => ({
+        name: line.match(/Tên:\s*([^,]+)/)?.[1]?.trim() || '',
+        price: line.match(/Giá:\s*([^,]+)/)?.[1]?.trim() || '',
+        duration: line.match(/Thời gian:\s*([^,]+)/)?.[1]?.trim() || '',
+      }))
+      .filter(s => s.name.length > 0);
+  }
+
   // ═══ Option A + B: Compose response with service-layer data & hallucination guard ═══
   private composeAndGuard(
     response: string,
     ctx: {
       salons: Array<{ name: string; addr: string }> | null;
       barbers: Array<{ name: string; rating: string }> | null;
-      lastListTool: 'salons' | 'barbers' | null;
+      services: Array<{ name: string; price: string; duration: string }> | null;
+      lastListTool: 'salons' | 'barbers' | 'services' | null;
     },
   ): string {
-    // ── Option B: Hallucination guard — detect fake “Thợ A”, “Thợ B”, “Barber 1” ──
+    // ── Hallucination guard: detect fake "Thợ A", "Thợ B", "Barber 1" ──
     const HALLUCINATION_RE = /\b(Thợ|Barber|Staff)\s+[A-Z\d]\b/gi;
     if (ctx.barbers?.length && HALLUCINATION_RE.test(response)) {
-      this.logger.warn('[Guard] Hallucinated barber names detected — injecting real DB data');
+      this.logger.warn('[Guard] Hallucinated barber names — injecting real DB data');
       const cleanedLines = response.split('\n').filter(l => !HALLUCINATION_RE.test(l));
       const followUp = cleanedLines.join('\n').trim() || 'Anh/chị muốn chọn thợ nào ạ? 😊';
       const barberList = ctx.barbers
@@ -823,13 +831,26 @@ export class AIAssistantService implements OnModuleInit {
       return `✂️ **Danh sách thợ cắt tóc:**\n${barberList}\n\n${followUp}`;
     }
 
-    // ── Option A: Inject salon list if model didn’t display the names ──
+    // ── Hallucination guard: detect fake service prices ("150.000 đồng", "220.000 đồng") when NOT from DB ──
+    const PRICE_HALLUCINATION_RE = /\d{2,3}\.000\s*(đồng|đ|VND)/gi;
+    if (ctx.services?.length && PRICE_HALLUCINATION_RE.test(response)) {
+      // Check if prices in response match actual DB prices
+      const dbPrices = ctx.services.map(s => s.price);
+      const responsePrices = response.match(/\d{2,3}\.?\d{0,3}/g) || [];
+      const hasRealPrice = responsePrices.some(p => dbPrices.some(db => db.includes(p)));
+      if (!hasRealPrice) {
+        this.logger.warn('[Guard] Hallucinated prices detected — injecting real DB data');
+        return this.formatServiceList(ctx.services);
+      }
+    }
+
+    // ── Inject salon list if model didn't display the names ──
     if (ctx.lastListTool === 'salons' && ctx.salons?.length) {
       const displayedAny = ctx.salons.some(s =>
         response.toLowerCase().includes(s.name.toLowerCase().substring(0, 8))
       );
       if (!displayedAny) {
-        this.logger.log('[Compose] Injecting salon list — model skipped display');
+        this.logger.log('[Compose] Injecting salon list');
         const salonList = ctx.salons
           .map((s, i) => `${i + 1}. **${s.name}**${s.addr ? ` - ${s.addr}` : ''}`)
           .join('\n');
@@ -838,13 +859,13 @@ export class AIAssistantService implements OnModuleInit {
       }
     }
 
-    // ── Option A: Inject barber list if model didn’t display the names ──
+    // ── Inject barber list if model didn't display the names ──
     if (ctx.lastListTool === 'barbers' && ctx.barbers?.length) {
       const displayedAny = ctx.barbers.some(b =>
         response.toLowerCase().includes(b.name.toLowerCase().substring(0, 5))
       );
       if (!displayedAny) {
-        this.logger.log('[Compose] Injecting barber list — model skipped display');
+        this.logger.log('[Compose] Injecting barber list');
         const barberList = ctx.barbers
           .map((b, i) => `${i + 1}. **${b.name}**${b.rating ? ` — ⭐ ${b.rating}/5` : ''}`)
           .join('\n');
@@ -853,12 +874,31 @@ export class AIAssistantService implements OnModuleInit {
       }
     }
 
+    // ── Inject service list if model didn't display real service names ──
+    if (ctx.lastListTool === 'services' && ctx.services?.length) {
+      const displayedAny = ctx.services.some(s =>
+        response.toLowerCase().includes(s.name.toLowerCase().substring(0, 5))
+      );
+      if (!displayedAny) {
+        this.logger.log('[Compose] Injecting service list');
+        return this.formatServiceList(ctx.services);
+      }
+    }
+
     return response;
   }
 
-  // ═══ Extract follow-up question, stripping hallucinated numbered list lines ═══
+  // ═══ Format service list for display ═══
+  private formatServiceList(services: Array<{ name: string; price: string; duration: string }>): string {
+    const list = services
+      .map((s, i) => `${i + 1}. **${s.name}** — ${s.price}đ${s.duration ? ` (${s.duration} phút)` : ''}`)
+      .join('\n');
+    return `💈 **Dịch vụ tại Reetro Barber:**\n${list}\n\nAnh/chị muốn chọn dịch vụ nào ạ? 😊`;
+  }
+
+  // ═══ Extract follow-up question, stripping hallucinated list lines ═══
   private extractQuestion(response: string, context: string): string {
-    const FAKE_LIST_LINE_RE = /^\s*\d+\.\s*(Thợ|Barber|Cơ sở|Salon|Reetro|Chi nhánh|Staff).*$/gim;
+    const FAKE_LIST_LINE_RE = /^\s*\d+\.\s*(Thợ|Barber|Cơ sở|Salon|Reetro|Chi nhánh|Staff|Cắt|Nhuộm|Gội|Combo).*$/gim;
     const cleaned = response.replace(FAKE_LIST_LINE_RE, '').replace(/\n{3,}/g, '\n\n').trim();
     const firstLine = cleaned.split('\n').find(l => l.trim().length > 5) || '';
     return firstLine.trim() || `Anh/chị muốn chọn ${context} nào ạ? 😊`;
