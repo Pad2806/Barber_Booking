@@ -570,7 +570,7 @@ export class AIAssistantService implements OnModuleInit {
             const contentText = responseMessage.content;
             const textToolCalls: any[] = [];
 
-            const reA = /<function[:\s](\w+)\s+"((?:[^"\\]|\\.)*)"\s*<\/function>/gi;
+            const reA = /<function[:\s](\w+)\s+"((?:[^"\\]|\\.)*)"<\/function>/gi;
             const reB = /<function[:\s](\w+)>([\s\S]*?)<\/function(?::\w+)?>/gi;
             const reC = /<function\s+name="(\w+)">([\s\S]*?)<\/function>/gi;
 
@@ -590,6 +590,23 @@ export class AIAssistantService implements OnModuleInit {
                 });
               }
               if (textToolCalls.length > 0) break;
+            }
+
+            // Format D: "/function=name>" or "function=name>{...}" (mixtral/llama hallucination)
+            // Intercept this format: ignore the FAKE JSON payload, call the REAL tool with {} args
+            // so actual DB data is fetched and compositionCtx injects the real list
+            if (textToolCalls.length === 0) {
+              const reD = /^\/?function=(\w+)>[^\n]*/gm;
+              while ((match = reD.exec(contentText)) !== null) {
+                const name = this.sanitizeToolName(match[1]);
+                if (!VALID_TOOL_NAMES.has(name)) continue;
+                this.logger.warn(`[Format-D] Intercepted hallucinated tool call: ${name} — executing real tool`);
+                textToolCalls.push({
+                  name,
+                  args: '{}', // discard fake payload; real tool fetches fresh DB data
+                  id: `call_${Date.now()}_${Math.random()}`,
+                });
+              }
             }
 
             extractedToolCalls.push(...textToolCalls);
@@ -723,8 +740,8 @@ export class AIAssistantService implements OnModuleInit {
       .replace(/<function[\s\S]*?<\/function[^>]*>/gi, '')
       .replace(/<function[:\s]\w+\s+"[^"]*"<\/function>/gi, '')
       .replace(/<\/?function[^>]*>/gi, '')
-      // Strip "function=name..." format without opening ‘<’ (llama-3.1-8b hallucination)
-      .replace(/^function=[\w]+[^\n]*/gim, '')
+      // Strip "\/function=name>..." format (optional leading slash — all model variants)
+      .replace(/^\/?function=[\w]+[^\n]*/gim, '')
       // Strip CJK characters (Chinese/Japanese/Korean) — model hallucinations
       .replace(/[\u4E00-\u9FFF\u3400-\u4DBF\u3000-\u303F\uFF00-\uFFEF\u2E80-\u2EFF]/g, '')
       // Clean up extra whitespace left by stripped chars
