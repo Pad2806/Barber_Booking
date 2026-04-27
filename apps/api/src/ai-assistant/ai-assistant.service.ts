@@ -121,14 +121,14 @@ const GROQ_TOOLS = [
 const VALID_TOOL_NAMES = new Set(GROQ_TOOLS.map(t => t.function.name));
 
 // ═══ Groq model fallback chain ═══
-// NOTE: llama3-groq-8b-8192-tool-use-preview was DECOMMISSIONED by Groq (April 2026)
-// PRIMARY:   llama-3.3-70b-versatile  — most capable, stable tool-calling (confirmed 2026)
-// FALLBACK1: llama-3.1-8b-instant     — faster, backup for quota exhaustion
-// FALLBACK2: mixtral-8x7b-32768       — alternative with tool support
+// NOTE: Check https://console.groq.com/docs/deprecations for latest available models
+// PRIMARY:   llama-3.3-70b-versatile  — most capable, best tool-calling
+// FALLBACK1: llama-3.1-8b-instant     — fast & cheap
+// FALLBACK2: gemma2-9b-it             — Google model, good quality backup
 const GROQ_MODELS = [
   'llama-3.3-70b-versatile',
   'llama-3.1-8b-instant',
-  'mixtral-8x7b-32768',
+  'gemma2-9b-it',
 ];
 
 // ═══ Vietnamese day of week map ═══
@@ -420,7 +420,7 @@ export class AIAssistantService implements OnModuleInit {
 
     let conversation = await this.prisma.chatConversation.findUnique({
       where: { sessionId },
-      include: { messages: { orderBy: { createdAt: 'desc' }, take: 6 } }, // P2: reduced from 10 to 6
+      include: { messages: { orderBy: { createdAt: 'desc' }, take: 4 } }, // Reduced to 4 to save tokens
     });
     if (conversation && conversation.messages) {
       conversation.messages.reverse();
@@ -508,7 +508,7 @@ export class AIAssistantService implements OnModuleInit {
               this.groq.chat.completions.create({
                 model: modelName,
                 messages: localMessages,
-                max_tokens: 380,
+                max_tokens: 300,
               }),
               new Promise<never>((_, reject) =>
                 setTimeout(() => reject(new Error('TIMEOUT')), API_TIMEOUT_MS),

@@ -61,6 +61,16 @@ export function AIChatWidget() {
     }
   }, [messages]);
 
+  const MAX_AUTO_RETRIES = 2;
+
+  const callAPI = async (text: string): Promise<string> => {
+    const response = await axios.post('/api/ai/chat', {
+      message: text,
+      session_id: sessionId,
+    }, { timeout: 30000 });
+    return response.data.response;
+  };
+
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
 
@@ -76,46 +86,53 @@ export function AIChatWidget() {
     setIsLoading(true);
     setLastFailedMessage(null);
 
-    try {
-      const response = await axios.post('/api/ai/chat', {
-        message: text,
-        session_id: sessionId,
-      }, { timeout: 35000 }); // 35s — matches backend LOOP_DEADLINE (40s)
-
-      const assistantMsg: Message = {
-        id: uuidv4(),
-        role: 'assistant',
-        content: response.data.response,
-        createdAt: new Date(),
-      };
-      setMessages(prev => [...prev, assistantMsg]);
-      setRetryCount(0);
-    } catch (error: any) {
-      const status = error?.response?.status;
-      let errorText: string;
-
-      if (status === 429) {
-        errorText = '⏳ Hệ thống đang bận, vui lòng đợi 30 giây rồi thử lại nhé!';
-        setLastFailedMessage(text);
-      } else if (error.code === 'ECONNABORTED') {
-        errorText = '⏱️ Phản hồi bị timeout. Anh thử lại nhé!';
-        setLastFailedMessage(text);
-      } else {
-        errorText = 'Xin lỗi, em đang gặp sự cố kết nối. Anh vui lòng thử lại sau nhé! 🙏';
-        setLastFailedMessage(text);
+    let lastErr: any = null;
+    for (let attempt = 0; attempt <= MAX_AUTO_RETRIES; attempt++) {
+      try {
+        if (attempt > 0) {
+          // Exponential backoff: 2s, 4s
+          await new Promise(r => setTimeout(r, attempt * 2000));
+        }
+        const aiResponse = await callAPI(text);
+        const assistantMsg: Message = {
+          id: uuidv4(),
+          role: 'assistant',
+          content: aiResponse,
+          createdAt: new Date(),
+        };
+        setMessages(prev => [...prev, assistantMsg]);
+        setRetryCount(0);
+        setIsLoading(false);
+        return; // success — exit
+      } catch (error: any) {
+        lastErr = error;
+        const status = error?.response?.status;
+        // Don't retry on 429 — wait is too long
+        if (status === 429) break;
       }
-
-      const errorMsg: Message = {
-        id: uuidv4(),
-        role: 'assistant',
-        content: errorText,
-        createdAt: new Date(),
-      };
-      setMessages(prev => [...prev, errorMsg]);
-      setRetryCount(prev => prev + 1);
-    } finally {
-      setIsLoading(false);
     }
+
+    // All retries failed — show error to user
+    const status = lastErr?.response?.status;
+    let errorText: string;
+    if (status === 429) {
+      errorText = '⏳ Hệ thống đang bận, vui lòng đợi 30 giây rồi thử lại nhé!';
+    } else if (lastErr?.code === 'ECONNABORTED') {
+      errorText = '⏱️ Phản hồi hơi lâu, anh thử lại nhé!';
+    } else {
+      errorText = 'Xin lỗi, em gặp sự cố. Anh thử lại sau nhé! 🙏';
+    }
+    setLastFailedMessage(text);
+
+    const errorMsg: Message = {
+      id: uuidv4(),
+      role: 'assistant',
+      content: errorText,
+      createdAt: new Date(),
+    };
+    setMessages(prev => [...prev, errorMsg]);
+    setRetryCount(prev => prev + 1);
+    setIsLoading(false);
   };
 
   const handleSend = () => sendMessage(input);
