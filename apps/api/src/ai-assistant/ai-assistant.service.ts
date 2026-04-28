@@ -348,13 +348,33 @@ export class AIAssistantService implements OnModuleInit {
     }
 
     // Confirmation
-    if (/^(ok|được|đúng|rồi|yes|có|xác nhận|oke)/i.test(lower)) {
+    if (/^(ok|được|đúng|rồi|yes|có|xác nhận|oke)$/i.test(lower)) {
       return { intent: 'confirm', confirmed: true };
     }
 
-    // Rejection/change
-    if (/^(không|sai|chưa|đổi|thay)/i.test(lower)) {
+    // Pure rejection (no new selection attached)
+    if (/^(không|sai|chưa)$/i.test(lower)) {
       return { intent: 'change', confirmed: false };
+    }
+
+    // Change intent WITH entity extraction ("đổi thành quận 1", "chuyển qua q3")
+    const changeRe = /^(đổi|thay|chuyển|sang|đặt\s*ở|đặt\s*tại)\s*(thành|qua|sang|ở|tại)?\s*/i;
+    if (changeRe.test(lower)) {
+      result.intent = 'change';
+      const remainder = msg.replace(changeRe, '').trim();
+      // Try to extract salon from remainder
+      const salonInChange = remainder.match(/(quận\s*\d+)/i) || remainder.match(/(q\.?\d+)/i);
+      if (salonInChange) {
+        result.salon = salonInChange[1].trim();
+      } else if (remainder.length >= 3 && !/(thợ|barber|ngày|giờ|dịch vụ)/i.test(remainder)) {
+        // Assume it's a salon name if not a barber/date keyword
+        result.salon = remainder;
+      }
+      // Extract barber change
+      if (/(thợ\s*khác|barber\s*khác|đổi\s*thợ)/i.test(msg)) {
+        result.barber = 'any';
+      }
+      return result;
     }
 
     // Phone
@@ -430,24 +450,41 @@ export class AIAssistantService implements OnModuleInit {
   ): Promise<{ acknowledgments: string[] }> {
     const acks: string[] = [];
 
-    // Handle change intent — reset dependent fields
+    // ── Handle change intent — cascading reset ──
     if (intent.intent === 'change') {
-      if (intent.confirmed === false && this.dataService.computeStep(state) === 'CONFIRM_BOOKING') {
-        // User says "no" at confirmation — ask what to change
-        return { acknowledgments: ['Anh/chị muốn thay đổi thông tin nào ạ?'] };
+      if (intent.confirmed === false && !intent.salon && !intent.service && !intent.barber && !intent.date && !intent.time) {
+        // Pure rejection ("không", "sai") without new entity → ask what to change
+        if (this.dataService.computeStep(state) === 'CONFIRM_BOOKING') {
+          return { acknowledgments: ['Anh/chị muốn thay đổi thông tin nào ạ?'] };
+        }
       }
-      // If user specifies what to change, reset from that field down
-      if (intent.salon) { state.salonId = null; state.serviceId = null; state.barberId = null; state.date = null; state.time = null; }
-      else if (intent.service) { state.serviceId = null; state.barberId = null; }
-      else if (intent.barber) { state.barberId = null; state.date = null; state.time = null; }
-      else if (intent.date || intent.time) { state.date = null; state.time = null; }
+      // Cascading reset: clear from changed field downward
+      if (intent.salon) {
+        state.salonId = null; state.serviceId = null; state.barberId = null; state.date = null; state.time = null;
+      } else if (intent.service) {
+        state.serviceId = null; state.barberId = null; state.date = null; state.time = null;
+      } else if (intent.barber) {
+        state.barberId = null; state.date = null; state.time = null;
+      } else if (intent.date) {
+        state.date = null; state.time = null;
+      } else if (intent.time) {
+        state.time = null;
+      }
     }
 
-    // Apply salon
-    if (intent.salon && !state.salonId) {
+    // ── Apply salon (handles both new selection AND re-selection/change) ──
+    if (intent.salon) {
       const salons = await this.dataService.getSalons();
       const salon = await this.dataService.resolveSalon(intent.salon, salons);
       if (salon) {
+        // If salon is CHANGING (different from current), cascade reset downstream
+        if (state.salonId && state.salonId !== salon.id) {
+          this.logger.log(`[State] Salon changed: ${state.salonId} → ${salon.id} — resetting downstream`);
+          state.serviceId = null;
+          state.barberId = null;
+          state.date = null;
+          state.time = null;
+        }
         state.salonId = salon.id;
         acks.push(`✅ Cơ sở: **${salon.name}**`);
       } else if (salons.length > 1) {

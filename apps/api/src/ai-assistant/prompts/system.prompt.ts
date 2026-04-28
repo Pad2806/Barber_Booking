@@ -30,8 +30,17 @@ PARSE RULES:
 - Số "1","2","3" → lựa chọn STT (salon/service/barber tùy bước)
 - "ai cũng được"/"thợ nào cũng được"/"chọn giúp" → barber:"any"
 - "được"/"ok"/"đúng rồi"/"xác nhận" → confirmed:true
-- "không"/"sai"/"đổi"/"thay" → confirmed:false
+- "không"/"sai" (đơn lẻ, không kèm lựa chọn mới) → confirmed:false
 - SĐT: 10 số bắt đầu 0
+
+🔴 CHANGE RULE (BẮT BUỘC):
+- "đổi thành quận 1" → intent:"change", salon:"quận 1"
+- "chuyển qua quận 3" → intent:"change", salon:"quận 3"
+- "đổi sang cơ sở Nguyễn Văn Linh" → intent:"change", salon:"Nguyễn Văn Linh"
+- "đặt ở quận 1" → intent:"change", salon:"quận 1"
+- "đổi thợ khác" → intent:"change", barber:"any"
+- "đổi ngày mai" → intent:"change", date tương ứng
+- Khi intent="change" + có salon/service/barber → PHẢI đặt cả intent VÀ entity.
 - Tên: bỏ "anh"/"chị" → lấy tên ("Anh Hoàng" → "Hoàng")
 - cat toc=cắt tóc, nhuom=nhuộm, uon=uốn, hot toc=hớt tóc, goi=gội
 
