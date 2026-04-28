@@ -176,6 +176,21 @@ export class AIAssistantService implements OnModuleInit {
   }
 
   // ═══════════════════════════════════════════
+  // AUTH-REQUIRED STEPS (need login to proceed)
+  // ═══════════════════════════════════════════
+  private static readonly AUTH_REQUIRED_STEPS: Set<BookingStep> = new Set([
+    'SELECT_BARBER', 'SELECT_DATE_TIME', 'COLLECT_INFO', 'CONFIRM_BOOKING',
+  ]);
+
+  private static readonly AUTH_REQUIRED_RESPONSE =
+    '🔒 Anh/chị vui lòng **đăng nhập** để tiếp tục chọn thợ và đặt lịch nhé! 😊\n\n' +
+    'Sau khi đăng nhập, anh/chị có thể:\n' +
+    '• 👨‍🦱 Chọn thợ yêu thích\n' +
+    '• 📅 Xem lịch trống\n' +
+    '• ✅ Đặt lịch nhanh\n\n' +
+    '👉 Nhấn vào nút **Đăng nhập** ở góc trên để bắt đầu ạ!';
+
+  // ═══════════════════════════════════════════
   // DETERMINISTIC BOOKING FLOW ORCHESTRATOR
   // No LLM tool calling. Backend controls everything.
   // ═══════════════════════════════════════════
@@ -185,7 +200,13 @@ export class AIAssistantService implements OnModuleInit {
     // 1. Load state
     const state = await this.dataService.loadState(sessionId, userId);
     const stepBefore = this.dataService.computeStep(state);
-    this.logger.log(`[Flow] step=${stepBefore} state=${this.dataService.getStateDescription(state)}`);
+    this.logger.log(`[Flow] step=${stepBefore} userId=${userId || 'GUEST'} state=${this.dataService.getStateDescription(state)}`);
+
+    // ══ AUTH GUARD: Block protected steps for unauthenticated users ══
+    if (!userId && AIAssistantService.AUTH_REQUIRED_STEPS.has(stepBefore)) {
+      this.logger.warn(`[Auth] Blocked guest at step=${stepBefore}`);
+      return { response: AIAssistantService.AUTH_REQUIRED_RESPONSE, bookingCreated: false };
+    }
 
     // 2. Load conversation history (last 2 messages for context)
     const history = await this.getRecentHistory(sessionId);
@@ -201,7 +222,20 @@ export class AIAssistantService implements OnModuleInit {
     const stepAfter = this.dataService.computeStep(state);
     this.logger.log(`[Flow] step ${stepBefore} → ${stepAfter}`);
 
-    const response = await this.generateStepResponse(state, stepAfter, intent, applyResult.acknowledgments);
+    // ══ AUTH GUARD: Check again after entity application ══
+    if (!userId && AIAssistantService.AUTH_REQUIRED_STEPS.has(stepAfter)) {
+      this.logger.warn(`[Auth] Blocking guest after entity application, step would be=${stepAfter}`);
+      // Persist partial state (salon + service only) so progress isn't lost after login
+      await this.dataService.saveState(sessionId, state);
+      const parts: string[] = [];
+      if (applyResult.acknowledgments.length > 0) {
+        parts.push(applyResult.acknowledgments.join('\n'));
+      }
+      parts.push(AIAssistantService.AUTH_REQUIRED_RESPONSE);
+      return { response: parts.join('\n\n'), bookingCreated: false };
+    }
+
+    const response = await this.generateStepResponse(state, stepAfter, intent, applyResult.acknowledgments, userId);
     const bookingCreated = state.status === 'COMPLETED';
 
     // 6. Persist state
@@ -463,6 +497,7 @@ export class AIAssistantService implements OnModuleInit {
     step: BookingStep,
     intent: ExtractedIntent,
     acks: string[],
+    userId?: string,
   ): Promise<string> {
     const parts: string[] = [];
 
@@ -483,7 +518,7 @@ export class AIAssistantService implements OnModuleInit {
           state.salonId = salons[0].id;
           parts.push(`📍 Đã tự động chọn cơ sở **${salons[0].name}** (${salons[0].address}).`);
           // Cascade to next step
-          return this.generateStepResponse(state, this.dataService.computeStep(state), intent, parts);
+          return this.generateStepResponse(state, this.dataService.computeStep(state), intent, parts, userId);
         }
         parts.push(this.formatSalonList(salons));
         parts.push('Anh/chị muốn đặt lịch tại cơ sở nào ạ? 😊');
@@ -503,7 +538,7 @@ export class AIAssistantService implements OnModuleInit {
           if (svc) {
             state.serviceId = svc.id;
             parts.push(`✅ Dịch vụ: **${svc.name}** (${svc.price.toLocaleString()}đ)`);
-            return this.generateStepResponse(state, this.dataService.computeStep(state), intent, parts);
+            return this.generateStepResponse(state, this.dataService.computeStep(state), intent, parts, userId);
           }
         }
         parts.push(this.formatServiceList(services));
@@ -525,7 +560,7 @@ export class AIAssistantService implements OnModuleInit {
           if (barber) {
             state.barberId = barber.id;
             parts.push(`✅ Thợ: **${barber.name}** (⭐ ${barber.rating}/5)`);
-            return this.generateStepResponse(state, this.dataService.computeStep(state), intent, parts);
+            return this.generateStepResponse(state, this.dataService.computeStep(state), intent, parts, userId);
           }
         }
         parts.push(this.formatBarberList(barbers));
@@ -543,7 +578,7 @@ export class AIAssistantService implements OnModuleInit {
               if (slots.includes(intent.time)) {
                 state.time = intent.time;
                 parts.push(`✅ Giờ: **${intent.time}**`);
-                return this.generateStepResponse(state, this.dataService.computeStep(state), intent, parts);
+                return this.generateStepResponse(state, this.dataService.computeStep(state), intent, parts, userId);
               } else {
                 parts.push(`⚠️ Khung giờ **${intent.time}** đã hết.`);
               }
@@ -588,7 +623,7 @@ export class AIAssistantService implements OnModuleInit {
       case 'CONFIRM_BOOKING': {
         // If user confirmed → create booking
         if (intent.intent === 'confirm' && intent.confirmed === true) {
-          const result = await this.dataService.createBooking(state);
+          const result = await this.dataService.createBooking(state, userId);
           if (result.success) {
             state.status = 'COMPLETED';
             return result.message;

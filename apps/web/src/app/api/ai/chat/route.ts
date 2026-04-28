@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { auth } from '@/lib/auth';
 import axios from 'axios';
 
 // Simple per-IP rate limiter (max 8 requests per minute)
@@ -25,6 +26,10 @@ export async function POST(req: Request) {
     );
   }
 
+  // ══ Extract authenticated user from session ══
+  const session = await auth();
+  const userId = (session?.user as any)?.id || undefined;
+
   const body = await req.json();
   const { message, session_id } = body;
 
@@ -32,6 +37,7 @@ export async function POST(req: Request) {
     return await axios.post(url, {
       message,
       sessionId: session_id,
+      userId, // Pass authenticated user ID to backend
     }, { timeout: 38000 }); // 38s — relay timeout (backend max = 40s)
   };
 

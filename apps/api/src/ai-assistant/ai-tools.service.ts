@@ -272,7 +272,13 @@ export class AIToolsService {
   }
 
   // ═══ Create Booking ═══
-  async createBooking(state: BookingState): Promise<{ success: boolean; message: string; bookingCode?: string }> {
+  async createBooking(state: BookingState, userId?: string): Promise<{ success: boolean; message: string; bookingCode?: string }> {
+    // ══ AUTH GUARD: Reject guest bookings ══
+    if (!userId) {
+      this.logger.warn('[CreateBooking] Blocked — no userId');
+      return { success: false, message: 'Vui lòng đăng nhập để đặt lịch.' };
+    }
+
     // Validate all fields
     if (!state.salonId || !state.serviceId || !state.barberId || !state.date || !state.time || !state.customerName || !state.phone) {
       return { success: false, message: 'Thiếu thông tin đặt lịch.' };
@@ -324,6 +330,7 @@ export class AIToolsService {
     const booking = await (this.prisma.booking as any).create({
       data: {
         bookingCode,
+        customerId: userId,
         customerName: state.customerName,
         customerPhone: state.phone,
         salonId: barber.salonId,

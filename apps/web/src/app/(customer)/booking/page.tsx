@@ -7,7 +7,7 @@ import { useSession } from 'next-auth/react';
 import {
   ChevronLeft, Check, Scissors, Star, CalendarDays, Sparkles, X,
   MessageSquare, Eye, MapPin, Calendar, User, AlertCircle, RefreshCw,
-  ChevronRight, Clock,
+  ChevronRight, Clock, LogIn,
 } from 'lucide-react';
 import { staffApi, serviceApi, bookingApi, Staff } from '@/lib/api';
 import { useBookingStore } from '@/lib/store';
@@ -24,7 +24,7 @@ dayjs.extend(timezone);
 const VIETNAM_TZ = 'Asia/Ho_Chi_Minh';
 const DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'];
 const FULL_DAYS = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
-const MONTHS = ['Tháng 1','Tháng 2','Tháng 3','Tháng 4','Tháng 5','Tháng 6','Tháng 7','Tháng 8','Tháng 9','Tháng 10','Tháng 11','Tháng 12'];
+const MONTHS = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
 
 export default function BookingPage() {
   const router = useRouter();
@@ -155,7 +155,7 @@ export default function BookingPage() {
     if (selectedDate && timeRef.current) {
       scrollToSection(timeRef, 400);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate]);
 
   // ── Time sections (morning / afternoon / evening) ────────────
@@ -269,210 +269,243 @@ export default function BookingPage() {
         </div>
 
         {/* ─── Section 1: Choose Barber ─── */}
-        <div>
-          <h2 className="text-base font-bold text-[#2C1E12] mb-1">Chọn thợ cắt</h2>
-          <p className="text-sm text-[#8B7355] mb-3">Bạn có thể để hệ thống tự chọn hoặc chọn thợ yêu thích</p>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-6">
-              <div className="w-7 h-7 border-[3px] border-[#E8E0D4] border-t-[#C8A97E] rounded-full animate-spin" />
+        {status !== 'authenticated' ? (
+          /* ═══ AUTH GATE: Login required to continue ═══ */
+          <div className="bg-white rounded-2xl border-2 border-dashed border-[#E8E0D4] p-6 text-center space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-[#C8A97E]/10 flex items-center justify-center mx-auto">
+              <LogIn className="w-7 h-7 text-[#C8A97E]" />
             </div>
-          ) : (
-            <div className="space-y-2">
-              {/* Auto-assign */}
-              <div
-                onClick={() => {
-                  const today = dayjs.tz(undefined, VIETNAM_TZ).format('YYYY-MM-DD');
-                  setStaff(null);
-                  setDate(today);
-                  scrollToSection(timeRef, 350);
-                }}
-                className={cn(
-                  'relative flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer',
-                  !selectedStaff ? 'border-[#C8A97E] bg-[#C8A97E]/5' : 'border-transparent bg-white hover:border-[#E8E0D4]'
-                )}
+            <div>
+              <h3 className="text-base font-bold text-[#2C1E12] mb-1">Đăng nhập để tiếp tục</h3>
+              <p className="text-sm text-[#8B7355] max-w-xs mx-auto">
+                Bạn cần đăng nhập để chọn thợ cắt, xem lịch trống và đặt lịch hẹn
+              </p>
+            </div>
+            <button
+              onClick={() => router.push(`/login?callbackUrl=${encodeURIComponent('/booking')}`)}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#C8A97E] text-white rounded-xl font-bold text-sm hover:bg-[#B8975E] transition-all active:scale-[0.98] shadow-lg shadow-[#C8A97E]/20 cursor-pointer"
+            >
+              <LogIn className="w-4 h-4" />
+              Đăng nhập ngay
+            </button>
+            <p className="text-[11px] text-[#8B7355]">
+              Chưa có tài khoản?{' '}
+              <button
+                onClick={() => router.push(`/register?callbackUrl=${encodeURIComponent('/booking')}`)}
+                className="text-[#C8A97E] font-semibold hover:underline cursor-pointer"
               >
-                <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all', !selectedStaff ? 'bg-[#C8A97E] text-white' : 'bg-[#F0EBE3] text-[#C8A97E]')}>
-                  <Sparkles className="w-5 h-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm text-[#2C1E12]">Tự động</h4>
-                  <p className="text-[11px] text-[#8B7355]">Hệ thống chọn thợ phù hợp nhất</p>
-                </div>
-                {!selectedStaff && (
-                  <div className="w-5 h-5 bg-[#C8A97E] rounded-full flex items-center justify-center shrink-0">
-                    <Check className="w-3 h-3 text-white stroke-[3]" />
-                  </div>
-                )}
-              </div>
+                Đăng ký miễn phí
+              </button>
+            </p>
+          </div>
+        ) : (
+          <>
+            <div>
+              <h2 className="text-base font-bold text-[#2C1E12] mb-1">Chọn thợ cắt</h2>
+              <p className="text-sm text-[#8B7355] mb-3">Bạn có thể để hệ thống tự chọn hoặc chọn thợ yêu thích</p>
 
-              {/* Staff list */}
-              {staffList.map(member => {
-                const selected = selectedStaff?.id === member.id;
-                return (
+              {loading ? (
+                <div className="flex items-center justify-center py-6">
+                  <div className="w-7 h-7 border-[3px] border-[#E8E0D4] border-t-[#C8A97E] rounded-full animate-spin" />
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {/* Auto-assign */}
                   <div
-                    key={member.id}
                     onClick={() => {
                       const today = dayjs.tz(undefined, VIETNAM_TZ).format('YYYY-MM-DD');
-                      setStaff(member);
+                      setStaff(null);
                       setDate(today);
                       scrollToSection(timeRef, 350);
                     }}
                     className={cn(
                       'relative flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer',
-                      selected ? 'border-[#C8A97E] bg-[#C8A97E]/5' : 'border-transparent bg-white hover:border-[#E8E0D4]'
+                      !selectedStaff ? 'border-[#C8A97E] bg-[#C8A97E]/5' : 'border-transparent bg-white hover:border-[#E8E0D4]'
                     )}
                   >
-                    <Avatar src={member.user.avatar} name={member.user.name} size="md" variant="circle" className={cn('shrink-0', selected && 'ring-2 ring-[#C8A97E] ring-offset-1')} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-sm text-[#2C1E12] truncate">{member.user.name}</h4>
-                        <div className="flex items-center gap-0.5 shrink-0">
-                          <Star className="w-3 h-3 text-[#C8A97E] fill-[#C8A97E]" />
-                          <span className="text-xs font-bold text-[#2C1E12]">{member.rating.toFixed(1)}</span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-[11px] text-[#8B7355] truncate">{STAFF_POSITIONS[member.position]}</p>
-                        <button
-                          onClick={e => { e.stopPropagation(); setProfileStaffId(member.id); }}
-                          className="text-[10px] font-semibold text-[#C8A97E] hover:text-[#B8975E] transition-colors shrink-0 flex items-center gap-0.5"
-                        >
-                          <Eye className="w-3 h-3" /> Hồ sơ
-                        </button>
-                      </div>
+                    <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-all', !selectedStaff ? 'bg-[#C8A97E] text-white' : 'bg-[#F0EBE3] text-[#C8A97E]')}>
+                      <Sparkles className="w-5 h-5" />
                     </div>
-                    {selected && (
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-sm text-[#2C1E12]">Tự động</h4>
+                      <p className="text-[11px] text-[#8B7355]">Hệ thống chọn thợ phù hợp nhất</p>
+                    </div>
+                    {!selectedStaff && (
                       <div className="w-5 h-5 bg-[#C8A97E] rounded-full flex items-center justify-center shrink-0">
                         <Check className="w-3 h-3 text-white stroke-[3]" />
                       </div>
                     )}
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
 
-        {/* ─── Section 2: Date & Time Picker ─── */}
-        <div ref={dateSectionRef}>
-          <h2 className="text-base font-bold text-[#2C1E12] mb-1">Chọn ngày & giờ</h2>
-          <p className="text-sm text-[#8B7355] mb-4">Chọn ngày rồi chọn giờ bên dưới</p>
-
-          <div className="bg-white rounded-2xl border border-[#E8E0D4] p-4 space-y-4">
-            {/* Horizontal date strip with arrow buttons */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-xs font-bold text-[#8B7355] uppercase tracking-wider flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5" /> Chọn ngày
-                </h3>
-                {selectedDate && (
-                  <span className="text-xs font-medium text-[#C8A97E]">{formattedDate}</span>
-                )}
-              </div>
-
-              <div className="relative flex items-center gap-1.5">
-                {/* Left arrow */}
-                <button
-                  onClick={() => scrollDates('left')}
-                  className="shrink-0 w-8 h-8 rounded-full bg-[#F0EBE3] hover:bg-[#E8E0D4] flex items-center justify-center text-[#8B7355] transition-colors cursor-pointer active:scale-95"
-                  aria-label="Cuộn trái"
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                </button>
-
-                {/* Scrollable date strip */}
-                <div
-                  ref={dateScrollRef}
-                  className="flex gap-2 overflow-x-auto pb-1.5 scroll-smooth snap-x snap-mandatory flex-1"
-                  style={{ scrollbarWidth: 'thin', scrollbarColor: '#D4C9BA transparent' }}
-                >
-                  {DATES.map(date => {
-                    const dateStr = date.format('YYYY-MM-DD');
-                    const isSelected = selectedDate === dateStr;
-                    const isToday = dateStr === dayjs.tz(undefined, VIETNAM_TZ).format('YYYY-MM-DD');
+                  {/* Staff list */}
+                  {staffList.map(member => {
+                    const selected = selectedStaff?.id === member.id;
                     return (
-                      <button
-                        key={dateStr}
-                        onClick={() => setDate(dateStr)}
+                      <div
+                        key={member.id}
+                        onClick={() => {
+                          const today = dayjs.tz(undefined, VIETNAM_TZ).format('YYYY-MM-DD');
+                          setStaff(member);
+                          setDate(today);
+                          scrollToSection(timeRef, 350);
+                        }}
                         className={cn(
-                          'flex-shrink-0 snap-center flex flex-col items-center w-14 py-2.5 rounded-xl border-2 transition-all duration-300 cursor-pointer',
-                          isSelected
-                            ? 'border-[#C8A97E] bg-[#C8A97E] text-white shadow-sm'
-                            : 'border-transparent hover:border-[#E8E0D4] text-[#2C1E12] hover:bg-[#FAF8F5]'
+                          'relative flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 cursor-pointer',
+                          selected ? 'border-[#C8A97E] bg-[#C8A97E]/5' : 'border-transparent bg-white hover:border-[#E8E0D4]'
                         )}
                       >
-                        <span className={cn('text-[10px] font-bold uppercase mb-0.5', isSelected ? 'text-white/70' : 'text-[#8B7355]')}>
-                          {DAYS[date.day()]}
-                        </span>
-                        <span className="text-lg font-bold leading-tight">{date.date()}</span>
-                        {isToday && <div className={cn('w-1 h-1 rounded-full mt-0.5', isSelected ? 'bg-white' : 'bg-[#C8A97E]')} />}
-                      </button>
+                        <Avatar src={member.user.avatar} name={member.user.name} size="md" variant="circle" className={cn('shrink-0', selected && 'ring-2 ring-[#C8A97E] ring-offset-1')} />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-sm text-[#2C1E12] truncate">{member.user.name}</h4>
+                            <div className="flex items-center gap-0.5 shrink-0">
+                              <Star className="w-3 h-3 text-[#C8A97E] fill-[#C8A97E]" />
+                              <span className="text-xs font-bold text-[#2C1E12]">{member.rating.toFixed(1)}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-[11px] text-[#8B7355] truncate">{STAFF_POSITIONS[member.position]}</p>
+                            <button
+                              onClick={e => { e.stopPropagation(); setProfileStaffId(member.id); }}
+                              className="text-[10px] font-semibold text-[#C8A97E] hover:text-[#B8975E] transition-colors shrink-0 flex items-center gap-0.5"
+                            >
+                              <Eye className="w-3 h-3" /> Hồ sơ
+                            </button>
+                          </div>
+                        </div>
+                        {selected && (
+                          <div className="w-5 h-5 bg-[#C8A97E] rounded-full flex items-center justify-center shrink-0">
+                            <Check className="w-3 h-3 text-white stroke-[3]" />
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
-
-                {/* Right arrow */}
-                <button
-                  onClick={() => scrollDates('right')}
-                  className="shrink-0 w-8 h-8 rounded-full bg-[#F0EBE3] hover:bg-[#E8E0D4] flex items-center justify-center text-[#8B7355] transition-colors cursor-pointer active:scale-95"
-                  aria-label="Cuộn phải"
-                >
-                  <ChevronRight className="w-4 h-4" />
-                </button>
-              </div>
+              )}
             </div>
 
-            {/* Time grid (shows after date selected) */}
-            {selectedDate && (
-              <div ref={timeRef} className="animate-in fade-in duration-300 border-t border-[#E8E0D4] pt-4">
-                <h3 className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5" /> Chọn giờ
-                </h3>
+            {/* ─── Section 2: Date & Time Picker ─── */}
+            <div ref={dateSectionRef}>
+              <h2 className="text-base font-bold text-[#2C1E12] mb-1">Chọn ngày & giờ</h2>
+              <p className="text-sm text-[#8B7355] mb-4">Chọn ngày rồi chọn giờ bên dưới</p>
 
-                {loadingSlots ? (
-                  <div className="flex items-center justify-center py-8 gap-2">
-                    <div className="w-6 h-6 border-[3px] border-[#E8E0D4] border-t-[#C8A97E] rounded-full animate-spin" />
-                    <span className="text-sm text-[#8B7355]">Đang tải...</span>
+              <div className="bg-white rounded-2xl border border-[#E8E0D4] p-4 space-y-4">
+                {/* Horizontal date strip with arrow buttons */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-xs font-bold text-[#8B7355] uppercase tracking-wider flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5" /> Chọn ngày
+                    </h3>
+                    {selectedDate && (
+                      <span className="text-xs font-medium text-[#C8A97E]">{formattedDate}</span>
+                    )}
                   </div>
-                ) : timeSections.length === 0 ? (
-                  <div className="text-center py-8">
-                    <CalendarDays className="w-7 h-7 text-[#D4C9BA] mx-auto mb-2" />
-                    <p className="text-sm font-bold text-[#2C1E12]">Hết lịch trống</p>
-                    <p className="text-xs text-[#8B7355] mt-1">Vui lòng chọn ngày khác</p>
+
+                  <div className="relative flex items-center gap-1.5">
+                    {/* Left arrow */}
+                    <button
+                      onClick={() => scrollDates('left')}
+                      className="shrink-0 w-8 h-8 rounded-full bg-[#F0EBE3] hover:bg-[#E8E0D4] flex items-center justify-center text-[#8B7355] transition-colors cursor-pointer active:scale-95"
+                      aria-label="Cuộn trái"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+
+                    {/* Scrollable date strip */}
+                    <div
+                      ref={dateScrollRef}
+                      className="flex gap-2 overflow-x-auto pb-1.5 scroll-smooth snap-x snap-mandatory flex-1"
+                      style={{ scrollbarWidth: 'thin', scrollbarColor: '#D4C9BA transparent' }}
+                    >
+                      {DATES.map(date => {
+                        const dateStr = date.format('YYYY-MM-DD');
+                        const isSelected = selectedDate === dateStr;
+                        const isToday = dateStr === dayjs.tz(undefined, VIETNAM_TZ).format('YYYY-MM-DD');
+                        return (
+                          <button
+                            key={dateStr}
+                            onClick={() => setDate(dateStr)}
+                            className={cn(
+                              'flex-shrink-0 snap-center flex flex-col items-center w-14 py-2.5 rounded-xl border-2 transition-all duration-300 cursor-pointer',
+                              isSelected
+                                ? 'border-[#C8A97E] bg-[#C8A97E] text-white shadow-sm'
+                                : 'border-transparent hover:border-[#E8E0D4] text-[#2C1E12] hover:bg-[#FAF8F5]'
+                            )}
+                          >
+                            <span className={cn('text-[10px] font-bold uppercase mb-0.5', isSelected ? 'text-white/70' : 'text-[#8B7355]')}>
+                              {DAYS[date.day()]}
+                            </span>
+                            <span className="text-lg font-bold leading-tight">{date.date()}</span>
+                            {isToday && <div className={cn('w-1 h-1 rounded-full mt-0.5', isSelected ? 'bg-white' : 'bg-[#C8A97E]')} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Right arrow */}
+                    <button
+                      onClick={() => scrollDates('right')}
+                      className="shrink-0 w-8 h-8 rounded-full bg-[#F0EBE3] hover:bg-[#E8E0D4] flex items-center justify-center text-[#8B7355] transition-colors cursor-pointer active:scale-95"
+                      aria-label="Cuộn phải"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
                   </div>
-                ) : (
-                  <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
-                    {timeSections.map(section => (
-                      <div key={section.label}>
-                        <h4 className="text-[10px] font-bold text-[#8B7355] mb-1.5 flex items-center gap-1">
-                          <span>{section.icon}</span> {section.label}
-                          <span className="text-[#C4B9A8] font-normal">({section.slots.length})</span>
-                        </h4>
-                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
-                          {section.slots.map(slot => (
-                            <button
-                              key={slot.time}
-                              onClick={() => setTimeSlot(slot.time)}
-                              className={cn(
-                                'py-2 rounded-lg text-sm font-bold transition-all duration-300 cursor-pointer border',
-                                selectedTimeSlot === slot.time
-                                  ? 'bg-[#C8A97E] border-[#C8A97E] text-white shadow-sm'
-                                  : 'bg-[#FAF8F5] border-transparent text-[#2C1E12] hover:border-[#E8E0D4]'
-                              )}
-                            >
-                              {slot.time}
-                            </button>
-                          ))}
-                        </div>
+                </div>
+
+                {/* Time grid (shows after date selected) */}
+                {selectedDate && (
+                  <div ref={timeRef} className="animate-in fade-in duration-300 border-t border-[#E8E0D4] pt-4">
+                    <h3 className="text-xs font-bold text-[#8B7355] uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" /> Chọn giờ
+                    </h3>
+
+                    {loadingSlots ? (
+                      <div className="flex items-center justify-center py-8 gap-2">
+                        <div className="w-6 h-6 border-[3px] border-[#E8E0D4] border-t-[#C8A97E] rounded-full animate-spin" />
+                        <span className="text-sm text-[#8B7355]">Đang tải...</span>
                       </div>
-                    ))}
+                    ) : timeSections.length === 0 ? (
+                      <div className="text-center py-8">
+                        <CalendarDays className="w-7 h-7 text-[#D4C9BA] mx-auto mb-2" />
+                        <p className="text-sm font-bold text-[#2C1E12]">Hết lịch trống</p>
+                        <p className="text-xs text-[#8B7355] mt-1">Vui lòng chọn ngày khác</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-[280px] overflow-y-auto pr-1" style={{ scrollbarWidth: 'thin' }}>
+                        {timeSections.map(section => (
+                          <div key={section.label}>
+                            <h4 className="text-[10px] font-bold text-[#8B7355] mb-1.5 flex items-center gap-1">
+                              <span>{section.icon}</span> {section.label}
+                              <span className="text-[#C4B9A8] font-normal">({section.slots.length})</span>
+                            </h4>
+                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5">
+                              {section.slots.map(slot => (
+                                <button
+                                  key={slot.time}
+                                  onClick={() => setTimeSlot(slot.time)}
+                                  className={cn(
+                                    'py-2 rounded-lg text-sm font-bold transition-all duration-300 cursor-pointer border',
+                                    selectedTimeSlot === slot.time
+                                      ? 'bg-[#C8A97E] border-[#C8A97E] text-white shadow-sm'
+                                      : 'bg-[#FAF8F5] border-transparent text-[#2C1E12] hover:border-[#E8E0D4]'
+                                  )}
+                                >
+                                  {slot.time}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </>
+        )}
 
         {/* ─── Note (visible after time selected) ─── */}
         {selectedTimeSlot && (
