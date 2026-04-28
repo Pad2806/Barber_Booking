@@ -192,30 +192,78 @@ export class AIToolsService {
     return this.staffService.getAvailableSlots(barberId, date);
   }
 
-  // ═══ Resolve: Match user text to salon ═══
+  // ═══ Resolve: Match user text to salon (deterministic, NEVER guess) ═══
   async resolveSalon(input: string, salons: SalonItem[]): Promise<SalonItem | null> {
-    const str = input.trim();
+    if (!input || salons.length === 0) return null;
+    const raw = input.trim();
+    const lower = raw.toLowerCase();
 
-    // Number selection: "1", "2"
-    const numMatch = str.match(/(?:thứ|số|cơ\s*sở|chi\s*nhánh)?\s*(\d+)$/i) || str.match(/^(\d+)$/);
+    // ── LEVEL 0: Number selection "1", "2", "cơ sở 1", "chi nhánh 2" ──
+    const numMatch = raw.match(/(?:thứ|số|cơ\s*sở|chi\s*nhánh)?\s*(\d+)$/i) || raw.match(/^(\d+)$/);
     if (numMatch) {
       const idx = parseInt(numMatch[1], 10) - 1;
       if (idx >= 0 && idx < salons.length) {
-        this.logger.log(`[Resolve] Salon "${str}" → #${idx + 1}: ${salons[idx].name}`);
+        this.logger.log(`[Resolve] Salon "${raw}" → #${idx + 1}: ${salons[idx].name}`);
         return salons[idx];
       }
     }
 
-    // Name match
-    const match = salons.find(s =>
-      s.name.toLowerCase().includes(str.toLowerCase()) ||
-      str.toLowerCase().includes(s.name.toLowerCase().substring(0, 8))
-    );
-    if (match) {
-      this.logger.log(`[Resolve] Salon "${str}" → ${match.name}`);
-      return match;
+    // ── LEVEL 1: Normalize Vietnamese aliases → canonical keyword ──
+    const SALON_ALIASES: Record<string, string> = {
+      'q1': 'quận 1', 'q.1': 'quận 1', 'quan 1': 'quận 1', 'quận một': 'quận 1',
+      'q2': 'quận 2', 'q.2': 'quận 2', 'quan 2': 'quận 2', 'quận hai': 'quận 2',
+      'q3': 'quận 3', 'q.3': 'quận 3', 'quan 3': 'quận 3', 'quận ba': 'quận 3',
+      'q4': 'quận 4', 'q.4': 'quận 4', 'quan 4': 'quận 4', 'quận bốn': 'quận 4',
+      'q5': 'quận 5', 'q.5': 'quận 5', 'quan 5': 'quận 5', 'quận năm': 'quận 5',
+      'q6': 'quận 6', 'q.6': 'quận 6', 'quan 6': 'quận 6', 'quận sáu': 'quận 6',
+      'q7': 'quận 7', 'q.7': 'quận 7', 'quan 7': 'quận 7', 'quận bảy': 'quận 7',
+      'q8': 'quận 8', 'q.8': 'quận 8', 'quan 8': 'quận 8', 'quận tám': 'quận 8',
+      'q9': 'quận 9', 'q.9': 'quận 9', 'quan 9': 'quận 9', 'quận chín': 'quận 9',
+      'q10': 'quận 10', 'q.10': 'quận 10', 'quan 10': 'quận 10', 'quận mười': 'quận 10',
+      'q11': 'quận 11', 'q12': 'quận 12',
+      'td': 'thủ đức', 'thu duc': 'thủ đức',
+      'bt': 'bình thạnh', 'binh thanh': 'bình thạnh',
+      'btan': 'bình tân', 'binh tan': 'bình tân',
+      'gc': 'gò vấp', 'go vap': 'gò vấp', 'gv': 'gò vấp',
+      'pn': 'phú nhuận', 'phu nhuan': 'phú nhuận',
+      'tp': 'tân phú', 'tan phu': 'tân phú',
+      'tb': 'tân bình', 'tan binh': 'tân bình',
+      'nvl': 'nguyễn văn linh', 'nguyen van linh': 'nguyễn văn linh',
+    };
+
+    // Normalize input through aliases
+    const normalized = SALON_ALIASES[lower] || lower;
+
+    // ── LEVEL 2: Keyword match against salon NAME ──
+    // Extract the key location part from input (strip "cơ sở", "salon", "chi nhánh", "reetro")
+    const locationKeyword = normalized
+      .replace(/^(cơ\s*sở|salon|chi\s*nhánh|reetro)\s*/i, '')
+      .trim();
+
+    if (locationKeyword.length >= 2) {
+      // Exact keyword match in salon name (highest priority)
+      const nameMatch = salons.find(s =>
+        s.name.toLowerCase().includes(locationKeyword)
+      );
+      if (nameMatch) {
+        this.logger.log(`[Resolve] Salon "${raw}" → name match: ${nameMatch.name}`);
+        return nameMatch;
+      }
     }
 
+    // ── LEVEL 3: Keyword match against salon ADDRESS ──
+    if (locationKeyword.length >= 3) {
+      const addrMatch = salons.find(s =>
+        s.address.toLowerCase().includes(locationKeyword)
+      );
+      if (addrMatch) {
+        this.logger.log(`[Resolve] Salon "${raw}" → address match: ${addrMatch.name} (${addrMatch.address})`);
+        return addrMatch;
+      }
+    }
+
+    // ── LEVEL 4: No confident match → return null (caller will ask user) ──
+    this.logger.warn(`[Resolve] Salon "${raw}" → NO MATCH. Will ask user to clarify.`);
     return null;
   }
 

@@ -403,6 +403,21 @@ export class AIAssistantService implements OnModuleInit {
       result.intent = 'select';
     }
 
+    // Salon extraction: "quận 1", "q1", "cơ sở quận 1", "Nguyễn Văn Linh"
+    const salonPatterns = [
+      /(?:cơ\s*sở|salon|chi\s*nhánh)\s+(.+?)(?:\s+(?:vào|lúc|ngày|hôm|ở|tại)|$)/i,
+      /(quận\s*\d+)/i,
+      /(q\.?\d+)/i,
+    ];
+    for (const re of salonPatterns) {
+      const m = msg.match(re);
+      if (m && !result.salon) {
+        result.salon = m[1].trim();
+        result.intent = result.intent === 'other' ? 'book' : result.intent;
+        break;
+      }
+    }
+
     return result;
   }
 
@@ -435,6 +450,10 @@ export class AIAssistantService implements OnModuleInit {
       if (salon) {
         state.salonId = salon.id;
         acks.push(`✅ Cơ sở: **${salon.name}**`);
+      } else if (salons.length > 1) {
+        // Resolution failed → show list for user to pick
+        const list = salons.map((s, i) => `${i + 1}. **${s.name}** — ${s.address}`).join('\n');
+        acks.push(`Em không tìm thấy cơ sở "${intent.salon}". Anh/chị vui lòng chọn:\n\n${list}`);
       }
     }
 

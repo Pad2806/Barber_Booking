@@ -26,6 +26,7 @@ PARSE RULES:
 - "2h chiều"/"14h" → time:"14:00"
 - "9 rưỡi"/"9h30" → time:"09:30"
 - "8h30" → time:"08:30"
+- "9h sáng"/"9 giờ sáng" → time:"09:00"
 - Số "1","2","3" → lựa chọn STT (salon/service/barber tùy bước)
 - "ai cũng được"/"thợ nào cũng được"/"chọn giúp" → barber:"any"
 - "được"/"ok"/"đúng rồi"/"xác nhận" → confirmed:true
@@ -33,6 +34,15 @@ PARSE RULES:
 - SĐT: 10 số bắt đầu 0
 - Tên: bỏ "anh"/"chị" → lấy tên ("Anh Hoàng" → "Hoàng")
 - cat toc=cắt tóc, nhuom=nhuộm, uon=uốn, hot toc=hớt tóc, goi=gội
+
+🔴 SALON RULE (BẮT BUỘC):
+- Trường "salon" phải là NGUYÊN VĂN text user nhập về địa điểm/chi nhánh.
+- KHÔNG được tự suy đoán hoặc dịch sang tên salon khác.
+- VD: "quận 1" → salon:"quận 1" (ĐÚNG), KHÔNG phải salon:"Nguyễn Văn Linh" (SAI)
+- VD: "q1" → salon:"q1"
+- VD: "cơ sở quận 1" → salon:"quận 1"  
+- VD: "Nguyễn Văn Linh" → salon:"Nguyễn Văn Linh"
+- Backend sẽ tự match — LLM KHÔNG được đoán.
 
 JSON:
 {"intent":"book|select|confirm|change|cancel|greet|ask_slots|other","salon":null,"service":null,"barber":null,"date":null,"time":null,"name":null,"phone":null,"confirmed":null}`;
