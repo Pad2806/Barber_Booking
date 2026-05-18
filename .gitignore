@@ -47,3 +47,4 @@ prisma/*.db-journal
 
 # AWF Brain (AI session files)
 .brain/
+.agent/
